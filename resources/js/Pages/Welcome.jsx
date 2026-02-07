@@ -1,44 +1,71 @@
 import { Head, Link } from "@inertiajs/react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+    BookOpen,
+    Plus,
+    BarChart3,
+    List,
+    Star,
+    Share2,
+    Settings,
+    LogOut,
+    LogIn,
+} from "lucide-react";
+import { useState } from "react";
 
-export default function Welcome({ auth, laravelVersion, phpVersion }) {
-    const handleImageError = () => {
-        document
-            .getElementById("screenshot-container")
-            ?.classList.add("!hidden");
-        document.getElementById("docs-card")?.classList.add("!row-span-1");
-        document
-            .getElementById("docs-card-content")
-            ?.classList.add("!flex-row");
-        document.getElementById("background")?.classList.add("!hidden");
+export default function Welcome({ auth }) {
+    const [showStatsDialog, setShowStatsDialog] = useState(false);
+
+    const handleStatsClick = () => {
+        setShowStatsDialog(true);
     };
 
     return (
         <>
             <Head title="Welcome" />
-            <div className="min-h-screen flex justify-center pt-0 sm:items-start sm:justify-center">
-                <main className="w-full sm:max-w-xl sm:mx-auto">
-                    <div className=" bg-[#E5201C] text-white p-4 shadow-md">
-                        <div className="flex flex-row items-center justify-between">
-                            <h1 className="text-lg font-semibold">
-                                Memorize Words
-                            </h1>
+            <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-zinc-900 dark:to-zinc-950">
+                <div className="w-full max-w-2xl mx-auto">
+                    {/* Header */}
+                    <div className="bg-[#E5201C] text-white p-4 shadow-lg sticky top-0 z-10">
+                        <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                                <div className="p-2 bg-white/10 rounded-lg">
+                                    <BookOpen className="h-6 w-6" />
+                                </div>
+                                <h1 className="text-lg font-bold">
+                                    Memorize Words
+                                </h1>
+                            </div>
                             {auth.user ? (
                                 <Link
                                     href={route("logout")}
                                     method="post"
                                     as="button"
-                                    className="flex flex-col items-center justify-center p-4"
+                                    className="flex items-center gap-2 text-white font-medium px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
                                 >
-                                    <span className="text-sm font-medium text-white-700">
-                                        LogOut
+                                    <LogOut className="h-4 w-4" />
+                                    <span className="hidden sm:inline">
+                                        Logout
                                     </span>
                                 </Link>
                             ) : (
                                 <Link
                                     href={route("login")}
-                                    className="flex flex-col items-center justify-center p-4"
+                                    className="flex items-center gap-2 text-white font-medium px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
                                 >
-                                    <span className="text-sm font-medium text-white-700">
+                                    <LogIn className="h-4 w-4" />
+                                    <span className="hidden sm:inline">
                                         Login
                                     </span>
                                 </Link>
@@ -46,143 +73,172 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                         </div>
                     </div>
 
-                    <div className="bg-white dark:bg-zinc-900 p-4 shadow-sm">
-                        <div className="grid grid-cols-2 gap-4">
-                            <button className="flex flex-col items-center justify-center p-4 bg-white rounded-md shadow-md h-36">
-                                <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-[#E5201C]/10">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="h-7 w-7 text-[#E5201C]"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth="2"
-                                            d="M12 4v16m8-8H4"
-                                        />
-                                    </svg>
-                                </div>
-                                <span className="text-sm font-medium text-gray-700">
-                                    Add new word
-                                </span>
-                            </button>
+                    {/* Welcome Message */}
+                    <div className="px-4 pt-6 pb-4">
+                        <p className="text-gray-600 dark:text-gray-400">
+                            Start learning and expand your vocabulary
+                        </p>
+                    </div>
 
-                            <button className="flex flex-col items-center justify-center p-4 bg-white rounded-md shadow-md h-36">
-                                <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-[#E5201C]/10">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="h-7 w-7 text-[#E5201C]"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth="2"
-                                            d="M14.752 11.168l-6.518 3.758A1 1 0 0 1 6 13.998V7.002a1 1 0 0 1 1.234-.97l6.518 1.77a1 1 0 0 1 .999.97v2.376a1 1 0 0 1-.519.992z"
-                                        />
-                                    </svg>
-                                </div>
-                                <span className="text-sm font-medium text-gray-700">
-                                    Exercise
-                                </span>
-                            </button>
+                    {/* Main Actions Grid */}
+                    <div className="px-4 pb-6">
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                            <Card className="cursor-pointer hover:shadow-lg hover:border-blue-500 transition-all group">
+                                <CardContent className="flex flex-col items-center justify-center h-40 p-4">
+                                    <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
+                                        <Plus className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                                    </div>
+                                    <span className="text-sm font-semibold text-gray-900 dark:text-white text-center">
+                                        Add New Word
+                                    </span>
+                                    <span className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                        Expand vocabulary
+                                    </span>
+                                </CardContent>
+                            </Card>
 
-                            <button className="flex flex-col items-center justify-center p-4 bg-white rounded-md shadow-md h-36">
-                                <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-[#E5201C]/10">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="h-7 w-7 text-[#E5201C]"
-                                        viewBox="0 0 24 24"
-                                        fill="currentColor"
-                                    >
-                                        <path d="M3 3h18v2H3V3zm0 6h18v2H3V9zm0 6h18v2H3v-2z" />
-                                    </svg>
-                                </div>
-                                <span className="text-sm font-medium text-gray-700">
-                                    Statistics
-                                </span>
-                            </button>
+                            <Link href={route("exercise.index")}>
+                                <Card className="cursor-pointer hover:shadow-lg hover:border-[#E5201C] transition-all group h-full">
+                                    <CardContent className="flex flex-col items-center justify-center h-40 p-4">
+                                        <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-[#E5201C]/10 group-hover:bg-[#E5201C]/20 transition-colors">
+                                            <BookOpen className="h-8 w-8 text-[#E5201C]" />
+                                        </div>
+                                        <span className="text-sm font-semibold text-gray-900 dark:text-white text-center">
+                                            Exercise
+                                        </span>
+                                        <span className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                            Practice now
+                                        </span>
+                                    </CardContent>
+                                </Card>
+                            </Link>
 
-                            <button className="flex flex-col items-center justify-center p-4 bg-white rounded-md shadow-md h-36">
-                                <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-[#E5201C]/10">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="h-7 w-7 text-[#E5201C]"
-                                        viewBox="0 0 24 24"
-                                        fill="currentColor"
-                                    >
-                                        <path d="M3 6h18v2H3V6zm0 6h18v2H3v-2zm0 6h18v2H3v-2z" />
-                                    </svg>
-                                </div>
-                                <span className="text-sm font-medium text-gray-700">
-                                    List items
-                                </span>
-                            </button>
+                            <Card
+                                className="cursor-pointer hover:shadow-lg hover:border-green-500 transition-all group"
+                                onClick={handleStatsClick}
+                            >
+                                <CardContent className="flex flex-col items-center justify-center h-40 p-4">
+                                    <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30 group-hover:bg-green-200 dark:group-hover:bg-green-900/50 transition-colors">
+                                        <BarChart3 className="h-8 w-8 text-green-600 dark:text-green-400" />
+                                    </div>
+                                    <span className="text-sm font-semibold text-gray-900 dark:text-white text-center">
+                                        Statistics
+                                    </span>
+                                    <span className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                        Track progress
+                                    </span>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="cursor-pointer hover:shadow-lg hover:border-purple-500 transition-all group">
+                                <CardContent className="flex flex-col items-center justify-center h-40 p-4">
+                                    <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/30 group-hover:bg-purple-200 dark:group-hover:bg-purple-900/50 transition-colors">
+                                        <List className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+                                    </div>
+                                    <span className="text-sm font-semibold text-gray-900 dark:text-white text-center">
+                                        Word List
+                                    </span>
+                                    <span className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                        Browse all
+                                    </span>
+                                </CardContent>
+                            </Card>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-4 mt-4">
-                            <button className="flex flex-col items-center justify-center p-3 bg-white rounded-md shadow-md h-28">
-                                <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-[#E5201C]/10">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="h-5 w-5 text-[#E5201C]"
-                                        viewBox="0 0 24 24"
-                                        fill="currentColor"
-                                    >
-                                        <path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7l3-7z" />
-                                    </svg>
-                                </div>
-                                <span className="text-xs font-medium text-gray-700">
-                                    Rate 5 stars
+                        {/* Smaller Action Buttons */}
+                        <div className="grid grid-cols-3 gap-3">
+                            <Button
+                                variant="outline"
+                                className="flex flex-col items-center justify-center h-28 p-3 hover:border-[#E5201C] hover:bg-[#E5201C]/5 transition-colors group"
+                            >
+                                <Star className="h-6 w-6 text-amber-500 group-hover:text-[#E5201C] mb-2 transition-colors" />
+                                <span className="text-xs font-medium text-gray-700 dark:text-gray-300 text-center">
+                                    Rate 5 Stars
                                 </span>
-                            </button>
+                            </Button>
 
-                            <button className="flex flex-col items-center justify-center p-3 bg-white rounded-md shadow-md h-28">
-                                <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-[#E5201C]/10">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="h-5 w-5 text-[#E5201C]"
-                                        viewBox="0 0 24 24"
-                                        fill="currentColor"
-                                    >
-                                        <path d="M18 8a3 3 0 10-2.83-4H8a3 3 0 100 6h7.17A3 3 0 1018 8zM6 12v6h12v-6H6z" />
-                                    </svg>
-                                </div>
-                                <span className="text-xs font-medium text-gray-700">
+                            <Button
+                                variant="outline"
+                                className="flex flex-col items-center justify-center h-28 p-3 hover:border-[#E5201C] hover:bg-[#E5201C]/5 transition-colors group"
+                            >
+                                <Share2 className="h-6 w-6 text-blue-500 group-hover:text-[#E5201C] mb-2 transition-colors" />
+                                <span className="text-xs font-medium text-gray-700 dark:text-gray-300 text-center">
                                     Share
                                 </span>
-                            </button>
+                            </Button>
 
-                            <button className="flex flex-col items-center justify-center p-3 bg-white rounded-md shadow-md h-28">
-                                <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-[#E5201C]/10">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="h-5 w-5 text-[#E5201C]"
-                                        viewBox="0 0 24 24"
-                                        fill="currentColor"
-                                    >
-                                        <path d="M12 8a4 4 0 100 8 4 4 0 000-8zm8 4a8 8 0 11-16 0 8 8 0 0116 0z" />
-                                    </svg>
-                                </div>
-                                <span className="text-xs font-medium text-gray-700">
+                            <Button
+                                variant="outline"
+                                className="flex flex-col items-center justify-center h-28 p-3 hover:border-[#E5201C] hover:bg-[#E5201C]/5 transition-colors group"
+                            >
+                                <Settings className="h-6 w-6 text-gray-500 group-hover:text-[#E5201C] mb-2 transition-colors" />
+                                <span className="text-xs font-medium text-gray-700 dark:text-gray-300 text-center">
                                     Settings
                                 </span>
-                            </button>
+                            </Button>
                         </div>
                     </div>
 
-                    <div className="mt-4">
-                        <div className="rounded-b-md bg-[#E5201C] text-white text-center py-3 font-medium">
-                            MORE
+                    {/* Footer CTA */}
+                    <div className="mt-4 mb-6 mx-4">
+                        <div className="rounded-lg bg-gradient-to-r from-[#E5201C] to-red-600 text-white text-center py-4 shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
+                            <p className="text-sm font-semibold mb-1">
+                                Explore More Features
+                            </p>
+                            <p className="text-xs opacity-90">
+                                Discover advanced learning tools
+                            </p>
                         </div>
                     </div>
-                </main>
+                </div>
             </div>
+
+            {/* Statistics Alert Dialog */}
+            <AlertDialog
+                open={showStatsDialog}
+                onOpenChange={setShowStatsDialog}
+            >
+                <AlertDialogContent className="max-w-md mx-4">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2">
+                            <BarChart3 className="h-5 w-5 text-green-600" />
+                            {auth.user
+                                ? "Statistics Coming Soon!"
+                                : "Login Required"}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-base">
+                            {auth.user ? (
+                                <>
+                                    We're working on an amazing statistics
+                                    feature to help you track your learning
+                                    progress. Stay tuned for updates!
+                                </>
+                            ) : (
+                                <>
+                                    You need to be logged in to view your
+                                    statistics and track your learning progress.
+                                    Sign in to unlock this feature!
+                                </>
+                            )}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                        <AlertDialogCancel className="w-full sm:w-auto">
+                            {auth.user ? "Got it" : "Cancel"}
+                        </AlertDialogCancel>
+                        {!auth.user && (
+                            <AlertDialogAction
+                                onClick={() => {
+                                    window.location.href = route("login");
+                                }}
+                                className="w-full sm:w-auto bg-[#E5201C] hover:bg-red-700"
+                            >
+                                Go to Login
+                            </AlertDialogAction>
+                        )}
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 }

@@ -47,4 +47,25 @@ class User extends Authenticatable
             'is_admin' => 'boolean',
         ];
     }
+
+    public function wordAttempts()
+    {
+        return $this->hasMany(WordAttempt::class);
+    }
+
+    /**
+     * Aggregated word progress for the user
+     */
+    public function wordProgress()
+    {
+        return $this->hasMany(UserWordProgress::class);
+    }
+
+    /**
+     * Progress per exercise group
+     */
+    public function exerciseProgress()
+    {
+        return $this->hasMany(UserExerciseProgress::class);
+    }
 }
