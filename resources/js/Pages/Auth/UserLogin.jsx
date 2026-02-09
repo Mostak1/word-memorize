@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import FlashMessages from "@/Components/FlashMessage";
+import { toast } from "sonner";
 
 export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -21,12 +23,21 @@ export default function Login({ status, canResetPassword }) {
         e.preventDefault();
         post(route("login"), {
             onFinish: () => reset("password"),
+            onError: (errors) => {
+                // Show toast for validation errors
+                if (errors.email) {
+                    toast.error(errors.email);
+                } else if (errors.password) {
+                    toast.error(errors.password);
+                }
+            },
         });
     };
 
     return (
         <GuestLayout>
             <Head title="Log in" />
+            <FlashMessages />
 
             <div className="w-full">
                 {/* Header */}

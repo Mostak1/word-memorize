@@ -52,9 +52,17 @@ class HandleInertiaRequests extends Middleware
                     'updated_at' => $request->user()->updated_at,
                 ] : null,
             ],
+            // ✅ Flash messages for Sonner toasts
             'flash' => [
-                'success' => $request->session()->get('success'),
-                'error' => $request->session()->get('error'),
+                // Nested flash structure (flash.toast.type, flash.toast.message)
+                'toast' => fn() => $request->session()->get('flash.toast'),
+
+                // Direct flash messages (also supported)
+                'success' => fn() => $request->session()->get('success'),
+                'error' => fn() => $request->session()->get('error'),
+                'warning' => fn() => $request->session()->get('warning'),
+                'info' => fn() => $request->session()->get('info'),
+                'message' => fn() => $request->session()->get('message'),
             ],
         ];
     }

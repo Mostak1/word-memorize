@@ -2,6 +2,7 @@ import { Head, Link, router, usePage } from "@inertiajs/react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -21,23 +22,11 @@ import {
     LogIn,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import FlashMessages from "@/Components/FlashMessage";
 
 export default function WordDetail({ auth, word, exerciseGroup }) {
     const [wordStatus, setWordStatus] = useState(null);
     const [showLoginDialog, setShowLoginDialog] = useState(false);
-    const { toast: toastData } = usePage().props;
-
-    useEffect(() => {
-        if (!toastData) return;
-
-        if (toastData.type === "success") {
-            toast.success(toastData.message);
-        }
-
-        if (toastData.type === "error") {
-            toast.error(toastData.message);
-        }
-    }, [toastData]);
 
     const speakWord = (text) => {
         if ("speechSynthesis" in window) {
@@ -60,6 +49,9 @@ export default function WordDetail({ auth, word, exerciseGroup }) {
             { result: status },
             {
                 preserveScroll: true,
+                onSuccess: () => {
+                    // Toast will be shown by FlashMessages component
+                },
                 onError: () => {
                     setWordStatus(null);
                     toast.error("Something went wrong");
@@ -71,6 +63,7 @@ export default function WordDetail({ auth, word, exerciseGroup }) {
     return (
         <>
             <Head title={`${word.word} - Word Details`} />
+            <FlashMessages />
             <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pb-20">
                 {/* Header */}
                 <div className="bg-[#E5201C] text-white p-4 shadow-lg sticky top-0 z-10">
@@ -148,6 +141,7 @@ export default function WordDetail({ auth, word, exerciseGroup }) {
                                         }`}
                                     >
                                         <Check className="h-5 w-5 mr-2" />
+                                        I Know This
                                     </Button>
                                     <Button
                                         onClick={() =>
@@ -160,6 +154,7 @@ export default function WordDetail({ auth, word, exerciseGroup }) {
                                         }`}
                                     >
                                         <XIcon className="h-5 w-5 mr-2" />
+                                        Learning
                                     </Button>
                                 </div>
                             </div>
@@ -277,7 +272,7 @@ export default function WordDetail({ auth, word, exerciseGroup }) {
                     open={showLoginDialog}
                     onOpenChange={setShowLoginDialog}
                 >
-                    <AlertDialogContent className="max-w-md mx-4">
+                    <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-md sm:w-full">
                         <AlertDialogHeader>
                             <AlertDialogTitle className="flex items-center gap-2">
                                 <LogIn className="h-5 w-5 text-[#E5201C]" />

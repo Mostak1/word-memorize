@@ -1,4 +1,4 @@
-import { Head, Link } from "@inertiajs/react";
+import { Head, Link, router } from "@inertiajs/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -198,7 +198,7 @@ export default function Welcome({ auth }) {
                 open={showStatsDialog}
                 onOpenChange={setShowStatsDialog}
             >
-                <AlertDialogContent className="max-w-md mx-4">
+                <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-md sm:w-full">
                     <AlertDialogHeader>
                         <AlertDialogTitle className="flex items-center gap-2">
                             <BarChart3 className="h-5 w-5 text-green-600" />
@@ -229,7 +229,7 @@ export default function Welcome({ auth }) {
                         {!auth.user && (
                             <AlertDialogAction
                                 onClick={() => {
-                                    window.location.href = route("login");
+                                    router.visit(route("login"));
                                 }}
                                 className="w-full sm:w-auto bg-[#E5201C] hover:bg-red-700"
                             >

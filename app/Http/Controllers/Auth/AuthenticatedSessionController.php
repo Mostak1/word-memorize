@@ -23,6 +23,7 @@ class AuthenticatedSessionController extends Controller
             'status' => session('status'),
         ]);
     }
+
     public function createUser(): Response
     {
         return Inertia::render('Auth/UserLogin', [
@@ -30,6 +31,7 @@ class AuthenticatedSessionController extends Controller
             'status' => session('status'),
         ]);
     }
+
     /**
      * Handle an incoming authentication request.
      */
@@ -39,11 +41,26 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // Add success toast message
+        $userName = $request->user()->name;
+
         if ($request->user()->is_admin) {
-            return redirect()->intended(route('admin.dashboard'));
+            return redirect()->intended(route('admin.dashboard'))
+                ->with('flash', [
+                    'toast' => [
+                        'type' => 'success',
+                        'message' => "Welcome back, {$userName}! 👋"
+                    ]
+                ]);
         }
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        return redirect()->intended(route('dashboard', absolute: false))
+            ->with('flash', [
+                'toast' => [
+                    'type' => 'success',
+                    'message' => "Welcome back, {$userName}! 👋"
+                ]
+            ]);
     }
 
     /**
@@ -57,6 +74,12 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect('/')
+            ->with('flash', [
+                'toast' => [
+                    'type' => 'success',
+                    'message' => 'Logged out successfully. See you soon! 👋'
+                ]
+            ]);
     }
 }

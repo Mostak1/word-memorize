@@ -5,6 +5,8 @@ import { Eye, EyeOff, Mail, Lock, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import FlashMessages from "@/Components/FlashMessage";
+import { toast } from "sonner";
 
 export default function Register() {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -22,12 +24,25 @@ export default function Register() {
         e.preventDefault();
         post(route("register"), {
             onFinish: () => reset("password", "password_confirmation"),
+            onError: (errors) => {
+                // Show toast for validation errors
+                if (errors.name) {
+                    toast.error(errors.name);
+                } else if (errors.email) {
+                    toast.error(errors.email);
+                } else if (errors.password) {
+                    toast.error(errors.password);
+                } else if (errors.password_confirmation) {
+                    toast.error(errors.password_confirmation);
+                }
+            },
         });
     };
 
     return (
         <GuestLayout>
             <Head title="Register" />
+            <FlashMessages />
 
             <div className="w-full">
                 {/* Header */}

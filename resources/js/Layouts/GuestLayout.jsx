@@ -7,7 +7,7 @@ export default function GuestLayout({ children }) {
         <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-white dark:from-zinc-900 dark:to-zinc-950 px-4 py-8 sm:py-12">
             {/* Logo/Brand Section */}
             <div className="w-full max-w-md mx-auto mb-8">
-                <Link href="/" className="flex flex-col items-center gap-3">
+                <Link href={route("home")} className="flex flex-col items-center gap-3">
                     <div className="flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-[#E5201C] shadow-lg">
                         <BookOpen className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
                     </div>

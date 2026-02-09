@@ -1,6 +1,7 @@
 import { Link, usePage } from "@inertiajs/react";
 import { useState } from "react";
 import { BookOpen, Menu, X, User, LogOut, Home } from "lucide-react";
+import FlashMessages from "@/Components/FlashMessage";
 
 export default function AuthenticatedLayout({ children }) {
     const user = usePage().props.auth.user;
@@ -9,6 +10,7 @@ export default function AuthenticatedLayout({ children }) {
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-zinc-900 dark:to-zinc-950">
+            <FlashMessages />
             {/* Mobile-First Header matching Welcome.jsx */}
             <div className="bg-[#E5201C] text-white p-4 shadow-lg sticky top-0 z-10">
                 <div className="w-full max-w-2xl mx-auto">

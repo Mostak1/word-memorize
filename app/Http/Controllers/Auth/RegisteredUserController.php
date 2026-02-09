@@ -23,6 +23,11 @@ class RegisteredUserController extends Controller
         return Inertia::render('Auth/Register');
     }
 
+    public function createUser(): Response
+    {
+        return Inertia::render('Auth/UserRegister');
+    }
+
     /**
      * Handle an incoming registration request.
      *
@@ -32,7 +37,7 @@ class RegisteredUserController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
+            'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
@@ -46,6 +51,12 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
-        return redirect(route('home', absolute: false));
+        return redirect(route('home', absolute: false))
+            ->with('flash', [
+                'toast' => [
+                    'type' => 'success',
+                    'message' => "Welcome to Memorize Words, {$user->name}! 🎉 Your account has been created successfully."
+                ]
+            ]);
     }
 }

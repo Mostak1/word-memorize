@@ -23,10 +23,6 @@ return new class extends Migration {
 
             $table->enum('last_result', ['correct', 'wrong'])->nullable();
 
-            $table->unsignedTinyInteger('mastery_level')
-                ->default(0)
-                ->comment('0–5 mastery scale');
-
             $table->timestamp('last_attempted_at')->nullable();
 
             $table->timestamps();

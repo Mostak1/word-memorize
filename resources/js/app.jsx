@@ -22,7 +22,7 @@ createInertiaApp({
         root.render(
             <ThemeProvider defaultTheme="light" storageKey="admin-theme">
                 <App {...props} />
-                <Toaster position="bottom-right" expand={false} richColors />
+                <Toaster position="bottom-right" closeButton expand={false} richColors />
             </ThemeProvider>,
         );
     },

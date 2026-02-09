@@ -19,14 +19,53 @@ import {
     Star,
     Share2,
     Settings,
+    TestTube,
 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export default function Dashboard() {
     const [showStatsDialog, setShowStatsDialog] = useState(false);
+    const [showTestDialog, setShowTestDialog] = useState(false);
 
     const handleStatsClick = () => {
         setShowStatsDialog(true);
+    };
+
+    // Test functions for Sonner
+    const testToasts = () => {
+        setShowTestDialog(true);
+    };
+
+    const showSuccessToast = () => {
+        toast.success("Success! This is a success message 🎉");
+    };
+
+    const showErrorToast = () => {
+        toast.error("Error! Something went wrong ❌");
+    };
+
+    const showWarningToast = () => {
+        toast.warning("Warning! Please be careful ⚠️");
+    };
+
+    const showInfoToast = () => {
+        toast.info("Info! Here's some information ℹ️");
+    };
+
+    const showDefaultToast = () => {
+        toast("This is a default toast message");
+    };
+
+    const showPromiseToast = () => {
+        toast.promise(
+            new Promise((resolve) => setTimeout(resolve, 2000)),
+            {
+                loading: "Loading...",
+                success: "Done! Action completed",
+                error: "Failed! Something went wrong",
+            }
+        );
     };
 
     return (
@@ -39,6 +78,20 @@ export default function Dashboard() {
                         <p className="text-gray-600 dark:text-gray-400">
                             Start learning and expand your vocabulary
                         </p>
+                    </div>
+
+                    {/* Test Toast Button - Remove after testing */}
+                    <div className="px-4 pb-4">
+                        <Button
+                            onClick={testToasts}
+                            variant="outline"
+                            className="w-full border-2 border-dashed border-purple-300 hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-950/20"
+                        >
+                            <TestTube className="h-4 w-4 mr-2 text-purple-600" />
+                            <span className="text-purple-700 dark:text-purple-400 font-medium">
+                                Test Sonner Toasts (Click Me!)
+                            </span>
+                        </Button>
                     </div>
 
                     {/* Main Actions Grid */}
@@ -177,6 +230,72 @@ export default function Dashboard() {
                             className="w-full sm:w-auto bg-[#E5201C] hover:bg-red-700"
                         >
                             Got it
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Toast Test Dialog */}
+            <AlertDialog
+                open={showTestDialog}
+                onOpenChange={setShowTestDialog}
+            >
+                <AlertDialogContent className="max-w-md mx-4">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2">
+                            <TestTube className="h-5 w-5 text-purple-600" />
+                            Test Sonner Toasts
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-base">
+                            Click the buttons below to test different toast types
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="space-y-2 py-4">
+                        <Button
+                            onClick={showSuccessToast}
+                            className="w-full bg-green-600 hover:bg-green-700"
+                        >
+                            Success Toast
+                        </Button>
+                        <Button
+                            onClick={showErrorToast}
+                            className="w-full bg-red-600 hover:bg-red-700"
+                        >
+                            Error Toast
+                        </Button>
+                        <Button
+                            onClick={showWarningToast}
+                            className="w-full bg-yellow-600 hover:bg-yellow-700"
+                        >
+                            Warning Toast
+                        </Button>
+                        <Button
+                            onClick={showInfoToast}
+                            className="w-full bg-blue-600 hover:bg-blue-700"
+                        >
+                            Info Toast
+                        </Button>
+                        <Button
+                            onClick={showDefaultToast}
+                            variant="outline"
+                            className="w-full"
+                        >
+                            Default Toast
+                        </Button>
+                        <Button
+                            onClick={showPromiseToast}
+                            variant="outline"
+                            className="w-full border-purple-300 text-purple-700 hover:bg-purple-50"
+                        >
+                            Promise Toast (2s delay)
+                        </Button>
+                    </div>
+                    <AlertDialogFooter>
+                        <AlertDialogAction
+                            onClick={() => setShowTestDialog(false)}
+                            className="w-full sm:w-auto bg-[#E5201C] hover:bg-red-700"
+                        >
+                            Close
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
