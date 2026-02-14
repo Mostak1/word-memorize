@@ -1,9 +1,10 @@
 import { Head, Link } from "@inertiajs/react";
+import AppLayout from "@/Layouts/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ChevronRight, BookOpen, Lock, ChevronLeft } from "lucide-react";
+import { ChevronRight, BookOpen, Lock } from "lucide-react";
 
-export default function Exercise({ auth, exerciseGroups }) {
+export default function Exercise({ exerciseGroups }) {
     const getDifficultyColor = (difficulty) => {
         switch (difficulty?.toLowerCase()) {
             case "easy":
@@ -31,37 +32,9 @@ export default function Exercise({ auth, exerciseGroups }) {
     };
 
     return (
-        <>
+        <AppLayout>
             <Head title="Exercises" />
             <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-                {/* Header */}
-                <div className="bg-[#E5201C] text-white p-4 shadow-lg sticky top-0 z-10">
-                    <div className="max-w-2xl mx-auto flex items-center gap-4">
-                        <Link
-                            href={
-                                auth.user ? route("dashboard") : route("home")
-                            }
-                            className="text-white hover:bg-red-700 p-2 rounded-lg transition"
-                        >
-                            <ChevronLeft className="h-6 w-6" />
-                        </Link>
-                        <h1 className="text-xl font-bold flex items-center gap-2 flex-1">
-                            <BookOpen className="h-6 w-6" />
-                            Exercise Groups
-                        </h1>
-                        {auth.user && (
-                            <Link
-                                href={route("logout")}
-                                method="post"
-                                as="button"
-                                className="text-white text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-red-700 transition"
-                            >
-                                Logout
-                            </Link>
-                        )}
-                    </div>
-                </div>
-
                 {/* Main Content */}
                 <main className="max-w-2xl mx-auto px-4 py-6 pb-20">
                     {exerciseGroups && exerciseGroups.length > 0 ? (
@@ -177,11 +150,7 @@ export default function Exercise({ auth, exerciseGroups }) {
                                         yet.
                                     </p>
                                     <Link
-                                        href={
-                                            auth.user
-                                                ? route("dashboard")
-                                                : route("home")
-                                        }
+                                        href={route("home")}
                                         className="inline-flex items-center gap-2 bg-[#E5201C] text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
                                     >
                                         Go Back Home
@@ -205,6 +174,6 @@ export default function Exercise({ auth, exerciseGroups }) {
                     }
                 `}</style>
             </div>
-        </>
+        </AppLayout>
     );
 }

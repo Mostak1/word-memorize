@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\ReviewWordController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ExerciseGroupController;
 use App\Http\Controllers\Admin\WordController;
@@ -8,7 +9,7 @@ use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\ProfileController;
 use Illuminate\Support\Facades\Route;
 
-Route::group(["middleware" => "admin", "prefix" => "admin", "as" => "admin."], function () {
+Route::group(["middleware" => ["auth", "admin"], "prefix" => "admin", "as" => "admin."], function () {
 
     // Admin Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -47,6 +48,9 @@ Route::group(["middleware" => "admin", "prefix" => "admin", "as" => "admin."], f
             Route::delete('/{word}', [WordController::class, 'destroy'])->name('destroy');
         });
     });
+
+    // Review Words
+    Route::get('/review-words', [ReviewWordController::class, 'index'])->name('review-words.index');
 
     // Settings
     Route::prefix('settings')->name('settings.')->group(function () {

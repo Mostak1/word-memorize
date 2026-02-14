@@ -68,4 +68,9 @@ class Word extends Model
 
     //     return url($this->image_url);
     // }
+
+    public function reviewEntries()
+    {
+        return $this->hasMany(ReviewWord::class);
+    }
 }

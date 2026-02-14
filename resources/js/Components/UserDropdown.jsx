@@ -54,19 +54,19 @@ export function UserDropdown() {
 
                 <DropdownMenuSeparator />
 
-                <DropdownMenuItem asChild>
+                <DropdownMenuItem asChild className="w-full">
                     <Link
                         href={route("admin.profile.edit")}
-                        className="flex items-center gap-2"
+                        className="flex w-full items-center gap-2 cursor-pointer"
                     >
                         Profile
                     </Link>
                 </DropdownMenuItem>
 
-                <DropdownMenuItem asChild>
+                <DropdownMenuItem asChild className="w-full">
                     <Link
                         href={route("admin.settings.index")}
-                        className="flex items-center gap-2"
+                        className="flex w-full items-center gap-2 cursor-pointer"
                     >
                         Settings
                     </Link>
@@ -74,12 +74,12 @@ export function UserDropdown() {
 
                 <DropdownMenuSeparator />
 
-                <DropdownMenuItem asChild>
+                <DropdownMenuItem asChild className="w-full">
                     <Link
                         href={route("logout")}
                         method="post"
                         as="button"
-                        className="flex items-center gap-2 text-red-600"
+                        className="flex w-full items-center gap-2 text-red-600 cursor-pointer"
                     >
                         <LogOut className="h-4 w-4" />
                         Logout

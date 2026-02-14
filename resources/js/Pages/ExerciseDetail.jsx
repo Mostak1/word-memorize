@@ -1,10 +1,11 @@
 import { Head, Link } from "@inertiajs/react";
+import AppLayout from "@/Layouts/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Play, Volume2, BookOpen, List } from "lucide-react";
 
-export default function ExerciseDetail({ auth, exerciseGroup }) {
+export default function ExerciseDetail({ exerciseGroup }) {
     const getDifficultyColor = (difficulty) => {
         switch (difficulty?.toLowerCase()) {
             case "easy":
@@ -27,46 +28,36 @@ export default function ExerciseDetail({ auth, exerciseGroup }) {
     };
 
     return (
-        <>
+        <AppLayout>
             <Head title={`Exercise - ${exerciseGroup.title}`} />
             <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pb-20">
-                {/* Header */}
-                <div className="bg-[#E5201C] text-white shadow-lg sticky top-0 z-10">
-                    <div className="max-w-xl mx-auto p-4">
-                        <div className="flex items-center gap-4 mb-3">
-                            <Link
-                                href={route("exercise.index")}
-                                className="text-white hover:bg-red-700 p-2 rounded-lg transition"
-                            >
-                                <ChevronLeft className="h-6 w-6" />
-                            </Link>
-                            <h1 className="text-xl font-bold flex-1 line-clamp-1">
+                {/* Page Sub-header */}
+                <div className="max-w-xl mx-auto px-4 pt-4 pb-2">
+                    <div className="flex items-center gap-3 mb-2">
+                        <Link
+                            href={route("exercise.index")}
+                            className="p-2 rounded-lg hover:bg-gray-100 transition text-gray-600"
+                        >
+                            <ChevronLeft className="h-5 w-5" />
+                        </Link>
+                        <div className="flex-1 min-w-0">
+                            <h1 className="text-xl font-bold text-gray-900 line-clamp-1">
                                 {exerciseGroup.title}
                             </h1>
-                            {auth.user && (
-                                <Link
-                                    href={route("logout")}
-                                    method="post"
-                                    as="button"
-                                    className="text-white text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-red-700 transition"
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                <Badge
+                                    variant="outline"
+                                    className={`${getDifficultyColor(exerciseGroup.difficulty)} font-semibold border`}
                                 >
-                                    Logout
-                                </Link>
-                            )}
-                        </div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                            <Badge
-                                variant="outline"
-                                className={`${getDifficultyColor(exerciseGroup.difficulty)} font-semibold border bg-white`}
-                            >
-                                {exerciseGroup.difficulty}
-                            </Badge>
-                            <Badge
-                                variant="outline"
-                                className="bg-white text-gray-700 border-white"
-                            >
-                                {exerciseGroup.words?.length || 0} words
-                            </Badge>
+                                    {exerciseGroup.difficulty}
+                                </Badge>
+                                <Badge
+                                    variant="outline"
+                                    className="bg-gray-50 text-gray-700"
+                                >
+                                    {exerciseGroup.words?.length || 0} words
+                                </Badge>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -182,6 +173,6 @@ export default function ExerciseDetail({ auth, exerciseGroup }) {
                     }
                 `}</style>
             </div>
-        </>
+        </AppLayout>
     );
 }

@@ -1,4 +1,5 @@
-import { Head, Link, router, usePage } from "@inertiajs/react";
+import { Head, Link, router } from "@inertiajs/react";
+import AppLayout from "@/Layouts/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,12 +22,20 @@ import {
     BookOpen,
     LogIn,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import FlashMessages from "@/Components/FlashMessage";
 
 export default function WordDetail({ auth, word, exerciseGroup }) {
     const [wordStatus, setWordStatus] = useState(null);
     const [showLoginDialog, setShowLoginDialog] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Inertia reuses the same component instance when navigating between words
+    // on the same route, so we must reset local state whenever the word changes.
+    useEffect(() => {
+        setWordStatus(null);
+        setIsSubmitting(false);
+    }, [word.id]);
 
     const speakWord = (text) => {
         if ("speechSynthesis" in window) {
@@ -42,61 +51,57 @@ export default function WordDetail({ auth, word, exerciseGroup }) {
             return;
         }
 
-        setWordStatus(status); // instant UI change
+        if (isSubmitting) return;
+
+        setWordStatus(status);
+        setIsSubmitting(true);
+
+        const routeName = status === "known" ? "word.know" : "word.learn";
 
         router.post(
-            route("word.attempt", word.id),
-            { result: status },
+            route(routeName, word.id),
+            {},
             {
-                preserveScroll: true,
-                onSuccess: () => {
-                    // Toast will be shown by FlashMessages component
-                },
+                preserveScroll: false,
                 onError: () => {
                     setWordStatus(null);
-                    toast.error("Something went wrong");
+                    setIsSubmitting(false);
+                    toast.error("Something went wrong. Please try again.");
+                },
+                onFinish: () => {
+                    // Always reset — the useEffect on word.id handles the
+                    // successful redirect case; this covers any other finish.
+                    setIsSubmitting(false);
                 },
             },
         );
     };
 
     return (
-        <>
+        <AppLayout>
             <Head title={`${word.word} - Word Details`} />
             <FlashMessages />
             <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pb-20">
-                {/* Header */}
-                <div className="bg-[#E5201C] text-white p-4 shadow-lg sticky top-0 z-10">
-                    <div className="max-w-2xl mx-auto flex items-center gap-4">
-                        <Link
-                            href={
-                                exerciseGroup
-                                    ? route("exercise.show", exerciseGroup.id)
-                                    : route("exercise.index")
-                            }
-                            className="text-white hover:bg-red-700 p-2 rounded-lg transition"
-                        >
-                            <ChevronLeft className="h-6 w-6" />
-                        </Link>
-                        <h1 className="text-xl font-bold flex items-center gap-2 flex-1">
-                            <BookOpen className="h-6 w-6" />
-                            Word Details
-                        </h1>
-                        {auth.user && (
-                            <Link
-                                href={route("logout")}
-                                method="post"
-                                as="button"
-                                className="text-white text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-red-700 transition"
-                            >
-                                Logout
-                            </Link>
-                        )}
-                    </div>
+                {/* Page Sub-header */}
+                <div className="max-w-2xl mx-auto px-4 pt-4 pb-2 flex items-center gap-3">
+                    <Link
+                        href={
+                            exerciseGroup
+                                ? route("exercise.show", exerciseGroup.id)
+                                : route("exercise.index")
+                        }
+                        className="p-2 rounded-lg hover:bg-gray-100 transition text-gray-600"
+                    >
+                        <ChevronLeft className="h-5 w-5" />
+                    </Link>
+                    <h1 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                        <BookOpen className="h-5 w-5 text-[#E5201C]" />
+                        Word Details
+                    </h1>
                 </div>
 
                 {/* Main Content */}
-                <main className="max-w-2xl mx-auto px-4 py-6">
+                <main className="max-w-2xl mx-auto px-4 py-2">
                     <Card className="overflow-hidden border-2 shadow-lg">
                         <CardContent className="p-0">
                             {/* Word Header Section */}
@@ -134,27 +139,34 @@ export default function WordDetail({ auth, word, exerciseGroup }) {
                                 <div className="flex gap-3 mt-4">
                                     <Button
                                         onClick={() => handleMarkWord("known")}
+                                        disabled={isSubmitting}
                                         className={`flex-1 h-12 text-base font-semibold transition-all ${
                                             wordStatus === "known"
                                                 ? "bg-green-600 hover:bg-green-700 text-white"
                                                 : "bg-white border-2 border-green-600 text-green-600 hover:bg-green-50"
-                                        }`}
+                                        } disabled:opacity-60 disabled:cursor-not-allowed`}
                                     >
                                         <Check className="h-5 w-5 mr-2" />
-                                        I Know This
+                                        {isSubmitting && wordStatus === "known"
+                                            ? "Saving…"
+                                            : "I Know This"}
                                     </Button>
                                     <Button
                                         onClick={() =>
                                             handleMarkWord("unknown")
                                         }
+                                        disabled={isSubmitting}
                                         className={`flex-1 h-12 text-base font-semibold transition-all ${
                                             wordStatus === "unknown"
                                                 ? "bg-red-600 hover:bg-red-700 text-white"
                                                 : "bg-white border-2 border-red-600 text-red-600 hover:bg-red-50"
-                                        }`}
+                                        } disabled:opacity-60 disabled:cursor-not-allowed`}
                                     >
                                         <XIcon className="h-5 w-5 mr-2" />
-                                        Learning
+                                        {isSubmitting &&
+                                        wordStatus === "unknown"
+                                            ? "Saving…"
+                                            : "Learning"}
                                     </Button>
                                 </div>
                             </div>
@@ -300,6 +312,6 @@ export default function WordDetail({ auth, word, exerciseGroup }) {
                     </AlertDialogContent>
                 </AlertDialog>
             </div>
-        </>
+        </AppLayout>
     );
 }

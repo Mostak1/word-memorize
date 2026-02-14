@@ -48,24 +48,8 @@ class User extends Authenticatable
         ];
     }
 
-    public function wordAttempts()
+    public function reviewWords()
     {
-        return $this->hasMany(WordAttempt::class);
-    }
-
-    /**
-     * Aggregated word progress for the user
-     */
-    public function wordProgress()
-    {
-        return $this->hasMany(UserWordProgress::class);
-    }
-
-    /**
-     * Progress per exercise group
-     */
-    public function exerciseProgress()
-    {
-        return $this->hasMany(UserExerciseProgress::class);
+        return $this->hasMany(ReviewWord::class);
     }
 }

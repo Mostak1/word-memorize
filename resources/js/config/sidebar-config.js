@@ -8,6 +8,7 @@ import {
     BarChart3,
     Shield,
     Bell,
+    BookMarked,
 } from "lucide-react";
 
 /**
@@ -23,7 +24,7 @@ export const sidebarConfig = {
         title: "Word Game",
         subtitle: "Admin Panel",
         icon: BookOpen,
-        homeRoute: "/", // Route when clicking the logo
+        homeRoute: "admin.dashboard",
     },
 
     // Main navigation menu groups
@@ -35,14 +36,7 @@ export const sidebarConfig = {
                     name: "Overview",
                     route: "admin.dashboard",
                     icon: LayoutDashboard,
-                    // badge: "New", // Optional: add a badge
                 },
-                // Add more dashboard items here
-                // {
-                //     name: "Analytics",
-                //     route: "admin.analytics",
-                //     icon: BarChart3,
-                // },
             ],
         },
         {
@@ -58,17 +52,11 @@ export const sidebarConfig = {
                     route: "admin.exercise-groups.index",
                     icon: BookOpen,
                 },
-                // Add more management items here
-                // {
-                //     name: "Content",
-                //     route: "admin.content.index",
-                //     icon: FileText,
-                // },
-                // {
-                //     name: "Roles & Permissions",
-                //     route: "admin.roles.index",
-                //     icon: Shield,
-                // },
+                {
+                    name: "Review Words",
+                    route: "admin.review-words.index",
+                    icon: BookMarked,
+                },
             ],
         },
         {
@@ -79,25 +67,8 @@ export const sidebarConfig = {
                     route: "admin.settings.index",
                     icon: Settings,
                 },
-                // Add more system items here
-                // {
-                //     name: "Notifications",
-                //     route: "admin.notifications.index",
-                //     icon: Bell,
-                // },
             ],
         },
-        // Add more groups here
-        // {
-        //     title: "Reports",
-        //     items: [
-        //         {
-        //             name: "User Reports",
-        //             route: "admin.reports.users",
-        //             icon: BarChart3,
-        //         },
-        //     ],
-        // },
     ],
 
     // User dropdown menu items (appears in footer)
@@ -112,12 +83,6 @@ export const sidebarConfig = {
             route: "admin.dashboard",
             icon: LayoutDashboard,
         },
-        // Add more user menu items here
-        // {
-        //     name: "My Settings",
-        //     route: "admin.my-settings",
-        //     icon: Settings,
-        // },
     ],
 };
 

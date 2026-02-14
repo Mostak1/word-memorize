@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Inertia\Response;
+use Log;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -45,6 +46,7 @@ class AuthenticatedSessionController extends Controller
         $userName = $request->user()->name;
 
         if ($request->user()->is_admin) {
+            // Log::info("Admin");
             return redirect()->intended(route('admin.dashboard'))
                 ->with('flash', [
                     'toast' => [
@@ -53,6 +55,7 @@ class AuthenticatedSessionController extends Controller
                     ]
                 ]);
         }
+        // Log::info("Not Admin");
 
         return redirect()->intended(route('dashboard', absolute: false))
             ->with('flash', [

@@ -1,4 +1,4 @@
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import AppLayout from "@/Layouts/AppLayout";
 import { Head, Link } from "@inertiajs/react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -58,18 +58,15 @@ export default function Dashboard() {
     };
 
     const showPromiseToast = () => {
-        toast.promise(
-            new Promise((resolve) => setTimeout(resolve, 2000)),
-            {
-                loading: "Loading...",
-                success: "Done! Action completed",
-                error: "Failed! Something went wrong",
-            }
-        );
+        toast.promise(new Promise((resolve) => setTimeout(resolve, 2000)), {
+            loading: "Loading...",
+            success: "Done! Action completed",
+            error: "Failed! Something went wrong",
+        });
     };
 
     return (
-        <AuthenticatedLayout>
+        <AppLayout>
             <Head title="Dashboard" />
             <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-zinc-900 dark:to-zinc-950">
                 <div className="w-full max-w-2xl mx-auto">
@@ -81,7 +78,7 @@ export default function Dashboard() {
                     </div>
 
                     {/* Test Toast Button - Remove after testing */}
-                    <div className="px-4 pb-4">
+                    {/* <div className="px-4 pb-4">
                         <Button
                             onClick={testToasts}
                             variant="outline"
@@ -92,7 +89,7 @@ export default function Dashboard() {
                                 Test Sonner Toasts (Click Me!)
                             </span>
                         </Button>
-                    </div>
+                    </div>*/}
 
                     {/* Main Actions Grid */}
                     <div className="px-4 pb-6">
@@ -236,10 +233,7 @@ export default function Dashboard() {
             </AlertDialog>
 
             {/* Toast Test Dialog */}
-            <AlertDialog
-                open={showTestDialog}
-                onOpenChange={setShowTestDialog}
-            >
+            <AlertDialog open={showTestDialog} onOpenChange={setShowTestDialog}>
                 <AlertDialogContent className="max-w-md mx-4">
                     <AlertDialogHeader>
                         <AlertDialogTitle className="flex items-center gap-2">
@@ -247,7 +241,8 @@ export default function Dashboard() {
                             Test Sonner Toasts
                         </AlertDialogTitle>
                         <AlertDialogDescription className="text-base">
-                            Click the buttons below to test different toast types
+                            Click the buttons below to test different toast
+                            types
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="space-y-2 py-4">
@@ -300,6 +295,6 @@ export default function Dashboard() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </AuthenticatedLayout>
+        </AppLayout>
     );
 }
