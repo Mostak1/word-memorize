@@ -1,5 +1,5 @@
 import { Link, usePage } from "@inertiajs/react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
     BookOpen,
     Menu,
@@ -16,13 +16,42 @@ export default function AppLayout({ children }) {
     const { auth } = usePage().props;
     const user = auth?.user ?? null;
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [headerVisible, setHeaderVisible] = useState(true);
+    const lastScrollY = useRef(0);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            const currentScrollY = window.scrollY;
+
+            if (currentScrollY <= 0) {
+                // Always show at the very top
+                setHeaderVisible(true);
+            } else if (currentScrollY > lastScrollY.current) {
+                // Scrolling down — hide
+                setHeaderVisible(false);
+                setMobileOpen(false);
+            } else {
+                // Scrolling up — show
+                setHeaderVisible(true);
+            }
+
+            lastScrollY.current = currentScrollY;
+        };
+
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-zinc-900 dark:to-zinc-950">
             <FlashMessages />
 
             {/* Sticky Top Nav */}
-            <div className="bg-[#E5201C] text-white shadow-lg sticky top-0 z-10">
+            <div
+                className={`bg-[#E5201C] text-white shadow-lg fixed top-0 left-0 right-0 z-10 transition-transform duration-300 ease-in-out ${
+                    headerVisible ? "translate-y-0" : "-translate-y-full"
+                }`}
+            >
                 <div className="w-full max-w-2xl mx-auto px-4 py-3">
                     <div className="flex items-center justify-between">
                         {/* Brand */}
@@ -227,6 +256,9 @@ export default function AppLayout({ children }) {
                     )}
                 </div>
             </div>
+
+            {/* Offset for fixed header */}
+            <div className="h-[60px]" />
 
             {/* Page Content */}
             <main>{children}</main>

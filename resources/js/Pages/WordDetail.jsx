@@ -69,8 +69,6 @@ export default function WordDetail({ auth, word, exerciseGroup }) {
                     toast.error("Something went wrong. Please try again.");
                 },
                 onFinish: () => {
-                    // Always reset — the useEffect on word.id handles the
-                    // successful redirect case; this covers any other finish.
                     setIsSubmitting(false);
                 },
             },
@@ -81,36 +79,36 @@ export default function WordDetail({ auth, word, exerciseGroup }) {
         <AppLayout>
             <Head title={`${word.word} - Word Details`} />
             <FlashMessages />
-            <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pb-20">
-                {/* Page Sub-header */}
-                <div className="max-w-2xl mx-auto px-4 pt-4 pb-2 flex items-center gap-3">
-                    <Link
-                        href={
-                            exerciseGroup
-                                ? route("exercise.show", exerciseGroup.id)
-                                : route("exercise.index")
-                        }
-                        className="p-2 rounded-lg hover:bg-gray-100 transition text-gray-600"
-                    >
-                        <ChevronLeft className="h-5 w-5" />
-                    </Link>
-                    <h1 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                        <BookOpen className="h-5 w-5 text-[#E5201C]" />
-                        Word Details
-                    </h1>
-                </div>
-
+            {/* Extra bottom padding so content clears the fixed action bar */}
+            <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pb-32">
                 {/* Main Content */}
-                <main className="max-w-2xl mx-auto px-4 py-2">
+                <main className="max-w-2xl mx-auto px-4 pt-4 py-2">
                     <Card className="overflow-hidden border-2 shadow-lg">
                         <CardContent className="p-0">
                             {/* Word Header Section */}
                             <div className="bg-gradient-to-r from-gray-50 to-white p-6 border-b">
-                                <div className="flex items-start justify-between gap-4 mb-4">
+                                <div className="flex items-start justify-between gap-4">
                                     <div className="flex-1">
-                                        <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                                            {word.word}
-                                        </h1>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Link
+                                                href={
+                                                    exerciseGroup
+                                                        ? route(
+                                                              "exercise.show",
+                                                              exerciseGroup.id,
+                                                          )
+                                                        : route(
+                                                              "exercise.index",
+                                                          )
+                                                }
+                                                className="p-1 rounded-lg border border-gray-300 hover:bg-gray-100 active:bg-gray-200 active:border-gray-400 transition text-gray-600 shrink-0"
+                                            >
+                                                <ChevronLeft className="h-6 w-6" />
+                                            </Link>
+                                            <h1 className="text-4xl font-bold text-gray-900">
+                                                {word.word}
+                                            </h1>
+                                        </div>
                                         {word.hyphenation && (
                                             <p className="text-lg text-gray-500 italic mb-3">
                                                 {word.hyphenation}
@@ -133,41 +131,6 @@ export default function WordDetail({ auth, word, exerciseGroup }) {
                                     >
                                         <Volume2 className="h-7 w-7 text-[#E5201C]" />
                                     </button>
-                                </div>
-
-                                {/* Action Buttons */}
-                                <div className="flex gap-3 mt-4">
-                                    <Button
-                                        onClick={() => handleMarkWord("known")}
-                                        disabled={isSubmitting}
-                                        className={`flex-1 h-12 text-base font-semibold transition-all ${
-                                            wordStatus === "known"
-                                                ? "bg-green-600 hover:bg-green-700 text-white"
-                                                : "bg-white border-2 border-green-600 text-green-600 hover:bg-green-50"
-                                        } disabled:opacity-60 disabled:cursor-not-allowed`}
-                                    >
-                                        <Check className="h-5 w-5 mr-2" />
-                                        {isSubmitting && wordStatus === "known"
-                                            ? "Saving…"
-                                            : "I Know This"}
-                                    </Button>
-                                    <Button
-                                        onClick={() =>
-                                            handleMarkWord("unknown")
-                                        }
-                                        disabled={isSubmitting}
-                                        className={`flex-1 h-12 text-base font-semibold transition-all ${
-                                            wordStatus === "unknown"
-                                                ? "bg-red-600 hover:bg-red-700 text-white"
-                                                : "bg-white border-2 border-red-600 text-red-600 hover:bg-red-50"
-                                        } disabled:opacity-60 disabled:cursor-not-allowed`}
-                                    >
-                                        <XIcon className="h-5 w-5 mr-2" />
-                                        {isSubmitting &&
-                                        wordStatus === "unknown"
-                                            ? "Saving…"
-                                            : "Learning"}
-                                    </Button>
                                 </div>
                             </div>
 
@@ -278,40 +241,79 @@ export default function WordDetail({ auth, word, exerciseGroup }) {
                         </CardContent>
                     </Card>
                 </main>
-
-                {/* Login Alert Dialog */}
-                <AlertDialog
-                    open={showLoginDialog}
-                    onOpenChange={setShowLoginDialog}
-                >
-                    <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-md sm:w-full">
-                        <AlertDialogHeader>
-                            <AlertDialogTitle className="flex items-center gap-2">
-                                <LogIn className="h-5 w-5 text-[#E5201C]" />
-                                Login Required
-                            </AlertDialogTitle>
-                            <AlertDialogDescription className="text-base">
-                                You need to be logged in to mark words as known
-                                or unknown. This helps us track your progress
-                                and personalize your learning experience.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-                            <AlertDialogCancel className="w-full sm:w-auto">
-                                Cancel
-                            </AlertDialogCancel>
-                            <AlertDialogAction
-                                onClick={() => {
-                                    window.location.href = route("login");
-                                }}
-                                className="w-full sm:w-auto bg-[#E5201C] hover:bg-red-700"
-                            >
-                                Go to Login
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
             </div>
+
+            {/* Fixed Bottom Action Bar */}
+            <div className="fixed bottom-0 left-0 right-0 z-20 bg-white/90 backdrop-blur-md border-t border-gray-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+                <div className="max-w-2xl mx-auto px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+                    <div className="flex gap-3">
+                        {/* Learning / Don't Know */}
+                        <Button
+                            onClick={() => handleMarkWord("unknown")}
+                            disabled={isSubmitting}
+                            className={`flex-1 h-14 text-base font-semibold rounded-2xl transition-all shadow-sm ${
+                                wordStatus === "unknown"
+                                    ? "bg-[#E5201C] hover:bg-red-700 text-white shadow-red-200 shadow-md"
+                                    : "bg-white border-2 border-[#E5201C] text-[#E5201C] hover:bg-red-50"
+                            } disabled:opacity-60 disabled:cursor-not-allowed`}
+                        >
+                            <XIcon className="h-5 w-5 mr-2 shrink-0" />
+                            {isSubmitting && wordStatus === "unknown"
+                                ? "Saving…"
+                                : ""}
+                        </Button>
+
+                        {/* I Know This */}
+                        <Button
+                            onClick={() => handleMarkWord("known")}
+                            disabled={isSubmitting}
+                            className={`flex-1 h-14 text-base font-semibold rounded-2xl transition-all shadow-sm ${
+                                wordStatus === "known"
+                                    ? "bg-green-600 hover:bg-green-700 text-white shadow-green-200 shadow-md"
+                                    : "bg-white border-2 border-green-600 text-green-600 hover:bg-green-50"
+                            } disabled:opacity-60 disabled:cursor-not-allowed`}
+                        >
+                            <Check className="h-5 w-5 mr-2 shrink-0" />
+                            {isSubmitting && wordStatus === "known"
+                                ? "Saving…"
+                                : ""}
+                        </Button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Login Alert Dialog */}
+            <AlertDialog
+                open={showLoginDialog}
+                onOpenChange={setShowLoginDialog}
+            >
+                <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-md sm:w-full">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2">
+                            <LogIn className="h-5 w-5 text-[#E5201C]" />
+                            Login Required
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-base">
+                            You need to be logged in to mark words as known or
+                            unknown. This helps us track your progress and
+                            personalize your learning experience.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                        <AlertDialogCancel className="w-full sm:w-auto">
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => {
+                                window.location.href = route("login");
+                            }}
+                            className="w-full sm:w-auto bg-[#E5201C] hover:bg-red-700"
+                        >
+                            Go to Login
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </AppLayout>
     );
 }
