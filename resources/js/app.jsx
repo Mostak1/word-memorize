@@ -5,7 +5,7 @@ import { createInertiaApp } from "@inertiajs/react";
 import { resolvePageComponent } from "laravel-vite-plugin/inertia-helpers";
 import { createRoot } from "react-dom/client";
 import { Toaster } from "sonner";
-import { ThemeProvider } from "@/components/ThemeProvider";
+import { ThemeProvider } from "@/Components/ThemeProvider";
 
 const appName = import.meta.env.VITE_APP_NAME || "Laravel";
 
@@ -22,7 +22,12 @@ createInertiaApp({
         root.render(
             <ThemeProvider defaultTheme="light" storageKey="admin-theme">
                 <App {...props} />
-                <Toaster position="bottom-right" closeButton expand={false} richColors />
+                <Toaster
+                    position="bottom-right"
+                    closeButton
+                    expand={false}
+                    richColors
+                />
             </ThemeProvider>,
         );
     },
