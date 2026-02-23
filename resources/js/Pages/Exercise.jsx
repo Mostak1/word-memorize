@@ -1,7 +1,7 @@
 import { Head, Link } from "@inertiajs/react";
 import AppLayout from "@/Layouts/AppLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { Badge } from "@/Components/ui/badge";
 import { ChevronRight, BookOpen, Lock } from "lucide-react";
 
 export default function Exercise({ exerciseGroups }) {

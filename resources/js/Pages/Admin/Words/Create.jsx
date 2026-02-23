@@ -1,10 +1,10 @@
 import AdminLayout from "@/Layouts/AdminLayout";
 import { Head, Link, useForm } from "@inertiajs/react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { Button } from "@/Components/ui/button";
+import { Input } from "@/Components/ui/input";
+import { Label } from "@/Components/ui/label";
+import { Textarea } from "@/Components/ui/textarea";
 import { ArrowLeft } from "lucide-react";
 
 export default function Create({ exerciseGroup }) {
@@ -37,7 +37,7 @@ export default function Create({ exerciseGroup }) {
                         <Link
                             href={route(
                                 "admin.exercise-groups.show",
-                                exerciseGroup.id
+                                exerciseGroup.id,
                             )}
                         >
                             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -92,7 +92,7 @@ export default function Create({ exerciseGroup }) {
                                         onChange={(e) =>
                                             setData(
                                                 "hyphenation",
-                                                e.target.value
+                                                e.target.value,
                                             )
                                         }
                                         placeholder="e.g., run"
@@ -115,7 +115,7 @@ export default function Create({ exerciseGroup }) {
                                     onChange={(e) =>
                                         setData(
                                             "parts_of_speech_variations",
-                                            e.target.value
+                                            e.target.value,
                                         )
                                     }
                                     placeholder="e.g., verb, noun"
@@ -167,7 +167,7 @@ export default function Create({ exerciseGroup }) {
                                     onChange={(e) =>
                                         setData(
                                             "bangla_translation",
-                                            e.target.value
+                                            e.target.value,
                                         )
                                     }
                                     placeholder="বাংলা অনুবাদ"
@@ -218,7 +218,7 @@ export default function Create({ exerciseGroup }) {
                                     onChange={(e) =>
                                         setData(
                                             "example_sentences",
-                                            e.target.value
+                                            e.target.value,
                                         )
                                     }
                                     placeholder="Enter example sentences"
@@ -315,7 +315,7 @@ export default function Create({ exerciseGroup }) {
                                     onChange={(e) =>
                                         setData(
                                             "image_related_sentence",
-                                            e.target.value
+                                            e.target.value,
                                         )
                                     }
                                     placeholder="A sentence describing the image"
@@ -338,7 +338,7 @@ export default function Create({ exerciseGroup }) {
                             <Link
                                 href={route(
                                     "admin.exercise-groups.show",
-                                    exerciseGroup.id
+                                    exerciseGroup.id,
                                 )}
                             >
                                 Cancel

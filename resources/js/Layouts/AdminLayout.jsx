@@ -1,7 +1,7 @@
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { UserDropdown } from "@/components/UserDropdown"; // ✅ import
+import { SidebarProvider, SidebarTrigger } from "@/Components/ui/sidebar";
+import { AppSidebar } from "@/Components/AppSidebar";
+import { ThemeToggle } from "@/Components/ThemeToggle";
+import { UserDropdown } from "@/Components/UserDropdown"; // ✅ import
 
 export default function AdminLayout({ children }) {
     return (

@@ -9,7 +9,7 @@ import {
     SidebarMenuItem,
     SidebarHeader,
     SidebarFooter,
-} from "@/components/ui/sidebar";
+} from "@/Components/ui/sidebar";
 import { Link, usePage } from "@inertiajs/react";
 import {
     DropdownMenu,
@@ -18,10 +18,10 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/Components/ui/dropdown-menu";
 import { LogOut, ChevronUp } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/Components/ui/avatar";
+import { Badge } from "@/Components/ui/badge";
 import { sidebarConfig } from "@/config/sidebar-config";
 
 export function AppSidebar() {

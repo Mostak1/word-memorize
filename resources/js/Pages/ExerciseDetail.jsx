@@ -1,8 +1,8 @@
 import { Head, Link } from "@inertiajs/react";
 import AppLayout from "@/Layouts/AppLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { Badge } from "@/Components/ui/badge";
+import { Button } from "@/Components/ui/button";
 import { ChevronLeft, Play, Volume2, BookOpen, List } from "lucide-react";
 
 export default function ExerciseDetail({ exerciseGroup }) {

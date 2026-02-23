@@ -1,7 +1,7 @@
 import AppLayout from "@/Layouts/AppLayout";
 import { Head, Link } from "@inertiajs/react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/Components/ui/card";
+import { Button } from "@/Components/ui/button";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -10,7 +10,7 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from "@/Components/ui/alert-dialog";
 import {
     BookOpen,
     Plus,

@@ -1,6 +1,6 @@
 import { Head, Link, router } from "@inertiajs/react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/Components/ui/button";
+import { Card, CardContent } from "@/Components/ui/card";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -10,7 +10,7 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from "@/Components/ui/alert-dialog";
 import {
     BookOpen,
     Plus,

@@ -2,9 +2,9 @@ import GuestLayout from "@/Layouts/GuestLayout";
 import { Head, Link, useForm } from "@inertiajs/react";
 import { useState } from "react";
 import { Eye, EyeOff, Mail, Lock, User as UserIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/Components/ui/button";
+import { Input } from "@/Components/ui/input";
+import { Label } from "@/Components/ui/label";
 import FlashMessages from "@/Components/FlashMessage";
 import { toast } from "sonner";
 

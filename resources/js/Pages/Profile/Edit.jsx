@@ -9,7 +9,7 @@ import {
     CardHeader,
     CardTitle,
     CardDescription,
-} from "@/components/ui/card";
+} from "@/Components/ui/card";
 import { User, Lock, AlertTriangle } from "lucide-react";
 
 export default function Edit({ mustVerifyEmail, status }) {

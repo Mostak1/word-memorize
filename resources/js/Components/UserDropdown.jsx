@@ -5,8 +5,8 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+} from "@/Components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/Components/ui/avatar";
 import { LogOut, ChevronUp } from "lucide-react";
 import { Link, usePage } from "@inertiajs/react";
 
