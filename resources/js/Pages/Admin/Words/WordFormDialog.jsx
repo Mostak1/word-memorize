@@ -27,12 +27,14 @@ export default function WordFormDialog({
 
     const { data, setData, post, processing, errors, reset } = useForm({
         word: word?.word || "",
+        pronunciation: word?.pronunciation || "",
         hyphenation: word?.hyphenation || "",
         parts_of_speech_variations: word?.parts_of_speech_variations || "",
         definition: word?.definition || "",
-        bangla_translation: word?.bangla_translation || "",
+        bangla_meaning: word?.bangla_meaning || "",
         collocations: word?.collocations || "",
         example_sentences: word?.example_sentences || "",
+        ai_prompt: word?.ai_prompt || "",
         synonym: word?.synonym || "",
         antonym: word?.antonym || "",
         image_url: null,
@@ -160,6 +162,24 @@ export default function WordFormDialog({
                         )}
                     </div>
 
+                    {/* Pronunciation */}
+                    <div className="space-y-2">
+                        <Label>Pronunciation</Label>
+                        <Input
+                            name="pronunciation"
+                            value={data.pronunciation}
+                            onChange={(e) =>
+                                setData("pronunciation", e.target.value)
+                            }
+                            placeholder="e.g., /əˈkɒmplɪʃ/"
+                        />
+                        {errors.pronunciation && (
+                            <p className="text-sm text-red-600">
+                                {errors.pronunciation}
+                            </p>
+                        )}
+                    </div>
+
                     {/* Hyphenation */}
                     <div className="space-y-2">
                         <Label>Hyphenation</Label>
@@ -231,17 +251,17 @@ export default function WordFormDialog({
                             <span className="text-red-500">*</span>
                         </Label>
                         <Textarea
-                            name="bangla_translation"
-                            value={data.bangla_translation}
+                            name="bangla_meaning"
+                            value={data.bangla_meaning}
                             onChange={(e) =>
-                                setData("bangla_translation", e.target.value)
+                                setData("bangla_meaning", e.target.value)
                             }
                             placeholder="বাংলা অনুবাদ লিখুন"
                             rows={2}
                         />
-                        {errors.bangla_translation && (
+                        {errors.bangla_meaning && (
                             <p className="text-sm text-red-600">
-                                {errors.bangla_translation}
+                                {errors.bangla_meaning}
                             </p>
                         )}
                     </div>
@@ -280,6 +300,25 @@ export default function WordFormDialog({
                         {errors.example_sentences && (
                             <p className="text-sm text-red-600">
                                 {errors.example_sentences}
+                            </p>
+                        )}
+                    </div>
+
+                    {/* AI Prompt */}
+                    <div className="space-y-2">
+                        <Label>AI Prompt</Label>
+                        <Textarea
+                            name="ai_prompt"
+                            value={data.ai_prompt}
+                            onChange={(e) =>
+                                setData("ai_prompt", e.target.value)
+                            }
+                            placeholder="Custom prompt for AI image/content generation"
+                            rows={3}
+                        />
+                        {errors.ai_prompt && (
+                            <p className="text-sm text-red-600">
+                                {errors.ai_prompt}
                             </p>
                         )}
                     </div>

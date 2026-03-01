@@ -110,8 +110,13 @@ export default function WordDetail({ auth, word, exerciseGroup }) {
                                             </h1>
                                         </div>
                                         {word.hyphenation && (
-                                            <p className="text-lg text-gray-500 italic mb-3">
+                                            <p className="text-lg text-gray-500 italic mb-1">
                                                 {word.hyphenation}
+                                            </p>
+                                        )}
+                                        {word.pronunciation && (
+                                            <p className="text-base text-gray-400 mb-3 font-mono">
+                                                {word.pronunciation}
                                             </p>
                                         )}
                                         {word.parts_of_speech_variations && (
@@ -163,13 +168,13 @@ export default function WordDetail({ auth, word, exerciseGroup }) {
                                     </div>
                                 )}
 
-                                {word.bangla_translation && (
+                                {word.bangla_meaning && (
                                     <div className="border-l-4 border-blue-500 pl-4 py-2">
                                         <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-2">
                                             বাংলা অর্থ
                                         </h3>
                                         <p className="text-base text-gray-900 leading-relaxed">
-                                            {word.bangla_translation}
+                                            {word.bangla_meaning}
                                         </p>
                                     </div>
                                 )}

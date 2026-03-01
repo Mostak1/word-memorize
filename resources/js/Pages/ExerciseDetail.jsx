@@ -1,11 +1,18 @@
-import { Head, Link } from "@inertiajs/react";
+import { Head, Link, router } from "@inertiajs/react";
 import AppLayout from "@/Layouts/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Play, Volume2, BookOpen, List } from "lucide-react";
+import {
+    ChevronLeft,
+    ChevronRight,
+    Play,
+    Volume2,
+    BookOpen,
+    List,
+} from "lucide-react";
 
-export default function ExerciseDetail({ exerciseGroup }) {
+export default function ExerciseDetail({ exerciseGroup, words }) {
     const getDifficultyColor = (difficulty) => {
         switch (difficulty?.toLowerCase()) {
             case "easy":
@@ -55,7 +62,7 @@ export default function ExerciseDetail({ exerciseGroup }) {
                                     variant="outline"
                                     className="bg-gray-50 text-gray-700"
                                 >
-                                    {exerciseGroup.words?.length || 0} words
+                                    {exerciseGroup.words_count} words
                                 </Badge>
                             </div>
                         </div>
@@ -82,71 +89,119 @@ export default function ExerciseDetail({ exerciseGroup }) {
                         <h2 className="font-semibold">Word List</h2>
                     </div>
 
-                    {exerciseGroup.words && exerciseGroup.words.length > 0 ? (
-                        <div className="space-y-3">
-                            {exerciseGroup.words.map((word, index) => (
-                                <Link
-                                    href={route("word.show", word.id)}
-                                    key={word.id}
-                                >
-                                    <Card
-                                        className="overflow-hidden border-2 hover:border-[#E5201C] transition-all cursor-pointer"
-                                        style={{
-                                            animationDelay: `${index * 0.05}s`,
-                                            animation:
-                                                "fadeInUp 0.4s ease-out forwards",
-                                            opacity: 0,
-                                        }}
+                    {words.data && words.data.length > 0 ? (
+                        <>
+                            <div className="">
+                                {words.data.map((word, index) => (
+                                    <Link
+                                        href={route("word.show", word.id)}
+                                        key={word.id}
                                     >
-                                        <CardHeader className="pb-2 pt-4">
-                                            <div className="flex items-start justify-between gap-3">
-                                                <div className="flex-1">
-                                                    <CardTitle className="text-xl font-bold text-gray-900 mb-1">
-                                                        {word.word}
-                                                    </CardTitle>
-                                                    {word.hyphenation && (
-                                                        <p className="text-sm text-gray-500 italic">
-                                                            {word.hyphenation}
-                                                        </p>
-                                                    )}
-                                                    {word.parts_of_speech_variations && (
-                                                        <Badge
-                                                            variant="outline"
-                                                            className="mt-2 text-xs"
-                                                        >
-                                                            {
-                                                                word.parts_of_speech_variations
-                                                            }
-                                                        </Badge>
-                                                    )}
+                                        <Card
+                                            className="mb-2 overflow-hidden border-2 hover:border-[#E5201C] transition-all cursor-pointer"
+                                            style={{
+                                                animationDelay: `${index * 0.05}s`,
+                                                animation:
+                                                    "fadeInUp 0.4s ease-out forwards",
+                                                opacity: 0,
+                                            }}
+                                        >
+                                            <CardHeader className="pb-2 pt-4">
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div className="flex-1">
+                                                        <CardTitle className="text-xl font-bold text-gray-900 mb-1">
+                                                            {word.word}
+                                                        </CardTitle>
+                                                        {word.hyphenation && (
+                                                            <p className="text-sm text-gray-500 italic">
+                                                                {
+                                                                    word.hyphenation
+                                                                }
+                                                            </p>
+                                                        )}
+                                                        {word.parts_of_speech_variations && (
+                                                            <Badge
+                                                                variant="outline"
+                                                                className="mt-2 text-xs"
+                                                            >
+                                                                {
+                                                                    word.parts_of_speech_variations
+                                                                }
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            e.preventDefault();
+                                                            speakWord(
+                                                                word.word,
+                                                            );
+                                                        }}
+                                                        className="p-2 hover:bg-gray-100 rounded-full transition"
+                                                    >
+                                                        <Volume2 className="h-5 w-5 text-[#E5201C]" />
+                                                    </button>
                                                 </div>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        e.preventDefault();
-                                                        speakWord(word.word);
-                                                    }}
-                                                    className="p-2 hover:bg-gray-100 rounded-full transition"
-                                                >
-                                                    <Volume2 className="h-5 w-5 text-[#E5201C]" />
-                                                </button>
-                                            </div>
-                                        </CardHeader>
+                                            </CardHeader>
 
-                                        <CardContent className="pt-2 pb-4">
-                                            {word.definition && (
-                                                <p className="text-sm text-gray-600 line-clamp-2">
-                                                    {word.definition}
+                                            <CardContent className="pt-2 pb-4">
+                                                {word.definition && (
+                                                    <p className="text-sm text-gray-600 line-clamp-2">
+                                                        {word.definition}
+                                                    </p>
+                                                )}
+                                                <p className="text-xs text-[#E5201C] font-medium mt-2">
+                                                    Click to view full details →
                                                 </p>
-                                            )}
-                                            <p className="text-xs text-[#E5201C] font-medium mt-2">
-                                                Click to view full details →
-                                            </p>
-                                        </CardContent>
-                                    </Card>
-                                </Link>
-                            ))}
-                        </div>
+                                            </CardContent>
+                                        </Card>
+                                    </Link>
+                                ))}
+                            </div>
+
+                            {/* Pagination */}
+                            {words.last_page > 1 && (
+                                <div className="mt-6 flex items-center justify-between gap-3">
+                                    <Button
+                                        variant="outline"
+                                        disabled={!words.prev_page_url}
+                                        onClick={() =>
+                                            router.get(
+                                                words.prev_page_url,
+                                                {},
+                                                { preserveScroll: true },
+                                            )
+                                        }
+                                        className="flex items-center gap-1"
+                                    >
+                                        <ChevronLeft className="h-4 w-4" />
+                                        Previous
+                                    </Button>
+
+                                    <span className="text-sm text-gray-500">
+                                        Page {words.current_page} of{" "}
+                                        {words.last_page}
+                                    </span>
+
+                                    <Button
+                                        variant="outline"
+                                        disabled={!words.next_page_url}
+                                        onClick={() =>
+                                            router.get(
+                                                words.next_page_url,
+                                                {},
+                                                { preserveScroll: true },
+                                            )
+                                        }
+                                        className="flex items-center gap-1"
+                                    >
+                                        Next
+                                        <ChevronRight className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            )}
+                        </>
                     ) : (
                         <Card className="p-8 text-center">
                             <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />

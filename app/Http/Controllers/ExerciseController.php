@@ -25,14 +25,19 @@ class ExerciseController extends Controller
     }
 
     /**
-     * Display a specific exercise group with its words
+     * Display a specific exercise group with its words (paginated)
      */
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        $exerciseGroup = ExerciseGroup::with('words')->findOrFail($id);
+        $exerciseGroup = ExerciseGroup::withCount('words')->findOrFail($id);
+
+        $words = $exerciseGroup->words()
+            ->paginate(10)
+            ->withQueryString();
 
         return Inertia::render('ExerciseDetail', [
             'exerciseGroup' => $exerciseGroup,
+            'words'         => $words,
         ]);
     }
 

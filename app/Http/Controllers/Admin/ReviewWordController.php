@@ -12,7 +12,7 @@ class ReviewWordController extends Controller
     {
         $reviewWords = ReviewWord::with([
             'user:id,name,email',
-            'word:id,word,hyphenation,definition,bangla_translation,parts_of_speech_variations,synonym,antonym,collocations,example_sentences,image_url,exercise_group_id',
+            'word:id,word,hyphenation,definition,bangla_meaning,parts_of_speech_variations,synonym,antonym,collocations,example_sentences,image_url,exercise_group_id',
             'word.exerciseGroup:id,title,difficulty',
         ])
             ->latest()

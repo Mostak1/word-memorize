@@ -3,6 +3,7 @@ import { Head, Link, router } from "@inertiajs/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
     Tooltip,
     TooltipContent,
@@ -42,9 +43,19 @@ import {
     Edit,
     Trash2,
     Image as ImageIcon,
+    Search,
+    ArrowUpDown,
+    ChevronLeft,
+    ChevronRight,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useCallback, useRef } from "react";
 import { toast } from "sonner";
+import {
+    useReactTable,
+    getCoreRowModel,
+    flexRender,
+    createColumnHelper,
+} from "@tanstack/react-table";
 
 const difficultyColors = {
     beginner: "bg-green-100 text-green-800",
@@ -52,15 +63,185 @@ const difficultyColors = {
     advanced: "bg-red-100 text-red-800",
 };
 
-export default function Show({ exerciseGroup }) {
+const columnHelper = createColumnHelper();
+
+export default function Show({ exerciseGroup, words, filters }) {
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [editingWord, setEditingWord] = useState(null);
     const [editingGroup, setEditingGroup] = useState(null);
     const [deletingWord, setDeletingWord] = useState(null);
+    const [search, setSearch] = useState(filters?.search ?? "");
+    const debounceRef = useRef(null);
+
+    // Debounced server-side search
+    const handleSearch = useCallback(
+        (value) => {
+            setSearch(value);
+            clearTimeout(debounceRef.current);
+            debounceRef.current = setTimeout(() => {
+                router.get(
+                    route("admin.exercise-groups.show", exerciseGroup.id),
+                    { search: value, page: 1 },
+                    { preserveState: true, replace: true },
+                );
+            }, 400);
+        },
+        [exerciseGroup.id],
+    );
+
+    // Server-side sort toggle
+    const handleSort = useCallback(
+        (column) => {
+            const currentDir =
+                filters?.sort === column && filters?.direction === "asc"
+                    ? "desc"
+                    : "asc";
+            router.get(
+                route("admin.exercise-groups.show", exerciseGroup.id),
+                { search, sort: column, direction: currentDir, page: 1 },
+                { preserveState: true, replace: true },
+            );
+        },
+        [filters, search, exerciseGroup.id],
+    );
+
+    const SortableHeader = ({ column, label }) => (
+        <Button
+            variant="ghost"
+            size="sm"
+            className="-ml-3 h-8 font-semibold"
+            onClick={() => handleSort(column)}
+        >
+            {label}
+            <ArrowUpDown
+                className={`ml-1 h-3.5 w-3.5 ${
+                    filters?.sort === column
+                        ? "text-foreground"
+                        : "text-muted-foreground/40"
+                }`}
+            />
+        </Button>
+    );
+
+    const columns = [
+        columnHelper.accessor("word", {
+            header: () => <SortableHeader column="word" label="Word" />,
+            cell: (info) => (
+                <span className="font-medium">{info.getValue()}</span>
+            ),
+        }),
+        // columnHelper.accessor("hyphenation", {
+        //     header: "Hyphenation",
+        //     cell: (info) =>
+        //         info.getValue() || (
+        //             <span className="text-muted-foreground">—</span>
+        //         ),
+        // }),
+        columnHelper.accessor("definition", {
+            header: () => (
+                <SortableHeader column="definition" label="Definition" />
+            ),
+            cell: (info) => (
+                <span className="block max-w-xs truncate">
+                    {info.getValue()}
+                </span>
+            ),
+        }),
+        columnHelper.accessor("bangla_meaning", {
+            header: "Bangla",
+            cell: (info) =>
+                info.getValue() || (
+                    <span className="text-muted-foreground">—</span>
+                ),
+        }),
+        columnHelper.accessor("image_url_full", {
+            header: () => <span className="block text-center">Image</span>,
+            cell: (info) => {
+                const src = info.getValue();
+                const word = info.row.original.word;
+                return (
+                    <div className="flex justify-center">
+                        {src ? (
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <div className="relative h-10 w-10 overflow-hidden rounded border">
+                                            <img
+                                                src={src}
+                                                alt={word}
+                                                className="h-full w-full object-cover"
+                                                onError={(e) => {
+                                                    e.target.style.display =
+                                                        "none";
+                                                }}
+                                            />
+                                        </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <img
+                                            src={src}
+                                            alt={word}
+                                            className="h-48 w-auto rounded"
+                                        />
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        ) : (
+                            <ImageIcon className="h-5 w-5 text-muted-foreground/40" />
+                        )}
+                    </div>
+                );
+            },
+        }),
+        columnHelper.display({
+            id: "actions",
+            header: () => <span className="sr-only">Actions</span>,
+            cell: (info) => {
+                const word = info.row.original;
+                return (
+                    <div className="flex justify-end">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                    <MoreVertical className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                    onClick={() => setEditingWord(word)}
+                                    className="flex items-center"
+                                >
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={() => setDeletingWord(word)}
+                                    className="flex items-center text-red-600"
+                                >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                );
+            },
+        }),
+    ];
+
+    const table = useReactTable({
+        data: words.data,
+        columns,
+        getCoreRowModel: getCoreRowModel(),
+        // Sorting, filtering, and pagination are all handled server-side
+        manualPagination: true,
+        manualSorting: true,
+        manualFiltering: true,
+        pageCount: words.last_page,
+    });
 
     const confirmDelete = () => {
         if (!deletingWord) return;
-
         router.delete(
             route("admin.exercise-groups.words.destroy", [
                 exerciseGroup.id,
@@ -108,16 +289,15 @@ export default function Show({ exerciseGroup }) {
                             >
                                 {exerciseGroup.difficulty}
                             </Badge>
-                            <Badge variant="outline">
+                            {/* <Badge variant="outline">
                                 {exerciseGroup.type}
-                            </Badge>
+                            </Badge> */}
                             <Badge variant="outline">
                                 ${exerciseGroup.price}
                             </Badge>
                         </div>
                     </div>
 
-                    {/* Group Actions */}
                     <div className="flex gap-2">
                         <Button
                             variant="outline"
@@ -133,152 +313,134 @@ export default function Show({ exerciseGroup }) {
                     </div>
                 </div>
 
-                {/* Words Table */}
+                {/* Words DataTable */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>
-                            Words ({exerciseGroup.words.length})
-                        </CardTitle>
+                        <div className="flex items-center justify-between gap-4">
+                            <CardTitle>Words ({words.total})</CardTitle>
+                            {/* Search bar */}
+                            <div className="relative w-64">
+                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="Search word, definition…"
+                                    value={search}
+                                    onChange={(e) =>
+                                        handleSearch(e.target.value)
+                                    }
+                                    className="pl-8"
+                                />
+                            </div>
+                        </div>
                     </CardHeader>
                     <CardContent>
-                        {exerciseGroup.words.length === 0 ? (
-                            <div className="py-12 text-center">
-                                <p className="text-muted-foreground">
-                                    No words added yet. Add your first word to
-                                    get started!
-                                </p>
-                                <Button
-                                    className="mt-4"
-                                    onClick={() => setCreateDialogOpen(true)}
-                                >
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Add First Word
-                                </Button>
-                            </div>
-                        ) : (
+                        {/* Table */}
+                        <div className="rounded-md border">
                             <Table>
                                 <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Word</TableHead>
-                                        <TableHead>Hyphenation</TableHead>
-                                        <TableHead>Definition</TableHead>
-                                        <TableHead>Bangla</TableHead>
-                                        <TableHead className="text-center">
-                                            Image
-                                        </TableHead>
-                                        <TableHead className="text-right">
-                                            Actions
-                                        </TableHead>
-                                    </TableRow>
+                                    {table
+                                        .getHeaderGroups()
+                                        .map((headerGroup) => (
+                                            <TableRow key={headerGroup.id}>
+                                                {headerGroup.headers.map(
+                                                    (header) => (
+                                                        <TableHead
+                                                            key={header.id}
+                                                        >
+                                                            {header.isPlaceholder
+                                                                ? null
+                                                                : flexRender(
+                                                                      header
+                                                                          .column
+                                                                          .columnDef
+                                                                          .header,
+                                                                      header.getContext(),
+                                                                  )}
+                                                        </TableHead>
+                                                    ),
+                                                )}
+                                            </TableRow>
+                                        ))}
                                 </TableHeader>
                                 <TableBody>
-                                    {exerciseGroup.words.map((word) => (
-                                        <TableRow key={word.id}>
-                                            <TableCell className="font-medium">
-                                                {word.word}
-                                            </TableCell>
-                                            <TableCell>
-                                                {word.hyphenation || "-"}
-                                            </TableCell>
-                                            <TableCell className="max-w-xs truncate">
-                                                {word.definition}
-                                            </TableCell>
-                                            <TableCell>
-                                                {word.bangla_translation}
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                {word.image_url_full ? (
-                                                    <TooltipProvider>
-                                                        <Tooltip>
-                                                            <TooltipTrigger
-                                                                asChild
-                                                            >
-                                                                <div className="flex justify-center">
-                                                                    <div className="relative h-10 w-10 overflow-hidden rounded border">
-                                                                        <img
-                                                                            src={
-                                                                                word.image_url_full
-                                                                            }
-                                                                            alt={
-                                                                                word.word
-                                                                            }
-                                                                            className="h-full w-full object-cover"
-                                                                            onError={(
-                                                                                e,
-                                                                            ) => {
-                                                                                console.error(
-                                                                                    "Image failed to load:",
-                                                                                    word.image_url_full,
-                                                                                );
-                                                                                e.target.style.display =
-                                                                                    "none";
-                                                                            }}
-                                                                        />
-                                                                    </div>
-                                                                </div>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent>
-                                                                <img
-                                                                    src={
-                                                                        word.image_url_full
-                                                                    }
-                                                                    alt={
-                                                                        word.word
-                                                                    }
-                                                                    className="h-48 w-auto rounded"
-                                                                />
-                                                            </TooltipContent>
-                                                        </Tooltip>
-                                                    </TooltipProvider>
-                                                ) : (
-                                                    <div className="flex justify-center text-gray-400">
-                                                        <ImageIcon className="h-5 w-5" />
-                                                    </div>
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger
-                                                        asChild
-                                                    >
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
+                                    {table.getRowModel().rows.length ? (
+                                        table.getRowModel().rows.map((row) => (
+                                            <TableRow key={row.id}>
+                                                {row
+                                                    .getVisibleCells()
+                                                    .map((cell) => (
+                                                        <TableCell
+                                                            key={cell.id}
                                                         >
-                                                            <MoreVertical className="h-4 w-4" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem
-                                                            onClick={() =>
-                                                                setEditingWord(
-                                                                    word,
-                                                                )
-                                                            }
-                                                            className="flex items-center"
-                                                        >
-                                                            <Edit className="mr-2 h-4 w-4" />
-                                                            Edit
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem
-                                                            onClick={() =>
-                                                                setDeletingWord(
-                                                                    word,
-                                                                )
-                                                            }
-                                                            className="flex items-center text-red-600"
-                                                        >
-                                                            <Trash2 className="mr-2 h-4 w-4" />
-                                                            Delete
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
+                                                            {flexRender(
+                                                                cell.column
+                                                                    .columnDef
+                                                                    .cell,
+                                                                cell.getContext(),
+                                                            )}
+                                                        </TableCell>
+                                                    ))}
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell
+                                                colSpan={columns.length}
+                                                className="py-12 text-center text-muted-foreground"
+                                            >
+                                                {search
+                                                    ? `No words found for "${search}".`
+                                                    : "No words added yet."}
                                             </TableCell>
                                         </TableRow>
-                                    ))}
+                                    )}
                                 </TableBody>
                             </Table>
-                        )}
+                        </div>
+
+                        {/* Pagination footer */}
+                        <div className="flex items-center justify-between pt-4">
+                            <p className="text-sm text-muted-foreground">
+                                {words.total > 0
+                                    ? `Showing ${words.from}–${words.to} of ${words.total} words`
+                                    : "No results"}
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={!words.prev_page_url}
+                                    onClick={() =>
+                                        router.get(
+                                            words.prev_page_url,
+                                            {},
+                                            { preserveState: true },
+                                        )
+                                    }
+                                >
+                                    <ChevronLeft className="mr-1 h-4 w-4" />
+                                    Previous
+                                </Button>
+                                <span className="text-sm text-muted-foreground">
+                                    Page {words.current_page} of{" "}
+                                    {words.last_page}
+                                </span>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={!words.next_page_url}
+                                    onClick={() =>
+                                        router.get(
+                                            words.next_page_url,
+                                            {},
+                                            { preserveState: true },
+                                        )
+                                    }
+                                >
+                                    Next
+                                    <ChevronRight className="ml-1 h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
             </div>

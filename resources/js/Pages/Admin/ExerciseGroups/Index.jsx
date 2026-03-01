@@ -107,7 +107,7 @@ export default function Index({ exerciseGroups }) {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Title</TableHead>
-                                    <TableHead>Type</TableHead>
+                                    {/* <TableHead>Type</TableHead> */}
                                     <TableHead>Difficulty</TableHead>
                                     <TableHead>Price</TableHead>
                                     <TableHead>Words</TableHead>
@@ -132,9 +132,19 @@ export default function Index({ exerciseGroups }) {
                                     exerciseGroups.data.map((group) => (
                                         <TableRow key={group.id}>
                                             <TableCell className="font-medium">
-                                                {group.title}
+                                                {/* {group.title} */}
+
+                                                <Link
+                                                    href={route(
+                                                        "admin.exercise-groups.show",
+                                                        group.id,
+                                                    )}
+                                                    className="hover:underline"
+                                                >
+                                                    {group.title}
+                                                </Link>
                                             </TableCell>
-                                            <TableCell>{group.type}</TableCell>
+                                            {/* <TableCell>{group.type}</TableCell> */}
                                             <TableCell>
                                                 <Badge
                                                     className={

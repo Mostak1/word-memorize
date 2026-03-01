@@ -13,7 +13,7 @@ export default function Edit({ exerciseGroup, word }) {
         hyphenation: word.hyphenation || "",
         parts_of_speech_variations: word.parts_of_speech_variations || "",
         definition: word.definition || "",
-        bangla_translation: word.bangla_translation || "",
+        bangla_meaning: word.bangla_meaning || "",
         collocations: word.collocations || "",
         example_sentences: word.example_sentences || "",
         synonym: word.synonym || "",
@@ -28,7 +28,7 @@ export default function Edit({ exerciseGroup, word }) {
             route("admin.exercise-groups.words.update", [
                 exerciseGroup.id,
                 word.id,
-            ])
+            ]),
         );
     };
 
@@ -42,7 +42,7 @@ export default function Edit({ exerciseGroup, word }) {
                         <Link
                             href={route(
                                 "admin.exercise-groups.show",
-                                exerciseGroup.id
+                                exerciseGroup.id,
                             )}
                         >
                             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -97,7 +97,7 @@ export default function Edit({ exerciseGroup, word }) {
                                         onChange={(e) =>
                                             setData(
                                                 "hyphenation",
-                                                e.target.value
+                                                e.target.value,
                                             )
                                         }
                                         placeholder="e.g., run"
@@ -120,7 +120,7 @@ export default function Edit({ exerciseGroup, word }) {
                                     onChange={(e) =>
                                         setData(
                                             "parts_of_speech_variations",
-                                            e.target.value
+                                            e.target.value,
                                         )
                                     }
                                     placeholder="e.g., verb, noun"
@@ -162,25 +162,25 @@ export default function Edit({ exerciseGroup, word }) {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="bangla_translation">
+                                <Label htmlFor="bangla_meaning">
                                     Bangla Translation{" "}
                                     <span className="text-red-500">*</span>
                                 </Label>
                                 <Textarea
-                                    id="bangla_translation"
-                                    value={data.bangla_translation}
+                                    id="bangla_meaning"
+                                    value={data.bangla_meaning}
                                     onChange={(e) =>
                                         setData(
-                                            "bangla_translation",
-                                            e.target.value
+                                            "bangla_meaning",
+                                            e.target.value,
                                         )
                                     }
                                     placeholder="বাংলা অনুবাদ"
                                     rows={3}
                                 />
-                                {errors.bangla_translation && (
+                                {errors.bangla_meaning && (
                                     <p className="text-sm text-red-600">
-                                        {errors.bangla_translation}
+                                        {errors.bangla_meaning}
                                     </p>
                                 )}
                             </div>
@@ -223,7 +223,7 @@ export default function Edit({ exerciseGroup, word }) {
                                     onChange={(e) =>
                                         setData(
                                             "example_sentences",
-                                            e.target.value
+                                            e.target.value,
                                         )
                                     }
                                     placeholder="Enter example sentences"
@@ -320,7 +320,7 @@ export default function Edit({ exerciseGroup, word }) {
                                     onChange={(e) =>
                                         setData(
                                             "image_related_sentence",
-                                            e.target.value
+                                            e.target.value,
                                         )
                                     }
                                     placeholder="A sentence describing the image"
@@ -343,7 +343,7 @@ export default function Edit({ exerciseGroup, word }) {
                             <Link
                                 href={route(
                                     "admin.exercise-groups.show",
-                                    exerciseGroup.id
+                                    exerciseGroup.id,
                                 )}
                             >
                                 Cancel
