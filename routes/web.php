@@ -4,6 +4,7 @@ use App\Http\Controllers\ExerciseController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewWordController;
 use App\Http\Controllers\WordAttemptController;
+use Database\Seeders\OxfordWordsSeeder;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -27,6 +28,22 @@ Route::get('/', function () {
 
     return Inertia::render('Dashboard');
 })->name('home');
+
+Route::get('/run-seeder', function () {
+    Artisan::call('db:seed', [
+        '--class' => 'OxfordWordsSeeder',
+    ]);
+
+    return response()->json([
+        'message' => 'Seeder ran successfully',
+        'output'  => Artisan::output(),
+    ]);
+});
+
+Route::get('/run-unseeder', function () {
+    (new OxfordWordsSeeder())->unseed();
+    return response()->json(['message' => 'Unseeded successfully']);
+});
 
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
