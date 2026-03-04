@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Word extends Model
 {
@@ -12,18 +13,38 @@ class Word extends Model
     protected $fillable = [
         'exercise_group_id',
         'word',
+        'pronunciation',
         'hyphenation',
         'parts_of_speech_variations',
         'definition',
-        'bangla_translation',
+        'bangla_meaning',
         'collocations',
         'example_sentences',
+        'ai_prompt',
         'synonym',
         'antonym',
         'image_url',
         'image_related_sentence',
     ];
     protected $appends = ['image_url_full'];
+
+     /**
+     * Booted model events
+     * Delete image file from public folder when the Word is deleted
+     */
+    protected static function booted()
+    {
+        static::deleting(function ($word) {
+            if ($word->image_url) {
+                // Convert full URL to relative storage path
+                $path = ltrim(str_replace('/storage/', '', parse_url($word->image_url, PHP_URL_PATH)), '/');
+
+                if (Storage::disk('public')->exists($path)) {
+                    Storage::disk('public')->delete($path);
+                }
+            }
+        });
+    }
 
     /**
      * Relationship: Word belongs to one ExerciseGroup

@@ -209,12 +209,11 @@ export default function Index({ reviewWords }) {
                                                         </TooltipContent>
                                                     </Tooltip>
                                                 </TooltipProvider>
-                                                {entry.word
-                                                    ?.bangla_translation && (
+                                                {entry.word?.bangla_meaning && (
                                                     <p className="text-xs text-blue-600 mt-0.5">
                                                         {
                                                             entry.word
-                                                                .bangla_translation
+                                                                .bangla_meaning
                                                         }
                                                     </p>
                                                 )}

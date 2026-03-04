@@ -16,12 +16,14 @@ class WordController extends Controller
         // Log::info('Post');
         $validated = $request->validate([
             'word' => 'required|string|max:255',
+            'pronunciation' => 'nullable|string|max:255',
             'hyphenation' => 'nullable|string',
             'parts_of_speech_variations' => 'required|string',
             'definition' => 'required|string',
-            'bangla_translation' => 'required|string',
+            'bangla_meaning' => 'required|string',
             'collocations' => 'nullable|string',
             'example_sentences' => 'required|string',
+            'ai_prompt' => 'nullable|string',
             'synonym' => 'nullable|string',
             'antonym' => 'nullable|string',
             'image_url' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp|max:5120', // 5MB max
@@ -48,12 +50,14 @@ class WordController extends Controller
         // Validate input
         $validated = $request->validate([
             'word' => 'required|string|max:255',
+            'pronunciation' => 'nullable|string|max:255',
             'hyphenation' => 'nullable|string',
             'parts_of_speech_variations' => 'required|string',
             'definition' => 'required|string',
-            'bangla_translation' => 'required|string',
+            'bangla_meaning' => 'required|string',
             'collocations' => 'nullable|string',
             'example_sentences' => 'required|string',
+            'ai_prompt' => 'nullable|string',
             'synonym' => 'nullable|string',
             'antonym' => 'nullable|string',
             'image_url' => 'nullable|file|image|mimes:jpeg,jpg,png,gif,webp|max:5120',

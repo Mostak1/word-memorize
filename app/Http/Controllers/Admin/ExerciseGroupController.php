@@ -42,14 +42,34 @@ class ExerciseGroupController extends Controller
     }
 
     /**
-     * Display the specified exercise group with its words.
+     * Display the specified exercise group with its words (searchable, sortable, paginated).
      */
-    public function show(ExerciseGroup $exerciseGroup)
+    public function show(Request $request, ExerciseGroup $exerciseGroup)
     {
-        $exerciseGroup->load('words');
+        $search    = $request->string('search')->trim()->value();
+        $sortCol   = in_array($request->input('sort'), ['word', 'definition']) ? $request->input('sort') : 'word';
+        $sortDir   = $request->input('direction') === 'desc' ? 'desc' : 'asc';
+
+        $words = $exerciseGroup->words()
+            ->when($search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('word', 'like', "%{$search}%")
+                      ->orWhere('definition', 'like', "%{$search}%")
+                      ->orWhere('bangla_meaning', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy($sortCol, $sortDir)
+            ->paginate(10)
+            ->withQueryString();
 
         return Inertia::render('Admin/ExerciseGroups/Show', [
             'exerciseGroup' => $exerciseGroup,
+            'words'         => $words,
+            'filters'       => [
+                'search'    => $search,
+                'sort'      => $sortCol,
+                'direction' => $sortDir,
+            ],
         ]);
     }
 

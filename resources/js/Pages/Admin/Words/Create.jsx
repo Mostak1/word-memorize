@@ -13,7 +13,7 @@ export default function Create({ exerciseGroup }) {
         hyphenation: "",
         parts_of_speech_variations: "",
         definition: "",
-        bangla_translation: "",
+        bangla_meaning: "",
         collocations: "",
         example_sentences: "",
         synonym: "",
@@ -157,25 +157,25 @@ export default function Create({ exerciseGroup }) {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="bangla_translation">
+                                <Label htmlFor="bangla_meaning">
                                     Bangla Translation{" "}
                                     <span className="text-red-500">*</span>
                                 </Label>
                                 <Textarea
-                                    id="bangla_translation"
-                                    value={data.bangla_translation}
+                                    id="bangla_meaning"
+                                    value={data.bangla_meaning}
                                     onChange={(e) =>
                                         setData(
-                                            "bangla_translation",
+                                            "bangla_meaning",
                                             e.target.value,
                                         )
                                     }
                                     placeholder="বাংলা অনুবাদ"
                                     rows={3}
                                 />
-                                {errors.bangla_translation && (
+                                {errors.bangla_meaning && (
                                     <p className="text-sm text-red-600">
-                                        {errors.bangla_translation}
+                                        {errors.bangla_meaning}
                                     </p>
                                 )}
                             </div>

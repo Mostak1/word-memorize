@@ -13,7 +13,7 @@ export default function Edit({ exerciseGroup, word }) {
         hyphenation: word.hyphenation || "",
         parts_of_speech_variations: word.parts_of_speech_variations || "",
         definition: word.definition || "",
-        bangla_translation: word.bangla_translation || "",
+        bangla_meaning: word.bangla_meaning || "",
         collocations: word.collocations || "",
         example_sentences: word.example_sentences || "",
         synonym: word.synonym || "",
@@ -162,25 +162,25 @@ export default function Edit({ exerciseGroup, word }) {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="bangla_translation">
+                                <Label htmlFor="bangla_meaning">
                                     Bangla Translation{" "}
                                     <span className="text-red-500">*</span>
                                 </Label>
                                 <Textarea
-                                    id="bangla_translation"
-                                    value={data.bangla_translation}
+                                    id="bangla_meaning"
+                                    value={data.bangla_meaning}
                                     onChange={(e) =>
                                         setData(
-                                            "bangla_translation",
+                                            "bangla_meaning",
                                             e.target.value,
                                         )
                                     }
                                     placeholder="বাংলা অনুবাদ"
                                     rows={3}
                                 />
-                                {errors.bangla_translation && (
+                                {errors.bangla_meaning && (
                                     <p className="text-sm text-red-600">
-                                        {errors.bangla_translation}
+                                        {errors.bangla_meaning}
                                     </p>
                                 )}
                             </div>
