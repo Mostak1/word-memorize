@@ -11,6 +11,7 @@ import {
     UserPlus,
 } from "lucide-react";
 import FlashMessages from "@/Components/FlashMessage";
+import logo from "/public/img/logo.png"; // Vite will handle the pathing
 
 export default function AppLayout({ children }) {
     const { auth } = usePage().props;
@@ -60,10 +61,14 @@ export default function AppLayout({ children }) {
                             className="flex items-center gap-2"
                         >
                             <div className="p-2 bg-white/10 rounded-lg">
-                                <BookOpen className="h-5 w-5" />
+                                <img
+                                    src={logo}
+                                    className="h-5 w-25"
+                                    alt="Logo"
+                                />
                             </div>
                             <span className="text-lg font-bold leading-none">
-                                Memorize Words
+                                WordWise
                             </span>
                         </Link>
 
