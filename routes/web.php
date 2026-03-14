@@ -20,6 +20,16 @@ Route::get('/', function () {
     return Inertia::render('Dashboard');
 })->name('home');
 
+Route::get('/clear-cache', function () {
+    Artisan::call('cache:clear');
+    Artisan::call('config:clear');
+    Artisan::call('route:clear');
+    Artisan::call('view:clear');
+    Artisan::call('migrate');
+
+    return 'Laravel cache cleared!';
+});
+
 Route::get('/run-seeder', function () {
     Artisan::call('db:seed', [
         '--class' => 'OxfordWordsSeeder',

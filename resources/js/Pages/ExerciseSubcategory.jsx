@@ -87,14 +87,14 @@ export default function ExerciseSubcategory({ exerciseGroup, subcategory, words 
                 <main className="max-w-xl mx-auto px-4">
                     {words.data && words.data.length > 0 ? (
                         <>
-                            <div className="space-y-2">
+                            <div>
                                 {words.data.map((word, index) => (
                                     <Link
                                         href={route("word.show", word.id)}
                                         key={word.id}
                                     >
                                         <Card
-                                            className="overflow-hidden border-2 hover:border-[#E5201C] transition-all cursor-pointer"
+                                            className="overflow-hidden border-2 hover:border-[#E5201C] transition-all cursor-pointer mb-2"
                                             style={{
                                                 animationDelay: `${index * 0.05}s`,
                                                 animation: "fadeInUp 0.4s ease-out forwards",

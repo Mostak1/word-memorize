@@ -12,7 +12,7 @@ class Word extends Model
 
     protected $fillable = [
         'exercise_group_id',
-        'subcategory_id',        // ← new
+        'subcategory_id',
         'word',
         'pronunciation',
         'hyphenation',
@@ -24,6 +24,8 @@ class Word extends Model
         'ai_prompt',
         'synonym',
         'antonym',
+        // Legacy single-image columns — kept for backward compat, no longer
+        // used by the admin UI. New images live in the word_images table.
         'image_url',
         'image_related_sentence',
     ];
@@ -31,46 +33,71 @@ class Word extends Model
     protected $appends = ['image_url_full'];
 
     /**
-     * Booted model events
-     * Delete image file from public folder when the Word is deleted
+     * Booted model events.
+     * When a Word is deleted, cascade-delete its WordImage records
+     * (each WordImage's own deleting hook handles the physical file removal).
+     * Also removes the legacy single image file if one is still stored.
      */
-    protected static function booted()
+    protected static function booted(): void
     {
-        static::deleting(function ($word) {
+        static::deleting(function (self $word) {
+            // Delete all gallery images (each triggers WordImage::deleting → file cleanup)
+            $word->images()->get()->each(fn($img) => $img->delete());
+
+            // Legacy single-image cleanup (image_url may be bare path or old /storage/... format)
             if ($word->image_url) {
-                $path = ltrim(str_replace('/storage/', '', parse_url($word->image_url, PHP_URL_PATH)), '/');
-                if (Storage::disk('public')->exists($path)) {
+                // Normalise both old "/storage/words/file.jpg" and bare "words/file.jpg" formats
+                $path = ltrim(
+                    str_replace('/storage/', '', parse_url($word->image_url, PHP_URL_PATH)),
+                    '/'
+                );
+                if ($path && Storage::disk('public')->exists($path)) {
                     Storage::disk('public')->delete($path);
                 }
             }
         });
     }
 
-    /**
-     * Relationship: Word belongs to one ExerciseGroup
-     */
+    // ── Relationships ─────────────────────────────────────────────────────────
+
     public function exerciseGroup()
     {
         return $this->belongsTo(ExerciseGroup::class);
     }
 
-    /**
-     * Relationship: Word belongs to one Subcategory (nullable)
-     */
     public function subcategory()
     {
         return $this->belongsTo(Subcategory::class);
     }
 
     /**
-     * Helper: Get difficulty via ExerciseGroup
+     * Gallery images — ordered by sort_order, then id.
      */
-    public function getDifficultyAttribute()
+    public function images()
+    {
+        return $this->hasMany(WordImage::class)->orderBy('sort_order')->orderBy('id');
+    }
+
+    public function reviewEntries()
+    {
+        return $this->hasMany(ReviewWord::class);
+    }
+
+    // ── Accessors ─────────────────────────────────────────────────────────────
+
+    /**
+     * Helper: Get difficulty via ExerciseGroup.
+     */
+    public function getDifficultyAttribute(): ?string
     {
         return $this->exerciseGroup?->difficulty;
     }
 
-    public function getImageUrlFullAttribute()
+    /**
+     * Legacy accessor — still available for any code that reads image_url_full
+     * directly off a Word; falls through to the old image_url column.
+     */
+    public function getImageUrlFullAttribute(): ?string
     {
         if (!$this->image_url) {
             return null;
@@ -81,10 +108,5 @@ class Word extends Model
         }
 
         return asset($this->image_url);
-    }
-
-    public function reviewEntries()
-    {
-        return $this->hasMany(ReviewWord::class);
     }
 }

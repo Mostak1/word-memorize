@@ -18,10 +18,11 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/Components/ui/select";
+import { Badge } from "@/Components/ui/badge";
 import { toast } from "sonner";
-import { X, Image as ImageIcon } from "lucide-react";
+import { X, Image as ImageIcon, Plus, GripVertical } from "lucide-react";
 
-// Fields that are NOT NULL in the DB
+// ── Required word fields ──────────────────────────────────────────────────────
 const REQUIRED = {
     word:                       "Word is required.",
     parts_of_speech_variations: "Parts of Speech Variations is required.",
@@ -29,6 +30,52 @@ const REQUIRED = {
     bangla_meaning:             "Bangla Meaning is required.",
     example_sentences:          "Example Sentences is required.",
 };
+
+// ── Sub-component: a single image card (existing or staged) ──────────────────
+
+function ImageCard({ src, caption, onCaptionChange, onRemove, isNew = false }) {
+    return (
+        <div className="group relative rounded-lg border bg-muted/30 overflow-hidden">
+            {/* Thumbnail */}
+            <div className="relative aspect-video w-full overflow-hidden bg-muted">
+                <img
+                    src={src}
+                    alt="Word image"
+                    className="h-full w-full object-cover"
+                />
+                {isNew && (
+                    <Badge
+                        variant="secondary"
+                        className="absolute left-1.5 top-1.5 text-[10px] px-1.5 py-0"
+                    >
+                        New
+                    </Badge>
+                )}
+                <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute right-1.5 top-1.5 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={onRemove}
+                >
+                    <X className="h-3 w-3" />
+                </Button>
+            </div>
+
+            {/* Caption */}
+            <div className="p-2">
+                <Input
+                    value={caption}
+                    onChange={(e) => onCaptionChange(e.target.value)}
+                    placeholder="Add a caption…"
+                    className="h-7 text-xs"
+                />
+            </div>
+        </div>
+    );
+}
+
+// ── Main dialog ───────────────────────────────────────────────────────────────
 
 export default function WordFormDialog({
     exerciseGroup,
@@ -39,10 +86,7 @@ export default function WordFormDialog({
 }) {
     const isEditing = !!word;
 
-    const [imagePreview, setImagePreview] = useState(word?.image_url_full || null);
-    // console.log(word.image_url_full);
-    const [clientErrors, setClientErrors] = useState({});
-
+    // ── Core word form (no image fields) ─────────────────────────────────────
     const { data, setData, processing, errors: serverErrors, reset } = useForm({
         subcategory_id:             word?.subcategory_id ? String(word.subcategory_id) : "",
         word:                       word?.word || "",
@@ -56,25 +100,46 @@ export default function WordFormDialog({
         ai_prompt:                  word?.ai_prompt || "",
         synonym:                    word?.synonym || "",
         antonym:                    word?.antonym || "",
-        image_url:                  null,
-        remove_image:               false,
-        image_related_sentence:     word?.image_related_sentence || "",
     });
 
-    // Merge: server errors take priority (they're more specific), client errors fill the rest
+    const [clientErrors, setClientErrors] = useState({});
     const errors = { ...clientErrors, ...serverErrors };
 
+    // ── Image state ───────────────────────────────────────────────────────────
+    // Existing images (edit mode): { id, image_url_full, caption }
+    const [existingImages, setExistingImages] = useState(
+        word?.images?.map((img) => ({
+            id:            img.id,
+            src:           img.image_url_full,
+            caption:       img.caption || "",
+            markedRemoved: false,
+        })) ?? [],
+    );
+    // New staged images: { file, preview, caption }
+    const [newImages, setNewImages] = useState([]);
+
+    // Sync existing images whenever the dialog re-opens with a word prop
     useEffect(() => {
-        if (open && word?.image_url_full) {
-            setImagePreview(word.image_url_full);
-        } else if (!open) {
+        if (open) {
+            setExistingImages(
+                word?.images?.map((img) => ({
+                    id:            img.id,
+                    src:           img.image_url_full,
+                    caption:       img.caption || "",
+                    markedRemoved: false,
+                })) ?? [],
+            );
+            setNewImages([]);
+            setClientErrors({});
+        } else {
             reset();
-            setImagePreview(null);
+            setExistingImages([]);
+            setNewImages([]);
             setClientErrors({});
         }
     }, [open]);
 
-    // Clear the client error for a field as soon as the user edits it
+    // ── Helpers ───────────────────────────────────────────────────────────────
     const field = (name, value) => {
         setData(name, value);
         if (clientErrors[name]) {
@@ -86,54 +151,108 @@ export default function WordFormDialog({
         }
     };
 
-    const handleImageChange = (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        if (!file.type.startsWith("image/"))
-            return toast.error("Please select a valid image file");
-        if (file.size > 5 * 1024 * 1024)
-            return toast.error("Image size must be less than 5MB");
+    const inputCls = (name) =>
+        errors[name] ? "border-red-500 focus-visible:ring-red-500" : "";
 
-        setData((prev) => ({ ...prev, image_url: file, remove_image: false }));
-        const reader = new FileReader();
-        reader.onloadend = () => setImagePreview(reader.result);
-        reader.readAsDataURL(file);
+    // ── Image handlers ────────────────────────────────────────────────────────
+    const handleFileSelect = (e) => {
+        const files = Array.from(e.target.files || []);
+        e.target.value = ""; // reset so same file can be selected again
+
+        const remaining = 10 - existingImages.filter((i) => !i.markedRemoved).length - newImages.length;
+        if (files.length > remaining) {
+            toast.error(`You can add at most ${remaining} more image(s).`);
+            return;
+        }
+
+        const invalid = files.filter(
+            (f) => !f.type.startsWith("image/") || f.size > 5 * 1024 * 1024,
+        );
+        if (invalid.length) {
+            toast.error("Each image must be a valid image file under 5 MB.");
+            return;
+        }
+
+        files.forEach((file) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setNewImages((prev) => [
+                    ...prev,
+                    { file, preview: reader.result, caption: "" },
+                ]);
+            };
+            reader.readAsDataURL(file);
+        });
     };
 
-    const removeImage = () => {
-        setData((prev) => ({ ...prev, image_url: null, remove_image: true }));
-        setImagePreview(null);
-    };
+    const removeExisting = (id) =>
+        setExistingImages((prev) =>
+            prev.map((img) =>
+                img.id === id ? { ...img, markedRemoved: true } : img,
+            ),
+        );
 
+    const updateExistingCaption = (id, caption) =>
+        setExistingImages((prev) =>
+            prev.map((img) => (img.id === id ? { ...img, caption } : img)),
+        );
+
+    const removeNew = (index) =>
+        setNewImages((prev) => prev.filter((_, i) => i !== index));
+
+    const updateNewCaption = (index, caption) =>
+        setNewImages((prev) =>
+            prev.map((img, i) => (i === index ? { ...img, caption } : img)),
+        );
+
+    const visibleExisting = existingImages.filter((i) => !i.markedRemoved);
+    const totalImages = visibleExisting.length + newImages.length;
+
+    // ── Submit ────────────────────────────────────────────────────────────────
     const submit = (e) => {
         e.preventDefault();
 
-        // ── Client-side required check ──────────────────────────────────
+        // Client-side required check
         const newErrors = {};
         Object.entries(REQUIRED).forEach(([name, message]) => {
-            if (!data[name]?.toString().trim()) {
-                newErrors[name] = message;
-            }
+            if (!data[name]?.toString().trim()) newErrors[name] = message;
         });
-
         if (Object.keys(newErrors).length > 0) {
             setClientErrors(newErrors);
             toast.error("Please fix the errors in the form.");
             return;
         }
-
         setClientErrors({});
 
-        // ── Build FormData and post ─────────────────────────────────────
         const payload = new FormData();
+
+        // Core word fields
         Object.entries(data).forEach(([key, value]) => {
             if (value === undefined || value === null) payload.append(key, "");
-            else if (typeof value === "boolean")
-                payload.append(key, value ? "1" : "0");
             else payload.append(key, value);
         });
 
-        if (isEditing) payload.append("_method", "patch");
+        if (isEditing) {
+            payload.append("_method", "patch");
+
+            // IDs to remove
+            existingImages
+                .filter((i) => i.markedRemoved)
+                .forEach((i) => payload.append("remove_image_ids[]", i.id));
+
+            // Updated captions for surviving images
+            existingImages
+                .filter((i) => !i.markedRemoved)
+                .forEach((i) =>
+                    payload.append(`existing_captions[${i.id}]`, i.caption),
+                );
+        }
+
+        // New images + their captions
+        newImages.forEach((img, index) => {
+            payload.append(`images[${index}]`, img.file);
+            payload.append(`new_captions[${index}]`, img.caption);
+        });
 
         router.post(
             isEditing
@@ -141,26 +260,23 @@ export default function WordFormDialog({
                 : route("admin.exercise-groups.words.store", exerciseGroup.id),
             payload,
             {
-                preserveState: true,
+                preserveState:  true,
                 preserveScroll: true,
-                forceFormData: true,
+                forceFormData:  true,
                 onSuccess: () => {
                     toast.success(
-                        isEditing ? "Word updated successfully!" : "Word added successfully!",
+                        isEditing
+                            ? "Word updated successfully!"
+                            : "Word added successfully!",
                     );
                     onOpenChange(false);
                 },
-                onError: () => {
-                    toast.error("Please fix the errors in the form.");
-                },
+                onError: () => toast.error("Please fix the errors in the form."),
             },
         );
     };
 
-    // Helper: red border class when a field has an error
-    const inputCls = (name) =>
-        errors[name] ? "border-red-500 focus-visible:ring-red-500" : "";
-
+    // ── Render ────────────────────────────────────────────────────────────────
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
@@ -174,9 +290,10 @@ export default function WordFormDialog({
                     </DialogTitle>
                 </DialogHeader>
 
-                <form onSubmit={submit} className="flex-1 overflow-y-auto space-y-5 pr-2">
-                    <input type="hidden" name="remove_image" value={data.remove_image ? 1 : 0} />
-
+                <form
+                    onSubmit={submit}
+                    className="flex-1 overflow-y-auto space-y-5 pr-2"
+                >
                     {/* Subcategory */}
                     <div className="space-y-2">
                         <Label>Subcategory</Label>
@@ -209,7 +326,6 @@ export default function WordFormDialog({
                     <div className="space-y-2">
                         <Label>Word <span className="text-red-500">*</span></Label>
                         <Input
-                            name="word"
                             value={data.word}
                             onChange={(e) => field("word", e.target.value)}
                             placeholder="e.g., Accomplish"
@@ -222,38 +338,40 @@ export default function WordFormDialog({
                     <div className="space-y-2">
                         <Label>Pronunciation</Label>
                         <Input
-                            name="pronunciation"
                             value={data.pronunciation}
                             onChange={(e) => setData("pronunciation", e.target.value)}
                             placeholder="e.g., /əˈkɒmplɪʃ/"
                         />
-                        {errors.pronunciation && <p className="text-sm text-red-500">{errors.pronunciation}</p>}
                     </div>
 
                     {/* Hyphenation */}
                     <div className="space-y-2">
                         <Label>Hyphenation</Label>
                         <Input
-                            name="hyphenation"
                             value={data.hyphenation}
                             onChange={(e) => setData("hyphenation", e.target.value)}
                             placeholder="e.g., ac·com·plish"
                         />
-                        {errors.hyphenation && <p className="text-sm text-red-500">{errors.hyphenation}</p>}
                     </div>
 
                     {/* Parts of Speech * */}
                     <div className="space-y-2">
-                        <Label>Parts of Speech Variations <span className="text-red-500">*</span></Label>
+                        <Label>
+                            Parts of Speech Variations{" "}
+                            <span className="text-red-500">*</span>
+                        </Label>
                         <Input
-                            name="parts_of_speech_variations"
                             value={data.parts_of_speech_variations}
-                            onChange={(e) => field("parts_of_speech_variations", e.target.value)}
+                            onChange={(e) =>
+                                field("parts_of_speech_variations", e.target.value)
+                            }
                             placeholder="e.g., verb, noun (accomplishment)"
                             className={inputCls("parts_of_speech_variations")}
                         />
                         {errors.parts_of_speech_variations && (
-                            <p className="text-sm text-red-500">{errors.parts_of_speech_variations}</p>
+                            <p className="text-sm text-red-500">
+                                {errors.parts_of_speech_variations}
+                            </p>
                         )}
                     </div>
 
@@ -261,47 +379,48 @@ export default function WordFormDialog({
                     <div className="space-y-2">
                         <Label>Definition <span className="text-red-500">*</span></Label>
                         <Textarea
-                            name="definition"
                             value={data.definition}
                             onChange={(e) => field("definition", e.target.value)}
                             placeholder="Enter the definition"
                             rows={3}
                             className={inputCls("definition")}
                         />
-                        {errors.definition && <p className="text-sm text-red-500">{errors.definition}</p>}
+                        {errors.definition && (
+                            <p className="text-sm text-red-500">{errors.definition}</p>
+                        )}
                     </div>
 
                     {/* Bangla Meaning * */}
                     <div className="space-y-2">
                         <Label>Bangla Meaning <span className="text-red-500">*</span></Label>
                         <Input
-                            name="bangla_meaning"
                             value={data.bangla_meaning}
                             onChange={(e) => field("bangla_meaning", e.target.value)}
                             placeholder="বাংলা অর্থ"
                             className={inputCls("bangla_meaning")}
                         />
-                        {errors.bangla_meaning && <p className="text-sm text-red-500">{errors.bangla_meaning}</p>}
+                        {errors.bangla_meaning && (
+                            <p className="text-sm text-red-500">{errors.bangla_meaning}</p>
+                        )}
                     </div>
 
                     {/* Collocations */}
                     <div className="space-y-2">
                         <Label>Collocations</Label>
                         <Textarea
-                            name="collocations"
                             value={data.collocations}
                             onChange={(e) => setData("collocations", e.target.value)}
                             placeholder="e.g., accomplish a goal, accomplish a task"
                             rows={2}
                         />
-                        {errors.collocations && <p className="text-sm text-red-500">{errors.collocations}</p>}
                     </div>
 
                     {/* Example Sentences * */}
                     <div className="space-y-2">
-                        <Label>Example Sentences <span className="text-red-500">*</span></Label>
+                        <Label>
+                            Example Sentences <span className="text-red-500">*</span>
+                        </Label>
                         <Textarea
-                            name="example_sentences"
                             value={data.example_sentences}
                             onChange={(e) => field("example_sentences", e.target.value)}
                             placeholder="Enter example sentences (one per line)"
@@ -317,100 +436,124 @@ export default function WordFormDialog({
                     <div className="space-y-2">
                         <Label>AI Prompt</Label>
                         <Textarea
-                            name="ai_prompt"
                             value={data.ai_prompt}
                             onChange={(e) => setData("ai_prompt", e.target.value)}
                             placeholder="Custom prompt for AI image/content generation"
                             rows={3}
                         />
-                        {errors.ai_prompt && <p className="text-sm text-red-500">{errors.ai_prompt}</p>}
                     </div>
 
                     {/* Synonym */}
                     <div className="space-y-2">
                         <Label>Synonym</Label>
                         <Input
-                            name="synonym"
                             value={data.synonym}
                             onChange={(e) => setData("synonym", e.target.value)}
                             placeholder="e.g., achieve, complete, fulfill"
                         />
-                        {errors.synonym && <p className="text-sm text-red-500">{errors.synonym}</p>}
                     </div>
 
                     {/* Antonym */}
                     <div className="space-y-2">
                         <Label>Antonym</Label>
                         <Input
-                            name="antonym"
                             value={data.antonym}
                             onChange={(e) => setData("antonym", e.target.value)}
                             placeholder="e.g., fail, abandon"
                         />
-                        {errors.antonym && <p className="text-sm text-red-500">{errors.antonym}</p>}
                     </div>
 
-                    {/* Image Upload */}
-                    <div className="space-y-2">
-                        <Label>Image</Label>
-                        <div className="space-y-3">
-                            {imagePreview ? (
-                                <div className="relative w-full">
-                                    <img
-                                        src={imagePreview}
-                                        alt="Preview"
-                                        className="h-48 w-full rounded-lg border object-cover"
-                                    />
+                    {/* ── Images Section ──────────────────────────────────────── */}
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                            <Label className="text-sm font-semibold">
+                                Images
+                                {totalImages > 0 && (
+                                    <Badge variant="secondary" className="ml-2">
+                                        {totalImages} / 10
+                                    </Badge>
+                                )}
+                            </Label>
+                            {totalImages < 10 && (
+                                <label className="cursor-pointer">
                                     <Button
                                         type="button"
-                                        variant="destructive"
-                                        size="icon"
-                                        className="absolute right-2 top-2"
-                                        onClick={removeImage}
+                                        variant="outline"
+                                        size="sm"
+                                        asChild
                                     >
-                                        <X className="h-4 w-4" />
+                                        <span>
+                                            <Plus className="mr-1.5 h-3.5 w-3.5" />
+                                            Add Image
+                                        </span>
                                     </Button>
-                                </div>
-                            ) : (
-                                <div className="flex items-center justify-center rounded-lg border-2 border-dashed border-border p-6 transition-colors hover:border-muted-foreground/50">
-                                    <div className="text-center">
-                                        <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground/40" />
-                                        <div className="mt-2">
-                                            <Label htmlFor="image-upload" className="cursor-pointer">
-                                                <span className="text-sm font-medium text-primary hover:underline">
-                                                    Upload an image
-                                                </span>
-                                                <Input
-                                                    id="image-upload"
-                                                    type="file"
-                                                    accept="image/*"
-                                                    className="sr-only"
-                                                    onChange={handleImageChange}
-                                                />
-                                            </Label>
-                                        </div>
-                                        <p className="text-xs text-muted-foreground">
-                                            PNG, JPG, GIF up to 5MB
-                                        </p>
-                                    </div>
-                                </div>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        className="sr-only"
+                                        onChange={handleFileSelect}
+                                    />
+                                </label>
                             )}
                         </div>
-                        {errors.image_url && <p className="text-sm text-red-500">{errors.image_url}</p>}
-                    </div>
 
-                    {/* Image Related Sentence */}
-                    <div className="space-y-2">
-                        <Label>Image Related Sentence</Label>
-                        <Textarea
-                            name="image_related_sentence"
-                            value={data.image_related_sentence}
-                            onChange={(e) => setData("image_related_sentence", e.target.value)}
-                            placeholder="A sentence that describes or relates to the image"
-                            rows={2}
-                        />
-                        {errors.image_related_sentence && (
-                            <p className="text-sm text-red-500">{errors.image_related_sentence}</p>
+                        {totalImages === 0 ? (
+                            /* Empty-state drop zone */
+                            <label className="block cursor-pointer">
+                                <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-8 transition-colors hover:border-muted-foreground/50">
+                                    <ImageIcon className="h-10 w-10 text-muted-foreground/40" />
+                                    <p className="mt-2 text-sm font-medium text-primary hover:underline">
+                                        Click to upload images
+                                    </p>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        PNG, JPG, GIF, WebP — up to 5 MB each, max 10 images
+                                    </p>
+                                </div>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    className="sr-only"
+                                    onChange={handleFileSelect}
+                                />
+                            </label>
+                        ) : (
+                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                                {/* Existing images (edit mode) */}
+                                {visibleExisting.map((img) => (
+                                    <ImageCard
+                                        key={img.id}
+                                        src={img.src}
+                                        caption={img.caption}
+                                        onCaptionChange={(v) =>
+                                            updateExistingCaption(img.id, v)
+                                        }
+                                        onRemove={() => removeExisting(img.id)}
+                                    />
+                                ))}
+
+                                {/* Newly staged images */}
+                                {newImages.map((img, index) => (
+                                    <ImageCard
+                                        key={`new-${index}`}
+                                        src={img.preview}
+                                        caption={img.caption}
+                                        onCaptionChange={(v) =>
+                                            updateNewCaption(index, v)
+                                        }
+                                        onRemove={() => removeNew(index)}
+                                        isNew
+                                    />
+                                ))}
+                            </div>
+                        )}
+
+                        {errors["images"] && (
+                            <p className="text-sm text-red-500">{errors["images"]}</p>
+                        )}
+                        {errors["images.0"] && (
+                            <p className="text-sm text-red-500">{errors["images.0"]}</p>
                         )}
                     </div>
 
@@ -424,7 +567,11 @@ export default function WordFormDialog({
                             Cancel
                         </Button>
                         <Button type="submit" disabled={processing}>
-                            {processing ? "Saving..." : isEditing ? "Update Word" : "Add Word"}
+                            {processing
+                                ? "Saving…"
+                                : isEditing
+                                  ? "Update Word"
+                                  : "Add Word"}
                         </Button>
                     </div>
                 </form>

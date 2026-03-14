@@ -139,18 +139,41 @@ export default function WordDetail({ auth, word, exerciseGroup }) {
                                 </div>
                             </div>
 
-                            {/* Image Section */}
-                            {word.image_url_full && (
-                                <div className="p-6 border-b bg-white">
-                                    <img
-                                        src={word.image_url_full}
-                                        alt={word.word}
-                                        className="w-full h-64 object-cover rounded-lg shadow-md"
-                                    />
-                                    {word.image_related_sentence && (
-                                        <p className="text-sm text-gray-600 mt-3 italic text-center">
-                                            {word.image_related_sentence}
-                                        </p>
+                            {/* Image Gallery Section */}
+                            {word.images?.length > 0 && (
+                                <div className="p-6 border-b bg-white space-y-4">
+                                    {word.images.length === 1 ? (
+                                        /* Single image — full width */
+                                        <div>
+                                            <img
+                                                src={word.images[0].image_url_full}
+                                                alt={word.images[0].caption || word.word}
+                                                className="w-full max-h-96 object-contain rounded-lg shadow-md bg-gray-50"
+                                            />
+                                            {word.images[0].caption && (
+                                                <p className="text-sm text-gray-600 mt-2 italic text-center">
+                                                    {word.images[0].caption}
+                                                </p>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        /* Multiple images — responsive grid */
+                                        <div className={`grid gap-3 ${word.images.length === 2 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3"}`}>
+                                            {word.images.map((img) => (
+                                                <div key={img.id} className="flex flex-col gap-1">
+                                                    <img
+                                                        src={img.image_url_full}
+                                                        alt={img.caption || word.word}
+                                                        className="w-full h-40 object-contain rounded-lg shadow-sm bg-gray-50"
+                                                    />
+                                                    {img.caption && (
+                                                        <p className="text-xs text-gray-500 italic text-center px-1 truncate">
+                                                            {img.caption}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
                                     )}
                                 </div>
                             )}

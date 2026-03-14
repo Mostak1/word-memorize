@@ -123,7 +123,7 @@ class ExerciseController extends Controller
      */
     public function showWord($id)
     {
-        $word = Word::with('exerciseGroup')->findOrFail($id);
+        $word = Word::with(['exerciseGroup', 'images'])->findOrFail($id);
 
         return Inertia::render('WordDetail', [
             'word' => $word,

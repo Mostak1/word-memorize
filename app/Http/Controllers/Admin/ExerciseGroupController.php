@@ -41,8 +41,8 @@ class ExerciseGroupController extends Controller
     }
 
     /**
-     * Display the specified exercise group with its words (searchable, sortable, paginated)
-     * and its subcategories list for the subcategory panel + word form select.
+     * Display the specified exercise group with its words (searchable, sortable, paginated),
+     * its subcategory list, and each word's gallery images.
      */
     public function show(Request $request, ExerciseGroup $exerciseGroup)
     {
@@ -53,7 +53,10 @@ class ExerciseGroupController extends Controller
         $sortDir = $request->input('direction') === 'desc' ? 'desc' : 'asc';
 
         $words = $exerciseGroup->words()
-            ->with('subcategory')          // ← eager-load so the subcategory object is in each word row
+            ->with([
+                'subcategory',  // ← subcategory badge in the table
+                'images',       // ← gallery images (ordered by sort_order, id)
+            ])
             ->when($search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('word', 'like', "%{$search}%")
@@ -67,7 +70,7 @@ class ExerciseGroupController extends Controller
 
         return Inertia::render('Admin/ExerciseGroups/Show', [
             'exerciseGroup' => $exerciseGroup,
-            'subcategories' => $exerciseGroup->subcategories,   // ← passes subcategories to the view
+            'subcategories' => $exerciseGroup->subcategories,
             'words' => $words,
             'filters' => [
                 'search' => $search,
