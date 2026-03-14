@@ -5,6 +5,8 @@ use App\Http\Controllers\Admin\ReviewWordController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ExerciseGroupController;
 use App\Http\Controllers\Admin\WordController;
+use App\Http\Controllers\Admin\WordImageController;
+use App\Http\Controllers\Admin\SubcategoryController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -46,6 +48,20 @@ Route::group(["middleware" => ["auth", "admin"], "prefix" => "admin", "as" => "a
             Route::post('/', [WordController::class, 'store'])->name('store');
             Route::patch('/{word}', [WordController::class, 'update'])->name('update');
             Route::delete('/{word}', [WordController::class, 'destroy'])->name('destroy');
+
+            // Word Images — individual image operations
+            // Full name: admin.exercise-groups.words.images.*
+            Route::prefix('{word}/images')->name('images.')->group(function () {
+                Route::patch('/{wordImage}', [WordImageController::class, 'update'])->name('update');
+                Route::delete('/{wordImage}', [WordImageController::class, 'destroy'])->name('destroy');
+            });
+        });
+
+        // Subcategories (modal-based)
+        Route::prefix('{exerciseGroup}/subcategories')->name('subcategories.')->group(function () {
+            Route::post('/', [SubcategoryController::class, 'store'])->name('store');
+            Route::patch('/{subcategory}', [SubcategoryController::class, 'update'])->name('update');
+            Route::delete('/{subcategory}', [SubcategoryController::class, 'destroy'])->name('destroy');
         });
     });
 

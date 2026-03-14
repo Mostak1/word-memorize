@@ -12,6 +12,7 @@ class Word extends Model
 
     protected $fillable = [
         'exercise_group_id',
+        'subcategory_id',        // ← new
         'word',
         'pronunciation',
         'hyphenation',
@@ -26,9 +27,10 @@ class Word extends Model
         'image_url',
         'image_related_sentence',
     ];
+
     protected $appends = ['image_url_full'];
 
-     /**
+    /**
      * Booted model events
      * Delete image file from public folder when the Word is deleted
      */
@@ -36,9 +38,7 @@ class Word extends Model
     {
         static::deleting(function ($word) {
             if ($word->image_url) {
-                // Convert full URL to relative storage path
                 $path = ltrim(str_replace('/storage/', '', parse_url($word->image_url, PHP_URL_PATH)), '/');
-
                 if (Storage::disk('public')->exists($path)) {
                     Storage::disk('public')->delete($path);
                 }
@@ -55,6 +55,14 @@ class Word extends Model
     }
 
     /**
+     * Relationship: Word belongs to one Subcategory (nullable)
+     */
+    public function subcategory()
+    {
+        return $this->belongsTo(Subcategory::class);
+    }
+
+    /**
      * Helper: Get difficulty via ExerciseGroup
      */
     public function getDifficultyAttribute()
@@ -68,27 +76,12 @@ class Word extends Model
             return null;
         }
 
-        // If it's already a full URL, return as is
         if (str_starts_with($this->image_url, 'http')) {
             return $this->image_url;
         }
 
-        // Otherwise, convert relative path to full URL
         return asset($this->image_url);
     }
-
-    // public function getImageUrlFullAttribute()
-    // {
-    //     if (!$this->image_url) {
-    //         return null;
-    //     }
-
-    //     if (str_starts_with($this->image_url, 'http')) {
-    //         return $this->image_url;
-    //     }
-
-    //     return url($this->image_url);
-    // }
 
     public function reviewEntries()
     {

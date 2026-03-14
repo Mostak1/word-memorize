@@ -186,7 +186,7 @@ export default function Login({ status, canResetPassword }) {
                     <Button
                         type="button"
                         variant="outline"
-                        className="w-full h-12 border-2 border-gray-300 dark:border-zinc-700 hover:border-[#E5201C] hover:bg-[#E5201C]/5 font-semibold rounded-full transition-all"
+                        className="w-full h-12 border-2 border-gray-300 dark:border-zinc-700 hover:border-[#E5201C] hover:text-[#E5201C] hover:bg-[#E5201C]/5 font-semibold rounded-full transition-all"
                     >
                         Create an account
                     </Button>

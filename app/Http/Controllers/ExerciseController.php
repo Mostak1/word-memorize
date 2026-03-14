@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ExerciseGroup;
+use App\Models\Subcategory;
 use App\Models\Word;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -15,6 +16,7 @@ class ExerciseController extends Controller
     public function index()
     {
         $exerciseGroups = ExerciseGroup::withCount('words')
+            ->where('status', true)
             ->orderBy('difficulty')
             ->orderBy('created_at', 'desc')
             ->get();
@@ -25,19 +27,62 @@ class ExerciseController extends Controller
     }
 
     /**
-     * Display a specific exercise group with its words (paginated)
+     * Display a specific exercise group:
+     * - If it has subcategories → show subcategory list
+     * - If no subcategories → show words directly (fallback)
      */
     public function show(Request $request, $id)
     {
         $exerciseGroup = ExerciseGroup::withCount('words')->findOrFail($id);
 
-        $words = $exerciseGroup->words()
+        // Load subcategories with their word counts
+        $subcategories = Subcategory::where('exercise_group_id', $id)
+            ->withCount('words')
+            ->orderBy('name')
+            ->get();
+
+        if ($subcategories->isEmpty()) {
+            // No subcategories — fall back to showing words directly
+            $words = $exerciseGroup->words()
+                ->paginate(10)
+                ->withQueryString();
+
+            return Inertia::render('ExerciseDetail', [
+                'exerciseGroup' => $exerciseGroup,
+                'subcategories' => [],
+                'words' => $words,
+            ]);
+        }
+
+        // Has subcategories — pass them, no words needed on this screen
+        return Inertia::render('ExerciseDetail', [
+            'exerciseGroup' => $exerciseGroup,
+            'subcategories' => $subcategories,
+            'words' => null,
+        ]);
+    }
+
+    /**
+     * Show words for a specific subcategory within an exercise group
+     */
+    public function showSubcategory(Request $request, $groupId, $subcategoryId)
+    {
+        $exerciseGroup = ExerciseGroup::withCount('words')->findOrFail($groupId);
+
+        $subcategory = Subcategory::where('id', $subcategoryId)
+            ->where('exercise_group_id', $groupId)
+            ->withCount('words')
+            ->firstOrFail();
+
+        $words = Word::where('exercise_group_id', $groupId)
+            ->where('subcategory_id', $subcategoryId)
             ->paginate(10)
             ->withQueryString();
 
-        return Inertia::render('ExerciseDetail', [
+        return Inertia::render('ExerciseSubcategory', [
             'exerciseGroup' => $exerciseGroup,
-            'words'         => $words,
+            'subcategory' => $subcategory,
+            'words' => $words,
         ]);
     }
 
@@ -48,7 +93,6 @@ class ExerciseController extends Controller
     {
         $exerciseGroup = ExerciseGroup::with('words')->findOrFail($id);
 
-        // Shuffle words for random order
         $words = $exerciseGroup->words->shuffle();
 
         return Inertia::render('ExerciseSession', [
@@ -64,6 +108,7 @@ class ExerciseController extends Controller
     {
         $exerciseGroups = ExerciseGroup::difficulty($difficulty)
             ->withCount('words')
+            ->where('status', true)
             ->orderBy('created_at', 'desc')
             ->get();
 

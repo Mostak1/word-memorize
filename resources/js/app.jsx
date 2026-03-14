@@ -5,9 +5,23 @@ import { createInertiaApp } from "@inertiajs/react";
 import { resolvePageComponent } from "laravel-vite-plugin/inertia-helpers";
 import { createRoot } from "react-dom/client";
 import { Toaster } from "sonner";
-import { ThemeProvider } from "@/Components/ThemeProvider";
+import { ThemeProvider, useTheme } from "@/Components/ThemeProvider";
 
 const appName = import.meta.env.VITE_APP_NAME || "Laravel";
+
+// Wrapper so the Toaster can read the active theme from context
+function ThemedToaster() {
+    const { theme } = useTheme();
+    return (
+        <Toaster
+            position="bottom-right"
+            closeButton
+            expand={false}
+            richColors
+            theme={theme} // "light" | "dark" | "system"
+        />
+    );
+}
 
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,
@@ -22,12 +36,7 @@ createInertiaApp({
         root.render(
             <ThemeProvider defaultTheme="light" storageKey="admin-theme">
                 <App {...props} />
-                <Toaster
-                    position="bottom-right"
-                    closeButton
-                    expand={false}
-                    richColors
-                />
+                <ThemedToaster />
             </ThemeProvider>,
         );
     },

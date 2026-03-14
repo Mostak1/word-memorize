@@ -37,25 +37,28 @@ class ExerciseGroupController extends Controller
 
         ExerciseGroup::create($validated);
 
-        // 🔑 Modal-friendly response
         return back()->with('success', 'Exercise group created successfully.');
     }
 
     /**
-     * Display the specified exercise group with its words (searchable, sortable, paginated).
+     * Display the specified exercise group with its words (searchable, sortable, paginated)
+     * and its subcategories list for the subcategory panel + word form select.
      */
     public function show(Request $request, ExerciseGroup $exerciseGroup)
     {
-        $search    = $request->string('search')->trim()->value();
-        $sortCol   = in_array($request->input('sort'), ['word', 'definition']) ? $request->input('sort') : 'word';
-        $sortDir   = $request->input('direction') === 'desc' ? 'desc' : 'asc';
+        $search = $request->string('search')->trim()->value();
+        $sortCol = in_array($request->input('sort'), ['word', 'definition'])
+            ? $request->input('sort')
+            : 'word';
+        $sortDir = $request->input('direction') === 'desc' ? 'desc' : 'asc';
 
         $words = $exerciseGroup->words()
+            ->with('subcategory')          // ← eager-load so the subcategory object is in each word row
             ->when($search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('word', 'like', "%{$search}%")
-                      ->orWhere('definition', 'like', "%{$search}%")
-                      ->orWhere('bangla_meaning', 'like', "%{$search}%");
+                        ->orWhere('definition', 'like', "%{$search}%")
+                        ->orWhere('bangla_meaning', 'like', "%{$search}%");
                 });
             })
             ->orderBy($sortCol, $sortDir)
@@ -64,10 +67,11 @@ class ExerciseGroupController extends Controller
 
         return Inertia::render('Admin/ExerciseGroups/Show', [
             'exerciseGroup' => $exerciseGroup,
-            'words'         => $words,
-            'filters'       => [
-                'search'    => $search,
-                'sort'      => $sortCol,
+            'subcategories' => $exerciseGroup->subcategories,   // ← passes subcategories to the view
+            'words' => $words,
+            'filters' => [
+                'search' => $search,
+                'sort' => $sortCol,
                 'direction' => $sortDir,
             ],
         ]);
@@ -87,7 +91,6 @@ class ExerciseGroupController extends Controller
 
         $exerciseGroup->update($validated);
 
-        // 🔑 Modal-friendly response
         return back()->with('success', 'Exercise group updated successfully.');
     }
 

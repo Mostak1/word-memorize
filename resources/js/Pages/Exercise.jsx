@@ -104,13 +104,13 @@ export default function Exercise({ exerciseGroups }) {
                                         <CardContent className="pt-3 pb-4">
                                             <div className="flex items-center justify-between text-sm">
                                                 <span className="text-gray-600">
-                                                    Status:{" "}
+                                                    {/* Status:{" "}
                                                     <span
                                                         className={`font-semibold ${group.status === "active" ? "text-green-600" : "text-gray-500"}`}
                                                     >
                                                         {group.status ||
                                                             "active"}
-                                                    </span>
+                                                    </span> */}
                                                 </span>
                                                 <span className="text-[#E5201C] font-medium flex items-center gap-1">
                                                     Start Exercise

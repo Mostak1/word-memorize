@@ -44,7 +44,7 @@ export default function Welcome({ auth }) {
                                     <BookOpen className="h-6 w-6" />
                                 </div>
                                 <h1 className="text-lg font-bold">
-                                    Memorize Words
+                                    Word Wise
                                 </h1>
                             </div>
                             {auth.user ? (

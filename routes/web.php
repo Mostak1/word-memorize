@@ -10,21 +10,12 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    // Redirect authenticated users to dashboard
     if (auth()->check()) {
         if (auth()->user()->is_admin) {
             return redirect()->route('admin.dashboard');
         }
-
         return redirect()->route('dashboard');
     }
-
-    // return Inertia::render('Welcome', [
-    //     'canLogin' => Route::has('login'),
-    //     'canRegister' => Route::has('register'),
-    //     'laravelVersion' => Application::VERSION,
-    //     'phpVersion' => PHP_VERSION,
-    // ]);
 
     return Inertia::render('Dashboard');
 })->name('home');
@@ -36,7 +27,7 @@ Route::get('/run-seeder', function () {
 
     return response()->json([
         'message' => 'Seeder ran successfully',
-        'output'  => Artisan::output(),
+        'output' => Artisan::output(),
     ]);
 });
 
@@ -49,10 +40,15 @@ Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
+// Exercise routes
 Route::get('/exercises', [ExerciseController::class, 'index'])->name('exercise.index');
 Route::get('/exercise/{id}', [ExerciseController::class, 'show'])->name('exercise.show');
 Route::get('/exercise/{id}/start', [ExerciseController::class, 'start'])->name('exercise.start');
 Route::get('/exercises/difficulty/{difficulty}', [ExerciseController::class, 'byDifficulty'])->name('exercise.difficulty');
+
+// Subcategory words page  ← new
+Route::get('/exercise/{groupId}/subcategory/{subcategoryId}', [ExerciseController::class, 'showSubcategory'])->name('exercise.subcategory');
+
 Route::get('/word/{id}', [ExerciseController::class, 'showWord'])->name('word.show');
 
 Route::middleware('auth')->group(function () {

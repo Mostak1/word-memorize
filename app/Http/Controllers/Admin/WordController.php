@@ -7,14 +7,13 @@ use App\Models\ExerciseGroup;
 use App\Models\Word;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Log;
 
 class WordController extends Controller
 {
     public function store(Request $request, ExerciseGroup $exerciseGroup)
     {
-        // Log::info('Post');
         $validated = $request->validate([
+            'subcategory_id' => 'nullable|exists:subcategories,id',
             'word' => 'required|string|max:255',
             'pronunciation' => 'nullable|string|max:255',
             'hyphenation' => 'nullable|string',
@@ -26,14 +25,16 @@ class WordController extends Controller
             'ai_prompt' => 'nullable|string',
             'synonym' => 'nullable|string',
             'antonym' => 'nullable|string',
-            'image_url' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp|max:5120', // 5MB max
+            'image_url' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp|max:5120',
             'image_related_sentence' => 'nullable|string',
         ]);
 
+        // Treat empty string as null for the FK
+        $validated['subcategory_id'] = $validated['subcategory_id'] ?: null;
+
         // Handle image upload
         if ($request->hasFile('image_url')) {
-            $image = $request->file('image_url');
-            $path = $image->store('words', 'public');
+            $path = $request->file('image_url')->store('words', 'public');
             $validated['image_url'] = Storage::url($path);
         }
 
@@ -44,11 +45,8 @@ class WordController extends Controller
 
     public function update(Request $request, ExerciseGroup $exerciseGroup, Word $word)
     {
-        // Log::info('Patch');
-        // Log::info($request->all());
-
-        // Validate input
         $validated = $request->validate([
+            'subcategory_id' => 'nullable|exists:subcategories,id',
             'word' => 'required|string|max:255',
             'pronunciation' => 'nullable|string|max:255',
             'hyphenation' => 'nullable|string',
@@ -65,21 +63,21 @@ class WordController extends Controller
             'image_related_sentence' => 'nullable|string',
         ]);
 
-        // Handle image upload
+        // Treat empty string as null for the FK
+        $validated['subcategory_id'] = $validated['subcategory_id'] ?: null;
+
+        // Handle image upload / removal
         if ($request->hasFile('image_url')) {
-            // Delete old image if exists
+            // Delete old image
             if ($word->image_url) {
                 $oldPath = ltrim(str_replace('/storage/', '', parse_url($word->image_url, PHP_URL_PATH)), '/');
                 if (Storage::disk('public')->exists($oldPath)) {
                     Storage::disk('public')->delete($oldPath);
                 }
             }
-
-            // Store new image
             $path = $request->file('image_url')->store('words', 'public');
             $validated['image_url'] = Storage::url($path);
         } elseif ($request->boolean('remove_image')) {
-            // Delete old image if remove_image is true
             if ($word->image_url) {
                 $oldPath = ltrim(str_replace('/storage/', '', parse_url($word->image_url, PHP_URL_PATH)), '/');
                 if (Storage::disk('public')->exists($oldPath)) {
@@ -88,29 +86,24 @@ class WordController extends Controller
             }
             $validated['image_url'] = null;
         } else {
-            // Keep old image if no new file and remove_image is not set
+            // Keep existing image — don't overwrite it
             unset($validated['image_url']);
         }
 
-        // Remove control flags
         unset($validated['remove_image']);
 
-        // Update the word
         $word->update($validated);
 
         return back()->with('success', 'Word updated successfully');
     }
-
-
 
     /**
      * Remove the specified word.
      */
     public function destroy(ExerciseGroup $exerciseGroup, Word $word)
     {
-        // Delete associated image if exists
         if ($word->image_url) {
-            $path = str_replace('/storage/', '', $word->image_url);
+            $path = ltrim(str_replace('/storage/', '', parse_url($word->image_url, PHP_URL_PATH)), '/');
             Storage::disk('public')->delete($path);
         }
 

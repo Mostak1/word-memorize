@@ -23,7 +23,7 @@ export default function AuthenticatedLayout({ children }) {
                                 <BookOpen className="h-6 w-6" />
                             </div>
                             <h1 className="text-lg font-bold">
-                                Memorize Words
+                                Word Wise
                             </h1>
                         </Link>
 

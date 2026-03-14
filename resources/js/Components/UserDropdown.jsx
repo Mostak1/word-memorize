@@ -16,7 +16,7 @@ export function UserDropdown() {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 rounded-lg p-1 hover:bg-gray-200 transition">
+                <button className="flex items-center gap-2 rounded-lg p-1 transition">
                     <Avatar className="h-8 w-8 rounded-lg">
                         <AvatarFallback>
                             {auth.user.name.charAt(0).toUpperCase()}

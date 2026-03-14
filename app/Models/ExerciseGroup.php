@@ -9,7 +9,6 @@ class ExerciseGroup extends Model
 {
     use HasFactory;
 
-    // Fillable fields including difficulty
     protected $fillable = [
         'title',
         'price',
@@ -23,6 +22,14 @@ class ExerciseGroup extends Model
     public function words()
     {
         return $this->hasMany(Word::class);
+    }
+
+    /**
+     * Relationship: An ExerciseGroup has many Subcategories
+     */
+    public function subcategories()
+    {
+        return $this->hasMany(Subcategory::class)->orderBy('name');
     }
 
     /**
