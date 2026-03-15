@@ -30,20 +30,61 @@ Route::get('/clear-cache', function () {
     return 'Laravel cache cleared!';
 });
 
-Route::get('/run-seeder', function () {
-    Artisan::call('db:seed', [
-        '--class' => 'OxfordWordsSeeder',
-    ]);
+// Route::get('/run-seeder', function () {
+//     Artisan::call('db:seed', [
+//         '--class' => 'OxfordWordsSeeder',
+//     ]);
 
-    return response()->json([
-        'message' => 'Seeder ran successfully',
-        'output' => Artisan::output(),
-    ]);
+//     return response()->json([
+//         'message' => 'Seeder ran successfully',
+//         'output' => Artisan::output(),
+//     ]);
+// });
+
+// Route::get('/run-unseeder', function () {
+//     (new OxfordWordsSeeder())->unseed();
+//     return response()->json(['message' => 'Unseeded successfully']);
+// });
+
+
+Route::get('/run-seeder', function () {
+    try {
+        Artisan::call('db:seed', [
+            // '--class' => 'ActionMovementSeeder',
+            '--class' => 'FluentoWordsSeeder',
+            '--force' => true,
+        ]);
+
+        $output = Artisan::output();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'FluentoWordsSeeder ran successfully.',
+            'output' => $output,
+        ]);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage(),
+        ], 500);
+    }
 });
 
 Route::get('/run-unseeder', function () {
-    (new OxfordWordsSeeder())->unseed();
-    return response()->json(['message' => 'Unseeded successfully']);
+    try {
+        $seeder = new \Database\Seeders\ActionMovementSeeder();
+        $seeder->unseed();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'ActionMovementSeeder unseeded successfully.',
+        ]);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage(),
+        ], 500);
+    }
 });
 
 Route::get('/dashboard', function () {

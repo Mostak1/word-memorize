@@ -128,6 +128,7 @@ class ExerciseController extends Controller
         return Inertia::render('WordDetail', [
             'word' => $word,
             'exerciseGroup' => $word->exerciseGroup,
+            'subCategory' => $word->subcategory,
         ]);
     }
 }

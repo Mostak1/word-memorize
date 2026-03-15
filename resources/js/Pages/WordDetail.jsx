@@ -25,7 +25,7 @@ import {
 import { useState, useEffect } from "react";
 import FlashMessages from "@/Components/FlashMessage";
 
-export default function WordDetail({ auth, word, exerciseGroup }) {
+export default function WordDetail({ auth, word, exerciseGroup, subCategory }) {
     const [wordStatus, setWordStatus] = useState(null);
     const [showLoginDialog, setShowLoginDialog] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -91,11 +91,26 @@ export default function WordDetail({ auth, word, exerciseGroup }) {
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2 mb-2">
                                             <Link
+                                                // href={
+                                                //     exerciseGroup
+                                                //         ? route(
+                                                //               "exercise.show",
+                                                //               exerciseGroup.id,
+                                                //           )
+                                                //         : route(
+                                                //               "exercise.index",
+                                                //           )
+                                                // }
                                                 href={
-                                                    exerciseGroup
+                                                    subCategory
                                                         ? route(
-                                                              "exercise.show",
-                                                              exerciseGroup.id,
+                                                              "exercise.subcategory",
+                                                              {
+                                                                  groupId:
+                                                                      exerciseGroup.id,
+                                                                  subcategoryId:
+                                                                      subCategory.id,
+                                                              },
                                                           )
                                                         : route(
                                                               "exercise.index",
@@ -146,8 +161,14 @@ export default function WordDetail({ auth, word, exerciseGroup }) {
                                         /* Single image — full width */
                                         <div>
                                             <img
-                                                src={word.images[0].image_url_full}
-                                                alt={word.images[0].caption || word.word}
+                                                src={
+                                                    word.images[0]
+                                                        .image_url_full
+                                                }
+                                                alt={
+                                                    word.images[0].caption ||
+                                                    word.word
+                                                }
                                                 className="w-full max-h-96 object-contain rounded-lg shadow-md bg-gray-50"
                                             />
                                             {word.images[0].caption && (
@@ -158,12 +179,20 @@ export default function WordDetail({ auth, word, exerciseGroup }) {
                                         </div>
                                     ) : (
                                         /* Multiple images — responsive grid */
-                                        <div className={`grid gap-3 ${word.images.length === 2 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3"}`}>
+                                        <div
+                                            className={`grid gap-3 ${word.images.length === 2 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3"}`}
+                                        >
                                             {word.images.map((img) => (
-                                                <div key={img.id} className="flex flex-col gap-1">
+                                                <div
+                                                    key={img.id}
+                                                    className="flex flex-col gap-1"
+                                                >
                                                     <img
                                                         src={img.image_url_full}
-                                                        alt={img.caption || word.word}
+                                                        alt={
+                                                            img.caption ||
+                                                            word.word
+                                                        }
                                                         className="w-full h-40 object-contain rounded-lg shadow-sm bg-gray-50"
                                                     />
                                                     {img.caption && (

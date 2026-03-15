@@ -31,10 +31,13 @@ export function AppSidebar() {
 
     const isActiveRoute = (routeName) => {
         try {
-            // route().current() checks if the current page matches the named route.
-            // It automatically handles full URLs vs paths and subdirectories.
+            // e.g. "admin.exercise-groups.index" → "admin.exercise-groups"
+            const baseRoute = routeName.replace(/\.index$/, "");
+
             return (
-                route().current(routeName) || route().current(`${routeName}.*`)
+                route().current(routeName) ||
+                route().current(`${routeName}.*`) ||
+                route().current(`${baseRoute}.*`) // ← catches .show, .edit, etc.
             );
         } catch (error) {
             console.error(`Route ${routeName} matching error`, error);

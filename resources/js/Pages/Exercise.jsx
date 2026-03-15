@@ -2,7 +2,7 @@ import { Head, Link } from "@inertiajs/react";
 import AppLayout from "@/Layouts/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { Badge } from "@/Components/ui/badge";
-import { ChevronRight, BookOpen, Lock } from "lucide-react";
+import { ChevronRight, BookOpen, Lock, PlayIcon } from "lucide-react";
 
 export default function Exercise({ exerciseGroups }) {
     const getDifficultyColor = (difficulty) => {
@@ -114,20 +114,7 @@ export default function Exercise({ exerciseGroups }) {
                                                 </span>
                                                 <span className="text-[#E5201C] font-medium flex items-center gap-1">
                                                     Start Exercise
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        className="h-4 w-4"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke="currentColor"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth="2"
-                                                            d="M14.752 11.168l-6.518 3.758A1 1 0 0 1 6 13.998V7.002a1 1 0 0 1 1.234-.97l6.518 1.77a1 1 0 0 1 .999.97v2.376a1 1 0 0 1-.519.992z"
-                                                        />
-                                                    </svg>
+                                                    <PlayIcon className="h-4 w-4" />
                                                 </span>
                                             </div>
                                         </CardContent>

@@ -66,14 +66,21 @@ import {
 } from "@tanstack/react-table";
 
 const difficultyColors = {
-    beginner:     "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-    intermediate: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-    advanced:     "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+    beginner:
+        "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+    intermediate:
+        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+    advanced: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
 };
 
 const columnHelper = createColumnHelper();
 
-export default function Show({ exerciseGroup, subcategories = [], words, filters }) {
+export default function Show({
+    exerciseGroup,
+    subcategories = [],
+    words,
+    filters,
+}) {
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [editingWord, setEditingWord] = useState(null);
     const [editingGroup, setEditingGroup] = useState(null);
@@ -164,7 +171,9 @@ export default function Show({ exerciseGroup, subcategories = [], words, filters
                 <SortableHeader column="definition" label="Definition" />
             ),
             cell: (info) => (
-                <span className="block max-w-xs truncate">{info.getValue()}</span>
+                <span className="block max-w-xs truncate">
+                    {info.getValue()}
+                </span>
             ),
         }),
 
@@ -212,7 +221,8 @@ export default function Show({ exerciseGroup, subcategories = [], words, filters
                                                     alt={wordLabel}
                                                     className="h-full w-full object-cover"
                                                     onError={(e) => {
-                                                        e.target.style.display = "none";
+                                                        e.target.style.display =
+                                                            "none";
                                                     }}
                                                 />
                                             </div>
@@ -239,7 +249,9 @@ export default function Show({ exerciseGroup, subcategories = [], words, filters
                                             >
                                                 <img
                                                     src={img.image_url_full}
-                                                    alt={img.caption || wordLabel}
+                                                    alt={
+                                                        img.caption || wordLabel
+                                                    }
                                                     className="h-28 w-full object-cover"
                                                 />
                                                 {img.caption && (
@@ -256,7 +268,10 @@ export default function Show({ exerciseGroup, subcategories = [], words, filters
 
                         {/* Count badge when more than 1 */}
                         {images.length > 1 && (
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5">
+                            <Badge
+                                variant="outline"
+                                className="text-[10px] px-1.5 py-0 h-5"
+                            >
                                 {images.length}
                             </Badge>
                         )}
@@ -374,12 +389,16 @@ export default function Show({ exerciseGroup, subcategories = [], words, filters
                         </h1>
                         <div className="flex items-center gap-2">
                             <Badge
-                                className={difficultyColors[exerciseGroup.difficulty]}
+                                className={
+                                    difficultyColors[exerciseGroup.difficulty]
+                                }
                                 variant="secondary"
                             >
                                 {exerciseGroup.difficulty}
                             </Badge>
-                            <Badge variant="outline">${exerciseGroup.price}</Badge>
+                            <Badge variant="outline">
+                                ${exerciseGroup.price}
+                            </Badge>
                         </div>
                     </div>
 
@@ -445,8 +464,12 @@ export default function Show({ exerciseGroup, subcategories = [], words, filters
                                                         size="icon"
                                                         className="h-7 w-7"
                                                         onClick={() => {
-                                                            setEditingSubcategory(sub);
-                                                            setSubDialogOpen(true);
+                                                            setEditingSubcategory(
+                                                                sub,
+                                                            );
+                                                            setSubDialogOpen(
+                                                                true,
+                                                            );
                                                         }}
                                                     >
                                                         <Edit className="h-3.5 w-3.5" />
@@ -456,7 +479,9 @@ export default function Show({ exerciseGroup, subcategories = [], words, filters
                                                         size="icon"
                                                         className="h-7 w-7 text-red-500 hover:text-red-600"
                                                         onClick={() =>
-                                                            setDeletingSubcategory(sub)
+                                                            setDeletingSubcategory(
+                                                                sub,
+                                                            )
                                                         }
                                                     >
                                                         <Trash2 className="h-3.5 w-3.5" />
@@ -493,7 +518,9 @@ export default function Show({ exerciseGroup, subcategories = [], words, filters
                                 <Input
                                     placeholder="Search word, definition…"
                                     value={search}
-                                    onChange={(e) => handleSearch(e.target.value)}
+                                    onChange={(e) =>
+                                        handleSearch(e.target.value)
+                                    }
                                     className="pl-8"
                                 />
                             </div>
@@ -503,33 +530,48 @@ export default function Show({ exerciseGroup, subcategories = [], words, filters
                         <div className="rounded-md border">
                             <Table>
                                 <TableHeader>
-                                    {table.getHeaderGroups().map((headerGroup) => (
-                                        <TableRow key={headerGroup.id}>
-                                            {headerGroup.headers.map((header) => (
-                                                <TableHead key={header.id}>
-                                                    {header.isPlaceholder
-                                                        ? null
-                                                        : flexRender(
-                                                              header.column.columnDef.header,
-                                                              header.getContext(),
-                                                          )}
-                                                </TableHead>
-                                            ))}
-                                        </TableRow>
-                                    ))}
+                                    {table
+                                        .getHeaderGroups()
+                                        .map((headerGroup) => (
+                                            <TableRow key={headerGroup.id}>
+                                                {headerGroup.headers.map(
+                                                    (header) => (
+                                                        <TableHead
+                                                            key={header.id}
+                                                        >
+                                                            {header.isPlaceholder
+                                                                ? null
+                                                                : flexRender(
+                                                                      header
+                                                                          .column
+                                                                          .columnDef
+                                                                          .header,
+                                                                      header.getContext(),
+                                                                  )}
+                                                        </TableHead>
+                                                    ),
+                                                )}
+                                            </TableRow>
+                                        ))}
                                 </TableHeader>
                                 <TableBody>
                                     {table.getRowModel().rows.length ? (
                                         table.getRowModel().rows.map((row) => (
                                             <TableRow key={row.id}>
-                                                {row.getVisibleCells().map((cell) => (
-                                                    <TableCell key={cell.id}>
-                                                        {flexRender(
-                                                            cell.column.columnDef.cell,
-                                                            cell.getContext(),
-                                                        )}
-                                                    </TableCell>
-                                                ))}
+                                                {row
+                                                    .getVisibleCells()
+                                                    .map((cell) => (
+                                                        <TableCell
+                                                            key={cell.id}
+                                                        >
+                                                            {flexRender(
+                                                                cell.column
+                                                                    .columnDef
+                                                                    .cell,
+                                                                cell.getContext(),
+                                                            )}
+                                                        </TableCell>
+                                                    ))}
                                             </TableRow>
                                         ))
                                     ) : (
@@ -572,7 +614,8 @@ export default function Show({ exerciseGroup, subcategories = [], words, filters
                                     Previous
                                 </Button>
                                 <span className="text-sm text-muted-foreground">
-                                    Page {words.current_page} of {words.last_page}
+                                    Page {words.current_page} of{" "}
+                                    {words.last_page}
                                 </span>
                                 <Button
                                     variant="outline"

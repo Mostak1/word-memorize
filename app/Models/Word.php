@@ -15,6 +15,7 @@ class Word extends Model
         'subcategory_id',
         'word',
         'pronunciation',
+        'bangla_pronunciation',
         'hyphenation',
         'parts_of_speech_variations',
         'definition',
