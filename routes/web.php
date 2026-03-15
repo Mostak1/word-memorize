@@ -72,12 +72,12 @@ Route::get('/run-seeder', function () {
 
 Route::get('/run-unseeder', function () {
     try {
-        $seeder = new \Database\Seeders\ActionMovementSeeder();
+        $seeder = new \Database\Seeders\FluentoWordsSeeder();
         $seeder->unseed();
 
         return response()->json([
             'status' => 'success',
-            'message' => 'ActionMovementSeeder unseeded successfully.',
+            'message' => 'FluentoWordsSeeder unseeded successfully.',
         ]);
     } catch (\Throwable $e) {
         return response()->json([

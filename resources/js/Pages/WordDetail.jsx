@@ -80,7 +80,7 @@ export default function WordDetail({ auth, word, exerciseGroup, subCategory }) {
             <Head title={`${word.word} - Word Details`} />
             <FlashMessages />
             {/* Extra bottom padding so content clears the fixed action bar */}
-            <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pb-32">
+            <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pb-32 mt-4">
                 {/* Main Content */}
                 <main className="max-w-2xl mx-auto px-4 pt-4 py-2">
                     <Card className="overflow-hidden border-2 shadow-lg">

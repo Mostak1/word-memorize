@@ -13,18 +13,29 @@ import {
     Layers,
 } from "lucide-react";
 
-export default function ExerciseDetail({ exerciseGroup, subcategories = [], words }) {
+export default function ExerciseDetail({
+    exerciseGroup,
+    subcategories = [],
+    words,
+}) {
     const hasSubcategories = subcategories && subcategories.length > 0;
 
     const getDifficultyColor = (difficulty) => {
         switch (difficulty?.toLowerCase()) {
-            case "easy":       return "bg-green-100 text-green-700 border-green-300";
-            case "medium":     return "bg-yellow-100 text-yellow-700 border-yellow-300";
-            case "hard":       return "bg-red-100 text-red-700 border-red-300";
-            case "beginner":   return "bg-green-100 text-green-700 border-green-300";
-            case "intermediate": return "bg-yellow-100 text-yellow-700 border-yellow-300";
-            case "advanced":   return "bg-red-100 text-red-700 border-red-300";
-            default:           return "bg-gray-100 text-gray-700 border-gray-300";
+            case "easy":
+                return "bg-green-100 text-green-700 border-green-300";
+            case "medium":
+                return "bg-yellow-100 text-yellow-700 border-yellow-300";
+            case "hard":
+                return "bg-red-100 text-red-700 border-red-300";
+            case "beginner":
+                return "bg-green-100 text-green-700 border-green-300";
+            case "intermediate":
+                return "bg-yellow-100 text-yellow-700 border-yellow-300";
+            case "advanced":
+                return "bg-red-100 text-red-700 border-red-300";
+            default:
+                return "bg-gray-100 text-gray-700 border-gray-300";
         }
     };
 
@@ -39,8 +50,7 @@ export default function ExerciseDetail({ exerciseGroup, subcategories = [], word
     return (
         <AppLayout>
             <Head title={`Exercise - ${exerciseGroup.title}`} />
-            <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-zinc-900 dark:to-zinc-950 pb-20">
-
+            <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-zinc-900 dark:to-zinc-950 pb-20 mt-4">
                 {/* Sub-header */}
                 <div className="max-w-xl mx-auto px-4 pt-4 pb-2">
                     <div className="flex items-center gap-3 mb-2">
@@ -61,7 +71,10 @@ export default function ExerciseDetail({ exerciseGroup, subcategories = [], word
                                 >
                                     {exerciseGroup.difficulty}
                                 </Badge>
-                                <Badge variant="outline" className="bg-gray-50 dark:bg-zinc-800 text-gray-700 dark:text-gray-300">
+                                <Badge
+                                    variant="outline"
+                                    className="bg-gray-50 dark:bg-zinc-800 text-gray-700 dark:text-gray-300"
+                                >
                                     {exerciseGroup.words_count} words
                                 </Badge>
                             </div>
@@ -83,7 +96,6 @@ export default function ExerciseDetail({ exerciseGroup, subcategories = [], word
                 </div>
 
                 <main className="max-w-xl mx-auto px-4">
-
                     {/* ── SUBCATEGORY MODE ──────────────────────────────── */}
                     {hasSubcategories && (
                         <>
@@ -107,7 +119,8 @@ export default function ExerciseDetail({ exerciseGroup, subcategories = [], word
                                             className="overflow-hidden border-2 hover:border-[#E5201C] transition-all duration-200 hover:shadow-md cursor-pointer mb-2"
                                             style={{
                                                 animationDelay: `${index * 0.06}s`,
-                                                animation: "fadeInUp 0.4s ease-out forwards",
+                                                animation:
+                                                    "fadeInUp 0.4s ease-out forwards",
                                                 opacity: 0,
                                             }}
                                         >
@@ -122,7 +135,10 @@ export default function ExerciseDetail({ exerciseGroup, subcategories = [], word
                                                         </p>
                                                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                                                             {sub.words_count}{" "}
-                                                            {sub.words_count === 1 ? "word" : "words"}
+                                                            {sub.words_count ===
+                                                            1
+                                                                ? "word"
+                                                                : "words"}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -148,14 +164,18 @@ export default function ExerciseDetail({ exerciseGroup, subcategories = [], word
                                     <div className="space-y-2">
                                         {words.data.map((word, index) => (
                                             <Link
-                                                href={route("word.show", word.id)}
+                                                href={route(
+                                                    "word.show",
+                                                    word.id,
+                                                )}
                                                 key={word.id}
                                             >
                                                 <Card
                                                     className="overflow-hidden border-2 hover:border-[#E5201C] transition-all cursor-pointer"
                                                     style={{
                                                         animationDelay: `${index * 0.05}s`,
-                                                        animation: "fadeInUp 0.4s ease-out forwards",
+                                                        animation:
+                                                            "fadeInUp 0.4s ease-out forwards",
                                                         opacity: 0,
                                                     }}
                                                 >
@@ -167,20 +187,31 @@ export default function ExerciseDetail({ exerciseGroup, subcategories = [], word
                                                                 </CardTitle>
                                                                 {word.hyphenation && (
                                                                     <p className="text-sm text-gray-500 italic">
-                                                                        {word.hyphenation}
+                                                                        {
+                                                                            word.hyphenation
+                                                                        }
                                                                     </p>
                                                                 )}
                                                                 {word.parts_of_speech_variations && (
-                                                                    <Badge variant="outline" className="mt-2 text-xs">
-                                                                        {word.parts_of_speech_variations}
+                                                                    <Badge
+                                                                        variant="outline"
+                                                                        className="mt-2 text-xs"
+                                                                    >
+                                                                        {
+                                                                            word.parts_of_speech_variations
+                                                                        }
                                                                     </Badge>
                                                                 )}
                                                             </div>
                                                             <button
-                                                                onClick={(e) => {
+                                                                onClick={(
+                                                                    e,
+                                                                ) => {
                                                                     e.stopPropagation();
                                                                     e.preventDefault();
-                                                                    speakWord(word.word);
+                                                                    speakWord(
+                                                                        word.word,
+                                                                    );
                                                                 }}
                                                                 className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded-full transition"
                                                             >
@@ -191,11 +222,14 @@ export default function ExerciseDetail({ exerciseGroup, subcategories = [], word
                                                     <CardContent className="pt-2 pb-4">
                                                         {word.definition && (
                                                             <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-                                                                {word.definition}
+                                                                {
+                                                                    word.definition
+                                                                }
                                                             </p>
                                                         )}
                                                         <p className="text-xs text-[#E5201C] font-medium mt-2">
-                                                            Click to view full details →
+                                                            Click to view full
+                                                            details →
                                                         </p>
                                                     </CardContent>
                                                 </Card>
@@ -208,19 +242,36 @@ export default function ExerciseDetail({ exerciseGroup, subcategories = [], word
                                             <Button
                                                 variant="outline"
                                                 disabled={!words.prev_page_url}
-                                                onClick={() => router.get(words.prev_page_url, {}, { preserveScroll: true })}
+                                                onClick={() =>
+                                                    router.get(
+                                                        words.prev_page_url,
+                                                        {},
+                                                        {
+                                                            preserveScroll: true,
+                                                        },
+                                                    )
+                                                }
                                                 className="flex items-center gap-1"
                                             >
                                                 <ChevronLeft className="h-4 w-4" />
                                                 Previous
                                             </Button>
                                             <span className="text-sm text-gray-500">
-                                                Page {words.current_page} of {words.last_page}
+                                                Page {words.current_page} of{" "}
+                                                {words.last_page}
                                             </span>
                                             <Button
                                                 variant="outline"
                                                 disabled={!words.next_page_url}
-                                                onClick={() => router.get(words.next_page_url, {}, { preserveScroll: true })}
+                                                onClick={() =>
+                                                    router.get(
+                                                        words.next_page_url,
+                                                        {},
+                                                        {
+                                                            preserveScroll: true,
+                                                        },
+                                                    )
+                                                }
                                                 className="flex items-center gap-1"
                                             >
                                                 Next
@@ -236,7 +287,8 @@ export default function ExerciseDetail({ exerciseGroup, subcategories = [], word
                                         No Words Yet
                                     </h3>
                                     <p className="text-gray-600 dark:text-gray-400">
-                                        This exercise group doesn't have any words yet.
+                                        This exercise group doesn't have any
+                                        words yet.
                                     </p>
                                 </Card>
                             )}

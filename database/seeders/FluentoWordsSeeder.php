@@ -8,6 +8,7 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use App\Models\ExerciseGroup;
 use App\Models\Subcategory;
+use App\Models\Word;
 
 class FluentoWordsSeeder extends Seeder
 {
@@ -17,48 +18,56 @@ class FluentoWordsSeeder extends Seeder
   protected string $filePath = 'database/data/fluento_words.xlsx';
 
   /**
-   * Column indices (0-based) — identical across every sheet:
-   *
-   *   0 => Word
-   *   1 => Type                (parts_of_speech_variations)
-   *   2 => IPA                 (pronunciation)
-   *   3 => Bangla Pron.        (bangla_pronunciation)
-   *   4 => Definition          (definition)
-   *   5 => Meaning (Bangla)    (bangla_meaning)
-   *   6 => sub_tag             (subcategory name)
-   *   7 => Example Sentence    (example_sentences)
-   *   8 => AI Image Prompt     (ai_prompt)
-   *
-   * The sheet name itself is used as the ExerciseGroup title — no Tag column.
-   * Adding new sheets to the workbook requires no code changes.
+   * Columns updated when a word already exists (upsert).
+   * 'word', 'subcategory_id', 'exercise_group_id', and 'created_at'
+   * are intentionally excluded — they form the identity of a row.
    */
+  private const UPSERT_UPDATE_COLUMNS = [
+    'parts_of_speech_variations',
+    'pronunciation',
+    'bangla_pronunciation',
+    'definition',
+    'bangla_meaning',
+    'example_sentences',
+    'ai_prompt',
+    'updated_at',
+  ];
+
+  // ── Public entry-points ────────────────────────────────────────────────
+
   public function run(): void
   {
     if (!file_exists(base_path($this->filePath))) {
-      $this->command->error(
-        "Excel file not found at: {$this->filePath}\n" .
-        "Please place fluento_words.xlsx at database/data/"
-      );
+      $this->log('error', "Excel file not found at: {$this->filePath}\nPlease place fluento_words.xlsx at database/data/");
       return;
     }
 
-    $this->command->info('Loading Excel file...');
+    $this->log('info', 'Loading Excel file...');
     $spreadsheet = IOFactory::load(base_path($this->filePath));
     $sheets = $spreadsheet->getAllSheets();
 
-    $this->command->info(count($sheets) . ' sheet(s) found: ' .
-      implode(', ', array_map(fn($s) => '"' . $s->getTitle() . '"', $sheets)));
+    $this->log(
+      'info',
+      count($sheets) . ' sheet(s) found: ' .
+      implode(', ', array_map(fn($s) => '"' . $s->getTitle() . '"', $sheets))
+    );
 
-    $totalInserted = 0;
-    $totalSkipped = 0;
+    $totals = ['inserted' => 0, 'updated' => 0, 'skipped' => 0];
 
     foreach ($sheets as $sheet) {
-      [$inserted, $skipped] = $this->seedSheet($sheet);
-      $totalInserted += $inserted;
-      $totalSkipped += $skipped;
+      $counts = $this->seedSheet($sheet);
+      $totals['inserted'] += $counts['inserted'];
+      $totals['updated'] += $counts['updated'];
+      $totals['skipped'] += $counts['skipped'];
     }
 
-    $this->command->info("All sheets done. Total inserted: {$totalInserted}. Total skipped: {$totalSkipped}.");
+    $this->log(
+      'info',
+      "\nAll sheets done — " .
+      "inserted: {$totals['inserted']}, " .
+      "updated: {$totals['updated']}, " .
+      "skipped: {$totals['skipped']}."
+    );
   }
 
   // ── Unseed ─────────────────────────────────────────────────────────────
@@ -66,7 +75,7 @@ class FluentoWordsSeeder extends Seeder
   public function unseed(): void
   {
     if (!file_exists(base_path($this->filePath))) {
-      $this->command->warn("Excel file not found — cannot determine which groups to unseed.");
+      $this->log('warn', "Excel file not found — cannot determine which groups to unseed.");
       return;
     }
 
@@ -77,27 +86,31 @@ class FluentoWordsSeeder extends Seeder
       $group = ExerciseGroup::where('title', $title)->first();
 
       if (!$group) {
-        $this->command->warn("  Exercise group \"{$title}\" not found — skipping.");
+        $this->log('warn', "  ExerciseGroup \"{$title}\" not found — skipping.");
         continue;
       }
 
-      $subcategories = Subcategory::where('exercise_group_id', $group->id)->get();
+      DB::transaction(function () use ($group) {
+        $subcategories = Subcategory::where('exercise_group_id', $group->id)->get();
 
-      foreach ($subcategories as $subcategory) {
-        DB::table('words')->where('subcategory_id', $subcategory->id)->delete();
-        $subcategory->delete();
-      }
+        foreach ($subcategories as $subcategory) {
+          // Use the Word model so the deleting boot hook fires (image cleanup, etc.)
+          Word::where('subcategory_id', $subcategory->id)->each(fn($w) => $w->delete());
+          $subcategory->delete();
+        }
 
-      $group->delete();
-      $this->command->info("  Unseeded \"{$title}\" — group, subcategories, and words removed.");
+        $group->delete();
+      });
+
+      $this->log('info', "  Unseeded \"{$title}\" — group, subcategories, and words removed.");
     }
   }
 
   // ── Private helpers ────────────────────────────────────────────────────
 
   /**
-   * Seed a single worksheet.
-   * Returns [inserted, skipped] counts.
+   * Seed a single worksheet inside a transaction.
+   * Returns ['inserted' => int, 'updated' => int, 'skipped' => int].
    */
   private function seedSheet(Worksheet $sheet): array
   {
@@ -105,96 +118,151 @@ class FluentoWordsSeeder extends Seeder
     $rows = $sheet->toArray(null, true, true, false);
     array_shift($rows); // remove header row
 
-    $this->command->info("\n── Sheet: \"{$groupTitle}\" ({$this->countNonEmpty($rows)} data rows) ──");
+    $dataRowCount = $this->countNonEmpty($rows);
+    $this->log('info', "\n── Sheet: \"{$groupTitle}\" ({$dataRowCount} data rows) ──");
 
-    // 1. ExerciseGroup ─────────────────────────────────────────────────
-    $group = ExerciseGroup::firstOrCreate(
-      ['title' => $groupTitle],
-      [
-        'price' => 0,
-        'difficulty' => 'beginner',
-        'status' => true,
-      ]
-    );
+    return DB::transaction(function () use ($groupTitle, $rows): array {
 
-    $this->command->info("  Exercise group ready (ID: {$group->id}).");
+      // 1. ExerciseGroup ───────────────────────────────────────────────
+      $groupExists = ExerciseGroup::where('title', $groupTitle)->exists();
+      $group = ExerciseGroup::firstOrCreate(
+        ['title' => $groupTitle],
+        [
+          'price' => 0,
+          'difficulty' => 'beginner',
+          'status' => true,
+        ]
+      );
 
-    // 2. Subcategories (col 6) ─────────────────────────────────────────
-    $uniqueSubTags = $this->getSubTagList($rows);
-    $subcategoryMap = [];
+      $this->log(
+        'info',
+        $groupExists
+        ? "  ExerciseGroup already exists (ID: {$group->id}) — skipping creation."
+        : "  ExerciseGroup created (ID: {$group->id})."
+      );
 
-    foreach ($uniqueSubTags as $subTag) {
-      $subcategory = Subcategory::firstOrCreate([
-        'exercise_group_id' => $group->id,
-        'name' => $subTag,
-      ]);
+      // 2. Subcategories (col 6) ────────────────────────────────────────
+      $uniqueSubTags = $this->getSubTagList($rows);
+      $subcategoryMap = [];
+      $newSubcategories = 0;
 
-      $subcategoryMap[$subTag] = $subcategory->id;
-    }
+      foreach ($uniqueSubTags as $subTag) {
+        $subExists = Subcategory::where('exercise_group_id', $group->id)
+          ->where('name', $subTag)
+          ->exists();
 
-    $this->command->info("  " . count($uniqueSubTags) . " subcategories ready.");
+        $subcategory = Subcategory::firstOrCreate([
+          'exercise_group_id' => $group->id,
+          'name' => $subTag,
+        ]);
 
-    // 3. Words ─────────────────────────────────────────────────────────
-    $inserted = 0;
-    $skipped = 0;
-    $batchSize = 100;
-    $batch = [];
-    $now = now()->toDateTimeString();
+        $subcategoryMap[$subTag] = $subcategory->id;
 
-    foreach ($rows as $row) {
-      $subTag = $this->clean($row[6] ?? null);
-
-      if ($subTag === null || !isset($subcategoryMap[$subTag])) {
-        $skipped++;
-        continue;
+        if (!$subExists) {
+          $newSubcategories++;
+        }
       }
 
-      $word = $this->clean($row[0] ?? null);
+      $existingSubs = count($uniqueSubTags) - $newSubcategories;
+      $this->log(
+        'info',
+        "  Subcategories: {$existingSubs} existing, {$newSubcategories} new " .
+        "(total: " . count($uniqueSubTags) . ")."
+      );
 
-      if ($word === null || $word === '') {
-        $skipped++;
-        continue;
-      }
+      // 3. Pre-fetch existing word keys for this group ──────────────────
+      // Key "{word}|{subcategory_id}" — used to distinguish insert vs update.
+      $existingKeys = DB::table('words')
+        ->where('exercise_group_id', $group->id)
+        ->select('word', 'subcategory_id')
+        ->get()
+        ->mapWithKeys(fn($r) => [$r->word . '|' . $r->subcategory_id => true])
+        ->toArray();
 
-      $batch[] = [
-        'exercise_group_id' => $group->id,
-        'subcategory_id' => $subcategoryMap[$subTag],
-        'word' => $word,
-        'parts_of_speech_variations' => $this->clean($row[1] ?? null) ?? '',
-        'pronunciation' => $this->clean($row[2] ?? null),
-        'bangla_pronunciation' => $this->clean($row[3] ?? null),
-        'definition' => $this->clean($row[4] ?? null) ?? '',
-        'bangla_meaning' => $this->clean($row[5] ?? null),
-        'hyphenation' => null,
-        'collocations' => null,
-        'example_sentences' => $this->clean($row[7] ?? null) ?? '',
-        'ai_prompt' => $this->clean($row[8] ?? null),
-        'synonym' => null,
-        'antonym' => null,
-        'created_at' => $now,
-        'updated_at' => $now,
-      ];
+      // 4. Words ────────────────────────────────────────────────────────
+      $inserted = 0;
+      $updated = 0;
+      $skipped = 0;
+      $batchSize = 100;
+      $batch = [];
+      $now = now()->toDateTimeString();
 
-      if (count($batch) >= $batchSize) {
-        DB::table('words')->insert($batch);
-        $inserted += count($batch);
+      $flush = function () use (&$batch, &$inserted, &$updated, &$existingKeys): void {
+        if (empty($batch)) {
+          return;
+        }
+
+        // Requires unique index on (word, subcategory_id).
+        // Run: php artisan migrate (migration file provided alongside this seeder).
+        DB::table('words')->upsert(
+          $batch,
+          ['word', 'subcategory_id'],
+          self::UPSERT_UPDATE_COLUMNS
+        );
+
+        foreach ($batch as $row) {
+          $key = $row['word'] . '|' . $row['subcategory_id'];
+          if (isset($existingKeys[$key])) {
+            $updated++;
+          } else {
+            $inserted++;
+            $existingKeys[$key] = true; // guard against duplicate rows in the xlsx itself
+          }
+        }
+
         $batch = [];
-        $this->command->info("    -> {$inserted} words inserted so far...");
+      };
+
+      foreach ($rows as $row) {
+        $subTag = $this->clean($row[6] ?? null);
+
+        if ($subTag === null || !isset($subcategoryMap[$subTag])) {
+          $skipped++;
+          continue;
+        }
+
+        $word = $this->clean($row[0] ?? null);
+
+        if ($word === null || $word === '') {
+          $skipped++;
+          continue;
+        }
+
+        $batch[] = [
+          'exercise_group_id' => $group->id,
+          'subcategory_id' => $subcategoryMap[$subTag],
+          'word' => $word,
+          'parts_of_speech_variations' => $this->clean($row[1] ?? null) ?? '',
+          'pronunciation' => $this->clean($row[2] ?? null),
+          'bangla_pronunciation' => $this->clean($row[3] ?? null),
+          'definition' => $this->clean($row[4] ?? null) ?? '',
+          'bangla_meaning' => $this->clean($row[5] ?? null),
+          'hyphenation' => null,
+          'collocations' => null,
+          'example_sentences' => $this->clean($row[7] ?? null) ?? '',
+          'ai_prompt' => $this->clean($row[8] ?? null),
+          'synonym' => null,
+          'antonym' => null,
+          'created_at' => $now,
+          'updated_at' => $now,
+        ];
+
+        if (count($batch) >= $batchSize) {
+          $flush();
+          $this->log('info', "    -> " . ($inserted + $updated) . " words processed so far...");
+        }
       }
-    }
 
-    if (!empty($batch)) {
-      DB::table('words')->insert($batch);
-      $inserted += count($batch);
-    }
+      $flush();
 
-    $this->command->info("  Done. Inserted: {$inserted}. Skipped: {$skipped}.");
+      $this->log('info', "  Done — inserted: {$inserted}, updated: {$updated}, skipped: {$skipped}.");
 
-    return [$inserted, $skipped];
+      return ['inserted' => $inserted, 'updated' => $updated, 'skipped' => $skipped];
+    });
   }
 
   /**
-   * Extract unique, sorted sub_tag values (col 6) from the pre-loaded rows.
+   * Extract unique, sorted sub_tag values (col 6) from pre-loaded rows.
    */
   private function getSubTagList(array $rows): array
   {
@@ -232,5 +300,29 @@ class FluentoWordsSeeder extends Seeder
     $value = trim((string) $value);
 
     return $value === '' ? null : $value;
+  }
+
+  /**
+   * Null-safe logger.
+   *
+   * Via Artisan  → $this->command is a ConsoleCommand, use info/warn/error.
+   * Via route    → $this->command is null (new FluentoWordsSeeder() in a route),
+   *                fall back to Laravel's logger so nothing crashes.
+   */
+  private function log(string $level, string $message): void
+  {
+    if ($this->command) {
+      match ($level) {
+        'error' => $this->command->error($message),
+        'warn' => $this->command->warn($message),
+        default => $this->command->info($message),
+      };
+    } else {
+      match ($level) {
+        'error' => logger()->error('[FluentoWordsSeeder] ' . $message),
+        'warn' => logger()->warning('[FluentoWordsSeeder] ' . $message),
+        default => logger()->info('[FluentoWordsSeeder] ' . $message),
+      };
+    }
   }
 }

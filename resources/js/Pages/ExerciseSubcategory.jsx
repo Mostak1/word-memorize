@@ -12,13 +12,21 @@ import {
     Layers,
 } from "lucide-react";
 
-export default function ExerciseSubcategory({ exerciseGroup, subcategory, words }) {
+export default function ExerciseSubcategory({
+    exerciseGroup,
+    subcategory,
+    words,
+}) {
     const getDifficultyColor = (difficulty) => {
         switch (difficulty?.toLowerCase()) {
-            case "beginner":     return "bg-green-100 text-green-700 border-green-300";
-            case "intermediate": return "bg-yellow-100 text-yellow-700 border-yellow-300";
-            case "advanced":     return "bg-red-100 text-red-700 border-red-300";
-            default:             return "bg-gray-100 text-gray-700 border-gray-300";
+            case "beginner":
+                return "bg-green-100 text-green-700 border-green-300";
+            case "intermediate":
+                return "bg-yellow-100 text-yellow-700 border-yellow-300";
+            case "advanced":
+                return "bg-red-100 text-red-700 border-red-300";
+            default:
+                return "bg-gray-100 text-gray-700 border-gray-300";
         }
     };
 
@@ -33,8 +41,7 @@ export default function ExerciseSubcategory({ exerciseGroup, subcategory, words 
     return (
         <AppLayout>
             <Head title={`${subcategory.name} — ${exerciseGroup.title}`} />
-            <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-zinc-900 dark:to-zinc-950 pb-20">
-
+            <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-zinc-900 dark:to-zinc-950 pb-20 mt-4">
                 {/* Sub-header */}
                 <div className="max-w-xl mx-auto px-4 pt-4 pb-2">
                     <div className="flex items-center gap-3 mb-2">
@@ -61,9 +68,14 @@ export default function ExerciseSubcategory({ exerciseGroup, subcategory, words 
                                 >
                                     {exerciseGroup.difficulty}
                                 </Badge>
-                                <Badge variant="outline" className="bg-gray-50 dark:bg-zinc-800 text-gray-700 dark:text-gray-300">
+                                <Badge
+                                    variant="outline"
+                                    className="bg-gray-50 dark:bg-zinc-800 text-gray-700 dark:text-gray-300"
+                                >
                                     {subcategory.words_count}{" "}
-                                    {subcategory.words_count === 1 ? "word" : "words"}
+                                    {subcategory.words_count === 1
+                                        ? "word"
+                                        : "words"}
                                 </Badge>
                             </div>
                         </div>
@@ -97,7 +109,8 @@ export default function ExerciseSubcategory({ exerciseGroup, subcategory, words 
                                             className="overflow-hidden border-2 hover:border-[#E5201C] transition-all cursor-pointer mb-2"
                                             style={{
                                                 animationDelay: `${index * 0.05}s`,
-                                                animation: "fadeInUp 0.4s ease-out forwards",
+                                                animation:
+                                                    "fadeInUp 0.4s ease-out forwards",
                                                 opacity: 0,
                                             }}
                                         >
@@ -109,12 +122,19 @@ export default function ExerciseSubcategory({ exerciseGroup, subcategory, words 
                                                         </CardTitle>
                                                         {word.hyphenation && (
                                                             <p className="text-sm text-gray-500 italic">
-                                                                {word.hyphenation}
+                                                                {
+                                                                    word.hyphenation
+                                                                }
                                                             </p>
                                                         )}
                                                         {word.parts_of_speech_variations && (
-                                                            <Badge variant="outline" className="mt-2 text-xs">
-                                                                {word.parts_of_speech_variations}
+                                                            <Badge
+                                                                variant="outline"
+                                                                className="mt-2 text-xs"
+                                                            >
+                                                                {
+                                                                    word.parts_of_speech_variations
+                                                                }
                                                             </Badge>
                                                         )}
                                                     </div>
@@ -122,7 +142,9 @@ export default function ExerciseSubcategory({ exerciseGroup, subcategory, words 
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             e.preventDefault();
-                                                            speakWord(word.word);
+                                                            speakWord(
+                                                                word.word,
+                                                            );
                                                         }}
                                                         className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded-full transition"
                                                     >
@@ -152,7 +174,11 @@ export default function ExerciseSubcategory({ exerciseGroup, subcategory, words 
                                         variant="outline"
                                         disabled={!words.prev_page_url}
                                         onClick={() =>
-                                            router.get(words.prev_page_url, {}, { preserveScroll: true })
+                                            router.get(
+                                                words.prev_page_url,
+                                                {},
+                                                { preserveScroll: true },
+                                            )
                                         }
                                         className="flex items-center gap-1"
                                     >
@@ -160,13 +186,18 @@ export default function ExerciseSubcategory({ exerciseGroup, subcategory, words 
                                         Previous
                                     </Button>
                                     <span className="text-sm text-gray-500">
-                                        Page {words.current_page} of {words.last_page}
+                                        Page {words.current_page} of{" "}
+                                        {words.last_page}
                                     </span>
                                     <Button
                                         variant="outline"
                                         disabled={!words.next_page_url}
                                         onClick={() =>
-                                            router.get(words.next_page_url, {}, { preserveScroll: true })
+                                            router.get(
+                                                words.next_page_url,
+                                                {},
+                                                { preserveScroll: true },
+                                            )
                                         }
                                         className="flex items-center gap-1"
                                     >
@@ -183,7 +214,8 @@ export default function ExerciseSubcategory({ exerciseGroup, subcategory, words 
                                 No Words Yet
                             </h3>
                             <p className="text-gray-600 dark:text-gray-400">
-                                No words have been added to this subcategory yet.
+                                No words have been added to this subcategory
+                                yet.
                             </p>
                             <Link
                                 href={route("exercise.show", exerciseGroup.id)}
