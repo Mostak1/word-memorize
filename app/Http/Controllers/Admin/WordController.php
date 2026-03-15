@@ -18,6 +18,7 @@ class WordController extends Controller
             'subcategory_id' => 'nullable|exists:subcategories,id',
             'word' => 'required|string|max:255',
             'pronunciation' => 'nullable|string|max:255',
+            'bangla_pronunciation' => 'nullable|string|max:255',
             'hyphenation' => 'nullable|string',
             'parts_of_speech_variations' => 'required|string',
             'definition' => 'required|string',

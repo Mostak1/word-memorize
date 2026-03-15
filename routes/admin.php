@@ -33,6 +33,7 @@ Route::group(["middleware" => ["auth", "admin"], "prefix" => "admin", "as" => "a
         Route::patch('/{user}', [UserController::class, 'update'])->name('update');
         Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
         Route::post('/{user}/toggle-admin', [UserController::class, 'toggleAdmin'])->name('toggle-admin');
+        Route::post('/{user}/reset-password', [UserController::class, 'resetPassword'])->name('reset-password');
     });
 
     // Exercise Group Management

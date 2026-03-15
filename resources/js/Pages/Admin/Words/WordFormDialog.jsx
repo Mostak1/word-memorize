@@ -24,11 +24,11 @@ import { X, Image as ImageIcon, Plus, GripVertical } from "lucide-react";
 
 // ── Required word fields ──────────────────────────────────────────────────────
 const REQUIRED = {
-    word:                       "Word is required.",
+    word: "Word is required.",
     parts_of_speech_variations: "Parts of Speech Variations is required.",
-    definition:                 "Definition is required.",
-    bangla_meaning:             "Bangla Meaning is required.",
-    example_sentences:          "Example Sentences is required.",
+    definition: "Definition is required.",
+    bangla_meaning: "Bangla Meaning is required.",
+    example_sentences: "Example Sentences is required.",
 };
 
 // ── Sub-component: a single image card (existing or staged) ──────────────────
@@ -87,19 +87,26 @@ export default function WordFormDialog({
     const isEditing = !!word;
 
     // ── Core word form (no image fields) ─────────────────────────────────────
-    const { data, setData, processing, errors: serverErrors, reset } = useForm({
-        subcategory_id:             word?.subcategory_id ? String(word.subcategory_id) : "",
-        word:                       word?.word || "",
-        pronunciation:              word?.pronunciation || "",
-        hyphenation:                word?.hyphenation || "",
+    const {
+        data,
+        setData,
+        processing,
+        errors: serverErrors,
+        reset,
+    } = useForm({
+        subcategory_id: word?.subcategory_id ? String(word.subcategory_id) : "",
+        word: word?.word || "",
+        pronunciation: word?.pronunciation || "",
+        bangla_pronunciation: word?.bangla_pronunciation || "",
+        hyphenation: word?.hyphenation || "",
         parts_of_speech_variations: word?.parts_of_speech_variations || "",
-        definition:                 word?.definition || "",
-        bangla_meaning:             word?.bangla_meaning || "",
-        collocations:               word?.collocations || "",
-        example_sentences:          word?.example_sentences || "",
-        ai_prompt:                  word?.ai_prompt || "",
-        synonym:                    word?.synonym || "",
-        antonym:                    word?.antonym || "",
+        definition: word?.definition || "",
+        bangla_meaning: word?.bangla_meaning || "",
+        collocations: word?.collocations || "",
+        example_sentences: word?.example_sentences || "",
+        ai_prompt: word?.ai_prompt || "",
+        synonym: word?.synonym || "",
+        antonym: word?.antonym || "",
     });
 
     const [clientErrors, setClientErrors] = useState({});
@@ -109,9 +116,9 @@ export default function WordFormDialog({
     // Existing images (edit mode): { id, image_url_full, caption }
     const [existingImages, setExistingImages] = useState(
         word?.images?.map((img) => ({
-            id:            img.id,
-            src:           img.image_url_full,
-            caption:       img.caption || "",
+            id: img.id,
+            src: img.image_url_full,
+            caption: img.caption || "",
             markedRemoved: false,
         })) ?? [],
     );
@@ -123,9 +130,9 @@ export default function WordFormDialog({
         if (open) {
             setExistingImages(
                 word?.images?.map((img) => ({
-                    id:            img.id,
-                    src:           img.image_url_full,
-                    caption:       img.caption || "",
+                    id: img.id,
+                    src: img.image_url_full,
+                    caption: img.caption || "",
                     markedRemoved: false,
                 })) ?? [],
             );
@@ -159,7 +166,10 @@ export default function WordFormDialog({
         const files = Array.from(e.target.files || []);
         e.target.value = ""; // reset so same file can be selected again
 
-        const remaining = 10 - existingImages.filter((i) => !i.markedRemoved).length - newImages.length;
+        const remaining =
+            10 -
+            existingImages.filter((i) => !i.markedRemoved).length -
+            newImages.length;
         if (files.length > remaining) {
             toast.error(`You can add at most ${remaining} more image(s).`);
             return;
@@ -256,13 +266,16 @@ export default function WordFormDialog({
 
         router.post(
             isEditing
-                ? route("admin.exercise-groups.words.update", [exerciseGroup.id, word.id])
+                ? route("admin.exercise-groups.words.update", [
+                      exerciseGroup.id,
+                      word.id,
+                  ])
                 : route("admin.exercise-groups.words.store", exerciseGroup.id),
             payload,
             {
-                preserveState:  true,
+                preserveState: true,
                 preserveScroll: true,
-                forceFormData:  true,
+                forceFormData: true,
                 onSuccess: () => {
                     toast.success(
                         isEditing
@@ -271,7 +284,8 @@ export default function WordFormDialog({
                     );
                     onOpenChange(false);
                 },
-                onError: () => toast.error("Please fix the errors in the form."),
+                onError: () =>
+                    toast.error("Please fix the errors in the form."),
             },
         );
     };
@@ -308,30 +322,43 @@ export default function WordFormDialog({
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="none">
-                                    <span className="text-muted-foreground">— None —</span>
+                                    <span className="text-muted-foreground">
+                                        — None —
+                                    </span>
                                 </SelectItem>
                                 {subcategories.map((sub) => (
-                                    <SelectItem key={sub.id} value={String(sub.id)}>
+                                    <SelectItem
+                                        key={sub.id}
+                                        value={String(sub.id)}
+                                    >
                                         {sub.name}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
                         {errors.subcategory_id && (
-                            <p className="text-sm text-red-500">{errors.subcategory_id}</p>
+                            <p className="text-sm text-red-500">
+                                {errors.subcategory_id}
+                            </p>
                         )}
                     </div>
 
                     {/* Word * */}
                     <div className="space-y-2">
-                        <Label>Word <span className="text-red-500">*</span></Label>
+                        <Label>
+                            Word <span className="text-red-500">*</span>
+                        </Label>
                         <Input
                             value={data.word}
                             onChange={(e) => field("word", e.target.value)}
                             placeholder="e.g., Accomplish"
                             className={inputCls("word")}
                         />
-                        {errors.word && <p className="text-sm text-red-500">{errors.word}</p>}
+                        {errors.word && (
+                            <p className="text-sm text-red-500">
+                                {errors.word}
+                            </p>
+                        )}
                     </div>
 
                     {/* Pronunciation */}
@@ -339,8 +366,22 @@ export default function WordFormDialog({
                         <Label>Pronunciation</Label>
                         <Input
                             value={data.pronunciation}
-                            onChange={(e) => setData("pronunciation", e.target.value)}
+                            onChange={(e) =>
+                                setData("pronunciation", e.target.value)
+                            }
                             placeholder="e.g., /əˈkɒmplɪʃ/"
+                        />
+                    </div>
+
+                    {/* Bangla Pronunciation */}
+                    <div className="space-y-2">
+                        <Label>Bangla Pronunciation</Label>
+                        <Input
+                            value={data.bangla_pronunciation}
+                            onChange={(e) =>
+                                setData("bangla_pronunciation", e.target.value)
+                            }
+                            placeholder="e.g., অ্যাকম্পলিশ"
                         />
                     </div>
 
@@ -349,7 +390,9 @@ export default function WordFormDialog({
                         <Label>Hyphenation</Label>
                         <Input
                             value={data.hyphenation}
-                            onChange={(e) => setData("hyphenation", e.target.value)}
+                            onChange={(e) =>
+                                setData("hyphenation", e.target.value)
+                            }
                             placeholder="e.g., ac·com·plish"
                         />
                     </div>
@@ -363,7 +406,10 @@ export default function WordFormDialog({
                         <Input
                             value={data.parts_of_speech_variations}
                             onChange={(e) =>
-                                field("parts_of_speech_variations", e.target.value)
+                                field(
+                                    "parts_of_speech_variations",
+                                    e.target.value,
+                                )
                             }
                             placeholder="e.g., verb, noun (accomplishment)"
                             className={inputCls("parts_of_speech_variations")}
@@ -377,30 +423,43 @@ export default function WordFormDialog({
 
                     {/* Definition * */}
                     <div className="space-y-2">
-                        <Label>Definition <span className="text-red-500">*</span></Label>
+                        <Label>
+                            Definition <span className="text-red-500">*</span>
+                        </Label>
                         <Textarea
                             value={data.definition}
-                            onChange={(e) => field("definition", e.target.value)}
+                            onChange={(e) =>
+                                field("definition", e.target.value)
+                            }
                             placeholder="Enter the definition"
                             rows={3}
                             className={inputCls("definition")}
                         />
                         {errors.definition && (
-                            <p className="text-sm text-red-500">{errors.definition}</p>
+                            <p className="text-sm text-red-500">
+                                {errors.definition}
+                            </p>
                         )}
                     </div>
 
                     {/* Bangla Meaning * */}
                     <div className="space-y-2">
-                        <Label>Bangla Meaning <span className="text-red-500">*</span></Label>
+                        <Label>
+                            Bangla Meaning{" "}
+                            <span className="text-red-500">*</span>
+                        </Label>
                         <Input
                             value={data.bangla_meaning}
-                            onChange={(e) => field("bangla_meaning", e.target.value)}
+                            onChange={(e) =>
+                                field("bangla_meaning", e.target.value)
+                            }
                             placeholder="বাংলা অর্থ"
                             className={inputCls("bangla_meaning")}
                         />
                         {errors.bangla_meaning && (
-                            <p className="text-sm text-red-500">{errors.bangla_meaning}</p>
+                            <p className="text-sm text-red-500">
+                                {errors.bangla_meaning}
+                            </p>
                         )}
                     </div>
 
@@ -409,7 +468,9 @@ export default function WordFormDialog({
                         <Label>Collocations</Label>
                         <Textarea
                             value={data.collocations}
-                            onChange={(e) => setData("collocations", e.target.value)}
+                            onChange={(e) =>
+                                setData("collocations", e.target.value)
+                            }
                             placeholder="e.g., accomplish a goal, accomplish a task"
                             rows={2}
                         />
@@ -418,17 +479,22 @@ export default function WordFormDialog({
                     {/* Example Sentences * */}
                     <div className="space-y-2">
                         <Label>
-                            Example Sentences <span className="text-red-500">*</span>
+                            Example Sentences{" "}
+                            <span className="text-red-500">*</span>
                         </Label>
                         <Textarea
                             value={data.example_sentences}
-                            onChange={(e) => field("example_sentences", e.target.value)}
+                            onChange={(e) =>
+                                field("example_sentences", e.target.value)
+                            }
                             placeholder="Enter example sentences (one per line)"
                             rows={3}
                             className={inputCls("example_sentences")}
                         />
                         {errors.example_sentences && (
-                            <p className="text-sm text-red-500">{errors.example_sentences}</p>
+                            <p className="text-sm text-red-500">
+                                {errors.example_sentences}
+                            </p>
                         )}
                     </div>
 
@@ -437,7 +503,9 @@ export default function WordFormDialog({
                         <Label>AI Prompt</Label>
                         <Textarea
                             value={data.ai_prompt}
-                            onChange={(e) => setData("ai_prompt", e.target.value)}
+                            onChange={(e) =>
+                                setData("ai_prompt", e.target.value)
+                            }
                             placeholder="Custom prompt for AI image/content generation"
                             rows={3}
                         />
@@ -507,7 +575,8 @@ export default function WordFormDialog({
                                         Click to upload images
                                     </p>
                                     <p className="text-xs text-muted-foreground mt-1">
-                                        PNG, JPG, GIF, WebP — up to 5 MB each, max 10 images
+                                        PNG, JPG, GIF, WebP — up to 5 MB each,
+                                        max 10 images
                                     </p>
                                 </div>
                                 <input
@@ -550,10 +619,14 @@ export default function WordFormDialog({
                         )}
 
                         {errors["images"] && (
-                            <p className="text-sm text-red-500">{errors["images"]}</p>
+                            <p className="text-sm text-red-500">
+                                {errors["images"]}
+                            </p>
                         )}
                         {errors["images.0"] && (
-                            <p className="text-sm text-red-500">{errors["images.0"]}</p>
+                            <p className="text-sm text-red-500">
+                                {errors["images.0"]}
+                            </p>
                         )}
                     </div>
 

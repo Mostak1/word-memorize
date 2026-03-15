@@ -21,14 +21,20 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/Components/ui/alert-dialog";
-import { Shield, Trash2 } from "lucide-react";
+import { Shield, Trash2, KeyRound } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Input } from "@/Components/ui/input";
+import { Label } from "@/Components/ui/label";
 
 export default function UsersIndex({ users }) {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [toggleAdminDialogOpen, setToggleAdminDialogOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
+    const [resetPasswordDialogOpen, setResetPasswordDialogOpen] =
+        useState(false);
+    const [resetPasswordUser, setResetPasswordUser] = useState(null);
+    const [newPassword, setNewPassword] = useState("12345678");
 
     const handleToggleAdminClick = (user) => {
         setSelectedUser(user);
@@ -38,6 +44,34 @@ export default function UsersIndex({ users }) {
     const handleDeleteClick = (user) => {
         setSelectedUser(user);
         setDeleteDialogOpen(true);
+    };
+
+    const handleResetPasswordClick = (user) => {
+        setResetPasswordUser(user);
+        setNewPassword("12345678");
+        setResetPasswordDialogOpen(true);
+    };
+
+    const confirmResetPassword = () => {
+        if (resetPasswordUser) {
+            router.post(
+                route("admin.users.reset-password", resetPasswordUser.id),
+                { password: newPassword },
+                {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        toast.success(
+                            `Password reset for ${resetPasswordUser.name}`,
+                        );
+                        setResetPasswordDialogOpen(false);
+                        setResetPasswordUser(null);
+                    },
+                    onError: () => {
+                        toast.error("Failed to reset password.");
+                    },
+                },
+            );
+        }
     };
 
     const confirmToggleAdmin = () => {
@@ -150,6 +184,17 @@ export default function UsersIndex({ users }) {
                                                         Toggle Admin
                                                     </Button>
                                                     <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            handleResetPasswordClick(
+                                                                user,
+                                                            )
+                                                        }
+                                                    >
+                                                        <KeyRound className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button
                                                         variant="destructive"
                                                         size="sm"
                                                         onClick={() =>
@@ -253,6 +298,46 @@ export default function UsersIndex({ users }) {
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
                             Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            {/* Reset Password Dialog */}
+            <AlertDialog
+                open={resetPasswordDialogOpen}
+                onOpenChange={(open) => {
+                    setResetPasswordDialogOpen(open);
+                    if (!open) setResetPasswordUser(null);
+                }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Reset Password</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Set a new password for{" "}
+                            <span className="font-semibold">
+                                {resetPasswordUser?.name}
+                            </span>
+                            .
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="space-y-2 py-2">
+                        <Label htmlFor="new-password">New Password</Label>
+                        <Input
+                            id="new-password"
+                            type="text"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            autoFocus
+                        />
+                    </div>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmResetPassword}
+                            disabled={!newPassword.trim()}
+                        >
+                            Reset Password
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
