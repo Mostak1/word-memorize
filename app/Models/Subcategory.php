@@ -7,23 +7,23 @@ use Illuminate\Database\Eloquent\Model;
 
 class Subcategory extends Model
 {
-  use HasFactory;
+    use HasFactory;
 
-  protected $fillable = ['exercise_group_id', 'name'];
+    protected $fillable = ['wordlist_id', 'name'];
 
-  /**
-   * Relationship: belongs to one ExerciseGroup
-   */
-  public function exerciseGroup()
-  {
-    return $this->belongsTo(ExerciseGroup::class);
-  }
+    /**
+     * Relationship: belongs to one WordList
+     */
+    public function wordList()
+    {
+        return $this->belongsTo(WordList::class, 'wordlist_id');
+    }
 
-  /**
-   * Relationship: has many Words
-   */
-  public function words()
-  {
-    return $this->hasMany(Word::class);
-  }
+    /**
+     * Relationship: has many Words
+     */
+    public function words()
+    {
+        return $this->hasMany(Word::class);
+    }
 }

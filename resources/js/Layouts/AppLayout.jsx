@@ -1,7 +1,6 @@
 import { Link, usePage } from "@inertiajs/react";
 import { useState, useEffect, useRef } from "react";
 import {
-    BookOpen,
     Menu,
     X,
     User,
@@ -9,9 +8,10 @@ import {
     Home,
     LogIn,
     UserPlus,
+    BookOpen,
 } from "lucide-react";
 import FlashMessages from "@/Components/FlashMessage";
-import logo from "/public/img/logo.png"; // Vite will handle the pathing
+import logo from "/public/img/logo.png";
 
 export default function AppLayout({ children }) {
     const { auth } = usePage().props;
@@ -23,33 +23,27 @@ export default function AppLayout({ children }) {
     useEffect(() => {
         const handleScroll = () => {
             const currentScrollY = window.scrollY;
-
             if (currentScrollY <= 0) {
-                // Always show at the very top
                 setHeaderVisible(true);
             } else if (currentScrollY > lastScrollY.current) {
-                // Scrolling down — hide
                 setHeaderVisible(false);
                 setMobileOpen(false);
             } else {
-                // Scrolling up — show
                 setHeaderVisible(true);
             }
-
             lastScrollY.current = currentScrollY;
         };
-
         window.addEventListener("scroll", handleScroll, { passive: true });
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-zinc-900 dark:to-zinc-950">
+        <div className="min-h-screen bg-[#F0F2F5]">
             <FlashMessages />
 
-            {/* Sticky Top Nav */}
+            {/* Fixed Top Nav */}
             <div
-                className={`bg-[#E5201C] text-white shadow-lg fixed top-0 left-0 right-0 z-10 transition-transform duration-300 ease-in-out ${
+                className={`bg-[#E5201C] text-white shadow-md fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ease-in-out ${
                     headerVisible ? "translate-y-0" : "-translate-y-full"
                 }`}
             >
@@ -60,45 +54,34 @@ export default function AppLayout({ children }) {
                             href={user ? route("dashboard") : route("home")}
                             className="flex items-center gap-2"
                         >
-                            <div className="p-2 bg-white/10 rounded-lg">
-                                <img
-                                    src={logo}
-                                    className="h-5 w-25"
-                                    alt="Logo"
-                                />
+                            <div className="bg-white rounded-lg px-2 py-1 flex items-center">
+                                <img src={logo} className="h-5" alt="Logo" />
                             </div>
-                            <span className="text-lg font-bold leading-none">
+                            <span className="text-lg font-bold tracking-tight">
                                 WordWise
                             </span>
                         </Link>
 
-                        {/* Desktop Right Side */}
+                        {/* Desktop Nav */}
                         <div className="hidden sm:flex items-center gap-1">
                             {user ? (
                                 <>
-                                    {/* Nav links */}
                                     <Link
                                         href={route("dashboard")}
-                                        className="flex items-center gap-1.5 text-white text-sm font-medium px-3 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                                        className="flex items-center gap-1.5 text-white text-sm font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
                                     >
                                         <Home className="h-4 w-4" />
-                                        <span className="hidden md:inline">
-                                            Home
-                                        </span>
+                                        <span>Home</span>
                                     </Link>
                                     <Link
-                                        href={route("exercise.index")}
-                                        className="flex items-center gap-1.5 text-white text-sm font-medium px-3 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                                        href={route("wordlist.index")}
+                                        className="flex items-center gap-1.5 text-white text-sm font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
                                     >
                                         <BookOpen className="h-4 w-4" />
-                                        <span className="hidden md:inline">
-                                            Exercises
-                                        </span>
+                                        <span>WordLists</span>
                                     </Link>
-
-                                    {/* User avatar + dropdown */}
                                     <div className="relative group ml-1">
-                                        <button className="flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-red-700 transition-colors">
+                                        <button className="flex items-center gap-2 text-white font-medium px-2 py-1.5 rounded-lg hover:bg-white/10 transition-colors">
                                             <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-semibold text-sm">
                                                 {user.name
                                                     .charAt(0)
@@ -108,41 +91,38 @@ export default function AppLayout({ children }) {
                                                 {user.name}
                                             </span>
                                         </button>
-                                        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-zinc-800 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 py-1">
+                                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 py-1 overflow-hidden">
                                             <Link
                                                 href={route("profile.edit")}
-                                                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-700"
+                                                className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
                                             >
-                                                <User className="w-4 h-4" />
+                                                <User className="w-4 h-4" />{" "}
                                                 Profile
                                             </Link>
                                             <Link
                                                 href={route("logout")}
                                                 method="post"
                                                 as="button"
-                                                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-700"
+                                                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
                                             >
-                                                <LogOut className="w-4 h-4" />
+                                                <LogOut className="w-4 h-4" />{" "}
                                                 Log Out
                                             </Link>
                                         </div>
                                     </div>
                                 </>
                             ) : (
-                                /* Guest links */
                                 <>
                                     <Link
-                                        href={route("exercise.index")}
-                                        className="flex items-center gap-1.5 text-white text-sm font-medium px-3 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                                        href={route("wordlist.index")}
+                                        className="flex items-center gap-1.5 text-white text-sm font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
                                     >
                                         <BookOpen className="h-4 w-4" />
-                                        <span className="hidden md:inline">
-                                            Exercises
-                                        </span>
+                                        <span>WordLists</span>
                                     </Link>
                                     <Link
                                         href={route("login")}
-                                        className="flex items-center gap-1.5 text-white text-sm font-medium px-3 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                                        className="flex items-center gap-1.5 text-white text-sm font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
                                     >
                                         <LogIn className="h-4 w-4" />
                                         <span>Login</span>
@@ -158,10 +138,10 @@ export default function AppLayout({ children }) {
                             )}
                         </div>
 
-                        {/* Mobile Menu Toggle */}
+                        {/* Mobile Toggle */}
                         <button
                             onClick={() => setMobileOpen(!mobileOpen)}
-                            className="sm:hidden text-white hover:bg-red-700 p-2 rounded-lg transition"
+                            className="sm:hidden text-white hover:bg-white/10 p-2 rounded-lg transition"
                         >
                             {mobileOpen ? (
                                 <X className="h-6 w-6" />
@@ -178,21 +158,19 @@ export default function AppLayout({ children }) {
                                 <>
                                     <Link
                                         href={route("dashboard")}
-                                        className="flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-red-700 transition-colors"
                                         onClick={() => setMobileOpen(false)}
+                                        className="flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
                                     >
-                                        <Home className="h-4 w-4" />
-                                        Home
+                                        <Home className="h-4 w-4" /> Home
                                     </Link>
                                     <Link
-                                        href={route("exercise.index")}
-                                        className="flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                                        href={route("wordlist.index")}
                                         onClick={() => setMobileOpen(false)}
+                                        className="flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
                                     >
-                                        <BookOpen className="h-4 w-4" />
-                                        Exercises
+                                        <BookOpen className="h-4 w-4" />{" "}
+                                        WordLists
                                     </Link>
-
                                     <div className="pt-3 mt-3 border-t border-white/20">
                                         <div className="flex items-center gap-3 px-3 mb-3">
                                             <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center font-semibold">
@@ -201,7 +179,7 @@ export default function AppLayout({ children }) {
                                                     .toUpperCase()}
                                             </div>
                                             <div>
-                                                <p className="text-sm font-semibold text-white leading-tight">
+                                                <p className="text-sm font-semibold text-white">
                                                     {user.name}
                                                 </p>
                                                 <p className="text-xs text-white/70">
@@ -211,48 +189,46 @@ export default function AppLayout({ children }) {
                                         </div>
                                         <Link
                                             href={route("profile.edit")}
-                                            className="flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-red-700 transition-colors"
                                             onClick={() => setMobileOpen(false)}
+                                            className="flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
                                         >
-                                            <User className="h-4 w-4" />
-                                            Profile
+                                            <User className="h-4 w-4" /> Profile
                                         </Link>
                                         <Link
                                             href={route("logout")}
                                             method="post"
                                             as="button"
-                                            className="w-full flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-red-700 transition-colors"
                                             onClick={() => setMobileOpen(false)}
+                                            className="w-full flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
                                         >
-                                            <LogOut className="h-4 w-4" />
-                                            Log Out
+                                            <LogOut className="h-4 w-4" /> Log
+                                            Out
                                         </Link>
                                     </div>
                                 </>
                             ) : (
                                 <>
                                     <Link
-                                        href={route("exercise.index")}
-                                        className="flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                                        href={route("wordlist.index")}
                                         onClick={() => setMobileOpen(false)}
+                                        className="flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
                                     >
-                                        <BookOpen className="h-4 w-4" />
-                                        Exercises
+                                        <BookOpen className="h-4 w-4" />{" "}
+                                        WordLists
                                     </Link>
                                     <Link
                                         href={route("login")}
-                                        className="flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-red-700 transition-colors"
                                         onClick={() => setMobileOpen(false)}
+                                        className="flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
                                     >
-                                        <LogIn className="h-4 w-4" />
-                                        Login
+                                        <LogIn className="h-4 w-4" /> Login
                                     </Link>
                                     <Link
                                         href={route("register")}
-                                        className="flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-red-700 transition-colors"
                                         onClick={() => setMobileOpen(false)}
+                                        className="flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
                                     >
-                                        <UserPlus className="h-4 w-4" />
+                                        <UserPlus className="h-4 w-4" />{" "}
                                         Register
                                     </Link>
                                 </>
@@ -262,10 +238,7 @@ export default function AppLayout({ children }) {
                 </div>
             </div>
 
-            {/* Offset for fixed header */}
             <div className="h-[60px]" />
-
-            {/* Page Content */}
             <main>{children}</main>
         </div>
     );

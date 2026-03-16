@@ -22,9 +22,7 @@ export default function AuthenticatedLayout({ children }) {
                             <div className="p-2 bg-white/10 rounded-lg">
                                 <BookOpen className="h-6 w-6" />
                             </div>
-                            <h1 className="text-lg font-bold">
-                                Word Wise
-                            </h1>
+                            <h1 className="text-lg font-bold">Word Wise</h1>
                         </Link>
 
                         {/* Desktop User Menu */}
@@ -42,7 +40,7 @@ export default function AuthenticatedLayout({ children }) {
                             >
                                 <BookOpen className="h-4 w-4 inline mr-1" />
                                 <span className="hidden md:inline">
-                                    Exercises
+                                    Exercise
                                 </span>
                             </Link>
                             <div className="relative group">

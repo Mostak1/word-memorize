@@ -4,11 +4,8 @@ import {
     BookOpen,
     Settings,
     User,
-    FileText,
-    BarChart3,
-    Shield,
-    Bell,
     BookMarked,
+    Trophy,
 } from "lucide-react";
 
 /**
@@ -48,14 +45,19 @@ export const sidebarConfig = {
                     icon: Users,
                 },
                 {
-                    name: "Exercise Groups",
-                    route: "admin.exercise-groups.index",
+                    name: "Word Lists",
+                    route: "admin.word-lists.index",
                     icon: BookOpen,
                 },
                 {
                     name: "Review Words",
                     route: "admin.review-words.index",
                     icon: BookMarked,
+                },
+                {
+                    name: "Mastered Words",
+                    route: "admin.mastered-words.index",
+                    icon: Trophy,
                 },
             ],
         },
@@ -85,19 +87,3 @@ export const sidebarConfig = {
         },
     ],
 };
-
-/**
- * How to add new menu items:
- *
- * 1. Import the icon from lucide-react at the top
- * 2. Add the item to the appropriate group
- * 3. Ensure the route name matches your Laravel route
- *
- * Example:
- * {
- *     name: "New Feature",
- *     route: "admin.feature.index",
- *     icon: IconName,
- *     badge: "Beta", // optional
- * }
- */

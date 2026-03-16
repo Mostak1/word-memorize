@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { useForm } from "@inertiajs/react";
-import { router } from "@inertiajs/react";
+import { useForm, router } from "@inertiajs/react";
 import {
     Dialog,
     DialogContent,
@@ -20,7 +19,7 @@ import {
 } from "@/Components/ui/select";
 import { Badge } from "@/Components/ui/badge";
 import { toast } from "sonner";
-import { X, Image as ImageIcon, Plus, GripVertical } from "lucide-react";
+import { X, Image as ImageIcon, Plus } from "lucide-react";
 
 // ── Required word fields ──────────────────────────────────────────────────────
 const REQUIRED = {
@@ -31,12 +30,10 @@ const REQUIRED = {
     example_sentences: "Example Sentences is required.",
 };
 
-// ── Sub-component: a single image card (existing or staged) ──────────────────
-
+// ── Sub-component: single image card ─────────────────────────────────────────
 function ImageCard({ src, caption, onCaptionChange, onRemove, isNew = false }) {
     return (
         <div className="group relative rounded-lg border bg-muted/30 overflow-hidden">
-            {/* Thumbnail */}
             <div className="relative aspect-video w-full overflow-hidden bg-muted">
                 <img
                     src={src}
@@ -61,8 +58,6 @@ function ImageCard({ src, caption, onCaptionChange, onRemove, isNew = false }) {
                     <X className="h-3 w-3" />
                 </Button>
             </div>
-
-            {/* Caption */}
             <div className="p-2">
                 <Input
                     value={caption}
@@ -76,9 +71,8 @@ function ImageCard({ src, caption, onCaptionChange, onRemove, isNew = false }) {
 }
 
 // ── Main dialog ───────────────────────────────────────────────────────────────
-
 export default function WordFormDialog({
-    exerciseGroup,
+    wordList, // ← renamed from exerciseGroup
     subcategories = [],
     word = null,
     open,
@@ -86,7 +80,6 @@ export default function WordFormDialog({
 }) {
     const isEditing = !!word;
 
-    // ── Core word form (no image fields) ─────────────────────────────────────
     const {
         data,
         setData,
@@ -113,7 +106,6 @@ export default function WordFormDialog({
     const errors = { ...clientErrors, ...serverErrors };
 
     // ── Image state ───────────────────────────────────────────────────────────
-    // Existing images (edit mode): { id, image_url_full, caption }
     const [existingImages, setExistingImages] = useState(
         word?.images?.map((img) => ({
             id: img.id,
@@ -122,10 +114,8 @@ export default function WordFormDialog({
             markedRemoved: false,
         })) ?? [],
     );
-    // New staged images: { file, preview, caption }
     const [newImages, setNewImages] = useState([]);
 
-    // Sync existing images whenever the dialog re-opens with a word prop
     useEffect(() => {
         if (open) {
             setExistingImages(
@@ -151,9 +141,9 @@ export default function WordFormDialog({
         setData(name, value);
         if (clientErrors[name]) {
             setClientErrors((prev) => {
-                const next = { ...prev };
-                delete next[name];
-                return next;
+                const n = { ...prev };
+                delete n[name];
+                return n;
             });
         }
     };
@@ -164,8 +154,7 @@ export default function WordFormDialog({
     // ── Image handlers ────────────────────────────────────────────────────────
     const handleFileSelect = (e) => {
         const files = Array.from(e.target.files || []);
-        e.target.value = ""; // reset so same file can be selected again
-
+        e.target.value = "";
         const remaining =
             10 -
             existingImages.filter((i) => !i.markedRemoved).length -
@@ -174,7 +163,6 @@ export default function WordFormDialog({
             toast.error(`You can add at most ${remaining} more image(s).`);
             return;
         }
-
         const invalid = files.filter(
             (f) => !f.type.startsWith("image/") || f.size > 5 * 1024 * 1024,
         );
@@ -182,15 +170,13 @@ export default function WordFormDialog({
             toast.error("Each image must be a valid image file under 5 MB.");
             return;
         }
-
         files.forEach((file) => {
             const reader = new FileReader();
-            reader.onloadend = () => {
+            reader.onloadend = () =>
                 setNewImages((prev) => [
                     ...prev,
                     { file, preview: reader.result, caption: "" },
                 ]);
-            };
             reader.readAsDataURL(file);
         });
     };
@@ -201,15 +187,12 @@ export default function WordFormDialog({
                 img.id === id ? { ...img, markedRemoved: true } : img,
             ),
         );
-
     const updateExistingCaption = (id, caption) =>
         setExistingImages((prev) =>
             prev.map((img) => (img.id === id ? { ...img, caption } : img)),
         );
-
     const removeNew = (index) =>
         setNewImages((prev) => prev.filter((_, i) => i !== index));
-
     const updateNewCaption = (index, caption) =>
         setNewImages((prev) =>
             prev.map((img, i) => (i === index ? { ...img, caption } : img)),
@@ -222,7 +205,6 @@ export default function WordFormDialog({
     const submit = (e) => {
         e.preventDefault();
 
-        // Client-side required check
         const newErrors = {};
         Object.entries(REQUIRED).forEach(([name, message]) => {
             if (!data[name]?.toString().trim()) newErrors[name] = message;
@@ -235,8 +217,6 @@ export default function WordFormDialog({
         setClientErrors({});
 
         const payload = new FormData();
-
-        // Core word fields
         Object.entries(data).forEach(([key, value]) => {
             if (value === undefined || value === null) payload.append(key, "");
             else payload.append(key, value);
@@ -244,13 +224,9 @@ export default function WordFormDialog({
 
         if (isEditing) {
             payload.append("_method", "patch");
-
-            // IDs to remove
             existingImages
                 .filter((i) => i.markedRemoved)
                 .forEach((i) => payload.append("remove_image_ids[]", i.id));
-
-            // Updated captions for surviving images
             existingImages
                 .filter((i) => !i.markedRemoved)
                 .forEach((i) =>
@@ -258,7 +234,6 @@ export default function WordFormDialog({
                 );
         }
 
-        // New images + their captions
         newImages.forEach((img, index) => {
             payload.append(`images[${index}]`, img.file);
             payload.append(`new_captions[${index}]`, img.caption);
@@ -266,11 +241,8 @@ export default function WordFormDialog({
 
         router.post(
             isEditing
-                ? route("admin.exercise-groups.words.update", [
-                      exerciseGroup.id,
-                      word.id,
-                  ])
-                : route("admin.exercise-groups.words.store", exerciseGroup.id),
+                ? route("admin.word-lists.words.update", [wordList.id, word.id])
+                : route("admin.word-lists.words.store", wordList.id),
             payload,
             {
                 preserveState: true,
@@ -531,7 +503,7 @@ export default function WordFormDialog({
                         />
                     </div>
 
-                    {/* ── Images Section ──────────────────────────────────────── */}
+                    {/* Images */}
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
                             <Label className="text-sm font-semibold">
@@ -567,7 +539,6 @@ export default function WordFormDialog({
                         </div>
 
                         {totalImages === 0 ? (
-                            /* Empty-state drop zone */
                             <label className="block cursor-pointer">
                                 <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-8 transition-colors hover:border-muted-foreground/50">
                                     <ImageIcon className="h-10 w-10 text-muted-foreground/40" />
@@ -589,7 +560,6 @@ export default function WordFormDialog({
                             </label>
                         ) : (
                             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                                {/* Existing images (edit mode) */}
                                 {visibleExisting.map((img) => (
                                     <ImageCard
                                         key={img.id}
@@ -601,8 +571,6 @@ export default function WordFormDialog({
                                         onRemove={() => removeExisting(img.id)}
                                     />
                                 ))}
-
-                                {/* Newly staged images */}
                                 {newImages.map((img, index) => (
                                     <ImageCard
                                         key={`new-${index}`}
@@ -630,7 +598,7 @@ export default function WordFormDialog({
                         )}
                     </div>
 
-                    {/* Form Actions */}
+                    {/* Actions */}
                     <div className="flex justify-end gap-3 pt-4 border-t sticky bottom-0 bg-background pb-2">
                         <Button
                             type="button"

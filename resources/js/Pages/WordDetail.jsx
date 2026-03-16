@@ -1,9 +1,5 @@
 import { Head, Link, router } from "@inertiajs/react";
 import AppLayout from "@/Layouts/AppLayout";
-import { Card, CardContent } from "@/Components/ui/card";
-import { Badge } from "@/Components/ui/badge";
-import { Button } from "@/Components/ui/button";
-import { toast } from "sonner";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -15,33 +11,39 @@ import {
     AlertDialogTitle,
 } from "@/Components/ui/alert-dialog";
 import {
-    ChevronLeft,
     Volume2,
     Check,
     X as XIcon,
     BookOpen,
     LogIn,
+    Bookmark,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import FlashMessages from "@/Components/FlashMessage";
 
-export default function WordDetail({ auth, word, exerciseGroup, subCategory }) {
+export default function WordDetail({
+    auth,
+    word,
+    wordList,
+    subCategory,
+    isMastered = false,
+}) {
     const [wordStatus, setWordStatus] = useState(null);
     const [showLoginDialog, setShowLoginDialog] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [activeImageIndex, setActiveImageIndex] = useState(0);
 
-    // Inertia reuses the same component instance when navigating between words
-    // on the same route, so we must reset local state whenever the word changes.
     useEffect(() => {
         setWordStatus(null);
         setIsSubmitting(false);
+        setActiveImageIndex(0);
     }, [word.id]);
 
     const speakWord = (text) => {
         if ("speechSynthesis" in window) {
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = "en-US";
-            window.speechSynthesis.speak(utterance);
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = "en-US";
+            window.speechSynthesis.speak(u);
         }
     };
 
@@ -50,23 +52,17 @@ export default function WordDetail({ auth, word, exerciseGroup, subCategory }) {
             setShowLoginDialog(true);
             return;
         }
-
         if (isSubmitting) return;
-
         setWordStatus(status);
         setIsSubmitting(true);
-
-        const routeName = status === "known" ? "word.know" : "word.learn";
-
         router.post(
-            route(routeName, word.id),
+            route(status === "known" ? "word.know" : "word.learn", word.id),
             {},
             {
                 preserveScroll: false,
                 onError: () => {
                     setWordStatus(null);
                     setIsSubmitting(false);
-                    toast.error("Something went wrong. Please try again.");
                 },
                 onFinish: () => {
                     setIsSubmitting(false);
@@ -75,271 +71,264 @@ export default function WordDetail({ auth, word, exerciseGroup, subCategory }) {
         );
     };
 
+    const collocationList = word.collocations
+        ? word.collocations
+              .split(/[\n,]+/)
+              .map((c) => c.trim())
+              .filter(Boolean)
+        : [];
+
+    const images = word.images?.length > 0 ? word.images : [];
+    const activeImage = images[activeImageIndex] ?? null;
+
+    const highlightWord = (sentence, targetWord) => {
+        if (!sentence || !targetWord) return sentence;
+        const regex = new RegExp(`(${targetWord})`, "gi");
+        return sentence.split(regex).map((part, i) =>
+            regex.test(part) ? (
+                <strong key={i} className="font-bold text-gray-900">
+                    {part}
+                </strong>
+            ) : (
+                part
+            ),
+        );
+    };
+
     return (
         <AppLayout>
             <Head title={`${word.word} - Word Details`} />
             <FlashMessages />
-            {/* Extra bottom padding so content clears the fixed action bar */}
-            <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pb-32 mt-4">
-                {/* Main Content */}
-                <main className="max-w-2xl mx-auto px-4 pt-4 py-2">
-                    <Card className="overflow-hidden border-2 shadow-lg">
-                        <CardContent className="p-0">
-                            {/* Word Header Section */}
-                            <div className="bg-gradient-to-r from-gray-50 to-white p-6 border-b">
-                                <div className="flex items-start justify-between gap-4">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <Link
-                                                // href={
-                                                //     exerciseGroup
-                                                //         ? route(
-                                                //               "exercise.show",
-                                                //               exerciseGroup.id,
-                                                //           )
-                                                //         : route(
-                                                //               "exercise.index",
-                                                //           )
-                                                // }
-                                                href={
-                                                    subCategory
-                                                        ? route(
-                                                              "exercise.subcategory",
-                                                              {
-                                                                  groupId:
-                                                                      exerciseGroup.id,
-                                                                  subcategoryId:
-                                                                      subCategory.id,
-                                                              },
-                                                          )
-                                                        : route(
-                                                              "exercise.index",
-                                                          )
-                                                }
-                                                className="p-1 rounded-lg border border-gray-300 hover:bg-gray-100 active:bg-gray-200 active:border-gray-400 transition text-gray-600 shrink-0"
-                                            >
-                                                <ChevronLeft className="h-6 w-6" />
-                                            </Link>
-                                            <h1 className="text-4xl font-bold text-gray-900">
-                                                {word.word}
-                                            </h1>
-                                        </div>
-                                        {word.hyphenation && (
-                                            <p className="text-lg text-gray-500 italic mb-1">
-                                                {word.hyphenation}
-                                            </p>
-                                        )}
-                                        {word.pronunciation && (
-                                            <p className="text-base text-gray-400 mb-3 font-mono">
-                                                {word.pronunciation}
-                                            </p>
-                                        )}
-                                        {word.parts_of_speech_variations && (
-                                            <Badge
-                                                variant="outline"
-                                                className="text-sm font-semibold"
-                                            >
-                                                {
-                                                    word.parts_of_speech_variations
-                                                }
-                                            </Badge>
-                                        )}
-                                    </div>
-                                    <button
-                                        onClick={() => speakWord(word.word)}
-                                        className="p-3 hover:bg-gray-100 rounded-full transition-colors"
-                                    >
-                                        <Volume2 className="h-7 w-7 text-[#E5201C]" />
-                                    </button>
-                                </div>
-                            </div>
+            <div
+                className={`min-h-screen bg-[#F0F2F5] ${isMastered ? "pb-6" : "pb-32"}`}
+            >
+                <main className="max-w-lg mx-auto px-3 pt-4">
+                    <div className="bg-white rounded-3xl shadow-md overflow-hidden">
+                        {/* Top row */}
+                        <div className="flex items-center justify-between px-5 pt-5 pb-2">
+                            <Link
+                                href={
+                                    subCategory
+                                        ? route("wordlist.subcategory", {
+                                              wordListId: wordList.id,
+                                              subcategoryId: subCategory.id,
+                                          })
+                                        : route("wordlist.index")
+                                }
+                                className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                                <Bookmark
+                                    className="h-6 w-6"
+                                    strokeWidth={1.8}
+                                />
+                            </Link>
+                            <button
+                                onClick={() => speakWord(word.word)}
+                                className="p-1 text-gray-500 hover:text-gray-700 transition-colors"
+                            >
+                                <Volume2
+                                    className="h-6 w-6"
+                                    strokeWidth={1.8}
+                                />
+                            </button>
+                        </div>
 
-                            {/* Image Gallery Section */}
-                            {word.images?.length > 0 && (
-                                <div className="p-6 border-b bg-white space-y-4">
-                                    {word.images.length === 1 ? (
-                                        /* Single image — full width */
-                                        <div>
-                                            <img
-                                                src={
-                                                    word.images[0]
-                                                        .image_url_full
-                                                }
-                                                alt={
-                                                    word.images[0].caption ||
-                                                    word.word
-                                                }
-                                                className="w-full max-h-96 object-contain rounded-lg shadow-md bg-gray-50"
-                                            />
-                                            {word.images[0].caption && (
-                                                <p className="text-sm text-gray-600 mt-2 italic text-center">
-                                                    {word.images[0].caption}
-                                                </p>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        /* Multiple images — responsive grid */
-                                        <div
-                                            className={`grid gap-3 ${word.images.length === 2 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3"}`}
-                                        >
-                                            {word.images.map((img) => (
-                                                <div
-                                                    key={img.id}
-                                                    className="flex flex-col gap-1"
-                                                >
-                                                    <img
-                                                        src={img.image_url_full}
-                                                        alt={
-                                                            img.caption ||
-                                                            word.word
-                                                        }
-                                                        className="w-full h-40 object-contain rounded-lg shadow-sm bg-gray-50"
-                                                    />
-                                                    {img.caption && (
-                                                        <p className="text-xs text-gray-500 italic text-center px-1 truncate">
-                                                            {img.caption}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
+                        {/* Word + Pronunciation + POS */}
+                        <div className="px-5 pb-4 text-center">
+                            <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight leading-tight">
+                                {word.word}
+                            </h1>
+                            {word.pronunciation && (
+                                <p className="text-base text-gray-400 font-mono mt-1">
+                                    {word.pronunciation}
+                                </p>
+                            )}
+                            {word.parts_of_speech_variations && (
+                                <div className="mt-2 inline-flex">
+                                    <span className="bg-gray-100 text-gray-600 text-sm font-medium px-3 py-0.5 rounded-md">
+                                        {word.parts_of_speech_variations}
+                                    </span>
                                 </div>
                             )}
+                        </div>
 
-                            {/* Word Details Section */}
-                            <div className="p-6 space-y-5">
+                        {/* Image */}
+                        {images.length > 0 && (
+                            <div className="px-4 pb-3">
+                                <div className="rounded-2xl overflow-hidden bg-[#EEF6F5]">
+                                    <img
+                                        src={activeImage?.image_url_full}
+                                        alt={activeImage?.caption || word.word}
+                                        className="w-full object-cover"
+                                        style={{
+                                            maxHeight: "240px",
+                                            objectFit: "cover",
+                                        }}
+                                    />
+                                </div>
+                                {images.length > 1 && (
+                                    <div className="flex justify-center gap-1.5 mt-2">
+                                        {images.map((_, idx) => (
+                                            <button
+                                                key={idx}
+                                                onClick={() =>
+                                                    setActiveImageIndex(idx)
+                                                }
+                                                className={`rounded-full transition-all ${idx === activeImageIndex ? "w-5 h-2 bg-gray-500" : "w-2 h-2 bg-gray-300"}`}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Example sentence */}
+                        {word.example_sentences && (
+                            <div className="mx-4 mb-4 border-l-4 border-green-400 pl-3 py-1">
+                                <p className="text-base text-gray-800 leading-snug">
+                                    {highlightWord(
+                                        word.example_sentences,
+                                        word.word,
+                                    )}
+                                </p>
+                            </div>
+                        )}
+
+                        <div className="h-px bg-gray-100 mx-4" />
+
+                        {/* Definition two-column */}
+                        {(word.definition || word.bangla_meaning) && (
+                            <div className="grid grid-cols-2 gap-0 mx-4 my-4">
                                 {word.definition && (
-                                    <div className="border-l-4 border-[#E5201C] pl-4 py-2">
-                                        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-2">
-                                            Definition
-                                        </h3>
-                                        <p className="text-base text-gray-900 leading-relaxed">
+                                    <div className="border-l-4 border-[#E5201C] pl-3 pr-2 py-1">
+                                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                                            English Definition
+                                        </p>
+                                        <p className="text-sm text-gray-900 leading-snug">
                                             {word.definition}
                                         </p>
                                     </div>
                                 )}
-
                                 {word.bangla_meaning && (
-                                    <div className="border-l-4 border-blue-500 pl-4 py-2">
-                                        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-2">
+                                    <div className="border-l-4 border-blue-400 pl-3 pr-2 py-1">
+                                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                                            Bangla Definition
+                                        </p>
+                                        <p className="text-sm text-gray-900 leading-snug">
                                             বাংলা অর্থ
-                                        </h3>
-                                        <p className="text-base text-gray-900 leading-relaxed">
+                                        </p>
+                                        <p className="text-sm text-gray-800 leading-snug font-medium">
                                             {word.bangla_meaning}
                                         </p>
                                     </div>
                                 )}
+                            </div>
+                        )}
 
-                                {word.example_sentences && (
-                                    <div className="border-l-4 border-green-500 pl-4 py-2">
-                                        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-2">
-                                            Example Sentence
-                                        </h3>
-                                        <p className="text-base text-gray-700 italic leading-relaxed">
-                                            "{word.example_sentences}"
-                                        </p>
-                                    </div>
-                                )}
+                        {/* Collocations */}
+                        {collocationList.length > 0 && (
+                            <div className="px-4 pb-4">
+                                <div className="h-px bg-gray-100 mb-4" />
+                                <p className="text-sm font-semibold text-gray-600 mb-3">
+                                    Common Collocations
+                                </p>
+                                <div className="flex flex-wrap gap-2">
+                                    {collocationList.map((col, i) => (
+                                        <span
+                                            key={i}
+                                            className="bg-[#F5F5F5] text-gray-700 text-sm px-3 py-1.5 rounded-full border border-gray-200"
+                                        >
+                                            {col}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
+                        {/* Synonym / Antonym */}
+                        {(word.synonym || word.antonym) && (
+                            <div className="px-4 pb-4 space-y-3">
+                                <div className="h-px bg-gray-100" />
                                 {word.synonym && (
-                                    <div className="border-l-4 border-purple-500 pl-4 py-2">
-                                        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-2">
+                                    <div>
+                                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
                                             Synonyms
-                                        </h3>
-                                        <p className="text-base text-gray-900 leading-relaxed">
+                                        </p>
+                                        <p className="text-sm text-gray-800">
                                             {word.synonym}
                                         </p>
                                     </div>
                                 )}
-
                                 {word.antonym && (
-                                    <div className="border-l-4 border-orange-500 pl-4 py-2">
-                                        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-2">
+                                    <div>
+                                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
                                             Antonyms
-                                        </h3>
-                                        <p className="text-base text-gray-900 leading-relaxed">
+                                        </p>
+                                        <p className="text-sm text-gray-800">
                                             {word.antonym}
                                         </p>
                                     </div>
                                 )}
-
-                                {word.collocations && (
-                                    <div className="border-l-4 border-amber-500 pl-4 py-2">
-                                        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-2">
-                                            Common Collocations
-                                        </h3>
-                                        <p className="text-base text-gray-900 leading-relaxed">
-                                            {word.collocations}
-                                        </p>
-                                    </div>
-                                )}
                             </div>
+                        )}
 
-                            {/* Exercise Group Info */}
-                            {exerciseGroup && (
-                                <div className="bg-gray-50 p-6 border-t">
-                                    <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-2">
-                                        Part of Exercise
-                                    </h3>
-                                    <Link
-                                        href={route(
-                                            "exercise.show",
-                                            exerciseGroup.id,
-                                        )}
-                                        className="inline-flex items-center gap-2 text-[#E5201C] hover:text-red-700 font-semibold"
-                                    >
-                                        <BookOpen className="h-4 w-4" />
-                                        {exerciseGroup.title}
-                                        <span className="text-gray-400">→</span>
-                                    </Link>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
+                        {/* WordList link */}
+                        {wordList && (
+                            <div className="px-4 pb-5">
+                                <div className="h-px bg-gray-100 mb-3" />
+                                <Link
+                                    href={route("wordlist.show", wordList.id)}
+                                    className="inline-flex items-center gap-1.5 text-sm text-[#E5201C] hover:text-red-700 font-medium"
+                                >
+                                    <BookOpen className="h-4 w-4" />
+                                    Part of: {wordList.title} →
+                                </Link>
+                            </div>
+                        )}
+                    </div>
                 </main>
             </div>
 
-            {/* Fixed Bottom Action Bar */}
-            <div className="fixed bottom-0 left-0 right-0 z-20 bg-white/90 backdrop-blur-md border-t border-gray-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-                <div className="max-w-2xl mx-auto px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-                    <div className="flex gap-3">
-                        {/* Learning / Don't Know */}
-                        <Button
-                            onClick={() => handleMarkWord("unknown")}
-                            disabled={isSubmitting}
-                            className={`flex-1 h-14 text-base font-semibold rounded-2xl transition-all shadow-sm ${
-                                wordStatus === "unknown"
-                                    ? "bg-[#E5201C] hover:bg-red-700 text-white shadow-red-200 shadow-md"
-                                    : "bg-white border-2 border-[#E5201C] text-[#E5201C] hover:bg-red-50"
-                            } disabled:opacity-60 disabled:cursor-not-allowed`}
-                        >
-                            <XIcon className="h-5 w-5 mr-2 shrink-0" />
-                            {isSubmitting && wordStatus === "unknown"
-                                ? "Saving…"
-                                : ""}
-                        </Button>
-
-                        {/* I Know This */}
-                        <Button
-                            onClick={() => handleMarkWord("known")}
-                            disabled={isSubmitting}
-                            className={`flex-1 h-14 text-base font-semibold rounded-2xl transition-all shadow-sm ${
-                                wordStatus === "known"
-                                    ? "bg-green-600 hover:bg-green-700 text-white shadow-green-200 shadow-md"
-                                    : "bg-white border-2 border-green-600 text-green-600 hover:bg-green-50"
-                            } disabled:opacity-60 disabled:cursor-not-allowed`}
-                        >
-                            <Check className="h-5 w-5 mr-2 shrink-0" />
-                            {isSubmitting && wordStatus === "known"
-                                ? "Saving…"
-                                : ""}
-                        </Button>
+            {/* Fixed Bottom Bar — hidden when viewing from Mastered Words */}
+            {!isMastered && (
+                <div className="fixed bottom-0 left-0 right-0 z-20 ">
+                    <div className="max-w-lg mx-auto px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+                        {wordList && (
+                            <div className="text-center mb-2">
+                                <Link
+                                    href={route("wordlist.show", wordList.id)}
+                                    className="text-xs text-gray-400 hover:text-gray-600"
+                                >
+                                    Part of Exercise: {wordList.title} →
+                                </Link>
+                            </div>
+                        )}
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => handleMarkWord("unknown")}
+                                disabled={isSubmitting}
+                                className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl text-base font-bold bg-[#E5201C] text-white hover:bg-red-700 disabled:opacity-60 transition-all"
+                            >
+                                <XIcon className="h-5 w-5" strokeWidth={2.5} />
+                                {isSubmitting && wordStatus === "unknown"
+                                    ? "Saving…"
+                                    : "didn't know"}
+                            </button>
+                            <button
+                                onClick={() => handleMarkWord("known")}
+                                disabled={isSubmitting}
+                                className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl text-base font-bold bg-green-600 text-white hover:bg-green-700 disabled:opacity-60 transition-all"
+                            >
+                                <Check className="h-5 w-5" strokeWidth={2.5} />
+                                {isSubmitting && wordStatus === "known"
+                                    ? "Saving…"
+                                    : "Check"}
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
 
-            {/* Login Alert Dialog */}
             <AlertDialog
                 open={showLoginDialog}
                 onOpenChange={setShowLoginDialog}
@@ -347,13 +336,12 @@ export default function WordDetail({ auth, word, exerciseGroup, subCategory }) {
                 <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-md sm:w-full">
                     <AlertDialogHeader>
                         <AlertDialogTitle className="flex items-center gap-2">
-                            <LogIn className="h-5 w-5 text-[#E5201C]" />
-                            Login Required
+                            <LogIn className="h-5 w-5 text-[#E5201C]" /> Login
+                            Required
                         </AlertDialogTitle>
                         <AlertDialogDescription className="text-base">
                             You need to be logged in to mark words as known or
-                            unknown. This helps us track your progress and
-                            personalize your learning experience.
+                            unknown.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="flex-col sm:flex-row gap-2">

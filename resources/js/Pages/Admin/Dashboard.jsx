@@ -24,8 +24,8 @@ export default function Dashboard({ stats }) {
             description: "Registered users",
         },
         {
-            title: "Exercise Groups",
-            value: stats.total_exercise_groups,
+            title: "Word Lists",
+            value: stats.total_word_lists,
             icon: BookOpen,
             color: "text-green-600",
             bgColor: "bg-green-50 dark:bg-green-950",
@@ -200,7 +200,7 @@ export default function Dashboard({ stats }) {
                                     </div>
                                     <div className="text-right">
                                         <p className="text-sm font-medium">
-                                            {stats.total_exercise_groups} groups
+                                            {stats.total_word_lists} groups
                                         </p>
                                         <p className="text-xs text-muted-foreground">
                                             {stats.total_words} words

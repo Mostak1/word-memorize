@@ -1,11 +1,9 @@
 <?php
 
-use App\Http\Controllers\ExerciseController;
+use App\Http\Controllers\WordListController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewWordController;
-use App\Http\Controllers\WordAttemptController;
-use Database\Seeders\OxfordWordsSeeder;
-use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -30,41 +28,21 @@ Route::get('/clear-cache', function () {
     return 'Laravel cache cleared!';
 });
 
-// Route::get('/run-seeder', function () {
-//     Artisan::call('db:seed', [
-//         '--class' => 'OxfordWordsSeeder',
-//     ]);
-
-//     return response()->json([
-//         'message' => 'Seeder ran successfully',
-//         'output' => Artisan::output(),
-//     ]);
-// });
-
-// Route::get('/run-unseeder', function () {
-//     (new OxfordWordsSeeder())->unseed();
-//     return response()->json(['message' => 'Unseeded successfully']);
-// });
-
-
 Route::get('/run-seeder', function () {
     try {
         Artisan::call('db:seed', [
-            // '--class' => 'ActionMovementSeeder',
             '--class' => 'FluentoWordsSeeder',
             '--force' => true,
         ]);
 
-        $output = Artisan::output();
-
         return response()->json([
-            'status' => 'success',
+            'status'  => 'success',
             'message' => 'FluentoWordsSeeder ran successfully.',
-            'output' => $output,
+            'output'  => Artisan::output(),
         ]);
     } catch (\Throwable $e) {
         return response()->json([
-            'status' => 'error',
+            'status'  => 'error',
             'message' => $e->getMessage(),
         ], 500);
     }
@@ -76,39 +54,58 @@ Route::get('/run-unseeder', function () {
         $seeder->unseed();
 
         return response()->json([
-            'status' => 'success',
+            'status'  => 'success',
             'message' => 'FluentoWordsSeeder unseeded successfully.',
         ]);
     } catch (\Throwable $e) {
         return response()->json([
-            'status' => 'error',
+            'status'  => 'error',
             'message' => $e->getMessage(),
         ], 500);
     }
 });
 
 Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
+    $userId = auth()->id();
+
+    $masteredCount = \App\Models\MasteredWord::where('user_id', $userId)->count();
+    $reviewCount   = \App\Models\ReviewWord::where('user_id', $userId)->count();
+
+    return Inertia::render('Dashboard', [
+        'masteredCount' => $masteredCount,
+        'reviewCount'   => $reviewCount,
+    ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-// Exercise routes
-Route::get('/exercises', [ExerciseController::class, 'index'])->name('exercise.index');
-Route::get('/exercise/{id}', [ExerciseController::class, 'show'])->name('exercise.show');
-Route::get('/exercise/{id}/start', [ExerciseController::class, 'start'])->name('exercise.start');
-Route::get('/exercises/difficulty/{difficulty}', [ExerciseController::class, 'byDifficulty'])->name('exercise.difficulty');
+// ── WordList routes ────────────────────────────────────────────────────────────
+Route::get('/wordlists',                        [WordListController::class, 'index'])->name('wordlist.index');
+Route::get('/wordlist/{id}',                    [WordListController::class, 'show'])->name('wordlist.show');
+Route::get('/wordlists/difficulty/{difficulty}',[WordListController::class, 'byDifficulty'])->name('wordlist.difficulty');
 
-// Subcategory words page  ← new
-Route::get('/exercise/{groupId}/subcategory/{subcategoryId}', [ExerciseController::class, 'showSubcategory'])->name('exercise.subcategory');
+// Start entire word list
+Route::get('/wordlist/{id}/start',              [WordListController::class, 'start'])->name('wordlist.start');
 
-Route::get('/word/{id}', [ExerciseController::class, 'showWord'])->name('word.show');
+// Subcategory browse
+Route::get('/wordlist/{wordListId}/subcategory/{subcategoryId}',
+    [WordListController::class, 'showSubcategory'])->name('wordlist.subcategory');
+
+// Start subcategory session  ← was missing, caused route() error in ExerciseSubcategory
+Route::get('/wordlist/{wordListId}/subcategory/{subcategoryId}/start',
+    [WordListController::class, 'startSubcategory'])->name('wordlist.subcategory.start');
+
+Route::get('/word/{id}', [WordListController::class, 'showWord'])->name('word.show');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/profile',    [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile',  [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    Route::post('/word/{word}/know', [ReviewWordController::class, 'know'])->name('word.know');
+    Route::post('/word/{word}/know',  [ReviewWordController::class, 'know'])->name('word.know');
     Route::post('/word/{word}/learn', [ReviewWordController::class, 'learn'])->name('word.learn');
+
+    Route::get('/my/mastered',         [WordListController::class,  'masteredWords'])->name('words.mastered');
+    Route::get('/my/review',           [WordListController::class,  'reviewWords'])->name('words.review');
+    Route::get('/my/review/practice',  [ReviewWordController::class, 'practiceReview'])->name('words.review.practice');
 });
 
 require __DIR__ . '/auth.php';

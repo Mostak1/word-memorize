@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\ExerciseGroup;
+use App\Models\WordList;
 use App\Models\Word;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -15,35 +15,35 @@ class WordController extends Controller
     private function wordRules(): array
     {
         return [
-            'subcategory_id' => 'nullable|exists:subcategories,id',
-            'word' => 'required|string|max:255',
-            'pronunciation' => 'nullable|string|max:255',
-            'bangla_pronunciation' => 'nullable|string|max:255',
-            'hyphenation' => 'nullable|string',
-            'parts_of_speech_variations' => 'required|string',
-            'definition' => 'required|string',
-            'bangla_meaning' => 'required|string',
-            'collocations' => 'nullable|string',
-            'example_sentences' => 'required|string',
-            'ai_prompt' => 'nullable|string',
-            'synonym' => 'nullable|string',
-            'antonym' => 'nullable|string',
+            'subcategory_id'             => 'nullable|exists:subcategories,id',
+            'word'                        => 'required|string|max:255',
+            'pronunciation'               => 'nullable|string|max:255',
+            'bangla_pronunciation'        => 'nullable|string|max:255',
+            'hyphenation'                 => 'nullable|string',
+            'parts_of_speech_variations'  => 'required|string',
+            'definition'                  => 'required|string',
+            'bangla_meaning'              => 'required|string',
+            'collocations'                => 'nullable|string',
+            'example_sentences'           => 'required|string',
+            'ai_prompt'                   => 'nullable|string',
+            'synonym'                     => 'nullable|string',
+            'antonym'                     => 'nullable|string',
         ];
     }
 
     private function imageRules(): array
     {
         return [
-            'images' => 'nullable|array|max:10',
-            'images.*' => 'image|mimes:jpeg,jpg,png,gif,webp|max:5120',
-            'new_captions' => 'nullable|array',
-            'new_captions.*' => 'nullable|string|max:500',
+            'images'          => 'nullable|array|max:10',
+            'images.*'        => 'image|mimes:jpeg,jpg,png,gif,webp|max:5120',
+            'new_captions'    => 'nullable|array',
+            'new_captions.*'  => 'nullable|string|max:500',
         ];
     }
 
     // ── Store ─────────────────────────────────────────────────────────────────
 
-    public function store(Request $request, ExerciseGroup $exerciseGroup)
+    public function store(Request $request, WordList $wordList)
     {
         $validated = $request->validate(array_merge($this->wordRules(), $this->imageRules()));
 
@@ -51,7 +51,7 @@ class WordController extends Controller
 
         $wordData = collect($validated)->except(['images', 'new_captions'])->all();
 
-        $word = $exerciseGroup->words()->create($wordData);
+        $word = $wordList->words()->create($wordData);
 
         $this->storeNewImages($request, $word, startOrder: 0);
 
@@ -60,12 +60,12 @@ class WordController extends Controller
 
     // ── Update ────────────────────────────────────────────────────────────────
 
-    public function update(Request $request, ExerciseGroup $exerciseGroup, Word $word)
+    public function update(Request $request, WordList $wordList, Word $word)
     {
         $validated = $request->validate(array_merge($this->wordRules(), $this->imageRules(), [
-            'remove_image_ids' => 'nullable|array',
-            'remove_image_ids.*' => 'integer|exists:word_images,id',
-            'existing_captions' => 'nullable|array',
+            'remove_image_ids'    => 'nullable|array',
+            'remove_image_ids.*'  => 'integer|exists:word_images,id',
+            'existing_captions'   => 'nullable|array',
             'existing_captions.*' => 'nullable|string|max:500',
         ]));
 
@@ -100,7 +100,7 @@ class WordController extends Controller
 
     // ── Destroy ───────────────────────────────────────────────────────────────
 
-    public function destroy(ExerciseGroup $exerciseGroup, Word $word)
+    public function destroy(WordList $wordList, Word $word)
     {
         $word->delete();
 
@@ -109,17 +109,6 @@ class WordController extends Controller
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    /**
-     * Upload images and save WordImage records.
-     *
-     * DB stores image_url as "/words/filename.jpg"
-     *   - starts with /  → clearly a relative storage path
-     *   - no "storage/"  → portable across all environments
-     *
-     * The WordImage accessor rebuilds the full URL as:
-     *   asset('storage' . $image_url)  →  asset('storage/words/filename.jpg')
-     * which works on any server where public/storage symlink exists.
-     */
     private function storeNewImages(Request $request, Word $word, int $startOrder): void
     {
         if (!$request->hasFile('images')) {
@@ -127,13 +116,12 @@ class WordController extends Controller
         }
 
         foreach ($request->file('images') as $index => $file) {
-            // store() returns "words/filename.jpg" — prepend "/" for DB
             $storedPath = $file->store('words', 'public');
-            $imageUrl = '/' . $storedPath;   // DB value: /words/filename.jpg
+            $imageUrl   = '/' . $storedPath; // DB value: /words/filename.jpg
 
             $word->images()->create([
-                'image_url' => $imageUrl,
-                'caption' => $request->input("new_captions.{$index}") ?: null,
+                'image_url'  => $imageUrl,
+                'caption'    => $request->input("new_captions.{$index}") ?: null,
                 'sort_order' => $startOrder + $index,
             ]);
         }

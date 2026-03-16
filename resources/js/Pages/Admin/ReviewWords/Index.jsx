@@ -1,8 +1,8 @@
 import AdminLayout from "@/Layouts/AdminLayout";
-import { Head, Link, router } from "@inertiajs/react";
+import { Head, router } from "@inertiajs/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
-import { Badge } from "@/Components/ui/badge";
 import { Button } from "@/Components/ui/button";
+import { Badge } from "@/Components/ui/badge";
 import { Input } from "@/Components/ui/input";
 import {
     Table,
@@ -13,62 +13,77 @@ import {
     TableRow,
 } from "@/Components/ui/table";
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/Components/ui/tooltip";
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/Components/ui/alert-dialog";
 import {
-    ChevronLeft,
-    ChevronRight,
     BookMarked,
     Search,
-    User as UserIcon,
+    Trash2,
+    Users,
     BookOpen,
+    Hash,
 } from "lucide-react";
-import { useState } from "react";
-
-// const difficultyColors = {
-//     beginner: "bg-green-100 text-green-800",
-//     intermediate: "bg-yellow-100 text-yellow-800",
-//     advanced: "bg-red-100 text-red-800",
-//     easy: "bg-green-100 text-green-800",
-//     medium: "bg-yellow-100 text-yellow-800",
-//     hard: "bg-red-100 text-red-800",
-// };
+import { toast } from "sonner";
+import { useState, useCallback } from "react";
 
 const difficultyColors = {
-  beginner: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-  intermediate: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-  advanced: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-
-  easy: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-  medium: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-  hard: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+    beginner: "bg-green-100 text-green-800",
+    intermediate: "bg-yellow-100 text-yellow-800",
+    advanced: "bg-red-100 text-red-800",
 };
 
-export default function Index({ reviewWords }) {
-    const [search, setSearch] = useState("");
+function StatCard({ icon: Icon, iconClass, label, value }) {
+    return (
+        <Card>
+            <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                    <div className={`p-3 rounded-xl ${iconClass}`}>
+                        <Icon className="h-5 w-5" />
+                    </div>
+                    <div>
+                        <p className="text-2xl font-bold">{value}</p>
+                        <p className="text-sm text-muted-foreground">{label}</p>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
 
-    const { data, current_page, last_page, from, to, total } = reviewWords;
+export default function Index({ reviewWords, stats, filters }) {
+    const [search, setSearch] = useState(filters?.search ?? "");
+    const [deletingEntry, setDeleting] = useState(null);
 
-    // Client-side filter on the current page's data
-    const filtered = data.filter((entry) => {
-        const q = search.toLowerCase();
-        return (
-            entry.word?.word?.toLowerCase().includes(q) ||
-            entry.user?.name?.toLowerCase().includes(q) ||
-            entry.user?.email?.toLowerCase().includes(q) ||
-            entry.word?.exercise_group?.title?.toLowerCase().includes(q)
-        );
-    });
-
-    const goToPage = (page) => {
+    const handleSearch = useCallback((e) => {
+        const value = e.target.value;
+        setSearch(value);
         router.get(
             route("admin.review-words.index"),
-            { page },
-            { preserveState: true, preserveScroll: true },
+            { search: value },
+            { preserveState: true, replace: true },
         );
+    }, []);
+
+    const confirmDelete = () => {
+        if (!deletingEntry) return;
+        router.delete(route("admin.review-words.destroy", deletingEntry.id), {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success("Entry removed.");
+                setDeleting(null);
+            },
+            onError: () => {
+                toast.error("Failed to remove entry.");
+                setDeleting(null);
+            },
+        });
     };
 
     return (
@@ -76,151 +91,109 @@ export default function Index({ reviewWords }) {
             <Head title="Review Words" />
 
             <div className="space-y-6">
-                {/* Page Header */}
-                <div className="flex items-start justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                            <BookMarked className="h-8 w-8 text-red-600" />
-                            Review Words
-                        </h1>
-                        <p className="text-muted-foreground mt-1">
-                            Words that users have marked as "Learning" and added
-                            to their review list.
-                        </p>
+                {/* Header */}
+                <div>
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-xl bg-orange-100">
+                            <BookMarked className="h-6 w-6 text-orange-600" />
+                        </div>
+                        <div>
+                            <h1 className="text-3xl font-bold tracking-tight">
+                                Review Words
+                            </h1>
+                            <p className="text-muted-foreground text-sm">
+                                Words users marked as "Didn't Know" and are
+                                still learning
+                            </p>
+                        </div>
                     </div>
-                    <Badge variant="outline" className="text-base px-3 py-1">
-                        {total} total entries
-                    </Badge>
                 </div>
 
-                {/* Stats Cards */}
+                {/* Stat cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="text-2xl font-bold">{total}</div>
-                            <p className="text-sm text-muted-foreground">
-                                Total review entries
-                            </p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="text-2xl font-bold">
-                                {
-                                    [...new Set(data.map((r) => r.user_id))]
-                                        .length
-                                }
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                                Unique users (this page)
-                            </p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="text-2xl font-bold">
-                                {
-                                    [...new Set(data.map((r) => r.word_id))]
-                                        .length
-                                }
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                                Unique words (this page)
-                            </p>
-                        </CardContent>
-                    </Card>
+                    <StatCard
+                        icon={Hash}
+                        iconClass="bg-orange-100 text-orange-600"
+                        label="Total review entries"
+                        value={stats.total}
+                    />
+                    <StatCard
+                        icon={Users}
+                        iconClass="bg-blue-100 text-blue-600"
+                        label="Unique users"
+                        value={stats.unique_users}
+                    />
+                    <StatCard
+                        icon={BookOpen}
+                        iconClass="bg-purple-100 text-purple-600"
+                        label="Unique words"
+                        value={stats.unique_words}
+                    />
                 </div>
 
-                {/* Table Card */}
+                {/* Table */}
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between gap-4 pb-4">
+                    <CardHeader className="flex flex-row items-center justify-between gap-4 flex-wrap">
                         <CardTitle>All Review Entries</CardTitle>
                         <div className="relative w-64">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
-                                placeholder="Search word, user, group…"
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
                                 className="pl-9"
+                                placeholder="Search word, user..."
+                                value={search}
+                                onChange={handleSearch}
                             />
                         </div>
                     </CardHeader>
-                    <CardContent className="p-0">
-                        {filtered.length === 0 ? (
-                            <div className="py-16 text-center text-muted-foreground">
-                                <BookMarked className="h-10 w-10 mx-auto mb-3 opacity-30" />
-                                {search
-                                    ? "No results match your search."
-                                    : "No review words yet."}
-                            </div>
-                        ) : (
-                            <Table>
-                                <TableHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Word</TableHead>
+                                    <TableHead>Definition</TableHead>
+                                    <TableHead>Word List</TableHead>
+                                    <TableHead>Difficulty</TableHead>
+                                    <TableHead>User</TableHead>
+                                    <TableHead>Added</TableHead>
+                                    <TableHead className="text-right">
+                                        Actions
+                                    </TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {reviewWords.data.length === 0 ? (
                                     <TableRow>
-                                        <TableHead className="w-10">
-                                            #
-                                        </TableHead>
-                                        <TableHead>Word</TableHead>
-                                        <TableHead>Definition</TableHead>
-                                        <TableHead>Exercise Group</TableHead>
-                                        <TableHead>Difficulty</TableHead>
-                                        <TableHead>User</TableHead>
-                                        <TableHead>Added</TableHead>
+                                        <TableCell
+                                            colSpan={7}
+                                            className="text-center py-10 text-muted-foreground"
+                                        >
+                                            No review entries found.
+                                        </TableCell>
                                     </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {filtered.map((entry, index) => (
+                                ) : (
+                                    reviewWords.data.map((entry) => (
                                         <TableRow key={entry.id}>
-                                            {/* Row number */}
-                                            <TableCell className="text-muted-foreground text-xs">
-                                                {(from ?? 0) + index}
-                                            </TableCell>
-
                                             {/* Word */}
-                                            <TableCell>
-                                                <div className="font-semibold text-gray-900">
-                                                    {entry.word?.word ?? "—"}
-                                                </div>
-                                                {entry.word?.hyphenation && (
-                                                    <div className="text-xs text-muted-foreground italic">
-                                                        {entry.word.hyphenation}
-                                                    </div>
-                                                )}
+                                            <TableCell className="font-semibold">
+                                                <div>{entry.word?.word}</div>
                                                 {entry.word
                                                     ?.parts_of_speech_variations && (
-                                                    <Badge
-                                                        variant="outline"
-                                                        className="text-xs mt-1"
-                                                    >
+                                                    <span className="text-xs text-muted-foreground font-normal bg-muted px-1.5 py-0.5 rounded">
                                                         {
                                                             entry.word
                                                                 .parts_of_speech_variations
                                                         }
-                                                    </Badge>
+                                                    </span>
                                                 )}
                                             </TableCell>
 
                                             {/* Definition */}
-                                            <TableCell className="max-w-xs">
-                                                <TooltipProvider>
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <p className="truncate max-w-[200px] text-sm text-gray-700 cursor-default">
-                                                                {entry.word
-                                                                    ?.definition ??
-                                                                    "—"}
-                                                            </p>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent className="max-w-xs whitespace-normal">
-                                                            {
-                                                                entry.word
-                                                                    ?.definition
-                                                            }
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                </TooltipProvider>
+                                            <TableCell className="max-w-[220px]">
+                                                <p className="text-sm text-muted-foreground line-clamp-2">
+                                                    {entry.word?.definition}
+                                                </p>
                                                 {entry.word?.bangla_meaning && (
-                                                    <p className="text-xs text-blue-600 mt-0.5">
+                                                    <p className="text-xs text-blue-600 mt-0.5 line-clamp-1">
                                                         {
                                                             entry.word
                                                                 .bangla_meaning
@@ -229,48 +202,30 @@ export default function Index({ reviewWords }) {
                                                 )}
                                             </TableCell>
 
-                                            {/* Exercise Group */}
+                                            {/* Word List */}
                                             <TableCell>
-                                                {entry.word?.exercise_group ? (
-                                                    <Link
-                                                        href={route(
-                                                            "admin.exercise-groups.show",
-                                                            entry.word
-                                                                .exercise_group
-                                                                .id,
-                                                        )}
-                                                        className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
-                                                    >
-                                                        <BookOpen className="h-3.5 w-3.5" />
-                                                        {
-                                                            entry.word
-                                                                .exercise_group
-                                                                .title
-                                                        }
-                                                    </Link>
-                                                ) : (
-                                                    "—"
-                                                )}
+                                                <span className="text-sm font-medium text-primary">
+                                                    {entry.word?.word_list
+                                                        ?.title ?? "—"}
+                                                </span>
                                             </TableCell>
 
                                             {/* Difficulty */}
                                             <TableCell>
-                                                {entry.word?.exercise_group
+                                                {entry.word?.word_list
                                                     ?.difficulty ? (
                                                     <Badge
+                                                        variant="secondary"
                                                         className={
                                                             difficultyColors[
                                                                 entry.word
-                                                                    .exercise_group
+                                                                    .word_list
                                                                     .difficulty
-                                                            ] ??
-                                                            "bg-gray-100 text-gray-700"
+                                                            ]
                                                         }
-                                                        variant="secondary"
                                                     >
                                                         {
-                                                            entry.word
-                                                                .exercise_group
+                                                            entry.word.word_list
                                                                 .difficulty
                                                         }
                                                     </Badge>
@@ -282,78 +237,101 @@ export default function Index({ reviewWords }) {
                                             {/* User */}
                                             <TableCell>
                                                 <div className="flex items-center gap-2">
-                                                    <div className="h-7 w-7 rounded-full bg-gray-200 flex items-center justify-center text-xs font-semibold text-gray-600 shrink-0">
-                                                        {entry.user?.name
-                                                            ?.charAt(0)
-                                                            ?.toUpperCase() ??
+                                                    <div className="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-xs font-bold shrink-0">
+                                                        {entry.user?.name?.[0]?.toUpperCase() ??
                                                             "?"}
                                                     </div>
                                                     <div>
-                                                        <div className="text-sm font-medium leading-tight">
-                                                            {entry.user?.name ??
-                                                                "Deleted User"}
-                                                        </div>
-                                                        <div className="text-xs text-muted-foreground">
+                                                        <p className="text-sm font-medium leading-tight">
+                                                            {entry.user?.name}
+                                                        </p>
+                                                        <p className="text-xs text-muted-foreground">
                                                             {entry.user?.email}
-                                                        </div>
+                                                        </p>
                                                     </div>
                                                 </div>
                                             </TableCell>
 
-                                            {/* Added date */}
-                                            <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                                            {/* Added */}
+                                            <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                                                 {new Date(
                                                     entry.created_at,
                                                 ).toLocaleDateString("en-GB", {
-                                                    day: "2-digit",
+                                                    day: "numeric",
                                                     month: "short",
                                                     year: "numeric",
                                                 })}
                                             </TableCell>
+
+                                            {/* Actions */}
+                                            <TableCell className="text-right">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                                    onClick={() =>
+                                                        setDeleting(entry)
+                                                    }
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </TableCell>
                                         </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        )}
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
 
                         {/* Pagination */}
-                        {last_page > 1 && (
-                            <div className="flex items-center justify-between border-t px-4 py-3">
-                                <p className="text-sm text-muted-foreground">
-                                    Showing {from}–{to} of {total}
-                                </p>
-                                <div className="flex items-center gap-2">
+                        {reviewWords.links.length > 3 && (
+                            <div className="mt-4 flex items-center justify-center gap-2">
+                                {reviewWords.links.map((link, i) => (
                                     <Button
-                                        variant="outline"
-                                        size="sm"
-                                        disabled={current_page === 1}
-                                        onClick={() =>
-                                            goToPage(current_page - 1)
+                                        key={i}
+                                        variant={
+                                            link.active ? "default" : "outline"
                                         }
-                                    >
-                                        <ChevronLeft className="h-4 w-4" />
-                                        Prev
-                                    </Button>
-                                    <span className="text-sm">
-                                        {current_page} / {last_page}
-                                    </span>
-                                    <Button
-                                        variant="outline"
                                         size="sm"
-                                        disabled={current_page === last_page}
+                                        disabled={!link.url}
                                         onClick={() =>
-                                            goToPage(current_page + 1)
+                                            link.url && router.visit(link.url)
                                         }
-                                    >
-                                        Next
-                                        <ChevronRight className="h-4 w-4" />
-                                    </Button>
-                                </div>
+                                        dangerouslySetInnerHTML={{
+                                            __html: link.label,
+                                        }}
+                                    />
+                                ))}
                             </div>
                         )}
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Delete confirmation */}
+            <AlertDialog
+                open={!!deletingEntry}
+                onOpenChange={(open) => !open && setDeleting(null)}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Remove Review Entry</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Remove <strong>{deletingEntry?.word?.word}</strong>{" "}
+                            from <strong>{deletingEntry?.user?.name}</strong>'s
+                            review list? This cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmDelete}
+                            className="bg-red-600 hover:bg-red-700"
+                        >
+                            Remove
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </AdminLayout>
     );
 }

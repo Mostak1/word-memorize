@@ -3,51 +3,51 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\ExerciseGroup;
+use App\Models\WordList;
 use App\Models\Subcategory;
 use Illuminate\Http\Request;
 
 class SubcategoryController extends Controller
 {
-  /**
-   * Store a new subcategory under an exercise group.
-   */
-  public function store(Request $request, ExerciseGroup $exerciseGroup)
-  {
-    $validated = $request->validate([
-      'name' => ['required', 'string', 'max:255'],
-    ]);
+    /**
+     * Store a new subcategory under a word list.
+     */
+    public function store(Request $request, WordList $wordList)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+        ]);
 
-    $subcategory = $exerciseGroup->subcategories()->create($validated);
+        $wordList->subcategories()->create($validated);
 
-    return back()->with('success', 'Subcategory created.');
-  }
+        return back()->with('success', 'Subcategory created.');
+    }
 
-  /**
-   * Update an existing subcategory.
-   */
-  public function update(Request $request, ExerciseGroup $exerciseGroup, Subcategory $subcategory)
-  {
-    abort_if($subcategory->exercise_group_id !== $exerciseGroup->id, 403);
+    /**
+     * Update an existing subcategory.
+     */
+    public function update(Request $request, WordList $wordList, Subcategory $subcategory)
+    {
+        abort_if($subcategory->wordlist_id !== $wordList->id, 403);
 
-    $validated = $request->validate([
-      'name' => ['required', 'string', 'max:255'],
-    ]);
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+        ]);
 
-    $subcategory->update($validated);
+        $subcategory->update($validated);
 
-    return back()->with('success', 'Subcategory updated.');
-  }
+        return back()->with('success', 'Subcategory updated.');
+    }
 
-  /**
-   * Delete a subcategory (words keep their data, subcategory_id becomes null via nullOnDelete).
-   */
-  public function destroy(ExerciseGroup $exerciseGroup, Subcategory $subcategory)
-  {
-    abort_if($subcategory->exercise_group_id !== $exerciseGroup->id, 403);
+    /**
+     * Delete a subcategory.
+     */
+    public function destroy(WordList $wordList, Subcategory $subcategory)
+    {
+        abort_if($subcategory->wordlist_id !== $wordList->id, 403);
 
-    $subcategory->delete();
+        $subcategory->delete();
 
-    return back()->with('success', 'Subcategory deleted.');
-  }
+        return back()->with('success', 'Subcategory deleted.');
+    }
 }
