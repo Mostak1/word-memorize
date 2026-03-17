@@ -12,7 +12,6 @@ import {
 } from "@/Components/ui/tooltip";
 import WordFormDialog from "@/Pages/Admin/Words/WordFormDialog";
 import WordListFormDialog from "@/Pages/Admin/WordLists/WordListFormDialog";
-import SubcategoryFormDialog from "@/Pages/Admin/WordLists/SubcategoryFormDialog";
 import {
     Table,
     TableBody,
@@ -75,20 +74,13 @@ const difficultyColors = {
 
 const columnHelper = createColumnHelper();
 
-export default function Show({
-    wordList, // ← renamed from exerciseGroup
-    subcategories = [],
-    words,
-    filters,
-}) {
+export default function Show({ wordList, words, filters }) {
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [editingWord, setEditingWord] = useState(null);
     const [editingList, setEditingList] = useState(null); // ← was editingGroup
     const [deletingWord, setDeletingWord] = useState(null);
     const [search, setSearch] = useState(filters?.search ?? "");
     const [subDialogOpen, setSubDialogOpen] = useState(false);
-    const [editingSubcategory, setEditingSubcategory] = useState(null);
-    const [deletingSubcategory, setDeletingSubcategory] = useState(null);
     const [subPanelOpen, setSubPanelOpen] = useState(false);
     const debounceRef = useRef(null);
 
@@ -144,19 +136,6 @@ export default function Show({
             cell: (info) => (
                 <span className="font-medium">{info.getValue()}</span>
             ),
-        }),
-        columnHelper.accessor("subcategory", {
-            header: "Subcategory",
-            cell: (info) => {
-                const sub = info.getValue();
-                return sub ? (
-                    <Badge variant="secondary" className="text-xs">
-                        {sub.name}
-                    </Badge>
-                ) : (
-                    <span className="text-muted-foreground text-xs">—</span>
-                );
-            },
         }),
         columnHelper.accessor("definition", {
             header: () => (
@@ -322,27 +301,6 @@ export default function Show({
         );
     };
 
-    const confirmDeleteSubcategory = () => {
-        if (!deletingSubcategory) return;
-        router.delete(
-            route("admin.word-lists.subcategories.destroy", [
-                wordList.id,
-                deletingSubcategory.id,
-            ]),
-            {
-                preserveScroll: true,
-                onSuccess: () => {
-                    toast.success("Subcategory deleted.");
-                    setDeletingSubcategory(null);
-                },
-                onError: () => {
-                    toast.error("Failed to delete subcategory.");
-                    setDeletingSubcategory(null);
-                },
-            },
-        );
-    };
-
     return (
         <AdminLayout>
             <Head title={wordList.title} />
@@ -388,93 +346,6 @@ export default function Show({
                         </Button>
                     </div>
                 </div>
-
-                {/* Subcategory panel */}
-                <Collapsible open={subPanelOpen} onOpenChange={setSubPanelOpen}>
-                    <Card>
-                        <CollapsibleTrigger asChild>
-                            <CardHeader className="cursor-pointer select-none hover:bg-muted/40 transition-colors rounded-t-lg">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <Layers className="h-4 w-4 text-muted-foreground" />
-                                        <CardTitle className="text-base">
-                                            Subcategories
-                                        </CardTitle>
-                                        <Badge variant="secondary">
-                                            {subcategories.length}
-                                        </Badge>
-                                    </div>
-                                    <ChevronDown
-                                        className={`h-4 w-4 text-muted-foreground transition-transform ${subPanelOpen ? "rotate-180" : ""}`}
-                                    />
-                                </div>
-                            </CardHeader>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                            <CardContent className="pt-0 space-y-3">
-                                {subcategories.length === 0 ? (
-                                    <p className="text-sm text-muted-foreground py-2">
-                                        No subcategories yet. Create one to
-                                        organise words within this list.
-                                    </p>
-                                ) : (
-                                    <div className="divide-y rounded-md border">
-                                        {subcategories.map((sub) => (
-                                            <div
-                                                key={sub.id}
-                                                className="flex items-center justify-between px-4 py-2.5"
-                                            >
-                                                <span className="text-sm font-medium">
-                                                    {sub.name}
-                                                </span>
-                                                <div className="flex items-center gap-1">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-7 w-7"
-                                                        onClick={() => {
-                                                            setEditingSubcategory(
-                                                                sub,
-                                                            );
-                                                            setSubDialogOpen(
-                                                                true,
-                                                            );
-                                                        }}
-                                                    >
-                                                        <Edit className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-7 w-7 text-red-500 hover:text-red-600"
-                                                        onClick={() =>
-                                                            setDeletingSubcategory(
-                                                                sub,
-                                                            )
-                                                        }
-                                                    >
-                                                        <Trash2 className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                        setEditingSubcategory(null);
-                                        setSubDialogOpen(true);
-                                    }}
-                                >
-                                    <Plus className="mr-1.5 h-3.5 w-3.5" /> Add
-                                    Subcategory
-                                </Button>
-                            </CardContent>
-                        </CollapsibleContent>
-                    </Card>
-                </Collapsible>
 
                 {/* Words DataTable */}
                 <Card>
@@ -615,47 +486,9 @@ export default function Show({
                 />
             )}
 
-            {/* Subcategory create/edit dialog */}
-            <SubcategoryFormDialog
-                open={subDialogOpen}
-                onOpenChange={(open) => {
-                    setSubDialogOpen(open);
-                    if (!open) setEditingSubcategory(null);
-                }}
-                wordList={wordList}
-                subcategory={editingSubcategory}
-            />
-
-            {/* Delete subcategory confirmation */}
-            <AlertDialog
-                open={!!deletingSubcategory}
-                onOpenChange={(open) => !open && setDeletingSubcategory(null)}
-            >
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Subcategory</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Are you sure you want to delete{" "}
-                            <strong>{deletingSubcategory?.name}</strong>? Words
-                            assigned to it will become uncategorised.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={confirmDeleteSubcategory}
-                            className="bg-red-600 hover:bg-red-700"
-                        >
-                            Delete
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-
             {/* Create word dialog */}
             <WordFormDialog
                 wordList={wordList}
-                subcategories={subcategories}
                 open={createDialogOpen}
                 onOpenChange={setCreateDialogOpen}
             />
@@ -664,7 +497,6 @@ export default function Show({
             {editingWord && (
                 <WordFormDialog
                     wordList={wordList}
-                    subcategories={subcategories}
                     word={editingWord}
                     open={!!editingWord}
                     onOpenChange={(open) => !open && setEditingWord(null)}

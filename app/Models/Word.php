@@ -12,7 +12,6 @@ class Word extends Model
 
     protected $fillable = [
         'wordlist_id',
-        'subcategory_id',
         'word',
         'pronunciation',
         'ipa',
@@ -60,11 +59,6 @@ class Word extends Model
     public function wordList()
     {
         return $this->belongsTo(WordList::class, 'wordlist_id');
-    }
-
-    public function subcategory()
-    {
-        return $this->belongsTo(Subcategory::class);
     }
 
     public function images()

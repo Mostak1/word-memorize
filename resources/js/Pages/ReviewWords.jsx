@@ -6,7 +6,6 @@ import {
     Volume2,
     RefreshCcw,
     BookOpen,
-    Play,
 } from "lucide-react";
 
 export default function ReviewWords({ words }) {
@@ -30,13 +29,6 @@ export default function ReviewWords({ words }) {
                 ? "bg-red-50 text-red-700 border-red-200"
                 : "bg-gray-50 text-gray-600 border-gray-200";
     };
-
-    // Derive a unique list of wordlist IDs so we can offer "start exercise" links
-    const wordListIds = [
-        ...new Set(
-            (words.data ?? []).map((w) => w.word_list?.id).filter(Boolean),
-        ),
-    ];
 
     return (
         <AppLayout>
@@ -63,17 +55,6 @@ export default function ReviewWords({ words }) {
                         </div>
                     </div>
 
-                    {/* Quick practice banner — only if there are words */}
-                    {/* {words.data && words.data.length > 0 && (
-                        <Link
-                            href={route("words.review.practice")}
-                            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 text-base shadow-md transition-colors mb-5"
-                        >
-                            <Play className="h-5 w-5 fill-white" />
-                            Practice Review Words
-                        </Link>
-                    )} */}
-
                     {/* Word list */}
                     {words.data && words.data.length > 0 ? (
                         <>
@@ -95,7 +76,6 @@ export default function ReviewWords({ words }) {
                                         >
                                             <div className="flex items-start justify-between gap-3">
                                                 <div className="flex-1 min-w-0">
-                                                    {/* Word + review badge */}
                                                     <div className="flex items-center gap-2 flex-wrap">
                                                         <h3 className="text-lg font-bold text-gray-900">
                                                             {word.word}
@@ -120,7 +100,6 @@ export default function ReviewWords({ words }) {
                                                         </p>
                                                     )}
 
-                                                    {/* Word list pill */}
                                                     {word.word_list && (
                                                         <div className="flex items-center gap-2 mt-2 flex-wrap">
                                                             <span
@@ -201,7 +180,6 @@ export default function ReviewWords({ words }) {
                             )}
                         </>
                     ) : (
-                        /* Empty state */
                         <div className="bg-white rounded-2xl p-10 text-center shadow-sm">
                             <div className="w-20 h-20 rounded-full bg-orange-50 flex items-center justify-center mx-auto mb-4">
                                 <RefreshCcw className="h-10 w-10 text-orange-200" />
@@ -214,7 +192,7 @@ export default function ReviewWords({ words }) {
                                 and it'll appear here for extra practice.
                             </p>
                             <Link
-                                href={route("wordlist.index")}
+                                href={route("wordlistcategory.index")}
                                 className="inline-flex items-center gap-2 bg-[#E5201C] text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-red-700 transition"
                             >
                                 <BookOpen className="h-4 w-4" />

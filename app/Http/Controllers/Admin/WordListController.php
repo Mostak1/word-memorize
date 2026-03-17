@@ -4,102 +4,123 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\WordList;
+use App\Models\WordListCategory;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Log;
 
 class WordListController extends Controller
 {
-    /**
-     * Display a listing of word lists.
-     */
+    // public function index(Request $request)
+    // {
+    //     $query = WordList::with('category')
+    //         ->withCount('words')
+    //         ->latest();
+
+    //     if ($request->filled('category')) {
+    //         $query->where('word_list_category_id', $request->category);
+    //     }
+
+    //     $wordLists = $query->paginate(10)->withQueryString();
+    //     $categories = WordListCategory::orderBy('name')->get(['id', 'name']);
+
+    //     return Inertia::render('Admin/WordLists/Index', [
+    //         'wordLists' => $wordLists,
+    //         'categories' => $categories,
+    //         'filters' => $request->only('category'),
+    //     ]);
+    // }
+
     public function index()
     {
-        $wordLists = WordList::withCount('words')
-            ->latest()
+        $categories = WordListCategory::with([
+            'wordLists' => function ($query) {
+                $query->withCount('words')
+                    ->orderBy('title');
+            }
+        ])
+            ->withCount('wordLists')
+            ->orderBy('name')
             ->paginate(10);
 
         return Inertia::render('Admin/WordLists/Index', [
-            'wordLists' => $wordLists,
+            'categories' => $categories,
         ]);
     }
 
-    /**
-     * Store a newly created word list.
-     */
     public function store(Request $request)
     {
+        Log::info($request->all());
         $validated = $request->validate([
-            'title'      => 'required|string|max:255',
-            'price'      => 'required|numeric|min:0',
+            'word_list_category_id' => 'required|exists:word_list_categories,id',
+            'title' => 'required|string|max:255',
+            'price' => 'required|numeric|min:0',
             'difficulty' => 'required|in:beginner,intermediate,advanced',
-            'status'     => 'required|boolean',
+            'status' => 'required|boolean',
         ]);
+
+        // Cast empty string from the "No category" select option to null
+        $validated['word_list_category_id'] = $validated['word_list_category_id'] ?: null;
 
         WordList::create($validated);
 
         return back()->with('success', 'Word list created successfully.');
     }
 
-    /**
-     * Display the specified word list with its words (searchable, sortable, paginated),
-     * its subcategory list, and each word's gallery images.
-     */
     public function show(Request $request, WordList $wordList)
     {
-        $search  = $request->string('search')->trim()->value();
+        $search = $request->string('search')->trim()->value();
         $sortCol = in_array($request->input('sort'), ['word', 'definition'])
             ? $request->input('sort')
             : 'word';
         $sortDir = $request->input('direction') === 'desc' ? 'desc' : 'asc';
 
         $words = $wordList->words()
-            ->with([
-                'subcategory',
-                'images',
-            ])
+            ->with('images')
             ->when($search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('word', 'like', "%{$search}%")
-                      ->orWhere('definition', 'like', "%{$search}%")
-                      ->orWhere('bangla_meaning', 'like', "%{$search}%");
+                        ->orWhere('definition', 'like', "%{$search}%")
+                        ->orWhere('bangla_meaning', 'like', "%{$search}%");
                 });
             })
             ->orderBy($sortCol, $sortDir)
             ->paginate(10)
             ->withQueryString();
 
+        // Pass categories so the "Edit List" dialog can populate its dropdown
+        // $categories = WordListCategory::orderBy('name')->get(['id', 'name']);
+        // dd($words);
+
         return Inertia::render('Admin/WordLists/Show', [
-            'wordList'      => $wordList,
-            'subcategories' => $wordList->subcategories,
-            'words'         => $words,
-            'filters'       => [
-                'search'    => $search,
-                'sort'      => $sortCol,
+            'wordList' => $wordList->load('category'),
+            'words' => $words,
+            // 'categories' => $categories,
+            'filters' => [
+                'search' => $search,
+                'sort' => $sortCol,
                 'direction' => $sortDir,
             ],
         ]);
     }
 
-    /**
-     * Update the specified word list.
-     */
     public function update(Request $request, WordList $wordList)
     {
         $validated = $request->validate([
-            'title'      => 'required|string|max:255',
-            'price'      => 'required|numeric|min:0',
+            'word_list_category_id' => 'required|exists:word_list_categories,id',
+            'title' => 'required|string|max:255',
+            'price' => 'required|numeric|min:0',
             'difficulty' => 'required|in:beginner,intermediate,advanced',
-            'status'     => 'required|boolean',
+            'status' => 'required|boolean',
         ]);
+
+        $validated['word_list_category_id'] = $validated['word_list_category_id'] ?: null;
 
         $wordList->update($validated);
 
         return back()->with('success', 'Word list updated successfully.');
     }
 
-    /**
-     * Remove the specified word list.
-     */
     public function destroy(WordList $wordList)
     {
         $wordList->delete();

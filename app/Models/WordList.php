@@ -12,6 +12,7 @@ class WordList extends Model
     protected $table = 'wordlists';
 
     protected $fillable = [
+        'word_list_category_id',
         'title',
         'price',
         'difficulty',
@@ -19,19 +20,19 @@ class WordList extends Model
     ];
 
     /**
+     * Relationship: belongs to one WordListCategory
+     */
+    public function category()
+    {
+        return $this->belongsTo(WordListCategory::class, 'word_list_category_id');
+    }
+
+    /**
      * Relationship: A WordList has many Words
      */
     public function words()
     {
         return $this->hasMany(Word::class, 'wordlist_id');
-    }
-
-    /**
-     * Relationship: A WordList has many Subcategories
-     */
-    public function subcategories()
-    {
-        return $this->hasMany(Subcategory::class, 'wordlist_id')->orderBy('name');
     }
 
     /**

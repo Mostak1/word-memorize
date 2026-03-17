@@ -17,6 +17,8 @@ import {
     BookOpen,
     LogIn,
     Bookmark,
+    ChevronLeft,
+    ChevronRight,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import FlashMessages from "@/Components/FlashMessage";
@@ -28,6 +30,8 @@ export default function WordDetail({
     subCategory,
     isMastered = false,
     isBookmarked: initialBookmarked = false,
+    prevWordId = null,
+    nextWordId = null,
 }) {
     const [wordStatus, setWordStatus] = useState(null);
     const [bookmarked, setBookmarked] = useState(initialBookmarked);
@@ -46,6 +50,7 @@ export default function WordDetail({
         if ("speechSynthesis" in window) {
             const u = new SpeechSynthesisUtterance(text);
             u.lang = "en-US";
+            u.rate = 0.8; // ← add this (default is 1, range is 0.1–10)
             window.speechSynthesis.speak(u);
         }
     };
@@ -55,15 +60,13 @@ export default function WordDetail({
             setShowLoginDialog(true);
             return;
         }
-
-        setBookmarked((prev) => !prev); // optimistic toggle
-
+        setBookmarked((prev) => !prev);
         router.post(
             route("word.bookmark", word.id),
             {},
             {
                 preserveScroll: true,
-                onError: () => setBookmarked((prev) => !prev), // revert on error
+                onError: () => setBookmarked((prev) => !prev),
             },
         );
     };
@@ -88,6 +91,17 @@ export default function WordDetail({
                 onFinish: () => {
                     setIsSubmitting(false);
                 },
+            },
+        );
+    };
+
+    const navigateTo = (wordId) => {
+        if (!wordId) return;
+        router.get(
+            route("word.show", wordId) + "?from=mastered",
+            {},
+            {
+                preserveScroll: false,
             },
         );
     };
@@ -121,7 +135,7 @@ export default function WordDetail({
             <Head title={`${word.word} - Word Details`} />
             <FlashMessages />
             <div
-                className={`min-h-screen bg-[#F0F2F5] ${isMastered ? "pb-6" : "pb-32"}`}
+                className={`min-h-screen bg-[#F0F2F5] ${isMastered ? "pb-24" : "pb-32"}`}
             >
                 <main className="max-w-lg mx-auto px-3 pt-4">
                     <div className="bg-white rounded-3xl shadow-md overflow-hidden">
@@ -177,27 +191,25 @@ export default function WordDetail({
 
                         {/* Image */}
                         {images.length > 0 && (
-                            <div className="px-4 pb-3">
-                                <div className="rounded-2xl overflow-hidden bg-[#EEF6F5]">
-                                    <img
-                                        src={activeImage?.image_url_full}
-                                        alt={activeImage?.caption || word.word}
-                                        className="w-full object-cover"
-                                        style={{
-                                            maxHeight: "240px",
-                                            objectFit: "cover",
-                                        }}
-                                    />
-                                </div>
+                            <div className="px-4 pb-4">
+                                <img
+                                    src={activeImage?.url}
+                                    alt={word.word}
+                                    className="w-full rounded-2xl object-cover max-h-52"
+                                />
                                 {images.length > 1 && (
                                     <div className="flex justify-center gap-1.5 mt-2">
-                                        {images.map((_, idx) => (
+                                        {images.map((_, i) => (
                                             <button
-                                                key={idx}
+                                                key={i}
                                                 onClick={() =>
-                                                    setActiveImageIndex(idx)
+                                                    setActiveImageIndex(i)
                                                 }
-                                                className={`rounded-full transition-all ${idx === activeImageIndex ? "w-5 h-2 bg-gray-500" : "w-2 h-2 bg-gray-300"}`}
+                                                className={`w-2 h-2 rounded-full transition-colors ${
+                                                    i === activeImageIndex
+                                                        ? "bg-[#E5201C]"
+                                                        : "bg-gray-300"
+                                                }`}
                                             />
                                         ))}
                                     </div>
@@ -312,9 +324,52 @@ export default function WordDetail({
                 </main>
             </div>
 
-            {/* Fixed Bottom Bar — hidden when viewing from Mastered Words */}
+            {/* ── Mastered Words: Prev / Next navigation ── */}
+            {isMastered && (
+                <div className="fixed bottom-0 left-0 right-0 z-20">
+                    <div className="max-w-lg mx-auto px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => navigateTo(prevWordId)}
+                                disabled={!prevWordId}
+                                className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl text-sm font-bold bg-white border border-gray-200 text-gray-700 shadow-sm hover:shadow-md disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                            >
+                                <ChevronLeft className="h-5 w-5" />
+                                Previous
+                            </button>
+
+                            <Link
+                                href={route("words.mastered")}
+                                className="flex items-center justify-center w-12 h-14 rounded-2xl bg-white border border-gray-200 text-gray-400 shadow-sm hover:shadow-md transition-all shrink-0"
+                                aria-label="Back to Mastered Words"
+                            >
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    className="h-5 w-5"
+                                >
+                                    <path d="M4 6h16M4 12h16M4 18h7" />
+                                </svg>
+                            </Link>
+
+                            <button
+                                onClick={() => navigateTo(nextWordId)}
+                                disabled={!nextWordId}
+                                className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl text-sm font-bold bg-white border border-gray-200 text-gray-700 shadow-sm hover:shadow-md disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                            >
+                                Next
+                                <ChevronRight className="h-5 w-5" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Normal exercise bottom bar ── */}
             {!isMastered && (
-                <div className="fixed bottom-0 left-0 right-0 z-20 ">
+                <div className="fixed bottom-0 left-0 right-0 z-20">
                     <div className="max-w-lg mx-auto px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
                         {wordList && (
                             <div className="text-center mb-2">

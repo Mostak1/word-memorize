@@ -1,6 +1,15 @@
 import AppLayout from "@/Layouts/AppLayout";
 import { Head, Link } from "@inertiajs/react";
 import {
+    AlertDialog,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/Components/ui/alert-dialog";
+import {
     Plus,
     BookOpen,
     List,
@@ -10,9 +19,13 @@ import {
     Trophy,
     RefreshCcw,
     ChevronRight,
+    Sparkles,
 } from "lucide-react";
+import { useState } from "react";
 
 export default function Dashboard({ masteredCount = 0, reviewCount = 0 }) {
+    const [showComingSoon, setShowComingSoon] = useState(false);
+
     return (
         <AppLayout>
             <Head title="Dashboard" />
@@ -24,7 +37,10 @@ export default function Dashboard({ masteredCount = 0, reviewCount = 0 }) {
 
                     <div className="grid grid-cols-2 gap-3 mb-3">
                         {/* Add New Word */}
-                        <div className="bg-white rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm cursor-pointer hover:shadow-md transition-shadow min-h-[160px]">
+                        <div
+                            onClick={() => setShowComingSoon(true)}
+                            className="bg-white rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm cursor-pointer hover:shadow-md transition-shadow min-h-[160px]"
+                        >
                             <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
                                 <Plus className="h-8 w-8 text-blue-500" />
                             </div>
@@ -39,7 +55,10 @@ export default function Dashboard({ masteredCount = 0, reviewCount = 0 }) {
                         </div>
 
                         {/* Word Lists */}
-                        <Link href={route("wordlist.index")} className="block">
+                        <Link
+                            href={route("wordlistcategory.index")}
+                            className="block"
+                        >
                             <div className="bg-white rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm cursor-pointer hover:shadow-md transition-shadow min-h-[160px]">
                                 <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center">
                                     <List className="h-8 w-8 text-purple-500" />
@@ -59,11 +78,9 @@ export default function Dashboard({ masteredCount = 0, reviewCount = 0 }) {
                         <Link href={route("words.mastered")} className="block">
                             <div className="bg-white rounded-2xl p-5 flex flex-col items-start justify-between gap-2 shadow-sm hover:shadow-md transition-shadow min-h-[160px] relative overflow-hidden">
                                 <div className="absolute -right-4 -bottom-4 w-24 h-24 rounded-full bg-green-50 opacity-60" />
-
                                 <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
                                     <Trophy className="h-7 w-7 text-green-600" />
                                 </div>
-
                                 <div>
                                     <p className="font-bold text-gray-900 text-sm">
                                         Mastered Words
@@ -72,7 +89,6 @@ export default function Dashboard({ masteredCount = 0, reviewCount = 0 }) {
                                         Words you know
                                     </p>
                                 </div>
-
                                 {masteredCount > 0 ? (
                                     <div className="flex items-center justify-between w-full">
                                         <span className="text-2xl font-extrabold text-green-600">
@@ -92,11 +108,9 @@ export default function Dashboard({ masteredCount = 0, reviewCount = 0 }) {
                         <Link href={route("words.review")} className="block">
                             <div className="bg-white rounded-2xl p-5 flex flex-col items-start justify-between gap-2 shadow-sm hover:shadow-md transition-shadow min-h-[160px] relative overflow-hidden">
                                 <div className="absolute -right-4 -bottom-4 w-24 h-24 rounded-full bg-orange-50 opacity-60" />
-
                                 <div className="w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center">
                                     <RefreshCcw className="h-7 w-7 text-orange-500" />
                                 </div>
-
                                 <div>
                                     <p className="font-bold text-gray-900 text-sm">
                                         Review Words
@@ -105,7 +119,6 @@ export default function Dashboard({ masteredCount = 0, reviewCount = 0 }) {
                                         Keep practicing
                                     </p>
                                 </div>
-
                                 {reviewCount > 0 ? (
                                     <div className="flex items-center justify-between w-full">
                                         <span className="text-2xl font-extrabold text-orange-500">
@@ -122,8 +135,8 @@ export default function Dashboard({ masteredCount = 0, reviewCount = 0 }) {
                         </Link>
                     </div>
 
-                    {/* Quiz— full-width shortcut */}
-                    <Link href="#" className="block mb-3">
+                    {/* Quiz — linked to quiz.index */}
+                    <Link href={route("quiz.index")} className="block mb-3">
                         <div className="bg-white rounded-2xl px-5 py-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
                             <div className="w-12 h-12 rounded-full bg-[#E5201C]/10 flex items-center justify-center shrink-0">
                                 <BookOpen className="h-6 w-6 text-[#E5201C]" />
@@ -172,6 +185,31 @@ export default function Dashboard({ masteredCount = 0, reviewCount = 0 }) {
                     </div>
                 </div>
             </div>
+
+            {/* Coming Soon Dialog */}
+            <AlertDialog open={showComingSoon} onOpenChange={setShowComingSoon}>
+                <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-sm sm:w-full">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2">
+                            <Sparkles className="h-5 w-5 text-blue-500" />
+                            Coming Soon!
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-base">
+                            The{" "}
+                            <span className="font-semibold text-gray-800">
+                                Add New Word
+                            </span>{" "}
+                            feature is currently under development. Stay tuned —
+                            it'll be available soon! 🚀
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel className="w-full bg-[#E5201C] text-white hover:bg-red-700 border-0">
+                            Got it!
+                        </AlertDialogCancel>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </AppLayout>
     );
 }

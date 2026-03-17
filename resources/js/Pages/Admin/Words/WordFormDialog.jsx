@@ -72,8 +72,7 @@ function ImageCard({ src, caption, onCaptionChange, onRemove, isNew = false }) {
 
 // ── Main dialog ───────────────────────────────────────────────────────────────
 export default function WordFormDialog({
-    wordList, // ← renamed from exerciseGroup
-    subcategories = [],
+    wordList,
     word = null,
     open,
     onOpenChange,
@@ -87,7 +86,6 @@ export default function WordFormDialog({
         errors: serverErrors,
         reset,
     } = useForm({
-        subcategory_id: word?.subcategory_id ? String(word.subcategory_id) : "",
         word: word?.word || "",
         pronunciation: word?.pronunciation || "",
         bangla_pronunciation: word?.bangla_pronunciation || "",
@@ -280,41 +278,6 @@ export default function WordFormDialog({
                     onSubmit={submit}
                     className="flex-1 overflow-y-auto space-y-5 pr-2"
                 >
-                    {/* Subcategory */}
-                    <div className="space-y-2">
-                        <Label>Subcategory</Label>
-                        <Select
-                            value={data.subcategory_id}
-                            onValueChange={(v) =>
-                                setData("subcategory_id", v === "none" ? "" : v)
-                            }
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select a subcategory (optional)" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="none">
-                                    <span className="text-muted-foreground">
-                                        — None —
-                                    </span>
-                                </SelectItem>
-                                {subcategories.map((sub) => (
-                                    <SelectItem
-                                        key={sub.id}
-                                        value={String(sub.id)}
-                                    >
-                                        {sub.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        {errors.subcategory_id && (
-                            <p className="text-sm text-red-500">
-                                {errors.subcategory_id}
-                            </p>
-                        )}
-                    </div>
-
                     {/* Word * */}
                     <div className="space-y-2">
                         <Label>

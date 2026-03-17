@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use App\Models\WordList;
-use App\Models\Subcategory;
+use App\Models\WordListCategory;
 use App\Models\Word;
 
 class FluentoWordsSeeder extends Seeder
@@ -19,8 +19,8 @@ class FluentoWordsSeeder extends Seeder
 
     /**
      * Columns updated when a word already exists (upsert).
-     * 'word', 'subcategory_id', 'wordlist_id', and 'created_at'
-     * are intentionally excluded — they form the identity of a row.
+     * 'word', 'wordlist_id', and 'created_at' are intentionally excluded —
+     * they form the identity of a row.
      */
     private const UPSERT_UPDATE_COLUMNS = [
         'parts_of_speech_variations',
@@ -44,7 +44,7 @@ class FluentoWordsSeeder extends Seeder
 
         $this->log('info', 'Loading Excel file...');
         $spreadsheet = IOFactory::load(base_path($this->filePath));
-        $sheets      = $spreadsheet->getAllSheets();
+        $sheets = $spreadsheet->getAllSheets();
 
         $this->log(
             'info',
@@ -57,8 +57,8 @@ class FluentoWordsSeeder extends Seeder
         foreach ($sheets as $sheet) {
             $counts = $this->seedSheet($sheet);
             $totals['inserted'] += $counts['inserted'];
-            $totals['updated']  += $counts['updated'];
-            $totals['skipped']  += $counts['skipped'];
+            $totals['updated'] += $counts['updated'];
+            $totals['skipped'] += $counts['skipped'];
         }
 
         $this->log(
@@ -75,7 +75,7 @@ class FluentoWordsSeeder extends Seeder
     public function unseed(): void
     {
         if (!file_exists(base_path($this->filePath))) {
-            $this->log('warn', "Excel file not found — cannot determine which word lists to unseed.");
+            $this->log('warn', "Excel file not found — cannot determine which categories to unseed.");
             return;
         }
 
@@ -83,26 +83,26 @@ class FluentoWordsSeeder extends Seeder
         $sheetTitles = array_map(fn($s) => $s->getTitle(), $spreadsheet->getAllSheets());
 
         foreach ($sheetTitles as $title) {
-            $wordList = WordList::where('title', $title)->first();
+            $category = WordListCategory::where('name', $title)->first();
 
-            if (!$wordList) {
-                $this->log('warn', "  WordList \"{$title}\" not found — skipping.");
+            if (!$category) {
+                $this->log('warn', "  WordListCategory \"{$title}\" not found — skipping.");
                 continue;
             }
 
-            DB::transaction(function () use ($wordList) {
-                $subcategories = Subcategory::where('wordlist_id', $wordList->id)->get();
+            DB::transaction(function () use ($category) {
+                $wordLists = WordList::where('word_list_category_id', $category->id)->get();
 
-                foreach ($subcategories as $subcategory) {
+                foreach ($wordLists as $wordList) {
                     // Use the Word model so the deleting boot hook fires (image cleanup, etc.)
-                    Word::where('subcategory_id', $subcategory->id)->each(fn($w) => $w->delete());
-                    $subcategory->delete();
+                    Word::where('wordlist_id', $wordList->id)->each(fn($w) => $w->delete());
+                    $wordList->delete();
                 }
 
-                $wordList->delete();
+                $category->delete();
             });
 
-            $this->log('info', "  Unseeded \"{$title}\" — word list, subcategories, and words removed.");
+            $this->log('info', "  Unseeded \"{$title}\" — category, word lists, and words removed.");
         }
     }
 
@@ -110,97 +110,110 @@ class FluentoWordsSeeder extends Seeder
 
     /**
      * Seed a single worksheet inside a transaction.
+     *
+     * Structure:
+     *   Sheet title  → WordListCategory  (e.g. "Business & Economy")
+     *   sub_tag      → WordList          (e.g. "Money", "Corporate")
+     *   Rows         → Words             belonging to the matching WordList
+     *
      * Returns ['inserted' => int, 'updated' => int, 'skipped' => int].
      */
     private function seedSheet(Worksheet $sheet): array
     {
-        $listTitle = $sheet->getTitle();
-        $rows      = $sheet->toArray(null, true, true, false);
+        $categoryName = $sheet->getTitle();
+        $rows = $sheet->toArray(null, true, true, false);
         array_shift($rows); // remove header row
 
         $dataRowCount = $this->countNonEmpty($rows);
-        $this->log('info', "\n── Sheet: \"{$listTitle}\" ({$dataRowCount} data rows) ──");
+        $this->log('info', "\n── Sheet: \"{$categoryName}\" ({$dataRowCount} data rows) ──");
 
-        return DB::transaction(function () use ($listTitle, $rows): array {
+        return DB::transaction(function () use ($categoryName, $rows): array {
 
-            // 1. WordList ─────────────────────────────────────────────────
-            $listExists = WordList::where('title', $listTitle)->exists();
-            $wordList   = WordList::firstOrCreate(
-                ['title' => $listTitle],
+            // 1. WordListCategory (from sheet title) ───────────────────────
+            $categoryExists = WordListCategory::where('name', $categoryName)->exists();
+            $category = WordListCategory::firstOrCreate(
+                ['name' => $categoryName],
                 [
-                    'price'      => 0,
-                    'difficulty' => 'beginner',
-                    'status'     => true,
+                    'description' => null,
+                    'status' => true,
                 ]
             );
 
             $this->log(
                 'info',
-                $listExists
-                    ? "  WordList already exists (ID: {$wordList->id}) — skipping creation."
-                    : "  WordList created (ID: {$wordList->id})."
+                $categoryExists
+                ? "  WordListCategory already exists (ID: {$category->id}) — skipping creation."
+                : "  WordListCategory created (ID: {$category->id})."
             );
 
-            // 2. Subcategories (col 6) ─────────────────────────────────────
-            $uniqueSubTags  = $this->getSubTagList($rows);
-            $subcategoryMap = [];
-            $newSubcategories = 0;
+            // 2. WordLists (from unique sub_tags, col 6) ───────────────────
+            $uniqueSubTags = $this->getSubTagList($rows);
+            $wordListMap = [];   // sub_tag => wordlist_id
+            $newWordLists = 0;
 
             foreach ($uniqueSubTags as $subTag) {
-                $subExists = Subcategory::where('wordlist_id', $wordList->id)
-                    ->where('name', $subTag)
+                $listExists = WordList::where('word_list_category_id', $category->id)
+                    ->where('title', $subTag)
                     ->exists();
 
-                $subcategory = Subcategory::firstOrCreate([
-                    'wordlist_id' => $wordList->id,
-                    'name'        => $subTag,
-                ]);
+                $wordList = WordList::firstOrCreate(
+                    [
+                        'word_list_category_id' => $category->id,
+                        'title' => $subTag,
+                    ],
+                    [
+                        'price' => 0,
+                        'difficulty' => 'beginner',
+                        'status' => true,
+                    ]
+                );
 
-                $subcategoryMap[$subTag] = $subcategory->id;
+                $wordListMap[$subTag] = $wordList->id;
 
-                if (!$subExists) {
-                    $newSubcategories++;
+                if (!$listExists) {
+                    $newWordLists++;
                 }
             }
 
-            $existingSubs = count($uniqueSubTags) - $newSubcategories;
+            $existingLists = count($uniqueSubTags) - $newWordLists;
             $this->log(
                 'info',
-                "  Subcategories: {$existingSubs} existing, {$newSubcategories} new " .
+                "  WordLists: {$existingLists} existing, {$newWordLists} new " .
                 "(total: " . count($uniqueSubTags) . ")."
             );
 
-            // 3. Pre-fetch existing word keys for this word list ───────────
-            // Key "{word}|{subcategory_id}" — used to distinguish insert vs update.
+            // 3. Pre-fetch existing word keys for this category's word lists ──
+            // Key "{word}|{wordlist_id}" — used to distinguish insert vs update.
+            $wordListIds = array_values($wordListMap);
             $existingKeys = DB::table('words')
-                ->where('wordlist_id', $wordList->id)
-                ->select('word', 'subcategory_id')
+                ->whereIn('wordlist_id', $wordListIds)
+                ->select('word', 'wordlist_id')
                 ->get()
-                ->mapWithKeys(fn($r) => [$r->word . '|' . $r->subcategory_id => true])
+                ->mapWithKeys(fn($r) => [$r->word . '|' . $r->wordlist_id => true])
                 ->toArray();
 
             // 4. Words ─────────────────────────────────────────────────────
-            $inserted  = 0;
-            $updated   = 0;
-            $skipped   = 0;
+            $inserted = 0;
+            $updated = 0;
+            $skipped = 0;
             $batchSize = 100;
-            $batch     = [];
-            $now       = now()->toDateTimeString();
+            $batch = [];
+            $now = now()->toDateTimeString();
 
             $flush = function () use (&$batch, &$inserted, &$updated, &$existingKeys): void {
                 if (empty($batch)) {
                     return;
                 }
 
-                // Requires unique index on (word, subcategory_id).
+                // Requires a unique index on (word, wordlist_id).
                 DB::table('words')->upsert(
                     $batch,
-                    ['word', 'subcategory_id'],
+                    ['word', 'wordlist_id'],
                     self::UPSERT_UPDATE_COLUMNS
                 );
 
                 foreach ($batch as $row) {
-                    $key = $row['word'] . '|' . $row['subcategory_id'];
+                    $key = $row['word'] . '|' . $row['wordlist_id'];
                     if (isset($existingKeys[$key])) {
                         $updated++;
                     } else {
@@ -215,7 +228,7 @@ class FluentoWordsSeeder extends Seeder
             foreach ($rows as $row) {
                 $subTag = $this->clean($row[6] ?? null);
 
-                if ($subTag === null || !isset($subcategoryMap[$subTag])) {
+                if ($subTag === null || !isset($wordListMap[$subTag])) {
                     $skipped++;
                     continue;
                 }
@@ -228,22 +241,21 @@ class FluentoWordsSeeder extends Seeder
                 }
 
                 $batch[] = [
-                    'wordlist_id'                => $wordList->id,   // ← renamed
-                    'subcategory_id'             => $subcategoryMap[$subTag],
-                    'word'                       => $word,
+                    'wordlist_id' => $wordListMap[$subTag],
+                    'word' => $word,
                     'parts_of_speech_variations' => $this->clean($row[1] ?? null) ?? '',
-                    'pronunciation'              => $this->clean($row[2] ?? null),
-                    'bangla_pronunciation'       => $this->clean($row[3] ?? null),
-                    'definition'                 => $this->clean($row[4] ?? null) ?? '',
-                    'bangla_meaning'             => $this->clean($row[5] ?? null),
-                    'hyphenation'                => null,
-                    'collocations'               => null,
-                    'example_sentences'          => $this->clean($row[7] ?? null) ?? '',
-                    'ai_prompt'                  => $this->clean($row[8] ?? null),
-                    'synonym'                    => null,
-                    'antonym'                    => null,
-                    'created_at'                 => $now,
-                    'updated_at'                 => $now,
+                    'pronunciation' => $this->clean($row[2] ?? null),
+                    'bangla_pronunciation' => $this->clean($row[3] ?? null),
+                    'definition' => $this->clean($row[4] ?? null) ?? '',
+                    'bangla_meaning' => $this->clean($row[5] ?? null),
+                    'hyphenation' => null,
+                    'collocations' => null,
+                    'example_sentences' => $this->clean($row[7] ?? null) ?? '',
+                    'ai_prompt' => $this->clean($row[8] ?? null),
+                    'synonym' => null,
+                    'antonym' => null,
+                    'created_at' => $now,
+                    'updated_at' => $now,
                 ];
 
                 if (count($batch) >= $batchSize) {
@@ -311,15 +323,15 @@ class FluentoWordsSeeder extends Seeder
     {
         if ($this->command) {
             match ($level) {
-                'error'  => $this->command->error($message),
-                'warn'   => $this->command->warn($message),
-                default  => $this->command->info($message),
+                'error' => $this->command->error($message),
+                'warn' => $this->command->warn($message),
+                default => $this->command->info($message),
             };
         } else {
             match ($level) {
-                'error'  => logger()->error('[FluentoWordsSeeder] ' . $message),
-                'warn'   => logger()->warning('[FluentoWordsSeeder] ' . $message),
-                default  => logger()->info('[FluentoWordsSeeder] ' . $message),
+                'error' => logger()->error('[FluentoWordsSeeder] ' . $message),
+                'warn' => logger()->warning('[FluentoWordsSeeder] ' . $message),
+                default => logger()->info('[FluentoWordsSeeder] ' . $message),
             };
         }
     }

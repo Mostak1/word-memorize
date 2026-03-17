@@ -3,10 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\WordList;
 use App\Models\Word;
+use App\Models\WordList;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class WordController extends Controller
 {
@@ -15,29 +14,28 @@ class WordController extends Controller
     private function wordRules(): array
     {
         return [
-            'subcategory_id'             => 'nullable|exists:subcategories,id',
-            'word'                        => 'required|string|max:255',
-            'pronunciation'               => 'nullable|string|max:255',
-            'bangla_pronunciation'        => 'nullable|string|max:255',
-            'hyphenation'                 => 'nullable|string',
-            'parts_of_speech_variations'  => 'required|string',
-            'definition'                  => 'required|string',
-            'bangla_meaning'              => 'required|string',
-            'collocations'                => 'nullable|string',
-            'example_sentences'           => 'required|string',
-            'ai_prompt'                   => 'nullable|string',
-            'synonym'                     => 'nullable|string',
-            'antonym'                     => 'nullable|string',
+            'word' => 'required|string|max:255',
+            'pronunciation' => 'nullable|string|max:255',
+            'bangla_pronunciation' => 'nullable|string|max:255',
+            'hyphenation' => 'nullable|string',
+            'parts_of_speech_variations' => 'required|string',
+            'definition' => 'required|string',
+            'bangla_meaning' => 'required|string',
+            'collocations' => 'nullable|string',
+            'example_sentences' => 'required|string',
+            'ai_prompt' => 'nullable|string',
+            'synonym' => 'nullable|string',
+            'antonym' => 'nullable|string',
         ];
     }
 
     private function imageRules(): array
     {
         return [
-            'images'          => 'nullable|array|max:10',
-            'images.*'        => 'image|mimes:jpeg,jpg,png,gif,webp|max:5120',
-            'new_captions'    => 'nullable|array',
-            'new_captions.*'  => 'nullable|string|max:500',
+            'images' => 'nullable|array|max:10',
+            'images.*' => 'image|mimes:jpeg,jpg,png,gif,webp|max:5120',
+            'new_captions' => 'nullable|array',
+            'new_captions.*' => 'nullable|string|max:500',
         ];
     }
 
@@ -46,8 +44,6 @@ class WordController extends Controller
     public function store(Request $request, WordList $wordList)
     {
         $validated = $request->validate(array_merge($this->wordRules(), $this->imageRules()));
-
-        $validated['subcategory_id'] = $validated['subcategory_id'] ?: null;
 
         $wordData = collect($validated)->except(['images', 'new_captions'])->all();
 
@@ -63,13 +59,11 @@ class WordController extends Controller
     public function update(Request $request, WordList $wordList, Word $word)
     {
         $validated = $request->validate(array_merge($this->wordRules(), $this->imageRules(), [
-            'remove_image_ids'    => 'nullable|array',
-            'remove_image_ids.*'  => 'integer|exists:word_images,id',
-            'existing_captions'   => 'nullable|array',
+            'remove_image_ids' => 'nullable|array',
+            'remove_image_ids.*' => 'integer|exists:word_images,id',
+            'existing_captions' => 'nullable|array',
             'existing_captions.*' => 'nullable|string|max:500',
         ]));
-
-        $validated['subcategory_id'] = $validated['subcategory_id'] ?: null;
 
         $wordData = collect($validated)
             ->except(['images', 'new_captions', 'remove_image_ids', 'existing_captions'])
@@ -77,6 +71,7 @@ class WordController extends Controller
 
         $word->update($wordData);
 
+        // Delete images marked for removal
         if (!empty($validated['remove_image_ids'])) {
             $word->images()
                 ->whereIn('id', $validated['remove_image_ids'])
@@ -84,6 +79,7 @@ class WordController extends Controller
                 ->each(fn($img) => $img->delete());
         }
 
+        // Update captions for remaining existing images
         if (!empty($validated['existing_captions'])) {
             foreach ($validated['existing_captions'] as $imageId => $caption) {
                 $word->images()
@@ -117,11 +113,10 @@ class WordController extends Controller
 
         foreach ($request->file('images') as $index => $file) {
             $storedPath = $file->store('words', 'public');
-            $imageUrl   = '/' . $storedPath; // DB value: /words/filename.jpg
 
             $word->images()->create([
-                'image_url'  => $imageUrl,
-                'caption'    => $request->input("new_captions.{$index}") ?: null,
+                'image_url' => '/' . $storedPath, // DB stores: /words/filename.jpg
+                'caption' => $request->input("new_captions.{$index}") ?: null,
                 'sort_order' => $startOrder + $index,
             ]);
         }

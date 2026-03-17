@@ -4,10 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Models\WordList;
 use App\Models\Word;
-use Illuminate\Support\Facades\DB;
+use App\Models\WordList;
+use App\Models\WordListCategory;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
@@ -15,20 +16,21 @@ class DashboardController extends Controller
     public function index()
     {
         $totalWordLists = WordList::count();
-        $totalWords     = Word::count();
+        $totalWords = Word::count();
 
         $stats = [
-            'total_users'          => User::count(),
-            'total_word_lists'     => $totalWordLists,
-            'active_users'         => User::where('created_at', '>=', Carbon::now()->subDays(30))
-                                         ->orWhere('updated_at', '>=', Carbon::now()->subDays(30))
-                                         ->count(),
-            'total_admins'         => User::where('is_admin', true)->count(),
-            'total_words'          => $totalWords,
-            'new_users_this_week'  => User::where('created_at', '>=', Carbon::now()->subDays(7))->count(),
-            'avg_words_per_list'   => $totalWordLists > 0
-                                         ? round($totalWords / $totalWordLists, 1)
-                                         : 0,
+            'total_users' => User::count(),
+            'total_admins' => User::where('is_admin', true)->count(),
+            'total_categories' => WordListCategory::count(),
+            'total_word_lists' => $totalWordLists,
+            'active_users' => User::where('created_at', '>=', Carbon::now()->subDays(30))
+                ->orWhere('updated_at', '>=', Carbon::now()->subDays(30))
+                ->count(),
+            'total_words' => $totalWords,
+            'new_users_this_week' => User::where('created_at', '>=', Carbon::now()->subDays(7))->count(),
+            'avg_words_per_list' => $totalWordLists > 0
+                ? round($totalWords / $totalWordLists, 1)
+                : 0,
         ];
 
         return Inertia::render('Admin/Dashboard', [
@@ -36,9 +38,6 @@ class DashboardController extends Controller
         ]);
     }
 
-    /**
-     * Get detailed reports
-     */
     public function reports()
     {
         $reports = [
@@ -74,18 +73,15 @@ class DashboardController extends Controller
         ]);
     }
 
-    /**
-     * Get user-specific reports
-     */
     public function userReports()
     {
         $reports = [
             'users_by_role' => [
-                'admins'        => User::where('is_admin', true)->count(),
+                'admins' => User::where('is_admin', true)->count(),
                 'regular_users' => User::where('is_admin', false)->count(),
             ],
             'users_by_verification' => [
-                'verified'   => User::whereNotNull('email_verified_at')->count(),
+                'verified' => User::whereNotNull('email_verified_at')->count(),
                 'unverified' => User::whereNull('email_verified_at')->count(),
             ],
             'registration_trend' => User::select(

@@ -82,7 +82,11 @@ export default function Welcome({ auth }) {
                             </div>
                         </div>
 
-                        <Link href={route("wordlist.index")} className="block">
+                        {/* Exercise → category index (first step in the flow) */}
+                        <Link
+                            href={route("wordlistcategory.index")}
+                            className="block"
+                        >
                             <div className="bg-white rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm cursor-pointer hover:shadow-md transition-shadow min-h-[160px]">
                                 <div className="w-16 h-16 rounded-full bg-[#E5201C]/10 flex items-center justify-center">
                                     <BookOpen className="h-8 w-8 text-[#E5201C]" />
@@ -115,19 +119,25 @@ export default function Welcome({ auth }) {
                             </div>
                         </div>
 
-                        <div className="bg-white rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm cursor-pointer hover:shadow-md transition-shadow min-h-[160px]">
-                            <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center">
-                                <List className="h-8 w-8 text-purple-500" />
+                        {/* Word List → category index */}
+                        <Link
+                            href={route("wordlistcategory.index")}
+                            className="block"
+                        >
+                            <div className="bg-white rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm cursor-pointer hover:shadow-md transition-shadow min-h-[160px]">
+                                <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center">
+                                    <List className="h-8 w-8 text-purple-500" />
+                                </div>
+                                <div className="text-center">
+                                    <p className="font-semibold text-gray-900 text-sm">
+                                        Word List
+                                    </p>
+                                    <p className="text-xs text-gray-400 mt-0.5">
+                                        Browse all
+                                    </p>
+                                </div>
                             </div>
-                            <div className="text-center">
-                                <p className="font-semibold text-gray-900 text-sm">
-                                    Word List
-                                </p>
-                                <p className="text-xs text-gray-400 mt-0.5">
-                                    Browse all
-                                </p>
-                            </div>
-                        </div>
+                        </Link>
                     </div>
 
                     <div className="grid grid-cols-3 gap-3 mb-4">

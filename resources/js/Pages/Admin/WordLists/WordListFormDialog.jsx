@@ -22,15 +22,18 @@ import { toast } from "sonner";
 export default function WordListFormDialog({
     open,
     onOpenChange,
-    wordList = null, // ← renamed from exerciseGroup
+    wordList = null,
+    categoryId = null,
 }) {
     const isEditing = !!wordList;
 
     const [data, setData] = useState({
         title: wordList?.title || "",
         difficulty: wordList?.difficulty || "",
-        price: wordList?.price ?? "",
+        price: wordList?.price ?? 0,
         status: wordList?.status ?? true,
+        word_list_category_id:
+            wordList?.word_list_category_id || categoryId || "",
     });
 
     const [errors, setErrors] = useState({});
@@ -42,12 +45,20 @@ export default function WordListFormDialog({
             setData({
                 title: wordList?.title || "",
                 difficulty: wordList?.difficulty || "",
-                price: wordList?.price ?? "",
+                price: wordList?.price ?? 0,
                 status: wordList?.status ?? true,
+                word_list_category_id:
+                    wordList?.word_list_category_id || categoryId || "",
             });
             setErrors({});
         } else {
-            setData({ title: "", difficulty: "", price: "", status: true });
+            setData({
+                title: "",
+                difficulty: "",
+                price: 0,
+                status: true,
+                word_list_category_id: "",
+            });
             setErrors({});
         }
     }, [open]);

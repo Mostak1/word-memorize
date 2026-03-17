@@ -13,6 +13,7 @@ export default function ExerciseDetail({
     wordList,
     subcategories = [],
     words,
+    category,
 }) {
     const hasSubcategories = subcategories && subcategories.length > 0;
 
@@ -37,6 +38,11 @@ export default function ExerciseDetail({
         }
     };
 
+    // Back destination: category's wordlist page if available, else category index
+    const backHref = category
+        ? route("wordlistcategory.wordlists", category.id)
+        : route("wordlistcategory.index");
+
     return (
         <AppLayout>
             <Head title={`${wordList.title}`} />
@@ -45,12 +51,18 @@ export default function ExerciseDetail({
                     {/* Sub-header */}
                     <div className="flex items-center gap-3 mb-4">
                         <Link
-                            href={route("wordlist.index")}
+                            href={backHref}
                             className="p-2 rounded-xl bg-white shadow-sm hover:shadow-md transition text-gray-500"
                         >
                             <ChevronLeft className="h-5 w-5" />
                         </Link>
                         <div className="flex-1 min-w-0">
+                            {/* Breadcrumb */}
+                            {category && (
+                                <p className="text-xs text-gray-400 mb-0.5 truncate">
+                                    {category.name}
+                                </p>
+                            )}
                             <h1 className="text-xl font-bold text-gray-900 leading-tight">
                                 {wordList.title}
                             </h1>

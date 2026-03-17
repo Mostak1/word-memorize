@@ -3,7 +3,8 @@ import { Head, Link, router } from "@inertiajs/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { Button } from "@/Components/ui/button";
 import { Badge } from "@/Components/ui/badge";
-import WordListFormDialog from "@/Pages/Admin/WordLists/WordListFormDialog";
+import WordListCategoryFormDialog from "../WordListCategory/WordListCategoryFormDialog";
+import WordListFormDialog from "./WordListFormDialog"; // ← NEW IMPORT (adjust path if your folder structure differs)
 import {
     Table,
     TableBody,
@@ -29,31 +30,35 @@ import {
     AlertDialogTitle,
 } from "@/Components/ui/alert-dialog";
 import { Switch } from "@/Components/ui/switch";
-import { Plus, MoreVertical, Eye, Edit, Trash2 } from "lucide-react";
+import { Plus, MoreVertical, Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 
-const difficultyColors = {
-    beginner:
-        "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-    intermediate:
-        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-    advanced: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-};
+// NEW IMPORTS FOR ACCORDION
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from "@/Components/ui/accordion";
+import { Label } from "@/Components/ui/label"; // needed for status label inside accordion
 
-export default function Index({ wordLists }) {
-    const [openCreate, setOpenCreate] = useState(false);
-    const [editingList, setEditingList] = useState(null);
-    const [deletingList, setDeletingList] = useState(null);
+export default function Index({ categories }) {
+    const [openCategoryCreate, setOpenCategoryCreate] = useState(false);
+    const [editingCategory, setEditingCategory] = useState(null);
+    const [deletingCategory, setDeletingCategory] = useState(null);
 
-    const toggleStatus = (wordList) => {
+    // NEW STATE FOR WORD LIST CREATION PER CATEGORY
+    const [openWordListCreate, setOpenWordListCreate] = useState(false);
+    const [selectedCategoryId, setSelectedCategoryId] = useState(null);
+
+    const toggleCategoryStatus = (category) => {
         router.patch(
-            route("admin.word-lists.update", wordList.id),
+            route("admin.word-list-categories.update", category.id),
             {
-                title: wordList.title,
-                price: wordList.price,
-                difficulty: wordList.difficulty,
-                status: !wordList.status,
+                name: category.name,
+                description: category.description,
+                status: !category.status,
             },
             {
                 onSuccess: () => toast.success("Status updated!"),
@@ -62,186 +67,287 @@ export default function Index({ wordLists }) {
         );
     };
 
-    const confirmDelete = () => {
-        if (!deletingList) return;
-        router.delete(route("admin.word-lists.destroy", deletingList.id), {
-            onSuccess: () => {
-                toast.success("Word list deleted successfully!");
-                setDeletingList(null);
+    const confirmDeleteCategory = () => {
+        if (!deletingCategory) return;
+        router.delete(
+            route("admin.word-list-categories.destroy", deletingCategory.id),
+            {
+                onSuccess: () => {
+                    toast.success("Category deleted successfully!");
+                    setDeletingCategory(null);
+                },
+                onError: () => {
+                    toast.error("Failed to delete category.");
+                    setDeletingCategory(null);
+                },
             },
-            onError: () => {
-                toast.error("Failed to delete word list.");
-                setDeletingList(null);
-            },
-        });
+        );
+    };
+
+    // NEW HELPER – opens WordListFormDialog pre-filled with this category
+    const openNewWordListForCategory = (category) => {
+        setSelectedCategoryId(category.id);
+        setOpenWordListCreate(true);
     };
 
     return (
         <AdminLayout>
-            <Head title="Word Lists" />
+            <Head title="Word List Categories" />
 
             <div className="space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight">
-                            Word Lists
+                            Word List Categories
                         </h1>
                         <p className="text-muted-foreground">
-                            Manage your word lists and vocabulary sets
+                            Manage categories to organize your word lists
                         </p>
                     </div>
-                    <Button onClick={() => setOpenCreate(true)}>
+                    <Button onClick={() => setOpenCategoryCreate(true)}>
                         <Plus className="mr-2 h-4 w-4" />
-                        New Word List
+                        New Word List Category
                     </Button>
                 </div>
 
-                {/* Table */}
+                {/* REPLACED TABLE WITH ACCORDION */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>All Word Lists</CardTitle>
+                        <CardTitle>All Word List Categories</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Title</TableHead>
-                                    <TableHead>Difficulty</TableHead>
-                                    <TableHead>Price</TableHead>
-                                    <TableHead>Words</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">
-                                        Actions
-                                    </TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {wordLists.data.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell
-                                            colSpan={6}
-                                            className="text-center text-muted-foreground"
-                                        >
-                                            No word lists found. Create your
-                                            first one!
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    wordLists.data.map((wordList) => (
-                                        <TableRow key={wordList.id}>
-                                            {/* Title */}
-                                            <TableCell className="font-medium">
-                                                <Link
-                                                    href={route(
-                                                        "admin.word-lists.show",
-                                                        wordList.id,
-                                                    )}
-                                                    className="hover:underline"
-                                                >
-                                                    {wordList.title}
-                                                </Link>
-                                            </TableCell>
-
-                                            {/* Difficulty */}
-                                            <TableCell>
+                        {categories.data.length === 0 ? (
+                            <div className="py-12 text-center text-muted-foreground">
+                                No word list categories found. Create your first
+                                one!
+                            </div>
+                        ) : (
+                            <Accordion type="multiple" className="w-full">
+                                {categories.data.map((category) => (
+                                    <AccordionItem
+                                        key={category.id}
+                                        value={`cat-${category.id}`}
+                                    >
+                                        {/* Row: name+badge on LEFT, all controls on RIGHT */}
+                                        <div className="flex items-center justify-between px-4 py-3 group hover:bg-muted/50 rounded-lg transition-colors">
+                                            {/* LEFT — category name + count badge */}
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <span className="font-medium text-lg truncate">
+                                                    {category.name}
+                                                </span>
                                                 <Badge
-                                                    className={
-                                                        difficultyColors[
-                                                            wordList.difficulty
-                                                        ]
-                                                    }
-                                                    variant="secondary"
+                                                    variant="outline"
+                                                    className="shrink-0"
                                                 >
-                                                    {wordList.difficulty}
+                                                    {category.word_lists_count}{" "}
+                                                    lists
                                                 </Badge>
-                                            </TableCell>
+                                            </div>
 
-                                            {/* Price */}
-                                            <TableCell>
-                                                ${wordList.price}
-                                            </TableCell>
-
-                                            {/* Words */}
-                                            <TableCell>
-                                                <Badge variant="outline">
-                                                    {wordList.words_count} words
-                                                </Badge>
-                                            </TableCell>
-
-                                            {/* Status toggle */}
-                                            <TableCell>
+                                            {/* RIGHT — status · chevron · edit · delete · add */}
+                                            <div className="flex items-center gap-1 shrink-0 ml-4">
+                                                {/* Status toggle */}
                                                 <Switch
-                                                    checked={wordList.status}
+                                                    checked={category.status}
                                                     onCheckedChange={() =>
-                                                        toggleStatus(wordList)
+                                                        toggleCategoryStatus(
+                                                            category,
+                                                        )
                                                     }
+                                                    className="mr-1"
                                                 />
-                                            </TableCell>
 
-                                            {/* Actions */}
-                                            <TableCell className="text-right">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger
-                                                        asChild
-                                                    >
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                        >
-                                                            <MoreVertical className="h-4 w-4" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem
-                                                            asChild
-                                                        >
-                                                            <Link
-                                                                href={route(
-                                                                    "admin.word-lists.show",
-                                                                    wordList.id,
-                                                                )}
-                                                                className="flex items-center"
-                                                            >
-                                                                <Eye className="mr-2 h-4 w-4" />
-                                                                View Words
-                                                            </Link>
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem
-                                                            onClick={() =>
-                                                                setEditingList(
-                                                                    wordList,
-                                                                )
-                                                            }
-                                                            className="flex items-center"
-                                                        >
-                                                            <Edit className="mr-2 h-4 w-4" />
-                                                            Edit
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem
-                                                            onClick={() =>
-                                                                setDeletingList(
-                                                                    wordList,
-                                                                )
-                                                            }
-                                                            className="flex items-center text-red-600"
-                                                        >
-                                                            <Trash2 className="mr-2 h-4 w-4" />
-                                                            Delete
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
+                                                {/* Accordion chevron — AccordionTrigger wraps only the icon */}
+                                                <AccordionTrigger className="h-8 w-8 p-0 rounded-md hover:bg-muted flex items-center justify-center hover:no-underline [&>svg]:m-0 [&>svg]:shrink-0 data-[state=open]:[&>svg]:rotate-180" />
 
-                        {/* Pagination */}
-                        {wordLists.links.length > 3 && (
-                            <div className="mt-4 flex items-center justify-center gap-2">
-                                {wordLists.links.map((link, index) => (
+                                                {/* Divider */}
+                                                <div className="w-px h-5 bg-border mx-1" />
+
+                                                {/* Edit */}
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8"
+                                                    onClick={() =>
+                                                        setEditingCategory(
+                                                            category,
+                                                        )
+                                                    }
+                                                    title="Edit category"
+                                                >
+                                                    <Edit className="h-4 w-4" />
+                                                </Button>
+
+                                                {/* Delete */}
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50/80"
+                                                    onClick={() =>
+                                                        setDeletingCategory(
+                                                            category,
+                                                        )
+                                                    }
+                                                    title="Delete category"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+
+                                                {/* Add word list */}
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8"
+                                                    onClick={() =>
+                                                        openNewWordListForCategory(
+                                                            category,
+                                                        )
+                                                    }
+                                                    title="Add new word list"
+                                                >
+                                                    <Plus className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        <AccordionContent className="px-6 pb-6">
+                                            <div className="space-y-6 pt-2">
+                                                {/* Actions row - you can keep or move these if you want */}
+
+                                                {/* Word Lists Table / List */}
+                                                <div>
+                                                    <h3 className="text-sm font-semibold mb-3">
+                                                        Word Lists in this
+                                                        category (
+                                                        {
+                                                            category.word_lists_count
+                                                        }
+                                                        )
+                                                    </h3>
+
+                                                    {category.word_lists
+                                                        ?.length === 0 ? ( // ← add ?.
+                                                        <div className="text-sm text-muted-foreground py-6 text-center border rounded-lg bg-muted/30">
+                                                            No word lists in
+                                                            this category yet.
+                                                            <br />
+                                                            Click "Add New Word
+                                                            List" above to
+                                                            create one.
+                                                        </div>
+                                                    ) : (
+                                                        <div className="border rounded-lg overflow-hidden">
+                                                            <Table>
+                                                                <TableHeader className="bg-muted/50">
+                                                                    <TableRow>
+                                                                        <TableHead>
+                                                                            Title
+                                                                        </TableHead>
+                                                                        <TableHead className="w-24 text-center">
+                                                                            Difficulty
+                                                                        </TableHead>
+                                                                        <TableHead className="w-20 text-center">
+                                                                            Words
+                                                                        </TableHead>
+                                                                        <TableHead className="w-24 text-center">
+                                                                            Price
+                                                                        </TableHead>
+                                                                        <TableHead className="w-20 text-center">
+                                                                            Status
+                                                                        </TableHead>
+                                                                    </TableRow>
+                                                                </TableHeader>
+                                                                <TableBody>
+                                                                    {category.word_lists?.map(
+                                                                        (
+                                                                            wordList, // ← changed here + optional chaining
+                                                                        ) => (
+                                                                            <TableRow
+                                                                                key={
+                                                                                    wordList.id
+                                                                                }
+                                                                                className="cursor-pointer hover:bg-muted/60 transition-colors"
+                                                                                onClick={() => {
+                                                                                    router.visit(
+                                                                                        route(
+                                                                                            "admin.word-lists.edit",
+                                                                                            wordList.id,
+                                                                                        ),
+                                                                                    );
+                                                                                }}
+                                                                            >
+                                                                                <TableCell className="font-medium">
+                                                                                    <Link
+                                                                                        href={route(
+                                                                                            "admin.word-lists.show",
+                                                                                            wordList.id,
+                                                                                        )}
+                                                                                        className="hover:underline text-primary block"
+                                                                                        onClick={(
+                                                                                            e,
+                                                                                        ) =>
+                                                                                            e.stopPropagation()
+                                                                                        } // prevents accordion toggle when clicking link
+                                                                                    >
+                                                                                        {
+                                                                                            wordList.title
+                                                                                        }
+                                                                                    </Link>
+                                                                                </TableCell>
+                                                                                <TableCell className="text-center">
+                                                                                    <Badge
+                                                                                        variant={
+                                                                                            wordList.difficulty ===
+                                                                                            "beginner"
+                                                                                                ? "default"
+                                                                                                : wordList.difficulty ===
+                                                                                                    "intermediate"
+                                                                                                  ? "secondary"
+                                                                                                  : "destructive"
+                                                                                        }
+                                                                                        className="capitalize"
+                                                                                    >
+                                                                                        {wordList.difficulty ||
+                                                                                            "—"}
+                                                                                    </Badge>
+                                                                                </TableCell>
+                                                                                <TableCell className="text-center">
+                                                                                    {wordList.words_count ??
+                                                                                        0}
+                                                                                </TableCell>
+                                                                                <TableCell className="text-center">
+                                                                                    {wordList.price >
+                                                                                    0
+                                                                                        ? `$${wordList.price}`
+                                                                                        : "Free"}
+                                                                                </TableCell>
+                                                                                <TableCell className="text-center">
+                                                                                    <div className="flex justify-center">
+                                                                                        <div
+                                                                                            className={`h-2.5 w-2.5 rounded-full ${wordList.status ? "bg-green-500" : "bg-gray-400"}`}
+                                                                                        />
+                                                                                    </div>
+                                                                                </TableCell>
+                                                                            </TableRow>
+                                                                        ),
+                                                                    )}
+                                                                </TableBody>
+                                                            </Table>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                ))}
+                            </Accordion>
+                        )}
+
+                        {/* Pagination (kept exactly as before) */}
+                        {categories.links.length > 3 && (
+                            <div className="mt-6 flex items-center justify-center gap-2">
+                                {categories.links.map((link, index) => (
                                     <Button
                                         key={index}
                                         variant={
@@ -263,40 +369,50 @@ export default function Index({ wordLists }) {
                 </Card>
             </div>
 
-            {/* Create dialog */}
-            <WordListFormDialog
-                open={openCreate}
-                onOpenChange={setOpenCreate}
+            {/* Existing Category Dialogs (unchanged) */}
+            <WordListCategoryFormDialog
+                open={openCategoryCreate}
+                onOpenChange={setOpenCategoryCreate}
             />
 
-            {/* Edit dialog */}
-            {editingList && (
-                <WordListFormDialog
-                    open={!!editingList}
-                    wordList={editingList}
-                    onOpenChange={(open) => !open && setEditingList(null)}
+            {editingCategory && (
+                <WordListCategoryFormDialog
+                    open={!!editingCategory}
+                    category={editingCategory}
+                    onOpenChange={(open) => !open && setEditingCategory(null)}
                 />
             )}
 
-            {/* Delete confirmation */}
+            {/* NEW: Word List Creation Dialog (pre-filled with selected category) */}
+            <WordListFormDialog
+                open={openWordListCreate}
+                onOpenChange={(open) => {
+                    setOpenWordListCreate(open);
+                    if (!open) setSelectedCategoryId(null);
+                }}
+                categoryId={selectedCategoryId} // ← passes the category ID so the form includes word_list_category_id
+            />
+
+            {/* Delete Confirmation (unchanged) */}
             <AlertDialog
-                open={!!deletingList}
-                onOpenChange={(open) => !open && setDeletingList(null)}
+                open={!!deletingCategory}
+                onOpenChange={(open) => !open && setDeletingCategory(null)}
             >
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Word List</AlertDialogTitle>
+                        <AlertDialogTitle>Delete Category</AlertDialogTitle>
                         <AlertDialogDescription>
                             Are you sure you want to delete{" "}
-                            <strong>{deletingList?.title}</strong>? This action
-                            cannot be undone and will remove all associated
-                            words.
+                            <strong>{deletingCategory?.name}</strong>? This will
+                            permanently delete the category and all word lists
+                            (and their words) inside it.{" "}
+                            <strong>This action cannot be undone.</strong>
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
-                            onClick={confirmDelete}
+                            onClick={confirmDeleteCategory}
                             className="bg-red-600 hover:bg-red-700"
                         >
                             Delete
