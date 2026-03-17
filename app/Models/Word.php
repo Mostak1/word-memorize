@@ -82,6 +82,11 @@ class Word extends Model
         return $this->hasMany(MasteredWord::class);
     }
 
+    public function bookmarkEntries()
+    {
+        return $this->hasMany(BookmarkedWord::class);
+    }
+
     // ── Accessors ─────────────────────────────────────────────────────────────
 
     public function getDifficultyAttribute(): ?string

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BookmarkedWord;
 use App\Models\MasteredWord;
 use App\Models\ReviewWord;
 use App\Models\Word;
@@ -61,6 +62,16 @@ class ReviewWordController extends Controller
         return $this->handleRedirect($request, $word);
     }
 
+    private function bookmarkedIds(array $wordIds): array
+    {
+        if (!auth()->check())
+            return [];
+        return BookmarkedWord::where('user_id', auth()->id())
+            ->whereIn('word_id', $wordIds)
+            ->pluck('word_id')
+            ->toArray();
+    }
+
     /**
      * 🔁 Start a focused exercise session using only the user's review words.
      *
@@ -80,16 +91,17 @@ class ReviewWordController extends Controller
             ->values();
 
         $wordList = (object) [
-            'id'         => null,
-            'title'      => 'Review Words',
+            'id' => null,
+            'title' => 'Review Words',
             'difficulty' => 'Mixed',
         ];
 
         return Inertia::render('ExerciseSession', [
-            'wordList'    => $wordList,
-            'words'       => $words,
+            'wordList' => $wordList,
+            'words' => $words,
             'subcategory' => null,
-            'backUrl'     => route('words.review'),
+            'bookmarkedWordIds' => $this->bookmarkedIds($words->pluck('id')->toArray()),
+            'backUrl' => route('words.review'),
         ]);
     }
 

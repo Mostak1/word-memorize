@@ -27,8 +27,10 @@ export default function WordDetail({
     wordList,
     subCategory,
     isMastered = false,
+    isBookmarked: initialBookmarked = false,
 }) {
     const [wordStatus, setWordStatus] = useState(null);
+    const [bookmarked, setBookmarked] = useState(initialBookmarked);
     const [showLoginDialog, setShowLoginDialog] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -37,7 +39,8 @@ export default function WordDetail({
         setWordStatus(null);
         setIsSubmitting(false);
         setActiveImageIndex(0);
-    }, [word.id]);
+        setBookmarked(initialBookmarked);
+    }, [word.id, initialBookmarked]);
 
     const speakWord = (text) => {
         if ("speechSynthesis" in window) {
@@ -45,6 +48,24 @@ export default function WordDetail({
             u.lang = "en-US";
             window.speechSynthesis.speak(u);
         }
+    };
+
+    const handleBookmark = () => {
+        if (!auth.user) {
+            setShowLoginDialog(true);
+            return;
+        }
+
+        setBookmarked((prev) => !prev); // optimistic toggle
+
+        router.post(
+            route("word.bookmark", word.id),
+            {},
+            {
+                preserveScroll: true,
+                onError: () => setBookmarked((prev) => !prev), // revert on error
+            },
+        );
     };
 
     const handleMarkWord = (status) => {
@@ -106,22 +127,24 @@ export default function WordDetail({
                     <div className="bg-white rounded-3xl shadow-md overflow-hidden">
                         {/* Top row */}
                         <div className="flex items-center justify-between px-5 pt-5 pb-2">
-                            <Link
-                                href={
-                                    subCategory
-                                        ? route("wordlist.subcategory", {
-                                              wordListId: wordList.id,
-                                              subcategoryId: subCategory.id,
-                                          })
-                                        : route("wordlist.index")
+                            <button
+                                onClick={handleBookmark}
+                                className="p-1 transition-colors"
+                                aria-label={
+                                    bookmarked
+                                        ? "Remove bookmark"
+                                        : "Bookmark word"
                                 }
-                                className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
                             >
                                 <Bookmark
-                                    className="h-6 w-6"
+                                    className={`h-6 w-6 transition-colors ${
+                                        bookmarked
+                                            ? "fill-yellow-400 text-yellow-400"
+                                            : "text-gray-400 hover:text-gray-600"
+                                    }`}
                                     strokeWidth={1.8}
                                 />
-                            </Link>
+                            </button>
                             <button
                                 onClick={() => speakWord(word.word)}
                                 className="p-1 text-gray-500 hover:text-gray-700 transition-colors"

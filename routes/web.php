@@ -3,6 +3,7 @@
 use App\Http\Controllers\WordListController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewWordController;
+use App\Http\Controllers\BookmarkController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -106,6 +107,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/my/mastered',         [WordListController::class,  'masteredWords'])->name('words.mastered');
     Route::get('/my/review',           [WordListController::class,  'reviewWords'])->name('words.review');
     Route::get('/my/review/practice',  [ReviewWordController::class, 'practiceReview'])->name('words.review.practice');
+
+    // inside the auth middleware group:
+    Route::post('/word/{word}/bookmark', [BookmarkController::class, 'toggle'])->name('word.bookmark');
+    Route::get('/my/bookmarks',          [BookmarkController::class, 'index'])->name('words.bookmarked');
 });
 
 require __DIR__ . '/auth.php';

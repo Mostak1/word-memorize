@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BookmarkedWord;
 use App\Models\WordList;
 use App\Models\Subcategory;
 use App\Models\Word;
@@ -26,6 +27,16 @@ class WordListController extends Controller
         ]);
     }
 
+    private function bookmarkedIds(array $wordIds): array
+    {
+        if (!auth()->check())
+            return [];
+        return BookmarkedWord::where('user_id', auth()->id())
+            ->whereIn('word_id', $wordIds)
+            ->pluck('word_id')
+            ->toArray();
+    }
+
     /**
      * Display a specific word list:
      * - If it has subcategories → show subcategory list
@@ -46,16 +57,16 @@ class WordListController extends Controller
                 ->withQueryString();
 
             return Inertia::render('WordlistDetail', [
-                'wordList'      => $wordList,
+                'wordList' => $wordList,
                 'subcategories' => [],
-                'words'         => $words,
+                'words' => $words,
             ]);
         }
 
         return Inertia::render('WordlistDetail', [
-            'wordList'      => $wordList,
+            'wordList' => $wordList,
             'subcategories' => $subcategories,
-            'words'         => null,
+            'words' => null,
         ]);
     }
 
@@ -77,9 +88,9 @@ class WordListController extends Controller
             ->withQueryString();
 
         return Inertia::render('WordlistSubcategory', [
-            'wordList'    => $wordList,
+            'wordList' => $wordList,
             'subcategory' => $subcategory,
-            'words'       => $words,
+            'words' => $words,
         ]);
     }
 
@@ -89,38 +100,40 @@ class WordListController extends Controller
     public function start($id)
     {
         $wordList = WordList::with('words.images')->findOrFail($id);
- 
+
         $words = $wordList->words->shuffle()->values();
- 
+
         return Inertia::render('ExerciseSession', [
-            'wordList'   => $wordList,
-            'words'      => $words,
+            'wordList' => $wordList,
+            'words' => $words,
             'subcategory' => null,
+            'bookmarkedWordIds' => $this->bookmarkedIds($words->pluck('id')->toArray()),
         ]);
     }
- 
+
     /**
      * Start an exercise session for a specific subcategory (words shuffled)
      */
     public function startSubcategory($wordListId, $subcategoryId)
     {
         $wordList = WordList::findOrFail($wordListId);
- 
+
         $subcategory = Subcategory::where('id', $subcategoryId)
             ->where('wordlist_id', $wordListId)
             ->firstOrFail();
- 
+
         $words = Word::with('images')
             ->where('wordlist_id', $wordListId)
             ->where('subcategory_id', $subcategoryId)
             ->get()
             ->shuffle()
             ->values();
- 
+
         return Inertia::render('ExerciseSession', [
-            'wordList'    => $wordList,
-            'words'       => $words,
+            'wordList' => $wordList,
+            'words' => $words,
             'subcategory' => $subcategory,
+            'bookmarkedWordIds' => $this->bookmarkedIds($words->pluck('id')->toArray()),
         ]);
     }
 
@@ -136,7 +149,7 @@ class WordListController extends Controller
             ->get();
 
         return Inertia::render('Wordlist', [
-            'wordLists'         => $wordLists,
+            'wordLists' => $wordLists,
             'currentDifficulty' => $difficulty,
         ]);
     }
@@ -148,11 +161,17 @@ class WordListController extends Controller
     {
         $word = Word::with(['wordList', 'images'])->findOrFail($id);
 
+        $isBookmarked = auth()->check()
+            ? \App\Models\BookmarkedWord::where('user_id', auth()->id())
+                ->where('word_id', $word->id)->exists()
+            : false;
+
         return Inertia::render('WordDetail', [
-            'word'        => $word,
-            'wordList'    => $word->wordList,
+            'word' => $word,
+            'wordList' => $word->wordList,
             'subCategory' => $word->subcategory,
-            'isMastered'  => $request->query('from') === 'mastered',
+            'isMastered' => $request->query('from') === 'mastered',
+            'isBookmarked' => $isBookmarked,   // ← new
         ]);
     }
 
@@ -163,13 +182,13 @@ class WordListController extends Controller
             ->latest()
             ->paginate(20)
             ->withQueryString()
-            ->through(fn ($entry) => $entry->word);
-    
+            ->through(fn($entry) => $entry->word);
+
         return Inertia::render('MasteredWords', [
             'words' => $words,
         ]);
     }
-    
+
     /**
      * Show all words the authenticated user is still reviewing.
      */
@@ -180,8 +199,8 @@ class WordListController extends Controller
             ->latest()
             ->paginate(20)
             ->withQueryString()
-            ->through(fn ($entry) => $entry->word);
-    
+            ->through(fn($entry) => $entry->word);
+
         return Inertia::render('ReviewWords', [
             'words' => $words,
         ]);

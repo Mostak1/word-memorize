@@ -29,6 +29,7 @@ export default function ExerciseSession({
     subcategory,
     words,
     backUrl = null,
+    bookmarkedWordIds = [],
 }) {
     const { auth } = usePage().props;
 
@@ -38,6 +39,32 @@ export default function ExerciseSession({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [sessionDone, setSessionDone] = useState(false);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
+    const [bookmarks, setBookmarks] = useState(() =>
+        Object.fromEntries(bookmarkedWordIds.map((id) => [id, true])),
+    );
+
+    const handleBookmark = (wordId) => {
+        if (!auth?.user) {
+            setShowLoginDialog(true);
+            return;
+        }
+
+        setBookmarks((prev) => ({ ...prev, [wordId]: !prev[wordId] })); // optimistic
+
+        router.post(
+            route("word.bookmark", wordId),
+            {},
+            {
+                preserveScroll: true,
+                preserveState: true,
+                onError: () =>
+                    setBookmarks((prev) => ({
+                        ...prev,
+                        [wordId]: !prev[wordId],
+                    })), // revert
+            },
+        );
+    };
 
     const total = words.length;
     const word = words[currentIndex] ?? null;
@@ -243,12 +270,24 @@ export default function ExerciseSession({
                     <div className="bg-white rounded-3xl shadow-md overflow-hidden">
                         {/* Top row: bookmark + speaker */}
                         <div className="flex items-center justify-between px-5 pt-5 pb-2">
-                            <div className="p-1 text-gray-300">
+                            <button
+                                onClick={() => handleBookmark(word.id)}
+                                className="p-1 transition-colors"
+                                aria-label={
+                                    bookmarks[word.id]
+                                        ? "Remove bookmark"
+                                        : "Bookmark word"
+                                }
+                            >
                                 <Bookmark
-                                    className="h-6 w-6"
+                                    className={`h-6 w-6 transition-colors ${
+                                        bookmarks[word.id]
+                                            ? "fill-yellow-400 text-yellow-400"
+                                            : "text-gray-400 hover:text-gray-600"
+                                    }`}
                                     strokeWidth={1.8}
                                 />
-                            </div>
+                            </button>
                             <button
                                 onClick={() => speakWord(word.word)}
                                 className="p-1 text-gray-500 hover:text-gray-700 transition"
