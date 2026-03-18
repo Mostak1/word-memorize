@@ -13,14 +13,14 @@ import {
 import {
     Volume2,
     Check,
-    X as XIcon,
     BookOpen,
     LogIn,
     Bookmark,
     ChevronLeft,
+    ChevronRight,
     RotateCcw,
 } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import FlashMessages from "@/Components/FlashMessage";
 import { usePage } from "@inertiajs/react";
 
@@ -42,6 +42,16 @@ export default function ExerciseSession({
     const [bookmarks, setBookmarks] = useState(() =>
         Object.fromEntries(bookmarkedWordIds.map((id) => [id, true])),
     );
+
+    // ── Swipe state ───────────────────────────────────────────────────────────
+    const touchStartX = useRef(null);
+    const touchStartY = useRef(null);
+    const [dragX, setDragX] = useState(0);
+    const [swipeHint, setSwipeHint] = useState(null); // 'prev' | 'next' | null
+    const SWIPE_THRESHOLD = 80;
+    const slideDir = useRef("left"); // 'left' | 'right' — direction new card enters from
+    const [cardKey, setCardKey] = useState(0); // bump to re-trigger entrance anim
+    const [exiting, setExiting] = useState(false); // true while old card flies out
 
     const handleBookmark = (wordId) => {
         if (!auth?.user) {
@@ -98,11 +108,58 @@ export default function ExerciseSession({
         );
     };
 
+    const changeCard = (newIndex, direction) => {
+        if (newIndex < 0 || newIndex > total) return;
+        slideDir.current = direction;
+        setExiting(true);
+        setTimeout(() => {
+            setExiting(false);
+            if (newIndex >= total) {
+                setSessionDone(true);
+            } else {
+                setCurrentIndex(newIndex);
+                setCardKey((k) => k + 1);
+            }
+        }, 200); // exit anim duration
+    };
+
     const advance = () => {
-        if (isLastWord) {
-            setSessionDone(true);
-        } else {
-            setCurrentIndex((i) => i + 1);
+        changeCard(isLastWord ? total : currentIndex + 1, "left");
+    };
+
+    const goToPrev = () => {
+        if (currentIndex > 0) changeCard(currentIndex - 1, "right");
+    };
+
+    // ── Touch / swipe handlers ────────────────────────────────────────────────
+    const onTouchStart = (e) => {
+        touchStartX.current = e.touches[0].clientX;
+        touchStartY.current = e.touches[0].clientY;
+        setDragX(0);
+        setSwipeHint(null);
+    };
+
+    const onTouchMove = (e) => {
+        if (touchStartX.current === null) return;
+        const dx = e.touches[0].clientX - touchStartX.current;
+        const dy = e.touches[0].clientY - touchStartY.current;
+        // Only track horizontal swipes (ignore vertical scrolling)
+        if (Math.abs(dy) > Math.abs(dx) && Math.abs(dx) < 10) return;
+        setDragX(dx);
+        if (dx > 30) setSwipeHint("prev");
+        else if (dx < -30) setSwipeHint("next");
+        else setSwipeHint(null);
+    };
+
+    const onTouchEnd = () => {
+        const dx = dragX;
+        setDragX(0);
+        setSwipeHint(null);
+        touchStartX.current = null;
+        if (dx > SWIPE_THRESHOLD) {
+            goToPrev(); // swipe right → previous word
+        } else if (dx < -SWIPE_THRESHOLD) {
+            advance(); // swipe left  → next word (skip)
         }
     };
 
@@ -116,12 +173,13 @@ export default function ExerciseSession({
 
         setResults((prev) => ({ ...prev, [word.id]: status }));
 
+        // Only call the API for "known"; skipping via swipe needs no API call
         const routeName = status === "known" ? "word.know" : "word.learn";
         setIsSubmitting(true);
 
         router.post(
             route(routeName, word.id),
-            { from: "session" }, // tells the controller to redirect back (not to word.show)
+            { from: "session" },
             {
                 preserveScroll: true,
                 preserveState: true,
@@ -131,11 +189,14 @@ export default function ExerciseSession({
                 },
                 onError: () => {
                     setIsSubmitting(false);
-                    advance(); // still advance even on error
+                    advance();
                 },
             },
         );
     };
+
+    // Mark known via the Check button
+    const handleCheck = () => handleMarkWord("known");
 
     // ── Stats for done screen ─────────────────────────────────────────────────
     const knownCount = Object.values(results).filter(
@@ -157,23 +218,70 @@ export default function ExerciseSession({
     const images = word?.images?.length > 0 ? word.images : [];
     const activeImage = images[activeImageIndex] ?? null;
 
-    const backHref = backUrl
-        ? backUrl
-        : subcategory
-          ? route("wordlist.subcategory", {
-                wordListId: wordList.id,
-                subcategoryId: subcategory.id,
-            })
-          : route("wordlist.show", wordList.id);
+    const backHref = route(
+        "wordlistcategory.wordlists",
+        wordList.word_list_category_id,
+    );
+    // backUrl
+    //     ? backUrl
+    //     : subcategory
+    //       ? route("wordlist.subcategory", {
+    //             wordListId: wordList.id,
+    //             subcategoryId: subcategory.id,
+    //         })
+    //       : wordList.category?.id
+    //         ? route("wordlistcategory.wordlists", wordList.category.id)
+    //         : route("wordlist.show", wordList.id);
 
     // ── Session complete screen ───────────────────────────────────────────────
-    if (sessionDone || total === 0 || !word) {
+    // ── All words already mastered — nothing left to practice ────────────────
+    if (total === 0 || (!sessionDone && !word)) {
+        return (
+            <AppLayout>
+                <Head title="All Mastered" />
+                <div className="min-h-screen bg-[#F0F2F5] flex flex-col items-center justify-center px-4 py-10">
+                    <div className="bg-white rounded-3xl shadow-md w-full max-w-md p-8 text-center">
+                        <div className="text-6xl mb-4">🏆</div>
+                        <h1 className="text-2xl font-extrabold text-gray-900 mb-1">
+                            All Words Mastered!
+                        </h1>
+                        <p className="text-gray-400 text-sm mb-2">
+                            {subcategory ? subcategory.name : wordList.title}
+                        </p>
+                        <p className="text-gray-500 text-sm mb-8">
+                            You've already mastered every word in this list.
+                            Great work!
+                        </p>
+                        <div className="flex flex-col gap-3">
+                            <Link
+                                href={route("words.mastered")}
+                                className="w-full py-3.5 bg-green-600 text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-green-700 transition"
+                            >
+                                View Mastered Words
+                            </Link>
+                            <Link
+                                href={backHref}
+                                className="w-full py-3.5 bg-white border border-gray-200 text-gray-700 font-semibold rounded-2xl flex items-center justify-center gap-2 hover:shadow-md transition"
+                            >
+                                <ChevronLeft className="h-4 w-4" />
+                                Back to List
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </AppLayout>
+        );
+    }
+
+    // ── Session done screen ───────────────────────────────────────────────────
+    if (sessionDone) {
+        const skippedCount = Math.max(0, total - knownCount);
+
         return (
             <AppLayout>
                 <Head title="Exercise Complete" />
                 <div className="min-h-screen bg-[#F0F2F5] flex flex-col items-center justify-center px-4 py-10">
                     <div className="bg-white rounded-3xl shadow-md w-full max-w-md p-8 text-center">
-                        {/* Trophy */}
                         <div className="text-6xl mb-4">🎉</div>
                         <h1 className="text-2xl font-extrabold text-gray-900 mb-1">
                             Session Complete!
@@ -183,21 +291,13 @@ export default function ExerciseSession({
                         </p>
 
                         {/* Result pills */}
-                        <div className="grid grid-cols-3 gap-3 mb-8">
+                        <div className="grid grid-cols-2 gap-3 mb-8">
                             <div className="bg-green-50 rounded-2xl py-4">
                                 <p className="text-2xl font-extrabold text-green-600">
                                     {knownCount}
                                 </p>
                                 <p className="text-xs text-green-500 mt-0.5 font-medium">
-                                    Known
-                                </p>
-                            </div>
-                            <div className="bg-red-50 rounded-2xl py-4">
-                                <p className="text-2xl font-extrabold text-[#E5201C]">
-                                    {unknownCount}
-                                </p>
-                                <p className="text-xs text-red-400 mt-0.5 font-medium">
-                                    Learning
+                                    Mastered
                                 </p>
                             </div>
                             <div className="bg-gray-50 rounded-2xl py-4">
@@ -212,17 +312,27 @@ export default function ExerciseSession({
 
                         {/* Actions */}
                         <div className="flex flex-col gap-3">
-                            <button
-                                onClick={() => {
-                                    setCurrentIndex(0);
-                                    setResults({});
-                                    setSessionDone(false);
-                                }}
-                                className="w-full py-3.5 bg-[#E5201C] text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-red-700 transition"
-                            >
-                                <RotateCcw className="h-4 w-4" />
-                                Restart
-                            </button>
+                            {skippedCount > 0 && (
+                                <button
+                                    onClick={() => {
+                                        setCurrentIndex(0);
+                                        setResults({});
+                                        setSessionDone(false);
+                                    }}
+                                    className="w-full py-3.5 bg-[#E5201C] text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-red-700 transition"
+                                >
+                                    <RotateCcw className="h-4 w-4" />
+                                    Restart
+                                </button>
+                            )}
+                            {knownCount > 0 && (
+                                <Link
+                                    href={route("words.mastered")}
+                                    className="w-full py-3.5 bg-green-600 text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-green-700 transition"
+                                >
+                                    View Mastered Words
+                                </Link>
+                            )}
                             <Link
                                 href={backHref}
                                 className="w-full py-3.5 bg-white border border-gray-200 text-gray-700 font-semibold rounded-2xl flex items-center justify-center gap-2 hover:shadow-md transition"
@@ -243,14 +353,6 @@ export default function ExerciseSession({
             <Head title={`Exercise — ${word?.word ?? ""}`} />
             <FlashMessages />
 
-            {/* Progress bar */}
-            <div className="fixed top-[60px] left-0 right-0 z-30 h-1 bg-gray-200">
-                <div
-                    className="h-full bg-[#E5201C] transition-all duration-300"
-                    style={{ width: `${(currentIndex / total) * 100}%` }}
-                />
-            </div>
-
             <div className="min-h-screen bg-[#F0F2F5] pb-32 pt-1">
                 {/* Counter */}
                 <div className="max-w-lg mx-auto px-3 pt-3 pb-1 flex items-center justify-between">
@@ -266,190 +368,281 @@ export default function ExerciseSession({
                     <div className="w-8" /> {/* spacer */}
                 </div>
 
-                <main className="max-w-lg mx-auto px-3">
-                    <div className="bg-white rounded-3xl shadow-md overflow-hidden">
-                        {/* Top row: bookmark + speaker */}
-                        <div className="flex items-center justify-between px-5 pt-5 pb-2">
-                            <button
-                                onClick={() => handleBookmark(word.id)}
-                                className="p-1 transition-colors"
-                                aria-label={
-                                    bookmarks[word.id]
-                                        ? "Remove bookmark"
-                                        : "Bookmark word"
-                                }
+                <div className="relative flex items-start justify-center w-full overflow-hidden">
+                    {/* Desktop prev button */}
+                    <button
+                        onClick={goToPrev}
+                        disabled={currentIndex === 0}
+                        className="hidden md:flex items-center justify-center self-center shrink-0 w-11 h-11 rounded-full bg-white shadow-md border border-gray-100 text-gray-500 hover:text-gray-800 hover:shadow-lg disabled:opacity-25 disabled:cursor-not-allowed transition-all mr-3 mt-6"
+                        aria-label="Previous word"
+                    >
+                        <ChevronLeft className="h-5 w-5" />
+                    </button>
+
+                    <main className="max-w-lg w-full px-3">
+                        {/* Swipe hint labels */}
+                        {/* <div className="flex justify-between px-1 mb-1 h-5">
+                            <span
+                                className={`text-xs font-semibold text-gray-400 transition-opacity duration-150 flex items-center gap-1 ${swipeHint === "prev" ? "opacity-100" : "opacity-0"}`}
                             >
-                                <Bookmark
-                                    className={`h-6 w-6 transition-colors ${
+                                <ChevronLeft className="h-3.5 w-3.5" /> Previous
+                            </span>
+                            <span
+                                className={`text-xs font-semibold text-gray-400 transition-opacity duration-150 flex items-center gap-1 ${swipeHint === "next" ? "opacity-100" : "opacity-0"}`}
+                            >
+                                Next <ChevronRight className="h-3.5 w-3.5" />
+                            </span>
+                        </div> */}
+                        <div
+                            key={cardKey}
+                            className={`bg-white rounded-3xl shadow-md overflow-hidden select-none ${
+                                exiting
+                                    ? slideDir.current === "left"
+                                        ? "card-exit-left"
+                                        : "card-exit-right"
+                                    : slideDir.current === "left"
+                                      ? "card-enter-right"
+                                      : "card-enter-left"
+                            }`}
+                            style={{
+                                transform: `translateX(${dragX * 0.35}px) rotate(${dragX * 0.015}deg)`,
+                                transition:
+                                    dragX === 0 && !exiting
+                                        ? "transform 0.25s ease"
+                                        : "none",
+                            }}
+                            onTouchStart={onTouchStart}
+                            onTouchMove={onTouchMove}
+                            onTouchEnd={onTouchEnd}
+                        >
+                            {/* Top row: bookmark + speaker */}
+                            <div className="flex items-center justify-between px-5 pt-5 pb-2">
+                                <button
+                                    onClick={() => handleBookmark(word.id)}
+                                    className="p-1 transition-colors"
+                                    aria-label={
                                         bookmarks[word.id]
-                                            ? "fill-yellow-400 text-yellow-400"
-                                            : "text-gray-400 hover:text-gray-600"
-                                    }`}
-                                    strokeWidth={1.8}
-                                />
-                            </button>
-                            <button
-                                onClick={() => speakWord(word.word)}
-                                className="p-1 text-gray-500 hover:text-gray-700 transition"
-                            >
-                                <Volume2
-                                    className="h-6 w-6"
-                                    strokeWidth={1.8}
-                                />
-                            </button>
-                        </div>
-
-                        {/* Word + Pronunciation + POS */}
-                        <div className="px-5 pb-4 text-center">
-                            <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight leading-tight">
-                                {word.word}
-                            </h1>
-                            {word.pronunciation && (
-                                <p className="text-base text-gray-400 font-mono mt-1">
-                                    {word.pronunciation}
-                                </p>
-                            )}
-                            {word.parts_of_speech_variations && (
-                                <div className="mt-2 inline-flex">
-                                    <span className="bg-gray-100 text-gray-600 text-sm font-medium px-3 py-0.5 rounded-md">
-                                        {word.parts_of_speech_variations}
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Image */}
-                        {images.length > 0 && (
-                            <div className="px-4 pb-3">
-                                <div className="rounded-2xl overflow-hidden bg-[#EEF6F5]">
-                                    <img
-                                        src={activeImage?.image_url_full}
-                                        alt={activeImage?.caption || word.word}
-                                        className="w-full object-cover"
-                                        style={{
-                                            maxHeight: "220px",
-                                            objectFit: "cover",
-                                        }}
+                                            ? "Remove bookmark"
+                                            : "Bookmark word"
+                                    }
+                                >
+                                    <Bookmark
+                                        className={`h-6 w-6 transition-colors ${
+                                            bookmarks[word.id]
+                                                ? "fill-yellow-400 text-yellow-400"
+                                                : "text-gray-400 hover:text-gray-600"
+                                        }`}
+                                        strokeWidth={1.8}
                                     />
+                                </button>
+                                <button
+                                    onClick={() => speakWord(word.word)}
+                                    className="p-1 text-gray-500 hover:text-gray-700 transition"
+                                >
+                                    <Volume2
+                                        className="h-6 w-6"
+                                        strokeWidth={1.8}
+                                    />
+                                </button>
+                            </div>
+
+                            {/* Word + Pronunciation + POS */}
+                            <div className="px-5 pb-4 text-center">
+                                <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight leading-tight">
+                                    {word.word}
+                                </h1>
+                                {word.pronunciation && (
+                                    <p className="text-base text-gray-400 font-mono mt-1">
+                                        {word.pronunciation} {word.ipa}{" "}
+                                        {word.bangla_pronunciation}
+                                    </p>
+                                )}
+                                {word.parts_of_speech_variations && (
+                                    <div className="mt-2 inline-flex">
+                                        <span className="bg-gray-100 text-gray-600 text-sm font-medium px-3 py-0.5 rounded-md">
+                                            {word.parts_of_speech_variations}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Image */}
+                            {images.length > 0 && (
+                                <div className="px-4 pb-3">
+                                    <div className="rounded-2xl overflow-hidden bg-[#EEF6F5]">
+                                        <img
+                                            src={activeImage?.image_url_full}
+                                            alt={
+                                                activeImage?.caption ||
+                                                word.word
+                                            }
+                                            className="w-full object-cover"
+                                            style={{
+                                                maxHeight: "220px",
+                                                objectFit: "cover",
+                                            }}
+                                        />
+                                    </div>
+                                    {images.length > 1 && (
+                                        <div className="flex justify-center gap-1.5 mt-2">
+                                            {images.map((_, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    onClick={() =>
+                                                        setActiveImageIndex(idx)
+                                                    }
+                                                    className={`rounded-full transition-all ${idx === activeImageIndex ? "w-5 h-2 bg-gray-500" : "w-2 h-2 bg-gray-300"}`}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
-                                {images.length > 1 && (
-                                    <div className="flex justify-center gap-1.5 mt-2">
-                                        {images.map((_, idx) => (
-                                            <button
-                                                key={idx}
-                                                onClick={() =>
-                                                    setActiveImageIndex(idx)
-                                                }
-                                                className={`rounded-full transition-all ${idx === activeImageIndex ? "w-5 h-2 bg-gray-500" : "w-2 h-2 bg-gray-300"}`}
-                                            />
+                            )}
+
+                            {/* Example sentence */}
+                            {word.image_related_sentence && (
+                                <div className="mx-4 mb-4 border-l-4 border-green-400 pl-3 py-1">
+                                    <p className="text-base text-gray-800 leading-snug">
+                                        {highlightWord(
+                                            word.image_related_sentence,
+                                            word.word,
+                                        )}
+                                    </p>
+                                </div>
+                            )}
+
+                            <div className="h-px bg-gray-100 mx-4" />
+
+                            {/* Definition two-column */}
+                            {(word.definition || word.bangla_meaning) && (
+                                <div className="grid grid-cols-2 gap-0 mx-4 my-4">
+                                    {word.definition && (
+                                        <div className="border-l-4 border-[#E5201C] pl-3 pr-2 py-1">
+                                            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                                                English Definition
+                                            </p>
+                                            <p className="text-sm text-gray-900 leading-snug">
+                                                {word.definition}
+                                            </p>
+                                        </div>
+                                    )}
+                                    {word.bangla_meaning && (
+                                        <div className="border-l-4 border-blue-400 pl-3 pr-2 py-1">
+                                            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                                                Bangla Definition
+                                            </p>
+                                            <p className="text-sm text-gray-900 leading-snug">
+                                                বাংলা অর্থ
+                                            </p>
+                                            <p className="text-sm text-gray-800 leading-snug font-medium">
+                                                {word.bangla_meaning}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Collocations */}
+                            {collocationList.length > 0 && (
+                                <div className="px-4 pb-4">
+                                    <div className="h-px bg-gray-100 mb-3" />
+                                    <p className="text-sm font-semibold text-gray-600 mb-2">
+                                        Common Collocations
+                                    </p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {collocationList.map((col, i) => (
+                                            <span
+                                                key={i}
+                                                className="bg-[#F5F5F5] text-gray-700 text-sm px-3 py-1.5 rounded-full border border-gray-200"
+                                            >
+                                                {col}
+                                            </span>
                                         ))}
                                     </div>
-                                )}
-                            </div>
-                        )}
+                                </div>
+                            )}
 
-                        {/* Example sentence */}
-                        {word.example_sentences && (
-                            <div className="mx-4 mb-4 border-l-4 border-green-400 pl-3 py-1">
-                                <p className="text-base text-gray-800 leading-snug">
-                                    {highlightWord(
-                                        word.example_sentences,
-                                        word.word,
+                            {/* Synonym / Antonym */}
+                            {(word.synonym ||
+                                word.antonym ||
+                                word.bangla_synonym ||
+                                word.bangla_antonym) && (
+                                <div className="pb-4 space-y-0">
+                                    <div className="h-px bg-gray-100 mx-4 mb-4" />
+                                    {(word.synonym || word.bangla_synonym) && (
+                                        <div className="grid grid-cols-2 gap-0 mx-4 mb-4">
+                                            {word.synonym && (
+                                                <div className="border-l-4 border-[#E5201C] pl-3 pr-2 py-1">
+                                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                                                        Synonyms
+                                                    </p>
+                                                    <p className="text-sm text-gray-800 leading-snug">
+                                                        {word.synonym}
+                                                    </p>
+                                                </div>
+                                            )}
+                                            {word.bangla_synonym && (
+                                                <div className="border-l-4 border-blue-400 pl-3 pr-2 py-1">
+                                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                                                        প্রতিশব্দ
+                                                    </p>
+                                                    <p className="text-sm text-gray-800 leading-snug font-medium">
+                                                        {word.bangla_synonym}
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
                                     )}
-                                </p>
-                            </div>
-                        )}
+                                    {(word.antonym || word.bangla_antonym) && (
+                                        <div className="grid grid-cols-2 gap-0 mx-4">
+                                            {word.antonym && (
+                                                <div className="border-l-4 border-[#E5201C] pl-3 pr-2 py-1">
+                                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                                                        Antonyms
+                                                    </p>
+                                                    <p className="text-sm text-gray-800 leading-snug">
+                                                        {word.antonym}
+                                                    </p>
+                                                </div>
+                                            )}
+                                            {word.bangla_antonym && (
+                                                <div className="border-l-4 border-blue-400 pl-3 pr-2 py-1">
+                                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                                                        বিপরীত শব্দ
+                                                    </p>
+                                                    <p className="text-sm text-gray-800 leading-snug font-medium">
+                                                        {word.bangla_antonym}
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
-                        <div className="h-px bg-gray-100 mx-4" />
-
-                        {/* Definition two-column */}
-                        {(word.definition || word.bangla_meaning) && (
-                            <div className="grid grid-cols-2 gap-0 mx-4 my-4">
-                                {word.definition && (
-                                    <div className="border-l-4 border-[#E5201C] pl-3 pr-2 py-1">
-                                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
-                                            English Definition
-                                        </p>
-                                        <p className="text-sm text-gray-900 leading-snug">
-                                            {word.definition}
-                                        </p>
-                                    </div>
-                                )}
-                                {word.bangla_meaning && (
-                                    <div className="border-l-4 border-blue-400 pl-3 pr-2 py-1">
-                                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
-                                            Bangla Definition
-                                        </p>
-                                        <p className="text-sm text-gray-900 leading-snug">
-                                            বাংলা অর্থ
-                                        </p>
-                                        <p className="text-sm text-gray-800 leading-snug font-medium">
-                                            {word.bangla_meaning}
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {/* Collocations */}
-                        {collocationList.length > 0 && (
+                            {/* Exercise group link */}
                             <div className="px-4 pb-4">
                                 <div className="h-px bg-gray-100 mb-3" />
-                                <p className="text-sm font-semibold text-gray-600 mb-2">
-                                    Common Collocations
+                                <p className="text-xs text-gray-400 text-center">
+                                    Part of Exercise:{" "}
+                                    {subcategory
+                                        ? `${wordList.title} › ${subcategory.name}`
+                                        : wordList.title}
                                 </p>
-                                <div className="flex flex-wrap gap-2">
-                                    {collocationList.map((col, i) => (
-                                        <span
-                                            key={i}
-                                            className="bg-[#F5F5F5] text-gray-700 text-sm px-3 py-1.5 rounded-full border border-gray-200"
-                                        >
-                                            {col}
-                                        </span>
-                                    ))}
-                                </div>
                             </div>
-                        )}
-
-                        {/* Synonym / Antonym */}
-                        {(word.synonym || word.antonym) && (
-                            <div className="px-4 pb-4 space-y-2">
-                                <div className="h-px bg-gray-100" />
-                                {word.synonym && (
-                                    <div>
-                                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-0.5">
-                                            Synonyms
-                                        </p>
-                                        <p className="text-sm text-gray-800">
-                                            {word.synonym}
-                                        </p>
-                                    </div>
-                                )}
-                                {word.antonym && (
-                                    <div>
-                                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-0.5">
-                                            Antonyms
-                                        </p>
-                                        <p className="text-sm text-gray-800">
-                                            {word.antonym}
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {/* Exercise group link */}
-                        <div className="px-4 pb-4">
-                            <div className="h-px bg-gray-100 mb-3" />
-                            <p className="text-xs text-gray-400 text-center">
-                                Part of Exercise:{" "}
-                                {subcategory
-                                    ? `${wordList.title} › ${subcategory.name}`
-                                    : wordList.title}
-                            </p>
                         </div>
-                    </div>
-                </main>
+                        {/* end swipeable card */}
+                    </main>
+
+                    {/* Desktop next button */}
+                    <button
+                        onClick={advance}
+                        className="hidden md:flex items-center justify-center self-center shrink-0 w-11 h-11 rounded-full bg-white shadow-md border border-gray-100 text-gray-500 hover:text-gray-800 hover:shadow-lg transition-all ml-3 mt-6"
+                        aria-label="Next word"
+                    >
+                        <ChevronRight className="h-5 w-5" />
+                    </button>
+                </div>
             </div>
 
             {/* Fixed Bottom Action Bar */}
@@ -483,26 +676,55 @@ export default function ExerciseSession({
                             })}
                     </div>
 
-                    <div className="flex gap-3">
-                        <button
-                            onClick={() => handleMarkWord("unknown")}
-                            disabled={isSubmitting}
-                            className="flex-1 h-10 flex items-center justify-center gap-2 rounded-xl text-base font-bold bg-[#E5201C] text-white hover:bg-red-700 disabled:opacity-60 transition-all"
-                        >
-                            <XIcon className="h-5 w-5" strokeWidth={2.5} />
-                            didn't know
-                        </button>
-                        <button
-                            onClick={() => handleMarkWord("known")}
-                            disabled={isSubmitting}
-                            className="flex-1 h-10 flex items-center justify-center gap-2 rounded-xl text-base font-bold bg-green-600 text-white hover:bg-green-700 disabled:opacity-60 transition-all"
-                        >
-                            <Check className="h-5 w-5" strokeWidth={2.5} />
-                            Check
-                        </button>
+                    {/* Swipe instruction hint */}
+                    <div className="flex justify-between text-xs text-gray-400 mb-2 px-1">
+                        <span>← Swipe left to skip</span>
+                        <span>Swipe right for prev →</span>
                     </div>
+                    <button
+                        onClick={handleCheck}
+                        disabled={isSubmitting}
+                        className="w-full h-12 flex items-center justify-center gap-2 rounded-2xl text-base font-bold bg-green-600 text-white hover:bg-green-700 disabled:opacity-60 transition-all shadow-lg shadow-green-100"
+                    >
+                        <Check className="h-5 w-5" strokeWidth={2.5} />
+                        {isSubmitting ? "Saving…" : "✓ Mastered!"}
+                    </button>
                 </div>
             </div>
+
+            {/* Card transition keyframes */}
+            <style>{`
+                @keyframes cardEnterRight {
+                    from { opacity: 0; transform: translateX(60px) rotate(3deg) scale(0.96); }
+                    to   { opacity: 1; transform: translateX(0) rotate(0deg) scale(1); }
+                }
+                @keyframes cardEnterLeft {
+                    from { opacity: 0; transform: translateX(-60px) rotate(-3deg) scale(0.96); }
+                    to   { opacity: 1; transform: translateX(0) rotate(0deg) scale(1); }
+                }
+                @keyframes cardExitLeft {
+                    from { opacity: 1; transform: translateX(0) rotate(0deg) scale(1); }
+                    to   { opacity: 0; transform: translateX(-80px) rotate(-4deg) scale(0.94); }
+                }
+                @keyframes cardExitRight {
+                    from { opacity: 1; transform: translateX(0) rotate(0deg) scale(1); }
+                    to   { opacity: 0; transform: translateX(80px) rotate(4deg) scale(0.94); }
+                }
+                .card-enter-right {
+                    animation: cardEnterRight 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+                }
+                .card-enter-left {
+                    animation: cardEnterLeft 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+                }
+                .card-exit-left {
+                    animation: cardExitLeft 0.18s ease-in forwards;
+                    pointer-events: none;
+                }
+                .card-exit-right {
+                    animation: cardExitRight 0.18s ease-in forwards;
+                    pointer-events: none;
+                }
+            `}</style>
 
             {/* Login Dialog */}
             <AlertDialog

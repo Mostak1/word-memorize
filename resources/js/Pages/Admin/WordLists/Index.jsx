@@ -52,6 +52,16 @@ export default function Index({ categories }) {
     const [openWordListCreate, setOpenWordListCreate] = useState(false);
     const [selectedCategoryId, setSelectedCategoryId] = useState(null);
 
+    // Accordion open state
+    const [openAccordions, setOpenAccordions] = useState([]);
+    const toggleAccordion = (value) => {
+        setOpenAccordions((prev) =>
+            prev.includes(value)
+                ? prev.filter((v) => v !== value)
+                : [...prev, value],
+        );
+    };
+
     const toggleCategoryStatus = (category) => {
         router.patch(
             route("admin.word-list-categories.update", category.id),
@@ -123,16 +133,28 @@ export default function Index({ categories }) {
                                 one!
                             </div>
                         ) : (
-                            <Accordion type="multiple" className="w-full">
+                            <Accordion
+                                type="multiple"
+                                value={openAccordions}
+                                onValueChange={setOpenAccordions}
+                                className="w-full"
+                            >
                                 {categories.data.map((category) => (
                                     <AccordionItem
                                         key={category.id}
                                         value={`cat-${category.id}`}
                                     >
                                         {/* Row: name+badge on LEFT, all controls on RIGHT */}
-                                        <div className="flex items-center justify-between px-4 py-3 group hover:bg-muted/50 rounded-lg transition-colors">
+                                        <div
+                                            className="flex items-center justify-between px-4 py-3 group hover:bg-muted/50 rounded-lg transition-colors cursor-pointer"
+                                            onClick={() =>
+                                                toggleAccordion(
+                                                    `cat-${category.id}`,
+                                                )
+                                            }
+                                        >
                                             {/* LEFT — category name + count badge */}
-                                            <div className="flex items-center gap-3 min-w-0">
+                                            <div className="flex items-center gap-3 min-w-0 flex-1">
                                                 <span className="font-medium text-lg truncate">
                                                     {category.name}
                                                 </span>
@@ -146,7 +168,12 @@ export default function Index({ categories }) {
                                             </div>
 
                                             {/* RIGHT — status · chevron · edit · delete · add */}
-                                            <div className="flex items-center gap-1 shrink-0 ml-4">
+                                            <div
+                                                className="flex items-center gap-1 shrink-0 ml-4"
+                                                onClick={(e) =>
+                                                    e.stopPropagation()
+                                                }
+                                            >
                                                 {/* Status toggle */}
                                                 <Switch
                                                     checked={category.status}

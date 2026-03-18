@@ -34,13 +34,14 @@ Route::get('/clear-cache', function () {
 Route::get('/run-seeder', function () {
     try {
         Artisan::call('db:seed', [
-            '--class' => 'FluentoWordsSeeder',
+            '--class' => 'AcademicWordListSeeder',
+            // '--class' => 'FluentoWordsSeeder',
             '--force' => true,
         ]);
 
         return response()->json([
             'status' => 'success',
-            'message' => 'FluentoWordsSeeder ran successfully.',
+            'message' => 'AcademicWordListSeeder ran successfully.',
             'output' => Artisan::output(),
         ]);
     } catch (\Throwable $e) {
@@ -53,12 +54,12 @@ Route::get('/run-seeder', function () {
 
 Route::get('/run-unseeder', function () {
     try {
-        $seeder = new \Database\Seeders\FluentoWordsSeeder();
+        $seeder = new \Database\Seeders\AcademicWordListSeeder();
         $seeder->unseed();
 
         return response()->json([
             'status' => 'success',
-            'message' => 'FluentoWordsSeeder unseeded successfully.',
+            'message' => 'AcademicWordListSeeder unseeded successfully.',
         ]);
     } catch (\Throwable $e) {
         return response()->json([
@@ -117,6 +118,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/quiz', [QuizController::class, 'index'])->name('quiz.index');
 
     Route::get('/my/mastered', [WordListController::class, 'masteredWords'])->name('words.mastered');
+    Route::get('/my/mastered/{wordlistId}', [WordListController::class, 'masteredWordsByList'])
+        ->name('words.mastered.byList');
     Route::get('/my/review', [WordListController::class, 'reviewWords'])->name('words.review');
     Route::get('/my/review/practice', [ReviewWordController::class, 'practiceReview'])->name('words.review.practice');
 

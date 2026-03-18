@@ -25,6 +25,8 @@ class Word extends Model
         'ai_prompt',
         'synonym',
         'antonym',
+        'bangla_synonym',
+        'bangla_antonym',
         // Legacy single-image columns — kept for backward compat
         'image_url',
         'image_related_sentence',

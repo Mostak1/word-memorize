@@ -1,6 +1,13 @@
 import { Head, Link, router } from "@inertiajs/react";
 import AppLayout from "@/Layouts/AppLayout";
-import { BookOpen, ChevronRight, ChevronLeft, Lock, Play } from "lucide-react";
+import {
+    BookOpen,
+    ChevronRight,
+    ChevronLeft,
+    Lock,
+    Play,
+    Trophy,
+} from "lucide-react";
 
 function Pagination({ links, meta }) {
     if (!meta || meta.last_page <= 1) return null;
@@ -12,10 +19,9 @@ function Pagination({ links, meta }) {
             router.get(url, {}, { preserveScroll: true, preserveState: true });
     };
 
-    // Build page number list with ellipsis
     const getPages = () => {
         const pages = [];
-        const delta = 1; // siblings on each side of current
+        const delta = 1;
 
         for (let i = 1; i <= last_page; i++) {
             if (
@@ -39,14 +45,11 @@ function Pagination({ links, meta }) {
 
     return (
         <div className="flex flex-col items-center gap-3 mt-6">
-            {/* Count info */}
             <p className="text-xs text-gray-400">
                 Showing {from}–{to} of {total} lists
             </p>
 
-            {/* Pagination controls */}
             <div className="flex items-center gap-1">
-                {/* Prev */}
                 <button
                     onClick={() => goTo(prevLink)}
                     disabled={!prevLink}
@@ -56,7 +59,6 @@ function Pagination({ links, meta }) {
                     <ChevronLeft className="h-4 w-4" />
                 </button>
 
-                {/* Page numbers */}
                 {getPages().map((page, i) =>
                     page === "..." ? (
                         <span
@@ -85,7 +87,6 @@ function Pagination({ links, meta }) {
                     ),
                 )}
 
-                {/* Next */}
                 <button
                     onClick={() => goTo(nextLink)}
                     disabled={!nextLink}
@@ -99,10 +100,48 @@ function Pagination({ links, meta }) {
     );
 }
 
+function MasteredProgress({ mastered, total }) {
+    if (!total) return null;
+
+    const remaining = total - mastered;
+    const pct = Math.round((mastered / total) * 100);
+    const allDone = mastered >= total;
+
+    return (
+        <div className="mt-3 pt-3 border-t border-gray-100">
+            {/* Bar */}
+            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-2">
+                <div
+                    className={`h-full rounded-full transition-all ${allDone ? "bg-green-500" : "bg-[#E5201C]"}`}
+                    style={{ width: `${Math.min(100, pct)}%` }}
+                />
+            </div>
+
+            {/* Labels */}
+            <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700">
+                    <Trophy className="h-3 w-3" />
+                    {mastered} mastered
+                </span>
+                {allDone ? (
+                    <span className="text-xs font-bold text-green-600">
+                        ✓ Complete!
+                    </span>
+                ) : (
+                    <span className="text-xs text-gray-400">
+                        {remaining} remaining
+                    </span>
+                )}
+            </div>
+        </div>
+    );
+}
+
 export default function Wordlist({
     wordLists,
     currentDifficulty,
     currentCategory,
+    masteredCounts, // { [wordListId]: count } — only present when auth'd
 }) {
     const getDifficultyBadge = (difficulty) => {
         const d = difficulty?.toLowerCase();
@@ -123,7 +162,6 @@ export default function Wordlist({
         return { star, color };
     };
 
-    // Support both paginated object ({ data, links, meta }) and plain array
     const items = Array.isArray(wordLists)
         ? wordLists
         : (wordLists?.data ?? []);
@@ -135,7 +173,6 @@ export default function Wordlist({
             <Head title="Exercises" />
             <div className="min-h-screen bg-[#F0F2F5]">
                 <main className="max-w-2xl mx-auto px-4 py-5 pb-20">
-                    {/* Optional header for category/difficulty filter */}
                     {(currentCategory || currentDifficulty) && (
                         <div className="mb-4 flex items-center gap-2">
                             <span className="text-sm text-gray-500">
@@ -154,11 +191,15 @@ export default function Wordlist({
                                     const { star, color } = getDifficultyBadge(
                                         wordList.difficulty,
                                     );
+                                    const mastered =
+                                        masteredCounts?.[wordList.id] ?? null;
+                                    const total = wordList.words_count ?? 0;
+
                                     return (
                                         <Link
                                             key={wordList.id}
                                             href={route(
-                                                "wordlist.show",
+                                                "wordlist.start",
                                                 wordList.id,
                                             )}
                                             className="block"
@@ -203,20 +244,29 @@ export default function Wordlist({
                                                         {star}{" "}
                                                         {wordList.difficulty}
                                                     </span>
-                                                    {wordList.words_count >
-                                                        0 && (
+                                                    {total > 0 && (
                                                         <span className="text-xs font-medium px-2.5 py-0.5 rounded-full border border-blue-200 bg-blue-50 text-blue-700">
-                                                            {
-                                                                wordList.words_count
-                                                            }{" "}
-                                                            words
+                                                            {total} words
                                                         </span>
                                                     )}
                                                 </div>
 
-                                                <div className="flex justify-end">
+                                                {/* Mastered progress — only when logged in and data available */}
+                                                {mastered !== null && (
+                                                    <MasteredProgress
+                                                        mastered={mastered}
+                                                        total={total}
+                                                    />
+                                                )}
+
+                                                {/* Start button — hide label if complete */}
+                                                <div className="flex justify-end mt-3">
                                                     <span className="text-[#E5201C] text-sm font-semibold flex items-center gap-1">
-                                                        Start Exercise
+                                                        {mastered !== null &&
+                                                        mastered >= total &&
+                                                        total > 0
+                                                            ? "Completed"
+                                                            : "Start Exercise"}
                                                         <Play className="h-3.5 w-3.5 fill-[#E5201C]" />
                                                     </span>
                                                 </div>

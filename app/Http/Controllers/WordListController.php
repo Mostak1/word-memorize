@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BookmarkedWord;
 use App\Models\MasteredWord;
+use App\Models\ReviewWord;
 use App\Models\WordList;
 use App\Models\Word;
 use Illuminate\Http\Request;
@@ -46,8 +47,21 @@ class WordListController extends Controller
 
     public function start($id)
     {
-        $wordList = WordList::with('words.images')->findOrFail($id);
-        $words = $wordList->words->shuffle()->values();
+        $wordList = WordList::findOrFail($id);
+
+        $wordsQuery = Word::with('images')->where('wordlist_id', $id);
+
+        // Exclude already-mastered words for logged-in users
+        if (auth()->check()) {
+            $masteredWordIds = MasteredWord::where('user_id', auth()->id())
+                ->pluck('word_id');
+
+            if ($masteredWordIds->isNotEmpty()) {
+                $wordsQuery->whereNotIn('id', $masteredWordIds);
+            }
+        }
+
+        $words = $wordsQuery->get()->shuffle()->values();
 
         return Inertia::render('ExerciseSession', [
             'wordList' => $wordList,
@@ -140,17 +154,48 @@ class WordListController extends Controller
 
     public function masteredWords()
     {
-        $words = \App\Models\MasteredWord::where('user_id', auth()->id())
-            ->with(['word.wordList', 'word.images'])
-            ->latest()->paginate(20)->withQueryString()
-            ->through(fn($e) => $e->word);
+        $userId = auth()->id();
 
-        return Inertia::render('MasteredWords', ['words' => $words]);
+        // Wordlists that have at least one mastered word for this user
+        $wordlists = WordList::whereHas('words.masteredEntries', function ($q) use ($userId) {
+            $q->where('user_id', $userId);
+        })
+            ->withCount([
+                'words as total_words',
+                'words as mastered_count' => function ($q) use ($userId) {
+                    $q->whereHas('masteredEntries', fn($q2) => $q2->where('user_id', $userId));
+                },
+            ])
+            ->get(['id', 'title', 'difficulty']);
+
+        $totalMastered = MasteredWord::where('user_id', $userId)->count();
+
+        return Inertia::render('MasteredWords', [
+            'wordlists' => $wordlists,
+            'totalMastered' => $totalMastered,
+        ]);
+    }
+
+    public function masteredWordsByList($wordlistId)
+    {
+        $userId = auth()->id();
+
+        $wordlist = WordList::findOrFail($wordlistId);
+
+        $words = Word::where('wordlist_id', $wordlistId)
+            ->whereHas('masteredEntries', fn($q) => $q->where('user_id', $userId))
+            ->paginate(15)
+            ->withQueryString();
+
+        return Inertia::render('MasteredWordsByList', [
+            'words' => $words,
+            'wordlist' => $wordlist,
+        ]);
     }
 
     public function reviewWords()
     {
-        $words = \App\Models\ReviewWord::where('user_id', auth()->id())
+        $words = ReviewWord::where('user_id', auth()->id())
             ->with(['word.wordList', 'word.images'])
             ->latest()->paginate(20)->withQueryString()
             ->through(fn($e) => $e->word);

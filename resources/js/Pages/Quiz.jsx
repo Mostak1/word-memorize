@@ -9,71 +9,44 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/Components/ui/alert-dialog";
+import { Toaster, toast } from "sonner";
 import { ChevronLeft, Trophy, Check, X, RotateCcw } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 
-/* ─── Inline toast ─────────────────────────────────────────────── */
-function Toast({ toasts }) {
-    return (
-        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none w-[calc(100vw-2rem)] max-w-sm">
-            {toasts.map((t) => (
-                <div
-                    key={t.id}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg text-sm font-semibold text-white transition-all
-                        ${t.type === "correct" ? "bg-green-500" : "bg-[#E5201C]"}`}
-                    style={{ animation: "slideDown 0.25s ease-out" }}
-                >
-                    {t.type === "correct" ? (
-                        <Check className="h-5 w-5 shrink-0" />
-                    ) : (
-                        <X className="h-5 w-5 shrink-0" />
-                    )}
-                    {t.message}
-                </div>
-            ))}
-        </div>
-    );
-}
-
-/* ─── Main component ────────────────────────────────────────────── */
 export default function Quiz({ questions = [], noMasteredWords = false }) {
     const [current, setCurrent] = useState(0);
-    const [selected, setSelected] = useState(null); // chosen option string
+    const [selected, setSelected] = useState(null);
     const [answered, setAnswered] = useState(false);
+    const [isCorrect, setIsCorrect] = useState(false);
     const [score, setScore] = useState(0);
     const [done, setDone] = useState(false);
-    const [toasts, setToasts] = useState([]);
     const [showNoWordsDialog, setShowNoWordsDialog] = useState(noMasteredWords);
 
     const q = questions[current] ?? null;
     const total = questions.length;
 
-    /* ── toast helper ── */
-    const addToast = useCallback((type, message) => {
-        const id = Date.now();
-        setToasts((prev) => [...prev, { id, type, message }]);
-        setTimeout(
-            () => setToasts((prev) => prev.filter((t) => t.id !== id)),
-            2500,
-        );
-    }, []);
-
-    /* ── answer handler ── */
     const handleAnswer = (option) => {
         if (answered) return;
         setSelected(option);
         setAnswered(true);
 
-        const isCorrect = option.toLowerCase() === q.correct.toLowerCase();
-        if (isCorrect) {
+        const correct = option.toLowerCase() === q.correct.toLowerCase();
+        setIsCorrect(correct);
+
+        if (correct) {
             setScore((s) => s + 1);
-            addToast("correct", "✓ Correct! Well done.");
+            toast.success("Correct! Well done.", {
+                duration: 2000,
+                icon: "✓",
+            });
         } else {
-            addToast("wrong", `✗ Wrong! The answer was "${q.correct}".`);
+            toast.error("Wrong answer!", {
+                duration: 2000,
+                icon: "✗",
+            });
         }
     };
 
-    /* ── next question ── */
     const handleNext = () => {
         if (current + 1 >= total) {
             setDone(true);
@@ -81,31 +54,38 @@ export default function Quiz({ questions = [], noMasteredWords = false }) {
             setCurrent((c) => c + 1);
             setSelected(null);
             setAnswered(false);
+            setIsCorrect(false);
         }
     };
 
-    /* ── restart ── */
     const handleRestart = () => {
         setCurrent(0);
         setSelected(null);
         setAnswered(false);
+        setIsCorrect(false);
         setScore(0);
         setDone(false);
     };
 
-    /* ── option styling ── */
+    /* ── option styling — only highlight selected; never reveal correct ── */
     const optionClass = (option) => {
         const base =
             "w-full px-4 py-3.5 rounded-2xl text-sm font-semibold border-2 transition-all text-left";
         if (!answered) {
             return `${base} bg-white border-gray-200 text-gray-800 hover:border-[#E5201C] hover:bg-red-50 active:scale-[0.98]`;
         }
-        const isCorrect = option.toLowerCase() === q.correct.toLowerCase();
-        const isSelected = option === selected;
-        if (isCorrect)
+        const isThisCorrect = option.toLowerCase() === q.correct.toLowerCase();
+        const isThisSelected = option === selected;
+
+        if (isThisSelected && isCorrect) {
+            // User picked correctly — show green
             return `${base} bg-green-50 border-green-500 text-green-800`;
-        if (isSelected && !isCorrect)
+        }
+        if (isThisSelected && !isCorrect) {
+            // User picked wrong — show red on their choice only
             return `${base} bg-red-50 border-[#E5201C] text-red-700`;
+        }
+        // All other options — muted, no hints
         return `${base} bg-white border-gray-200 text-gray-400`;
     };
 
@@ -186,16 +166,16 @@ export default function Quiz({ questions = [], noMasteredWords = false }) {
                         <div className="flex flex-col gap-3">
                             <button
                                 onClick={handleRestart}
-                                className="w-full bg-[#E5201C] text-white font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 hover:bg-red-700 transition"
+                                className="w-full py-3.5 bg-[#E5201C] text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-red-700 transition"
                             >
-                                <RotateCcw className="h-4 w-4" />
-                                Try Again
+                                <RotateCcw className="h-4 w-4" /> Try Again
                             </button>
                             <Link
                                 href={route("dashboard")}
-                                className="w-full bg-gray-100 text-gray-700 font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 hover:bg-gray-200 transition"
+                                className="w-full py-3.5 bg-white border border-gray-200 text-gray-700 font-semibold rounded-2xl flex items-center justify-center gap-2 hover:shadow-md transition"
                             >
-                                Back to Home
+                                <ChevronLeft className="h-4 w-4" /> Back to
+                                Dashboard
                             </Link>
                         </div>
                     </div>
@@ -204,15 +184,16 @@ export default function Quiz({ questions = [], noMasteredWords = false }) {
         );
     }
 
+    /* ── Main quiz screen ── */
     return (
         <AppLayout>
             <Head title="Quiz" />
-            <Toast toasts={toasts} />
+            <Toaster position="top-center" richColors />
 
-            <div className="min-h-screen bg-[#F0F2F5] pb-6">
+            <div className="min-h-screen bg-[#F0F2F5] pb-10">
                 <div className="max-w-lg mx-auto px-4 pt-5">
                     {/* Header */}
-                    <div className="flex items-center gap-3 mb-5">
+                    <div className="flex items-center gap-3 mb-4">
                         <Link
                             href={route("dashboard")}
                             className="p-2 rounded-xl bg-white shadow-sm hover:shadow-md transition text-gray-500"
@@ -248,21 +229,9 @@ export default function Quiz({ questions = [], noMasteredWords = false }) {
                             key={current}
                             style={{ animation: "fadeInUp 0.3s ease-out" }}
                         >
-                            {/* Question counter */}
                             <p className="text-xs font-semibold text-gray-400 mb-3 uppercase tracking-wide">
                                 Question {current + 1} of {total}
                             </p>
-
-                            {/* Image */}
-                            {q.image && (
-                                <div className="rounded-2xl overflow-hidden mb-4 shadow-sm">
-                                    <img
-                                        src={q.image}
-                                        alt="question"
-                                        className="w-full object-cover max-h-52"
-                                    />
-                                </div>
-                            )}
 
                             {/* Sentence */}
                             <div className="bg-white rounded-2xl px-5 py-5 shadow-sm mb-4">
@@ -274,14 +243,16 @@ export default function Quiz({ questions = [], noMasteredWords = false }) {
                                                 {part}
                                                 {i < arr.length - 1 && (
                                                     <span
-                                                        className={`inline-block mx-1 border-b-2 font-bold min-w-[80px] text-center
-                                                    ${
-                                                        !answered
-                                                            ? "border-gray-400 text-transparent"
-                                                            : "border-green-500 text-green-700"
-                                                    }`}
+                                                        className={`inline-block mx-1 border-b-2 font-bold min-w-[80px] text-center transition-all
+                                                        ${
+                                                            !answered
+                                                                ? "border-gray-400 text-transparent"
+                                                                : isCorrect
+                                                                  ? "border-green-500 text-green-700"
+                                                                  : "border-gray-300 text-transparent"
+                                                        }`}
                                                     >
-                                                        {answered
+                                                        {answered && isCorrect
                                                             ? q.correct
                                                             : "\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0"}
                                                     </span>
@@ -302,14 +273,13 @@ export default function Quiz({ questions = [], noMasteredWords = false }) {
                                     >
                                         <span className="flex items-center gap-2">
                                             {answered &&
-                                                option.toLowerCase() ===
-                                                    q.correct.toLowerCase() && (
+                                                option === selected &&
+                                                isCorrect && (
                                                     <Check className="h-4 w-4 text-green-600 shrink-0" />
                                                 )}
                                             {answered &&
                                                 option === selected &&
-                                                option.toLowerCase() !==
-                                                    q.correct.toLowerCase() && (
+                                                !isCorrect && (
                                                     <X className="h-4 w-4 text-red-500 shrink-0" />
                                                 )}
                                             {option}
@@ -318,7 +288,7 @@ export default function Quiz({ questions = [], noMasteredWords = false }) {
                                 ))}
                             </div>
 
-                            {/* Next button — only after answering */}
+                            {/* Next button */}
                             {answered && (
                                 <button
                                     onClick={handleNext}
@@ -380,10 +350,6 @@ export default function Quiz({ questions = [], noMasteredWords = false }) {
             <style>{`
                 @keyframes fadeInUp {
                     from { opacity: 0; transform: translateY(10px); }
-                    to   { opacity: 1; transform: translateY(0); }
-                }
-                @keyframes slideDown {
-                    from { opacity: 0; transform: translateY(-10px); }
                     to   { opacity: 1; transform: translateY(0); }
                 }
             `}</style>

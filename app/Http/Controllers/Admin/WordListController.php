@@ -36,7 +36,7 @@ class WordListController extends Controller
         $categories = WordListCategory::with([
             'wordLists' => function ($query) {
                 $query->withCount('words')
-                    ->orderBy('title');
+                    ->orderByRaw('LENGTH(title), title');
             }
         ])
             ->withCount('wordLists')

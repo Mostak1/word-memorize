@@ -9,6 +9,19 @@ use Inertia\Inertia;
 
 class WordListCategoryController extends Controller
 {
+    private function getMasteredCounts(array $wordListIds): array
+    {
+        if (!auth()->check() || empty($wordListIds))
+            return [];
+
+        return \App\Models\MasteredWord::where('user_id', auth()->id())
+            ->whereHas('word', fn($q) => $q->whereIn('wordlist_id', $wordListIds))
+            ->join('words', 'mastered_words.word_id', '=', 'words.id')
+            ->selectRaw('words.wordlist_id, count(*) as cnt')
+            ->groupBy('words.wordlist_id')
+            ->pluck('cnt', 'wordlist_id')
+            ->toArray();
+    }
     public function index()
     {
         $wordListCategories = WordListCategory::withCount('wordlists')
@@ -26,15 +39,17 @@ class WordListCategoryController extends Controller
         $wordLists = WordList::withCount('words')
             ->where('word_list_category_id', $category->id)
             ->where('status', true)
-            ->orderBy('difficulty')
-            ->orderBy('title')
+            ->orderBy('id')
             ->paginate(10)
             ->withQueryString();
+
+        $ids = $wordLists->pluck('id')->toArray();
 
         return Inertia::render('Wordlist', [
             'wordLists' => $wordLists,
             'category' => $category,
             'currentCategory' => $category->name,
+            'masteredCounts' => $this->getMasteredCounts($ids),  // ← add this
         ]);
     }
 }

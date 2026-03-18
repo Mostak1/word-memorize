@@ -9,7 +9,7 @@ import {
     Layers,
 } from "lucide-react";
 
-export default function ExerciseDetail({
+export default function WordlistDetail({
     wordList,
     subcategories = [],
     words,
