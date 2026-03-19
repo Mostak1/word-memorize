@@ -30,7 +30,7 @@ import {
     AlertDialogTitle,
 } from "@/Components/ui/alert-dialog";
 import { Switch } from "@/Components/ui/switch";
-import { Plus, MoreVertical, Edit, Trash2 } from "lucide-react";
+import { Plus, MoreVertical, Edit, Trash2, Lock, Unlock } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 
@@ -51,6 +51,9 @@ export default function Index({ categories }) {
     // NEW STATE FOR WORD LIST CREATION PER CATEGORY
     const [openWordListCreate, setOpenWordListCreate] = useState(false);
     const [selectedCategoryId, setSelectedCategoryId] = useState(null);
+
+    // Word list editing
+    const [editingWordList, setEditingWordList] = useState(null);
 
     // Accordion open state
     const [openAccordions, setOpenAccordions] = useState([]);
@@ -73,6 +76,31 @@ export default function Index({ categories }) {
             {
                 onSuccess: () => toast.success("Status updated!"),
                 onError: () => toast.error("Failed to update status."),
+            },
+        );
+    };
+
+    const toggleWordListLocked = (wordList) => {
+        router.patch(
+            route("admin.word-lists.update", wordList.id),
+            {
+                word_list_category_id: wordList.word_list_category_id,
+                title: wordList.title,
+                price: wordList.price,
+                difficulty: wordList.difficulty,
+                status: wordList.status,
+                is_locked: !wordList.is_locked,
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                onSuccess: () =>
+                    toast.success(
+                        wordList.is_locked
+                            ? "Word list unlocked!"
+                            : "Word list locked!",
+                    ),
+                onError: () => toast.error("Failed to update lock status."),
             },
         );
     };
@@ -283,6 +311,12 @@ export default function Index({ categories }) {
                                                                         <TableHead className="w-20 text-center">
                                                                             Status
                                                                         </TableHead>
+                                                                        <TableHead className="w-20 text-center">
+                                                                            Locked
+                                                                        </TableHead>
+                                                                        <TableHead className="w-16 text-center">
+                                                                            Actions
+                                                                        </TableHead>
                                                                     </TableRow>
                                                                 </TableHeader>
                                                                 <TableBody>
@@ -356,6 +390,50 @@ export default function Index({ categories }) {
                                                                                         />
                                                                                     </div>
                                                                                 </TableCell>
+                                                                                <TableCell className="text-center">
+                                                                                    <button
+                                                                                        onClick={(
+                                                                                            e,
+                                                                                        ) => {
+                                                                                            e.stopPropagation();
+                                                                                            toggleWordListLocked(
+                                                                                                wordList,
+                                                                                            );
+                                                                                        }}
+                                                                                        title={
+                                                                                            wordList.is_locked
+                                                                                                ? "Unlock this word list"
+                                                                                                : "Lock this word list"
+                                                                                        }
+                                                                                        className={`inline-flex items-center justify-center rounded-md p-1.5 transition-colors ${
+                                                                                            wordList.is_locked
+                                                                                                ? "text-amber-600 bg-amber-50 hover:bg-amber-100"
+                                                                                                : "text-gray-400 hover:text-gray-600 hover:bg-muted"
+                                                                                        }`}
+                                                                                    >
+                                                                                        {wordList.is_locked ? (
+                                                                                            <Lock className="h-4 w-4" />
+                                                                                        ) : (
+                                                                                            <Unlock className="h-4 w-4" />
+                                                                                        )}
+                                                                                    </button>
+                                                                                </TableCell>
+                                                                                <TableCell className="text-center">
+                                                                                    <button
+                                                                                        onClick={(
+                                                                                            e,
+                                                                                        ) => {
+                                                                                            e.stopPropagation();
+                                                                                            setEditingWordList(
+                                                                                                wordList,
+                                                                                            );
+                                                                                        }}
+                                                                                        title="Edit word list"
+                                                                                        className="inline-flex items-center justify-center rounded-md p-1.5 transition-colors text-gray-500 hover:text-gray-800 hover:bg-muted"
+                                                                                    >
+                                                                                        <Edit className="h-4 w-4" />
+                                                                                    </button>
+                                                                                </TableCell>
                                                                             </TableRow>
                                                                         ),
                                                                     )}
@@ -419,6 +497,15 @@ export default function Index({ categories }) {
                 }}
                 categoryId={selectedCategoryId} // ← passes the category ID so the form includes word_list_category_id
             />
+
+            {/* Word List Edit Dialog */}
+            {editingWordList && (
+                <WordListFormDialog
+                    open={!!editingWordList}
+                    wordList={editingWordList}
+                    onOpenChange={(open) => !open && setEditingWordList(null)}
+                />
+            )}
 
             {/* Delete Confirmation (unchanged) */}
             <AlertDialog

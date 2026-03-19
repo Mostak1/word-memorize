@@ -34,6 +34,10 @@ class WordListController extends Controller
             ->withCount('words')
             ->findOrFail($id);
 
+        if ($wordList->is_locked) {
+            abort(403, 'This word list is locked.');
+        }
+
         $words = $wordList->words()
             ->paginate(10)
             ->withQueryString();
@@ -48,6 +52,10 @@ class WordListController extends Controller
     public function start($id)
     {
         $wordList = WordList::findOrFail($id);
+
+        if ($wordList->is_locked) {
+            abort(403, 'This word list is locked.');
+        }
 
         $wordsQuery = Word::with('images')->where('wordlist_id', $id);
 

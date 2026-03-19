@@ -57,6 +57,7 @@ class WordListController extends Controller
             'price' => 'required|numeric|min:0',
             'difficulty' => 'required|in:beginner,intermediate,advanced',
             'status' => 'required|boolean',
+            'is_locked' => 'boolean',
         ]);
 
         // Cast empty string from the "No category" select option to null
@@ -112,6 +113,7 @@ class WordListController extends Controller
             'price' => 'required|numeric|min:0',
             'difficulty' => 'required|in:beginner,intermediate,advanced',
             'status' => 'required|boolean',
+            'is_locked' => 'boolean',
         ]);
 
         $validated['word_list_category_id'] = $validated['word_list_category_id'] ?: null;

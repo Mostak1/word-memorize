@@ -34,14 +34,14 @@ Route::get('/clear-cache', function () {
 Route::get('/run-seeder', function () {
     try {
         Artisan::call('db:seed', [
-            '--class' => 'AcademicWordListSeeder',
-            // '--class' => 'FluentoWordsSeeder',
+            // '--class' => 'AcademicWordListSeeder',
+            '--class' => 'OxfordWordsSeeder',
             '--force' => true,
         ]);
 
         return response()->json([
             'status' => 'success',
-            'message' => 'AcademicWordListSeeder ran successfully.',
+            'message' => 'Seeder ran successfully.',
             'output' => Artisan::output(),
         ]);
     } catch (\Throwable $e) {

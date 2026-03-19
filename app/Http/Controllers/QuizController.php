@@ -21,6 +21,7 @@ class QuizController extends Controller
             return Inertia::render('Quiz', [
                 'questions' => [],
                 'noMasteredWords' => true,
+                'noUsableSentences' => false,
             ]);
         }
 
@@ -35,7 +36,8 @@ class QuizController extends Controller
         if ($words->count() < 1) {
             return Inertia::render('Quiz', [
                 'questions' => [],
-                'noMasteredWords' => true,
+                'noMasteredWords' => false,
+                'noUsableSentences' => true,
             ]);
         }
 
@@ -72,6 +74,7 @@ class QuizController extends Controller
         return Inertia::render('Quiz', [
             'questions' => $questions,
             'noMasteredWords' => false,
+            'noUsableSentences' => false,
         ]);
     }
 

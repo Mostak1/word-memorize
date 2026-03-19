@@ -196,82 +196,142 @@ export default function Wordlist({
                                     const total = wordList.words_count ?? 0;
 
                                     return (
-                                        <Link
-                                            key={wordList.id}
-                                            href={route(
-                                                "wordlist.start",
-                                                wordList.id,
-                                            )}
-                                            className="block"
-                                        >
-                                            <div
-                                                className="bg-white rounded-2xl px-5 py-4 shadow-sm hover:shadow-md transition-all"
-                                                style={{
-                                                    animationDelay: `${index * 0.07}s`,
-                                                    animation:
-                                                        "fadeInUp 0.4s ease-out forwards",
-                                                    opacity: 0,
-                                                }}
-                                            >
-                                                <div className="flex items-start justify-between gap-3 mb-3">
-                                                    <h2 className="text-base font-bold text-gray-900 leading-snug flex-1">
-                                                        {wordList.title}
-                                                    </h2>
-                                                    <div className="flex items-center gap-2 shrink-0">
-                                                        {wordList.price > 0 ? (
-                                                            <div className="flex items-center gap-1 bg-amber-100 px-2.5 py-0.5 rounded-full">
-                                                                <Lock className="h-3.5 w-3.5 text-amber-600" />
-                                                                <span className="text-xs font-bold text-amber-700">
-                                                                    $
-                                                                    {
-                                                                        wordList.price
-                                                                    }
+                                        <div key={wordList.id}>
+                                            {wordList.is_locked ? (
+                                                /* ── LOCKED card — not clickable ── */
+                                                <div
+                                                    className="bg-white rounded-2xl px-5 py-4 shadow-sm opacity-75 cursor-not-allowed select-none"
+                                                    style={{
+                                                        animationDelay: `${index * 0.07}s`,
+                                                        animation:
+                                                            "fadeInUp 0.4s ease-out forwards",
+                                                        opacity: 0,
+                                                    }}
+                                                >
+                                                    <div className="flex items-start justify-between gap-3 mb-3">
+                                                        <h2 className="text-base font-bold text-gray-500 leading-snug flex-1">
+                                                            {wordList.title}
+                                                        </h2>
+                                                        <div className="flex items-center gap-2 shrink-0">
+                                                            <div className="flex items-center gap-1 bg-gray-100 px-2.5 py-0.5 rounded-full">
+                                                                <Lock className="h-3.5 w-3.5 text-gray-500" />
+                                                                <span className="text-xs font-bold text-gray-500">
+                                                                    Locked
                                                                 </span>
                                                             </div>
-                                                        ) : (
-                                                            <span className="bg-green-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">
-                                                                FREE
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-2 mb-3">
+                                                        <span
+                                                            className={`text-xs font-medium px-2.5 py-0.5 rounded-full border ${color} opacity-60`}
+                                                        >
+                                                            {star}{" "}
+                                                            {
+                                                                wordList.difficulty
+                                                            }
+                                                        </span>
+                                                        {total > 0 && (
+                                                            <span className="text-xs font-medium px-2.5 py-0.5 rounded-full border border-gray-200 bg-gray-50 text-gray-400">
+                                                                {total} words
                                                             </span>
                                                         )}
-                                                        <ChevronRight className="h-4 w-4 text-gray-300" />
+                                                    </div>
+
+                                                    <div className="flex justify-end mt-3">
+                                                        <span className="text-gray-400 text-sm font-semibold flex items-center gap-1.5">
+                                                            <Lock className="h-3.5 w-3.5" />
+                                                            Content Locked
+                                                        </span>
                                                     </div>
                                                 </div>
-
-                                                <div className="flex items-center gap-2 mb-3">
-                                                    <span
-                                                        className={`text-xs font-medium px-2.5 py-0.5 rounded-full border ${color}`}
-                                                    >
-                                                        {star}{" "}
-                                                        {wordList.difficulty}
-                                                    </span>
-                                                    {total > 0 && (
-                                                        <span className="text-xs font-medium px-2.5 py-0.5 rounded-full border border-blue-200 bg-blue-50 text-blue-700">
-                                                            {total} words
-                                                        </span>
+                                            ) : (
+                                                /* ── UNLOCKED card — clickable ── */
+                                                <Link
+                                                    href={route(
+                                                        "wordlist.start",
+                                                        wordList.id,
                                                     )}
-                                                </div>
+                                                    className="block"
+                                                >
+                                                    <div
+                                                        className="bg-white rounded-2xl px-5 py-4 shadow-sm hover:shadow-md transition-all"
+                                                        style={{
+                                                            animationDelay: `${index * 0.07}s`,
+                                                            animation:
+                                                                "fadeInUp 0.4s ease-out forwards",
+                                                            opacity: 0,
+                                                        }}
+                                                    >
+                                                        <div className="flex items-start justify-between gap-3 mb-3">
+                                                            <h2 className="text-base font-bold text-gray-900 leading-snug flex-1">
+                                                                {wordList.title}
+                                                            </h2>
+                                                            <div className="flex items-center gap-2 shrink-0">
+                                                                {wordList.price >
+                                                                0 ? (
+                                                                    <div className="flex items-center gap-1 bg-amber-100 px-2.5 py-0.5 rounded-full">
+                                                                        <Lock className="h-3.5 w-3.5 text-amber-600" />
+                                                                        <span className="text-xs font-bold text-amber-700">
+                                                                            $
+                                                                            {
+                                                                                wordList.price
+                                                                            }
+                                                                        </span>
+                                                                    </div>
+                                                                ) : (
+                                                                    <span className="bg-green-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">
+                                                                        FREE
+                                                                    </span>
+                                                                )}
+                                                                <ChevronRight className="h-4 w-4 text-gray-300" />
+                                                            </div>
+                                                        </div>
 
-                                                {/* Mastered progress — only when logged in and data available */}
-                                                {mastered !== null && (
-                                                    <MasteredProgress
-                                                        mastered={mastered}
-                                                        total={total}
-                                                    />
-                                                )}
+                                                        <div className="flex items-center gap-2 mb-3">
+                                                            <span
+                                                                className={`text-xs font-medium px-2.5 py-0.5 rounded-full border ${color}`}
+                                                            >
+                                                                {star}{" "}
+                                                                {
+                                                                    wordList.difficulty
+                                                                }
+                                                            </span>
+                                                            {total > 0 && (
+                                                                <span className="text-xs font-medium px-2.5 py-0.5 rounded-full border border-blue-200 bg-blue-50 text-blue-700">
+                                                                    {total}{" "}
+                                                                    words
+                                                                </span>
+                                                            )}
+                                                        </div>
 
-                                                {/* Start button — hide label if complete */}
-                                                <div className="flex justify-end mt-3">
-                                                    <span className="text-[#E5201C] text-sm font-semibold flex items-center gap-1">
-                                                        {mastered !== null &&
-                                                        mastered >= total &&
-                                                        total > 0
-                                                            ? "Completed"
-                                                            : "Start Exercise"}
-                                                        <Play className="h-3.5 w-3.5 fill-[#E5201C]" />
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </Link>
+                                                        {/* Mastered progress — only when logged in and data available */}
+                                                        {mastered !== null && (
+                                                            <MasteredProgress
+                                                                mastered={
+                                                                    mastered
+                                                                }
+                                                                total={total}
+                                                            />
+                                                        )}
+
+                                                        {/* Start button — hide label if complete */}
+                                                        <div className="flex justify-end mt-3">
+                                                            <span className="text-[#E5201C] text-sm font-semibold flex items-center gap-1">
+                                                                {mastered !==
+                                                                    null &&
+                                                                mastered >=
+                                                                    total &&
+                                                                total > 0
+                                                                    ? "Completed"
+                                                                    : "Start Exercise"}
+                                                                <Play className="h-3.5 w-3.5 fill-[#E5201C]" />
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </Link>
+                                            )}
+                                        </div>
                                     );
                                 })}
                             </div>

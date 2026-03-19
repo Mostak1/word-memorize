@@ -17,6 +17,7 @@ import {
     SelectValue,
 } from "@/Components/ui/select";
 import { Switch } from "@/Components/ui/switch";
+import { Lock } from "lucide-react";
 import { toast } from "sonner";
 
 export default function WordListFormDialog({
@@ -32,6 +33,7 @@ export default function WordListFormDialog({
         difficulty: wordList?.difficulty || "",
         price: wordList?.price ?? 0,
         status: wordList?.status ?? true,
+        is_locked: wordList?.is_locked ?? false,
         word_list_category_id:
             wordList?.word_list_category_id || categoryId || "",
     });
@@ -47,6 +49,7 @@ export default function WordListFormDialog({
                 difficulty: wordList?.difficulty || "",
                 price: wordList?.price ?? 0,
                 status: wordList?.status ?? true,
+                is_locked: wordList?.is_locked ?? false,
                 word_list_category_id:
                     wordList?.word_list_category_id || categoryId || "",
             });
@@ -57,6 +60,7 @@ export default function WordListFormDialog({
                 difficulty: "",
                 price: 0,
                 status: true,
+                is_locked: false,
                 word_list_category_id: "",
             });
             setErrors({});
@@ -182,6 +186,25 @@ export default function WordListFormDialog({
                         />
                         <span className="text-sm text-muted-foreground">
                             {data.status ? "Active" : "Inactive"}
+                        </span>
+                    </div>
+
+                    {/* Is Locked */}
+                    <div className="flex items-center gap-3">
+                        <Label className="flex items-center gap-1.5">
+                            <Lock className="h-3.5 w-3.5" />
+                            Locked
+                        </Label>
+                        <Switch
+                            checked={data.is_locked}
+                            onCheckedChange={(checked) =>
+                                setData({ ...data, is_locked: checked })
+                            }
+                        />
+                        <span className="text-sm text-muted-foreground">
+                            {data.is_locked
+                                ? "Locked (users must purchase)"
+                                : "Unlocked (free access)"}
                         </span>
                     </div>
 

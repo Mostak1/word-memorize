@@ -13,14 +13,20 @@ import { Toaster, toast } from "sonner";
 import { ChevronLeft, Trophy, Check, X, RotateCcw } from "lucide-react";
 import { useState } from "react";
 
-export default function Quiz({ questions = [], noMasteredWords = false }) {
+export default function Quiz({
+    questions = [],
+    noMasteredWords = false,
+    noUsableSentences = false,
+}) {
     const [current, setCurrent] = useState(0);
     const [selected, setSelected] = useState(null);
     const [answered, setAnswered] = useState(false);
     const [isCorrect, setIsCorrect] = useState(false);
     const [score, setScore] = useState(0);
     const [done, setDone] = useState(false);
-    const [showNoWordsDialog, setShowNoWordsDialog] = useState(noMasteredWords);
+    const [showNoWordsDialog, setShowNoWordsDialog] = useState(
+        noMasteredWords || noUsableSentences,
+    );
 
     const q = questions[current] ?? null;
     const total = questions.length;
@@ -282,7 +288,7 @@ export default function Quiz({ questions = [], noMasteredWords = false }) {
                                                 !isCorrect && (
                                                     <X className="h-4 w-4 text-red-500 shrink-0" />
                                                 )}
-                                            {option}
+                                            {option.toLowerCase()}
                                         </span>
                                     </button>
                                 ))}
@@ -316,12 +322,14 @@ export default function Quiz({ questions = [], noMasteredWords = false }) {
                     <AlertDialogHeader>
                         <AlertDialogTitle className="flex items-center gap-2">
                             <Trophy className="h-5 w-5 text-amber-400" />
-                            No Mastered Words Yet
+                            {noUsableSentences
+                                ? "Words Not Ready for Quiz"
+                                : "No Mastered Words Yet"}
                         </AlertDialogTitle>
                         <AlertDialogDescription className="text-base">
-                            You need to master some words first before taking
-                            the quiz. Complete some exercises and mark words as
-                            "Check" to master them!
+                            {noUsableSentences
+                                ? "Your mastered words don't have example sentences that can be used for a fill-in-the-blank quiz yet. Keep exercising and mastering more words!"
+                                : 'You need to master some words first before taking the quiz. Complete some exercises and mark words as "Check" to master them!'}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="flex-col gap-2">

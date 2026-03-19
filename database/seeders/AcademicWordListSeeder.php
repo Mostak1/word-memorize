@@ -216,11 +216,14 @@ class AcademicWordListSeeder extends Seeder
             $totalUpdated = 0;
             $totalSkipped = 0;
 
+            $sublistIndex = 0;
             foreach ($sublists as $sublistName => $rows) {
                 $this->log('info', "\n  ── {$sublistName} (" . count($rows) . " rows) ──");
 
                 ['inserted' => $ins, 'updated' => $upd, 'skipped' => $skp] =
-                    $this->seedWordList($category->id, $sublistName, $rows);
+                    $this->seedWordList($category->id, $sublistName, $rows, $sublistIndex);
+
+                $sublistIndex++;
 
                 $totalInserted += $ins;
                 $totalUpdated += $upd;
@@ -236,8 +239,11 @@ class AcademicWordListSeeder extends Seeder
      *
      * Returns ['inserted' => int, 'updated' => int, 'skipped' => int].
      */
-    private function seedWordList(int $categoryId, string $title, array $rows): array
+    private function seedWordList(int $categoryId, string $title, array $rows, int $index = 0): array
     {
+        // First 3 sublists (index 0, 1, 2) are unlocked; the rest are locked.
+        $isLocked = $index >= 3;
+
         $listExists = WordList::where('word_list_category_id', $categoryId)
             ->where('title', $title)
             ->exists();
@@ -251,6 +257,7 @@ class AcademicWordListSeeder extends Seeder
                 'price' => 0,
                 'difficulty' => 'intermediate',
                 'status' => true,
+                'is_locked' => $isLocked,
             ]
         );
 

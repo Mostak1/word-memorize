@@ -17,6 +17,7 @@ class WordList extends Model
         'price',
         'difficulty',
         'status',
+        'is_locked',
     ];
 
     /**
