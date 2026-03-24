@@ -28,9 +28,13 @@ class OxfordWordsSeeder extends Seeder
 
     /**
      * Columns updated when a word already exists (upsert).
+     *
+     * Now includes the three split pronunciation fields.
      */
     private const UPSERT_UPDATE_COLUMNS = [
         'parts_of_speech_variations',
+        'ipa',
+        'bangla_pronunciation',
         'pronunciation',
         'definition',
         'bangla_meaning',
@@ -101,9 +105,6 @@ class OxfordWordsSeeder extends Seeder
 
     // ── Helper: Get Creator ID ─────────────────────────────────────────────
 
-    /**
-     * Find user by admin@gmail.com, fallback to user ID 1
-     */
     private function getCreatorId(): int
     {
         $user = User::where('email', self::ADMIN_EMAIL)->first();
@@ -138,6 +139,37 @@ class OxfordWordsSeeder extends Seeder
         fclose($handle);
 
         return $rows;
+    }
+
+    /**
+     * Parse the combined pronunciation column into its three parts.
+     *
+     * CSV format:  'tʃeəmən/ চেয়ারম্যান/ chair-man
+     *              ─────────  ────────────  ─────────
+     *              IPA        Bangla        Romanized/hyphenated
+     *
+     * Rules:
+     *  - Split on '/' (max 3 parts, trimmed).
+     *  - Part 1 → ipa             (contains IPA characters)
+     *  - Part 2 → bangla_pronunciation  (contains Bengali script)
+     *  - Part 3 → pronunciation   (romanized / hyphenated spelling)
+     *  - Missing parts are stored as null.
+     */
+    private function parsePronunciation(?string $raw): array
+    {
+        $empty = ['ipa' => null, 'bangla_pronunciation' => null, 'pronunciation' => null];
+
+        if ($raw === null || $raw === '') {
+            return $empty;
+        }
+
+        $parts = array_map('trim', explode('/', $raw, 3));
+
+        return [
+            'ipa' => $this->clean($parts[0] ?? null),
+            'bangla_pronunciation' => $this->clean($parts[1] ?? null),
+            'pronunciation' => $this->clean($parts[2] ?? null),
+        ];
     }
 
     private function groupBySubCategory(array $rows): array
@@ -212,8 +244,8 @@ class OxfordWordsSeeder extends Seeder
                 'difficulty' => 'beginner',
                 'status' => true,
                 'is_locked' => $isLocked,
-                'created_by' => $creatorId,     // ← NEW
-                'is_public' => true,           // ← NEW
+                'created_by' => $creatorId,
+                'is_public' => true,
             ]
         );
 
@@ -271,11 +303,17 @@ class OxfordWordsSeeder extends Seeder
                 continue;
             }
 
+            // ── Split the combined pronunciation column (CSV col 4) ──────────
+            // Format: "IPA/ বাংলা উচ্চারণ/ romanized"
+            $pron = $this->parsePronunciation($this->clean($row[4] ?? null));
+
             $batch[] = [
                 'wordlist_id' => $wordList->id,
                 'word' => $word,
                 'parts_of_speech_variations' => $this->clean($row[1] ?? null) ?? '',
-                'pronunciation' => $this->clean($row[4] ?? null),
+                'ipa' => $pron['ipa'],
+                'bangla_pronunciation' => $pron['bangla_pronunciation'],
+                'pronunciation' => $pron['pronunciation'],
                 'definition' => $this->clean($row[5] ?? null) ?? '',
                 'bangla_meaning' => $this->clean($row[6] ?? null),
                 'example_sentences' => $this->clean($row[7] ?? null) ?? '',
@@ -283,13 +321,11 @@ class OxfordWordsSeeder extends Seeder
                 'collocations' => $this->clean($row[9] ?? null),
                 'synonym' => $this->clean($row[10] ?? null),
                 'antonym' => $this->clean($row[11] ?? null),
-                'ipa' => null,
-                'bangla_pronunciation' => null,
                 'hyphenation' => null,
                 'image_url' => null,
                 'image_related_sentence' => null,
-                'created_by' => $creatorId,      // ← NEW
-                'is_public' => true,            // ← NEW
+                'created_by' => $creatorId,
+                'is_public' => true,
                 'created_at' => $now,
                 'updated_at' => $now,
             ];

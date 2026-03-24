@@ -8,20 +8,185 @@ import {
     Share2,
     Settings,
     Trophy,
+    Flame,
+    ShieldCheck,
+    Snowflake,
 } from "lucide-react";
 
-export default function Dashboard({ masteredCount = 0, reviewCount = 0 }) {
+// ── Streak Banner ─────────────────────────────────────────────────────────────
+
+function StreakBanner({ streak }) {
+    if (!streak) return null;
+
+    const {
+        current_streak,
+        longest_streak,
+        freeze_count,
+        active_today,
+        at_risk,
+        is_frozen,
+        is_broken,
+        auto_save_available,
+    } = streak;
+
+    // ── Visual config per state ───────────────────────────────────────────────
+    const config = active_today
+        ? {
+              bg: "bg-orange-50 border-orange-200",
+              flame: "text-orange-500",
+              label: null,
+              message: "Great job! Come back tomorrow to keep it going.",
+          }
+        : is_frozen
+          ? {
+                bg: "bg-blue-50 border-blue-300",
+                flame: "text-blue-400",
+                label: {
+                    text: "🧊 Streak Frozen",
+                    cls: "bg-blue-100 text-blue-700",
+                },
+                message:
+                    "You missed yesterday, but your streak is saved! Complete a quiz or exercise to continue.",
+            }
+          : at_risk
+            ? {
+                  bg: "bg-yellow-50 border-yellow-300",
+                  flame: "text-yellow-400",
+                  label: {
+                      text: "⚠️ At Risk",
+                      cls: "bg-yellow-100 text-yellow-700",
+                  },
+                  message:
+                      "No activity yet today — do a quiz or exercise before midnight!",
+              }
+            : is_broken
+              ? {
+                    bg: "bg-gray-100 border-gray-300",
+                    flame: "text-gray-300",
+                    label: {
+                        text: "💀 Streak Lost",
+                        cls: "bg-gray-200 text-gray-600",
+                    },
+                    message:
+                        "You missed too many days. Start a new streak today!",
+                }
+              : {
+                    // No streak yet (brand new user)
+                    bg: "bg-white border-gray-200",
+                    flame: "text-gray-300",
+                    label: null,
+                    message:
+                        "Complete a quiz or exercise to start your streak.",
+                };
+
+    return (
+        <div className={`rounded-2xl border p-4 mb-3 ${config.bg}`}>
+            {/* Top row */}
+            <div className="flex items-center justify-between mb-2">
+                {/* Flame + current streak */}
+                <div className="flex items-center gap-2">
+                    {is_frozen ? (
+                        <Snowflake className="h-8 w-8 text-blue-400" />
+                    ) : (
+                        <Flame className={`h-8 w-8 ${config.flame}`} />
+                    )}
+                    <div>
+                        <p className="text-2xl font-extrabold text-gray-900 leading-none">
+                            {current_streak}
+                            <span className="text-sm font-semibold text-gray-400 ml-1">
+                                day{current_streak !== 1 ? "s" : ""}
+                            </span>
+                        </p>
+                        <p className="text-xs text-gray-400">Current streak</p>
+                    </div>
+                </div>
+
+                {/* Right side: status badge + best + safe days */}
+                <div className="flex items-center gap-3">
+                    <div className="text-center">
+                        <p className="text-sm font-bold text-gray-700">
+                            {longest_streak}
+                        </p>
+                        <p className="text-xs text-gray-400">Best</p>
+                    </div>
+
+                    {freeze_count > 0 && (
+                        <div className="flex flex-col items-center">
+                            <div className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-600">
+                                <ShieldCheck className="h-3.5 w-3.5" />
+                                {freeze_count}
+                            </div>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                                Safe {freeze_count === 1 ? "day" : "days"}
+                            </p>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Status badge */}
+            {config.label && (
+                <span
+                    className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full mb-2 ${config.label.cls}`}
+                >
+                    {config.label.text}
+                </span>
+            )}
+
+            {/* Message */}
+            <p className="text-xs text-gray-500">{config.message}</p>
+
+            {/* Frozen CTA */}
+            {is_frozen && (
+                <div className="mt-3 flex gap-2">
+                    <Link
+                        href={route("quiz.index")}
+                        className="flex-1 text-center text-xs font-semibold bg-blue-500 text-white rounded-xl py-2 hover:bg-blue-600 transition-colors"
+                    >
+                        Take a Quiz
+                    </Link>
+                    <Link
+                        href={route("wordlistcategory.index")}
+                        className="flex-1 text-center text-xs font-semibold bg-white border border-blue-300 text-blue-600 rounded-xl py-2 hover:bg-blue-50 transition-colors"
+                    >
+                        Do Exercise
+                    </Link>
+                </div>
+            )}
+
+            {/* Auto-save availability hint (only shown when not frozen and not active) */}
+            {!is_frozen &&
+                !active_today &&
+                !is_broken &&
+                auto_save_available && (
+                    <p className="text-xs text-blue-400 mt-1.5">
+                        🛡️ Auto-save available — if you miss a day this week
+                        your streak will be saved.
+                    </p>
+                )}
+        </div>
+    );
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+
+export default function Dashboard({
+    masteredCount = 0,
+    reviewCount = 0,
+    streak = null,
+}) {
     return (
         <AppLayout>
             <Head title="Dashboard" />
             <div className="min-h-screen bg-[#F0F2F5]">
                 <div className="w-full max-w-2xl mx-auto px-4 py-5">
-                    <p className="text-gray-500 text-sm mb-5">
+                    <p className="text-gray-500 text-sm mb-4">
                         Start learning and expand your vocabulary
                     </p>
 
+                    <StreakBanner streak={streak} />
+
                     <div className="grid grid-cols-2 gap-3 mb-3">
-                        {/* Add New Word — opens dialog on My Words page */}
                         <Link
                             href={route("my.words.index") + "?new=1"}
                             className="block"
@@ -41,7 +206,6 @@ export default function Dashboard({ masteredCount = 0, reviewCount = 0 }) {
                             </div>
                         </Link>
 
-                        {/* Word Lists */}
                         <Link
                             href={route("wordlistcategory.index")}
                             className="block"
@@ -61,7 +225,6 @@ export default function Dashboard({ masteredCount = 0, reviewCount = 0 }) {
                             </div>
                         </Link>
 
-                        {/* Mastered Words */}
                         <Link href={route("words.mastered")} className="block">
                             <div className="bg-white rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm hover:shadow-md transition-shadow min-h-[160px]">
                                 <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
@@ -84,7 +247,6 @@ export default function Dashboard({ masteredCount = 0, reviewCount = 0 }) {
                             </div>
                         </Link>
 
-                        {/* Quiz */}
                         <Link href={route("quiz.index")} className="block">
                             <div className="bg-white rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm hover:shadow-md transition-shadow min-h-[160px]">
                                 <div className="w-16 h-16 rounded-full bg-[#E5201C]/10 flex items-center justify-center">
@@ -102,7 +264,6 @@ export default function Dashboard({ masteredCount = 0, reviewCount = 0 }) {
                         </Link>
                     </div>
 
-                    {/* Bottom row */}
                     <div className="grid grid-cols-3 gap-3 mb-4">
                         <div className="bg-white rounded-2xl py-5 px-3 flex flex-col items-center justify-center gap-2 shadow-sm cursor-pointer hover:shadow-md transition-shadow">
                             <Star className="h-6 w-6 text-amber-400" />
@@ -124,7 +285,6 @@ export default function Dashboard({ masteredCount = 0, reviewCount = 0 }) {
                         </div>
                     </div>
 
-                    {/* My Words collection banner */}
                     <Link href={route("my.words.index")}>
                         <div className="bg-[#E5201C] rounded-2xl py-5 px-6 text-center shadow-md hover:bg-red-700 transition-colors cursor-pointer">
                             <p className="text-white font-bold text-sm">

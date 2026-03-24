@@ -130,16 +130,16 @@ class UserWordController extends Controller
    * GET /my/words/create
    * Show the "Add New Word" form.
    */
-  public function create()
-  {
-    $category = $this->getOrCreatePersonalCategory();
-    $wordLists = $this->personalWordLists($category);
+  // public function create()
+  // {
+  //   $category = $this->getOrCreatePersonalCategory();
+  //   $wordLists = $this->personalWordLists($category);
 
-    return Inertia::render('UserWord/Create', [
-      'category' => $category,
-      'wordLists' => $wordLists,
-    ]);
-  }
+  //   return Inertia::render('UserWord/Create', [
+  //     'category' => $category,
+  //     'wordLists' => $wordLists,
+  //   ]);
+  // }
 
   /**
    * POST /my/words
@@ -169,19 +169,19 @@ class UserWordController extends Controller
    * GET /my/words/{word}/edit
    * Show the edit form pre-filled with the word's current data.
    */
-  public function edit(Word $word)
-  {
-    $this->authorizeWord($word);
+  // public function edit(Word $word)
+  // {
+  //   $this->authorizeWord($word);
 
-    $category = $this->getOrCreatePersonalCategory();
-    $wordLists = $this->personalWordLists($category);
+  //   $category = $this->getOrCreatePersonalCategory();
+  //   $wordLists = $this->personalWordLists($category);
 
-    return Inertia::render('UserWord/Create', [
-      'word' => $word,
-      'category' => $category,
-      'wordLists' => $wordLists,
-    ]);
-  }
+  //   return Inertia::render('UserWord/Create', [
+  //     'word' => $word,
+  //     'category' => $category,
+  //     'wordLists' => $wordLists,
+  //   ]);
+  // }
 
   /**
    * PUT /my/words/{word}

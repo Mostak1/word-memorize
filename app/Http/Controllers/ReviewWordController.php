@@ -6,33 +6,39 @@ use App\Models\BookmarkedWord;
 use App\Models\MasteredWord;
 use App\Models\ReviewWord;
 use App\Models\Word;
+use App\Services\StreakService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class ReviewWordController extends Controller
 {
+    public function __construct(private StreakService $streakService)
+    {
+    }
+
     /**
      * ✅ "Check" — user knows this word.
      *
      * 1. Remove from review_words  (if it was there)
      * 2. Add to mastered_words     (skip if already mastered)
-     * 3. Redirect — back to session OR to the next word detail page
+     * 3. Record streak activity
+     * 4. Redirect — back to session OR to the next word detail page
      */
     public function know(Request $request, Word $word)
     {
         $userId = Auth::id();
 
-        // Remove from review list
         ReviewWord::where('user_id', $userId)
             ->where('word_id', $word->id)
             ->delete();
 
-        // Add to mastered list (ignore if already exists)
         MasteredWord::firstOrCreate([
             'user_id' => $userId,
             'word_id' => $word->id,
         ]);
+
+        $this->streakService->recordActivity($request->user());
 
         return $this->handleRedirect($request, $word);
     }
@@ -42,22 +48,23 @@ class ReviewWordController extends Controller
      *
      * 1. Remove from mastered_words  (if it was there)
      * 2. Add to review_words         (skip if already present)
-     * 3. Redirect — back to session OR to the next word detail page
+     * 3. Record streak activity
+     * 4. Redirect — back to session OR to the next word detail page
      */
     public function learn(Request $request, Word $word)
     {
         $userId = Auth::id();
 
-        // Remove from mastered list
         MasteredWord::where('user_id', $userId)
             ->where('word_id', $word->id)
             ->delete();
 
-        // Add to review list (ignore if already exists)
         ReviewWord::firstOrCreate([
             'user_id' => $userId,
             'word_id' => $word->id,
         ]);
+
+        $this->streakService->recordActivity($request->user());
 
         return $this->handleRedirect($request, $word);
     }
@@ -74,14 +81,9 @@ class ReviewWordController extends Controller
 
     /**
      * 🔁 Start a focused exercise session using only the user's review words.
-     *
-     * Shuffles the words and renders the shared ExerciseSession component.
-     * A virtual "word list" object is passed so the session title renders nicely.
      */
     public function practiceReview()
     {
-        // Query Word models directly via the review_words pivot — avoids any
-        // null pluck issues when pivot rows outlive their parent words.
         $wordIds = ReviewWord::where('user_id', Auth::id())->pluck('word_id');
 
         $words = Word::with(['images', 'wordList'])
@@ -110,7 +112,6 @@ class ReviewWordController extends Controller
      *
      * - Called from ExerciseSession  →  from=session in POST body
      *   → redirect()->back() so Inertia stays on the session page
-     *     (ExerciseSession uses preserveState:true and advances the card itself)
      *
      * - Called from WordDetail page  →  no from param
      *   → redirect to the next word in the list, or back to the list when done
@@ -118,9 +119,6 @@ class ReviewWordController extends Controller
     private function handleRedirect(Request $request, Word $word)
     {
         if ($request->input('from') === 'session') {
-            // ExerciseSession handles card advancement in the frontend.
-            // Just redirect back so the Inertia response resolves to the
-            // same ExerciseSession component and preserveState kicks in.
             return redirect()->back();
         }
 
