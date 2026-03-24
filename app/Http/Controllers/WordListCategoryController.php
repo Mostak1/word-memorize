@@ -22,12 +22,42 @@ class WordListCategoryController extends Controller
             ->pluck('cnt', 'wordlist_id')
             ->toArray();
     }
+    // public function index()
+    // {
+    //     $wordListCategories = WordListCategory::withCount('wordlists')
+    //         ->where('status', true)
+    //         ->orderBy('created_at', 'desc')
+    //         ->get();
+
+    //     return Inertia::render('WordListCategoryIndex', [
+    //         'wordListCategories' => $wordListCategories,
+    //     ]);
+    // }
+
     public function index()
     {
-        $wordListCategories = WordListCategory::withCount('wordlists')
+        $query = WordListCategory::withCount('wordlists')
             ->where('status', true)
-            ->orderBy('created_at', 'desc')
-            ->get();
+            ->orderBy('created_at', 'desc');
+
+        if (auth()->check()) {
+            $user = auth()->user();
+
+            // Show categories created by logged-in user OR by admin@gmail.com
+            $query->where(function ($q) use ($user) {
+                $q->where('created_by', $user->id)
+                    ->orWhereHas('creator', function ($subQuery) {
+                        $subQuery->where('email', 'admin@gmail.com');
+                    });
+            });
+        } else {
+            // For guests: only show categories created by admin@gmail.com
+            $query->whereHas('creator', function ($subQuery) {
+                $subQuery->where('email', 'admin@gmail.com');
+            });
+        }
+
+        $wordListCategories = $query->get();
 
         return Inertia::render('WordListCategoryIndex', [
             'wordListCategories' => $wordListCategories,

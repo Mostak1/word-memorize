@@ -1,4 +1,4 @@
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import AppLayout from "@/Layouts/AppLayout";
 import { Head } from "@inertiajs/react";
 import DeleteUserForm from "./Partials/DeleteUserForm";
 import UpdatePasswordForm from "./Partials/UpdatePasswordForm";
@@ -14,13 +14,7 @@ import { User, Lock, AlertTriangle } from "lucide-react";
 
 export default function Edit({ mustVerifyEmail, status }) {
     return (
-        <AuthenticatedLayout
-            header={
-                <h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
-                    Profile Settings
-                </h2>
-            }
-        >
+        <AppLayout>
             <Head title="Profile" />
 
             <div className="py-6 sm:py-12">
@@ -99,6 +93,6 @@ export default function Edit({ mustVerifyEmail, status }) {
                     </Card>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </AppLayout>
     );
 }

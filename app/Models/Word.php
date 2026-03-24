@@ -25,11 +25,11 @@ class Word extends Model
         'ai_prompt',
         'synonym',
         'antonym',
-        'bangla_synonym',
-        'bangla_antonym',
         // Legacy single-image columns — kept for backward compat
         'image_url',
         'image_related_sentence',
+        'created_by',
+        'is_public',
     ];
 
     protected $appends = ['image_url_full'];
@@ -83,6 +83,11 @@ class Word extends Model
         return $this->hasMany(BookmarkedWord::class);
     }
 
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
     // ── Accessors ─────────────────────────────────────────────────────────────
 
     public function getDifficultyAttribute(): ?string
@@ -101,5 +106,25 @@ class Word extends Model
         }
 
         return asset($this->image_url);
+    }
+
+    public function isOwnedBy($user): bool
+    {
+        return $this->created_by === $user?->id;
+    }
+
+    public function isPublic(): bool
+    {
+        return (bool) $this->is_public;
+    }
+
+    public function scopePublic($query)
+    {
+        return $query->where('is_public', true);
+    }
+
+    public function scopePrivate($query)
+    {
+        return $query->where('is_public', false);
     }
 }

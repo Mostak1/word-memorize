@@ -9,8 +9,10 @@ import {
     LogIn,
     UserPlus,
     BookOpen,
+    Flag,
 } from "lucide-react";
 import FlashMessages from "@/Components/FlashMessage";
+import ReportErrorDialog from "@/Components/ReportErrorDialog";
 import logo from "/public/img/logo.png";
 
 export default function AppLayout({ children }) {
@@ -18,6 +20,7 @@ export default function AppLayout({ children }) {
     const user = auth?.user ?? null;
     const [mobileOpen, setMobileOpen] = useState(false);
     const [headerVisible, setHeaderVisible] = useState(true);
+    const [reportDialogOpen, setReportDialogOpen] = useState(false);
     const lastScrollY = useRef(0);
 
     useEffect(() => {
@@ -37,9 +40,21 @@ export default function AppLayout({ children }) {
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
+    // Opens the report dialog and closes the mobile menu
+    const openReportDialog = () => {
+        setMobileOpen(false);
+        setReportDialogOpen(true);
+    };
+
     return (
         <div className="min-h-screen bg-[#F0F2F5]">
             <FlashMessages />
+
+            {/* Always-mounted controlled ReportErrorDialog (used by mobile menu) */}
+            <ReportErrorDialog
+                controlledOpen={reportDialogOpen}
+                onControlledOpenChange={setReportDialogOpen}
+            />
 
             {/* Fixed Top Nav */}
             <div
@@ -80,6 +95,8 @@ export default function AppLayout({ children }) {
                                         <BookOpen className="h-4 w-4" />
                                         <span>WordLists</span>
                                     </Link>
+                                    {/* Desktop report button — self-contained */}
+                                    <ReportErrorDialog />
                                     <div className="relative group ml-1">
                                         <button className="flex items-center gap-2 text-white font-medium px-2 py-1.5 rounded-lg hover:bg-white/10 transition-colors">
                                             <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-semibold text-sm">
@@ -127,6 +144,8 @@ export default function AppLayout({ children }) {
                                         <LogIn className="h-4 w-4" />
                                         <span>Login</span>
                                     </Link>
+                                    {/* Desktop report button — self-contained */}
+                                    <ReportErrorDialog />
                                     <Link
                                         href={route("register")}
                                         className="flex items-center gap-1.5 bg-white text-[#E5201C] text-sm font-semibold px-3 py-2 rounded-lg hover:bg-red-50 transition-colors"
@@ -139,16 +158,26 @@ export default function AppLayout({ children }) {
                         </div>
 
                         {/* Mobile Toggle */}
-                        <button
-                            onClick={() => setMobileOpen(!mobileOpen)}
-                            className="sm:hidden text-white hover:bg-white/10 p-2 rounded-lg transition"
-                        >
-                            {mobileOpen ? (
-                                <X className="h-6 w-6" />
-                            ) : (
-                                <Menu className="h-6 w-6" />
-                            )}
-                        </button>
+                        <div className="sm:hidden flex items-center gap-2">
+                            {/* Mobile header flag — opens controlled dialog directly */}
+                            <button
+                                onClick={openReportDialog}
+                                className="flex items-center gap-1.5 text-xs font-medium text-white/80 hover:text-white border border-white/30 hover:border-white/60 rounded-full px-2.5 py-1.5 transition-all"
+                                aria-label="Report an error"
+                            >
+                                <Flag className="h-3.5 w-3.5 shrink-0" />
+                            </button>
+                            <button
+                                onClick={() => setMobileOpen(!mobileOpen)}
+                                className="text-white hover:bg-white/10 p-2 rounded-lg transition"
+                            >
+                                {mobileOpen ? (
+                                    <X className="h-6 w-6" />
+                                ) : (
+                                    <Menu className="h-6 w-6" />
+                                )}
+                            </button>
+                        </div>
                     </div>
 
                     {/* Mobile Dropdown */}
@@ -171,6 +200,14 @@ export default function AppLayout({ children }) {
                                         <BookOpen className="h-4 w-4" />{" "}
                                         WordLists
                                     </Link>
+                                    {/* Mobile menu Report Error — uses lifted state so unmounting is safe */}
+                                    <button
+                                        onClick={openReportDialog}
+                                        className="flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors w-full"
+                                    >
+                                        <Flag className="h-4 w-4 shrink-0" />
+                                        Report Error
+                                    </button>
                                     <div className="pt-3 mt-3 border-t border-white/20">
                                         <div className="flex items-center gap-3 px-3 mb-3">
                                             <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center font-semibold">
@@ -223,6 +260,14 @@ export default function AppLayout({ children }) {
                                     >
                                         <LogIn className="h-4 w-4" /> Login
                                     </Link>
+                                    {/* Mobile menu Report Error — uses lifted state */}
+                                    <button
+                                        onClick={openReportDialog}
+                                        className="flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors w-full"
+                                    >
+                                        <Flag className="h-4 w-4 shrink-0" />
+                                        Report Error
+                                    </button>
                                     <Link
                                         href={route("register")}
                                         onClick={() => setMobileOpen(false)}

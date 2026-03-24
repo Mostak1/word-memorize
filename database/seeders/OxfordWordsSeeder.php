@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Word;
 use App\Models\WordList;
 use App\Models\WordListCategory;
+use App\Models\User;
 
 class OxfordWordsSeeder extends Seeder
 {
@@ -16,9 +17,17 @@ class OxfordWordsSeeder extends Seeder
     protected string $filePath = 'database/data/Oxford_3000_processed.csv';
 
     /**
+     * The single WordListCategory that owns all Oxford 3000 word lists.
+     */
+    private const CATEGORY_NAME = 'Oxford 3000 Essential Words';
+
+    /**
+     * Admin email to use as creator
+     */
+    private const ADMIN_EMAIL = 'admin@gmail.com';
+
+    /**
      * Columns updated when a word already exists (upsert).
-     * 'word', 'wordlist_id', and 'created_at' are intentionally excluded —
-     * they form the identity of a row.
      */
     private const UPSERT_UPDATE_COLUMNS = [
         'parts_of_speech_variations',
@@ -32,23 +41,6 @@ class OxfordWordsSeeder extends Seeder
         'antonym',
         'updated_at',
     ];
-
-    // ── Column index map (0-based) ─────────────────────────────────────────
-    //  0  Word/Phrase
-    //  1  Type                   (→ parts_of_speech_variations)
-    //  2  Category               (→ WordListCategory name)
-    //  3  Sub-Category           (→ WordList title)
-    //  4  Pronunciation
-    //  5  Definition
-    //  6  Bangla meaning         (→ bangla_meaning)
-    //  7  Example Sentence       (→ example_sentences)
-    //  8  ai prompt              (→ ai_prompt)
-    //  9  Collocations
-    // 10  Synonym
-    // 11  Antonym
-    //
-    // is_locked rule: the first 3 WordLists (by order of appearance) under
-    // each WordListCategory are unlocked; all subsequent ones are locked.
 
     // ── Public entry-points ────────────────────────────────────────────────
 
@@ -68,12 +60,13 @@ class OxfordWordsSeeder extends Seeder
 
         $this->log('info', "{$dataRowCount} data row(s) found in the CSV.");
 
-        // Group rows by Category → Sub-Category
-        $grouped = $this->groupRows($rows);
+        $grouped = $this->groupBySubCategory($rows);
 
-        $this->log('info', count($grouped) . ' category/categories detected.');
+        $this->log('info', count($grouped) . ' word list(s) detected from Sub-Category column.');
 
-        $counts = $this->seedGrouped($grouped);
+        $creatorId = $this->getCreatorId();
+
+        $counts = $this->seedAll($grouped, $creatorId);
 
         $this->log(
             'info',
@@ -85,47 +78,47 @@ class OxfordWordsSeeder extends Seeder
 
     public function unseed(): void
     {
-        $fullPath = base_path($this->filePath);
+        $category = WordListCategory::where('name', self::CATEGORY_NAME)->first();
 
-        if (!file_exists($fullPath)) {
-            $this->log('warn', "CSV file not found — cannot determine which categories to unseed.");
+        if (!$category) {
+            $this->log('warn', '"' . self::CATEGORY_NAME . '" not found — nothing to unseed.');
             return;
         }
 
-        $rows = $this->parseCsv($fullPath);
-        $grouped = $this->groupRows($rows);
+        DB::transaction(function () use ($category) {
+            $wordLists = WordList::where('word_list_category_id', $category->id)->get();
 
-        foreach (array_keys($grouped) as $categoryName) {
-            $category = WordListCategory::where('name', $categoryName)->first();
-
-            if (!$category) {
-                $this->log('warn', "  \"{$categoryName}\" not found — skipping.");
-                continue;
+            foreach ($wordLists as $wordList) {
+                Word::where('wordlist_id', $wordList->id)->each(fn($w) => $w->delete());
+                $wordList->delete();
             }
 
-            DB::transaction(function () use ($category) {
-                $wordLists = WordList::where('word_list_category_id', $category->id)->get();
+            $category->delete();
+        });
 
-                foreach ($wordLists as $wordList) {
-                    // Use the Word model so the deleting boot hook fires (image cleanup, etc.)
-                    Word::where('wordlist_id', $wordList->id)->each(fn($w) => $w->delete());
-                    $wordList->delete();
-                }
+        $this->log('info', '"' . self::CATEGORY_NAME . '" unseeded — category, word lists, and words removed.');
+    }
 
-                $category->delete();
-            });
+    // ── Helper: Get Creator ID ─────────────────────────────────────────────
 
-            $this->log('info', "  Unseeded \"{$categoryName}\" — category, word lists, and words removed.");
+    /**
+     * Find user by admin@gmail.com, fallback to user ID 1
+     */
+    private function getCreatorId(): int
+    {
+        $user = User::where('email', self::ADMIN_EMAIL)->first();
+
+        if ($user) {
+            $this->log('info', "Using creator: {$user->email} (ID: {$user->id})");
+            return $user->id;
         }
+
+        $this->log('warn', "User with email " . self::ADMIN_EMAIL . " not found. Falling back to user ID 1.");
+        return 1;
     }
 
     // ── Private helpers ────────────────────────────────────────────────────
 
-    /**
-     * Parse the CSV and return all rows as indexed arrays (header stripped).
-     *
-     * @return array<int, array<int, string|null>>
-     */
     private function parseCsv(string $path): array
     {
         $handle = fopen($path, 'r');
@@ -135,8 +128,7 @@ class OxfordWordsSeeder extends Seeder
             return [];
         }
 
-        // Read and discard the header row (fgetcsv handles UTF-8 BOM transparently)
-        fgetcsv($handle);
+        fgetcsv($handle); // Skip header
 
         $rows = [];
         while (($row = fgetcsv($handle)) !== false) {
@@ -148,105 +140,68 @@ class OxfordWordsSeeder extends Seeder
         return $rows;
     }
 
-    /**
-     * Group all rows by Category (col 2) → Sub-Category (col 3),
-     * preserving order of first appearance within each level.
-     *
-     * Returns:
-     * [
-     *   'Category Name' => [
-     *     'Sub-Category Name' => [ [row], [row], … ],
-     *     …
-     *   ],
-     *   …
-     * ]
-     *
-     * @return array<string, array<string, array<int, array<int, string|null>>>>
-     */
-    private function groupRows(array $rows): array
+    private function groupBySubCategory(array $rows): array
     {
         $grouped = [];
 
         foreach ($rows as $row) {
             $word = $this->clean($row[0] ?? null);
-            $cat = $this->clean($row[2] ?? null);
             $subCat = $this->clean($row[3] ?? null);
 
-            if ($word === null || $cat === null || $subCat === null) {
+            if ($word === null || $subCat === null) {
                 continue;
             }
 
-            $grouped[$cat][$subCat][] = $row;
+            $grouped[$subCat][] = $row;
         }
 
         return $grouped;
     }
 
-    /**
-     * Seed all categories and their word lists inside one transaction.
-     *
-     * Returns ['inserted' => int, 'updated' => int, 'skipped' => int].
-     */
-    private function seedGrouped(array $grouped): array
+    private function seedAll(array $grouped, int $creatorId): array
     {
-        return DB::transaction(function () use ($grouped): array {
+        return DB::transaction(function () use ($grouped, $creatorId): array {
+
+            $category = WordListCategory::firstOrCreate(
+                ['name' => self::CATEGORY_NAME],
+                [
+                    'description' => null,
+                    'status' => true,
+                    'created_by' => $creatorId,
+                ]
+            );
+
+            $this->log('info', "WordListCategory: \"" . self::CATEGORY_NAME . "\" (ID: {$category->id})");
+
             $totalInserted = 0;
             $totalUpdated = 0;
             $totalSkipped = 0;
+            $listIndex = 0;
 
-            foreach ($grouped as $categoryName => $subCategories) {
-                $this->log('info', "\n── Category: \"{$categoryName}\" (" . count($subCategories) . " word lists) ──");
-
-                // 1. WordListCategory ──────────────────────────────────────
-                $categoryExists = WordListCategory::where('name', $categoryName)->exists();
-                $category = WordListCategory::firstOrCreate(
-                    ['name' => $categoryName],
-                    [
-                        'description' => null,
-                        'status' => true,
-                    ]
-                );
+            foreach ($grouped as $subCatName => $rows) {
+                $isLocked = $listIndex >= 3;
 
                 $this->log(
                     'info',
-                    $categoryExists
-                    ? "  WordListCategory already exists (ID: {$category->id}) — skipping creation."
-                    : "  WordListCategory created (ID: {$category->id})."
+                    "\n── WordList [{$listIndex}]: \"{$subCatName}\" ("
+                    . count($rows) . ' words, locked: ' . ($isLocked ? 'yes' : 'no') . ') ──'
                 );
 
-                // 2. WordLists — first 3 are unlocked, rest are locked ─────
-                $subCatIndex = 0;
+                ['inserted' => $ins, 'updated' => $upd, 'skipped' => $skp] =
+                    $this->seedWordList($category->id, $subCatName, $rows, $isLocked, $creatorId);
 
-                foreach ($subCategories as $subCatName => $rows) {
-                    $isLocked = $subCatIndex >= 3;
-
-                    $this->log('info', "\n  ── \"{$subCatName}\" (" . count($rows) . " words, locked: " . ($isLocked ? 'yes' : 'no') . ") ──");
-
-                    ['inserted' => $ins, 'updated' => $upd, 'skipped' => $skp] =
-                        $this->seedWordList($category->id, $subCatName, $rows, $isLocked);
-
-                    $totalInserted += $ins;
-                    $totalUpdated += $upd;
-                    $totalSkipped += $skp;
-                    $subCatIndex++;
-                }
+                $totalInserted += $ins;
+                $totalUpdated += $upd;
+                $totalSkipped += $skp;
+                $listIndex++;
             }
 
             return ['inserted' => $totalInserted, 'updated' => $totalUpdated, 'skipped' => $totalSkipped];
         });
     }
 
-    /**
-     * Create/update one WordList and upsert its words.
-     *
-     * Returns ['inserted' => int, 'updated' => int, 'skipped' => int].
-     */
-    private function seedWordList(int $categoryId, string $title, array $rows, bool $isLocked): array
+    private function seedWordList(int $categoryId, string $title, array $rows, bool $isLocked, int $creatorId): array
     {
-        $listExists = WordList::where('word_list_category_id', $categoryId)
-            ->where('title', $title)
-            ->exists();
-
         $wordList = WordList::firstOrCreate(
             [
                 'word_list_category_id' => $categoryId,
@@ -257,17 +212,19 @@ class OxfordWordsSeeder extends Seeder
                 'difficulty' => 'beginner',
                 'status' => true,
                 'is_locked' => $isLocked,
+                'created_by' => $creatorId,     // ← NEW
+                'is_public' => true,           // ← NEW
             ]
         );
 
         $this->log(
             'info',
-            $listExists
-            ? "    WordList already exists (ID: {$wordList->id}) — skipping creation."
-            : "    WordList created (ID: {$wordList->id})."
+            $wordList->wasRecentlyCreated
+            ? "  WordList created (ID: {$wordList->id})."
+            : "  WordList already exists (ID: {$wordList->id}) — skipping creation."
         );
 
-        // Pre-fetch existing word keys to distinguish insert vs update
+        // Pre-fetch existing word keys
         $existingKeys = DB::table('words')
             ->where('wordlist_id', $wordList->id)
             ->select('word', 'wordlist_id')
@@ -287,7 +244,6 @@ class OxfordWordsSeeder extends Seeder
                 return;
             }
 
-            // Requires a unique index on (word, wordlist_id).
             DB::table('words')->upsert(
                 $batch,
                 ['word', 'wordlist_id'],
@@ -300,7 +256,7 @@ class OxfordWordsSeeder extends Seeder
                     $updated++;
                 } else {
                     $inserted++;
-                    $existingKeys[$key] = true; // guard against duplicates in the CSV
+                    $existingKeys[$key] = true;
                 }
             }
 
@@ -327,40 +283,34 @@ class OxfordWordsSeeder extends Seeder
                 'collocations' => $this->clean($row[9] ?? null),
                 'synonym' => $this->clean($row[10] ?? null),
                 'antonym' => $this->clean($row[11] ?? null),
-                // Not present in this CSV — set to null
                 'ipa' => null,
                 'bangla_pronunciation' => null,
                 'hyphenation' => null,
                 'image_url' => null,
                 'image_related_sentence' => null,
+                'created_by' => $creatorId,      // ← NEW
+                'is_public' => true,            // ← NEW
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
 
             if (count($batch) >= $batchSize) {
                 $flush();
-                $this->log('info', "      -> " . ($inserted + $updated) . " words processed so far...");
             }
         }
 
         $flush();
 
-        $this->log('info', "    Done — inserted: {$inserted}, updated: {$updated}, skipped: {$skipped}.");
+        $this->log('info', "  Done — inserted: {$inserted}, updated: {$updated}, skipped: {$skipped}.");
 
         return ['inserted' => $inserted, 'updated' => $updated, 'skipped' => $skipped];
     }
 
-    /**
-     * Count rows that have at least a non-empty word column.
-     */
     private function countNonEmpty(array $rows): int
     {
         return count(array_filter($rows, fn($r) => $this->clean($r[0] ?? null) !== null));
     }
 
-    /**
-     * Trim and return null for empty / whitespace-only strings.
-     */
     private function clean(mixed $value): ?string
     {
         if ($value === null || $value === '') {
@@ -368,16 +318,9 @@ class OxfordWordsSeeder extends Seeder
         }
 
         $value = trim((string) $value);
-
         return $value === '' ? null : $value;
     }
 
-    /**
-     * Null-safe logger.
-     *
-     * Via Artisan  → $this->command is a ConsoleCommand, use info/warn/error.
-     * Via route    → $this->command is null, fall back to Laravel's logger.
-     */
     private function log(string $level, string $message): void
     {
         if ($this->command) {
@@ -387,11 +330,7 @@ class OxfordWordsSeeder extends Seeder
                 default => $this->command->info($message),
             };
         } else {
-            match ($level) {
-                'error' => logger()->error('[OxfordWordsSeeder] ' . $message),
-                'warn' => logger()->warning('[OxfordWordsSeeder] ' . $message),
-                default => logger()->info('[OxfordWordsSeeder] ' . $message),
-            };
+            logger()->info('[OxfordWordsSeeder] ' . $message);
         }
     }
 }

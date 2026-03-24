@@ -6,6 +6,7 @@ import {
     User,
     BookMarked,
     Trophy,
+    Flag,
 } from "lucide-react";
 
 /**
@@ -58,6 +59,11 @@ export const sidebarConfig = {
                     name: "Mastered Words",
                     route: "admin.mastered-words.index",
                     icon: Trophy,
+                },
+                {
+                    name: "Error Reports",
+                    route: "admin.error-reports.index",
+                    icon: Flag,
                 },
             ],
         },

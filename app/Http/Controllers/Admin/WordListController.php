@@ -62,6 +62,7 @@ class WordListController extends Controller
 
         // Cast empty string from the "No category" select option to null
         $validated['word_list_category_id'] = $validated['word_list_category_id'] ?: null;
+        $validated['created_by'] = auth()->id();
 
         WordList::create($validated);
 

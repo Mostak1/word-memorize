@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\ErrorReportController;
 use App\Http\Controllers\QuizController;
+use App\Http\Controllers\UserWordController;
 use App\Http\Controllers\WordListCategoryController;
 use App\Http\Controllers\WordListController;
 use App\Http\Controllers\ProfileController;
@@ -31,17 +33,42 @@ Route::get('/clear-cache', function () {
     return 'Laravel cache cleared!';
 });
 
+// Route::get('/run-seeder', function () {
+//     try {
+//         Artisan::call('db:seed', [
+//             // '--class' => 'AcademicWordListSeeder',
+//             '--class' => 'OxfordWordsSeeder',
+//             '--force' => true,
+//         ]);
+
+//         return response()->json([
+//             'status' => 'success',
+//             'message' => 'Seeder ran successfully.',
+//             'output' => Artisan::output(),
+//         ]);
+//     } catch (\Throwable $e) {
+//         return response()->json([
+//             'status' => 'error',
+//             'message' => $e->getMessage(),
+//         ], 500);
+//     }
+// });
+
 Route::get('/run-seeder', function () {
     try {
         Artisan::call('db:seed', [
-            // '--class' => 'AcademicWordListSeeder',
+            '--class' => 'AcademicWordListSeeder',
+            '--force' => true,
+        ]);
+
+        Artisan::call('db:seed', [
             '--class' => 'OxfordWordsSeeder',
             '--force' => true,
         ]);
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Seeder ran successfully.',
+            'message' => 'Both seeders ran successfully.',
             'output' => Artisan::output(),
         ]);
     } catch (\Throwable $e) {
@@ -54,12 +81,18 @@ Route::get('/run-seeder', function () {
 
 Route::get('/run-unseeder', function () {
     try {
-        $seeder = new \Database\Seeders\AcademicWordListSeeder();
-        $seeder->unseed();
+        $seeders = [
+            \Database\Seeders\AcademicWordListSeeder::class,
+            \Database\Seeders\OxfordWordsSeeder::class,
+        ];
+
+        foreach ($seeders as $seederClass) {
+            app($seederClass)->unseed();
+        }
 
         return response()->json([
             'status' => 'success',
-            'message' => 'AcademicWordListSeeder unseeded successfully.',
+            'message' => 'All seeders unseeded successfully.',
         ]);
     } catch (\Throwable $e) {
         return response()->json([
@@ -87,7 +120,7 @@ Route::get('/wordlist-categories/{category}/wordlists', [WordListCategoryControl
 
 // ── WordList routes ────────────────────────────────────────────────────────────
 // Route::get('/wordlists', [WordListController::class, 'index'])->name('wordlist.index');
-Route::get('/wordlist/{id}', [WordListController::class, 'show'])->name('wordlist.show');
+// Route::get('/wordlist/{id}', [WordListController::class, 'show'])->name('wordlist.show');
 Route::get('/wordlists/difficulty/{difficulty}', [WordListController::class, 'byDifficulty'])->name('wordlist.difficulty');
 
 // Start entire word list
@@ -112,6 +145,13 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    Route::get('/my/words', [UserWordController::class, 'index'])->name('my.words.index');
+    Route::get('/my/words/create', [UserWordController::class, 'create'])->name('my.words.create');
+    Route::post('/my/words', [UserWordController::class, 'store'])->name('my.words.store');
+    Route::get('/my/words/{word}/edit', [UserWordController::class, 'edit'])->name('my.words.edit');
+    Route::put('/my/words/{word}', [UserWordController::class, 'update'])->name('my.words.update');
+    Route::delete('/my/words/{word}', [UserWordController::class, 'destroy'])->name('my.words.destroy');
+
     Route::post('/word/{word}/know', [ReviewWordController::class, 'know'])->name('word.know');
     Route::post('/word/{word}/learn', [ReviewWordController::class, 'learn'])->name('word.learn');
 
@@ -126,6 +166,9 @@ Route::middleware('auth')->group(function () {
     // inside the auth middleware group:
     Route::post('/word/{word}/bookmark', [BookmarkController::class, 'toggle'])->name('word.bookmark');
     Route::get('/my/bookmarks', [BookmarkController::class, 'index'])->name('words.bookmarked');
+
+    Route::post('/error-reports', [ErrorReportController::class, 'store'])
+        ->name('error-reports.store');
 });
 
 require __DIR__ . '/auth.php';

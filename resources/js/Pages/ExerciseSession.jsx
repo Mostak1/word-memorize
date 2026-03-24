@@ -215,6 +215,17 @@ export default function ExerciseSession({
               .filter(Boolean)
         : [];
 
+    const collocationColors = [
+        "bg-red-100/70 text-red-700 border-red-200",
+        "bg-blue-100/70 text-blue-700 border-blue-200",
+        "bg-green-100/70 text-green-700 border-green-200",
+        "bg-amber-100/70 text-amber-700 border-amber-200",
+        "bg-purple-100/70 text-purple-700 border-purple-200",
+        "bg-teal-100/70 text-teal-700 border-teal-200",
+        "bg-pink-100/70 text-pink-700 border-pink-200",
+        "bg-indigo-100/70 text-indigo-700 border-indigo-200",
+    ];
+
     const images = word?.images?.length > 0 ? word.images : [];
     const activeImage = images[activeImageIndex] ?? null;
 
@@ -353,9 +364,9 @@ export default function ExerciseSession({
             <Head title={`Exercise — ${word?.word ?? ""}`} />
             <FlashMessages />
 
-            <div className="min-h-screen bg-[#F0F2F5] pb-32 pt-1">
+            <div className="min-h-screen bg-[#F0F2F5] pb-32 pt-1 mt-2">
                 {/* Counter */}
-                <div className="max-w-lg mx-auto px-3 pt-3 pb-1 flex items-center justify-between">
+                {/* <div className="max-w-lg mx-auto px-3 pt-3 pb-1 flex items-center justify-between">
                     <Link
                         href={backHref}
                         className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 transition"
@@ -365,8 +376,25 @@ export default function ExerciseSession({
                     <span className="text-sm text-gray-400 font-medium">
                         {currentIndex + 1} / {total}
                     </span>
-                    <div className="w-8" /> {/* spacer */}
-                </div>
+                    <div className="w-8" />
+                </div> */}
+
+                {/* Mobile fixed side arrows */}
+                <button
+                    onClick={goToPrev}
+                    disabled={currentIndex === 0}
+                    className="md:hidden fixed left-1 top-1/2 -translate-y-1/2 z-30 flex items-center justify-center w-9 h-9 rounded-full bg-white/90 shadow-md border border-gray-100 text-gray-500 active:scale-95 disabled:opacity-20 transition-all"
+                    aria-label="Previous word"
+                >
+                    <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button
+                    onClick={advance}
+                    className="md:hidden fixed right-1 top-1/2 -translate-y-1/2 z-30 flex items-center justify-center w-9 h-9 rounded-full bg-white/90 shadow-md border border-gray-100 text-gray-500 active:scale-95 transition-all"
+                    aria-label="Next word"
+                >
+                    <ChevronRight className="h-5 w-5" />
+                </button>
 
                 <div className="relative flex items-start justify-center w-full overflow-hidden">
                     {/* Desktop prev button */}
@@ -435,6 +463,17 @@ export default function ExerciseSession({
                                         strokeWidth={1.8}
                                     />
                                 </button>
+
+                                <div className="flex items-center justify-center gap-2 flex-wrap">
+                                    <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight leading-tight">
+                                        {word.word}
+                                    </h1>
+                                    {word.parts_of_speech_variations && (
+                                        <span className="bg-gray-100 text-gray-600 text-sm font-medium px-3 py-0.5 rounded-md self-center">
+                                            {word.parts_of_speech_variations}
+                                        </span>
+                                    )}
+                                </div>
                                 <button
                                     onClick={() => speakWord(word.word)}
                                     className="p-1 text-gray-500 hover:text-gray-700 transition"
@@ -448,21 +487,21 @@ export default function ExerciseSession({
 
                             {/* Word + Pronunciation + POS */}
                             <div className="px-5 pb-4 text-center">
-                                <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight leading-tight">
-                                    {word.word}
-                                </h1>
+                                {/* <div className="flex items-center justify-center gap-2 flex-wrap">
+                                    <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight leading-tight">
+                                        {word.word}
+                                    </h1>
+                                    {word.parts_of_speech_variations && (
+                                        <span className="bg-gray-100 text-gray-600 text-sm font-medium px-3 py-0.5 rounded-md self-center">
+                                            {word.parts_of_speech_variations}
+                                        </span>
+                                    )}
+                                </div> */}
                                 {word.pronunciation && (
                                     <p className="text-base text-gray-400 font-mono mt-1">
                                         {word.pronunciation} {word.ipa}{" "}
                                         {word.bangla_pronunciation}
                                     </p>
-                                )}
-                                {word.parts_of_speech_variations && (
-                                    <div className="mt-2 inline-flex">
-                                        <span className="bg-gray-100 text-gray-600 text-sm font-medium px-3 py-0.5 rounded-md">
-                                            {word.parts_of_speech_variations}
-                                        </span>
-                                    </div>
                                 )}
                             </div>
 
@@ -499,12 +538,14 @@ export default function ExerciseSession({
                                 </div>
                             )}
 
-                            {/* Example sentence */}
-                            {word.image_related_sentence && (
+                            {/* Example / Image-related Sentence */}
+                            {(word.image_related_sentence ||
+                                word.example_sentences) && (
                                 <div className="mx-4 mb-4 border-l-4 border-green-400 pl-3 py-1">
                                     <p className="text-base text-gray-800 leading-snug">
                                         {highlightWord(
-                                            word.image_related_sentence,
+                                            word.image_related_sentence ||
+                                                word.example_sentences,
                                             word.word,
                                         )}
                                     </p>
@@ -531,9 +572,6 @@ export default function ExerciseSession({
                                             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
                                                 Bangla Definition
                                             </p>
-                                            <p className="text-sm text-gray-900 leading-snug">
-                                                বাংলা অর্থ
-                                            </p>
                                             <p className="text-sm text-gray-800 leading-snug font-medium">
                                                 {word.bangla_meaning}
                                             </p>
@@ -553,7 +591,7 @@ export default function ExerciseSession({
                                         {collocationList.map((col, i) => (
                                             <span
                                                 key={i}
-                                                className="bg-[#F5F5F5] text-gray-700 text-sm px-3 py-1.5 rounded-full border border-gray-200"
+                                                className={`text-sm px-3 py-1.5 rounded-full border ${collocationColors[i % collocationColors.length]}`}
                                             >
                                                 {col}
                                             </span>
@@ -567,11 +605,12 @@ export default function ExerciseSession({
                                 word.antonym ||
                                 word.bangla_synonym ||
                                 word.bangla_antonym) && (
-                                <div className="pb-4 space-y-0">
+                                <div className="pb-4">
                                     <div className="h-px bg-gray-100 mx-4 mb-4" />
-                                    {(word.synonym || word.bangla_synonym) && (
+                                    {/* English Synonyms | English Antonyms */}
+                                    {(word.synonym || word.antonym) && (
                                         <div className="grid grid-cols-2 gap-0 mx-4 mb-4">
-                                            {word.synonym && (
+                                            {word.synonym ? (
                                                 <div className="border-l-4 border-[#E5201C] pl-3 pr-2 py-1">
                                                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
                                                         Synonyms
@@ -580,23 +619,11 @@ export default function ExerciseSession({
                                                         {word.synonym}
                                                     </p>
                                                 </div>
+                                            ) : (
+                                                <div />
                                             )}
-                                            {word.bangla_synonym && (
+                                            {word.antonym ? (
                                                 <div className="border-l-4 border-blue-400 pl-3 pr-2 py-1">
-                                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
-                                                        প্রতিশব্দ
-                                                    </p>
-                                                    <p className="text-sm text-gray-800 leading-snug font-medium">
-                                                        {word.bangla_synonym}
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                    {(word.antonym || word.bangla_antonym) && (
-                                        <div className="grid grid-cols-2 gap-0 mx-4">
-                                            {word.antonym && (
-                                                <div className="border-l-4 border-[#E5201C] pl-3 pr-2 py-1">
                                                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
                                                         Antonyms
                                                     </p>
@@ -604,8 +631,28 @@ export default function ExerciseSession({
                                                         {word.antonym}
                                                     </p>
                                                 </div>
+                                            ) : (
+                                                <div />
                                             )}
-                                            {word.bangla_antonym && (
+                                        </div>
+                                    )}
+                                    {/* Bangla Synonyms | Bangla Antonyms */}
+                                    {(word.bangla_synonym ||
+                                        word.bangla_antonym) && (
+                                        <div className="grid grid-cols-2 gap-0 mx-4">
+                                            {word.bangla_synonym ? (
+                                                <div className="border-l-4 border-[#E5201C] pl-3 pr-2 py-1">
+                                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                                                        প্রতিশব্দ
+                                                    </p>
+                                                    <p className="text-sm text-gray-800 leading-snug font-medium">
+                                                        {word.bangla_synonym}
+                                                    </p>
+                                                </div>
+                                            ) : (
+                                                <div />
+                                            )}
+                                            {word.bangla_antonym ? (
                                                 <div className="border-l-4 border-blue-400 pl-3 pr-2 py-1">
                                                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
                                                         বিপরীত শব্দ
@@ -614,6 +661,8 @@ export default function ExerciseSession({
                                                         {word.bangla_antonym}
                                                     </p>
                                                 </div>
+                                            ) : (
+                                                <div />
                                             )}
                                         </div>
                                     )}
@@ -649,7 +698,7 @@ export default function ExerciseSession({
             <div className="fixed bottom-0 left-0 right-0 z-20">
                 <div className="max-w-lg mx-auto px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
                     {/* Dot progress */}
-                    <div className="flex justify-center gap-1 mb-3">
+                    {/* <div className="flex justify-center gap-1 mb-3">
                         {words
                             .slice(
                                 Math.max(0, currentIndex - 3),
@@ -674,20 +723,28 @@ export default function ExerciseSession({
                                     />
                                 );
                             })}
+                    </div> */}
+
+                    <div className="max-w-lg mx-auto px-3 pt-3 pb-1 flex items-center justify-between">
+                        <Link
+                            href={backHref}
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 transition"
+                        >
+                            <ChevronLeft className="h-5 w-5" />
+                        </Link>
+                        <span className="text-sm text-gray-400 font-medium">
+                            {currentIndex + 1} / {total}
+                        </span>
+                        <div className="w-8" />
                     </div>
 
-                    {/* Swipe instruction hint */}
-                    <div className="flex justify-between text-xs text-gray-400 mb-2 px-1">
-                        <span>← Swipe left to skip</span>
-                        <span>Swipe right for prev →</span>
-                    </div>
                     <button
                         onClick={handleCheck}
                         disabled={isSubmitting}
                         className="w-full h-12 flex items-center justify-center gap-2 rounded-2xl text-base font-bold bg-green-600 text-white hover:bg-green-700 disabled:opacity-60 transition-all shadow-lg shadow-green-100"
                     >
                         <Check className="h-5 w-5" strokeWidth={2.5} />
-                        {isSubmitting ? "Saving…" : "✓ Mastered!"}
+                        {isSubmitting ? "Saving…" : "Mastered!"}
                     </button>
                 </div>
             </div>

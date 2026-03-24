@@ -28,6 +28,8 @@ class WordListCategoryController extends Controller
             'status' => 'boolean',
         ]);
 
+        $validated['created_by'] = auth()->id();
+
         WordListCategory::create($validated);
 
         return back(); // Inertia modal stays open until JS closes it

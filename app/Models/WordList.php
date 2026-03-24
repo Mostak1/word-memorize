@@ -18,6 +18,8 @@ class WordList extends Model
         'difficulty',
         'status',
         'is_locked',
+        'created_by',
+        'is_public',
     ];
 
     /**
@@ -36,11 +38,32 @@ class WordList extends Model
         return $this->hasMany(Word::class, 'wordlist_id');
     }
 
+    // NEW: Owner relationship
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
     /**
      * Scope: Filter by difficulty
      */
     public function scopeDifficulty($query, $level)
     {
         return $query->where('difficulty', $level);
+    }
+
+    public function isPublic(): bool
+    {
+        return (bool) $this->is_public;
+    }
+
+    public function scopePublic($query)
+    {
+        return $query->where('is_public', true);
+    }
+
+    public function scopePrivate($query)
+    {
+        return $query->where('is_public', false);
     }
 }

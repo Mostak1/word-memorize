@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\WordImageController;
 use App\Http\Controllers\Admin\SubcategoryController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\ProfileController;
+use App\Http\Controllers\Admin\ErrorReportController;
 use Illuminate\Support\Facades\Route;
 
 Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin', 'as' => 'admin.'], function () {
@@ -64,13 +65,6 @@ Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin', 'as' => 'a
                 Route::delete('/{wordImage}', [WordImageController::class, 'destroy'])->name('destroy');
             });
         });
-
-        // Subcategories (modal-based) — admin.word-lists.subcategories.*
-        // Route::prefix('{wordList}/subcategories')->name('subcategories.')->group(function () {
-        //     Route::post('/',               [SubcategoryController::class, 'store'])->name('store');
-        //     Route::patch('/{subcategory}', [SubcategoryController::class, 'update'])->name('update');
-        //     Route::delete('/{subcategory}',[SubcategoryController::class, 'destroy'])->name('destroy');
-        // });
     });
 
     // ── Review Words ───────────────────────────────────────────────────────────
@@ -83,6 +77,13 @@ Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin', 'as' => 'a
     Route::prefix('mastered-words')->name('mastered-words.')->group(function () {
         Route::get('/', [MasteredWordController::class, 'index'])->name('index');
         Route::delete('/{masteredWord}', [MasteredWordController::class, 'destroy'])->name('destroy');
+    });
+
+    // ── Error Reports ──────────────────────────────────────────────────────────
+    Route::prefix('error-reports')->name('error-reports.')->group(function () {
+        Route::get('/', [ErrorReportController::class, 'index'])->name('index');
+        Route::patch('/{errorReport}', [ErrorReportController::class, 'update'])->name('update');
+        Route::delete('/{errorReport}', [ErrorReportController::class, 'destroy'])->name('destroy');
     });
 
     // ── Settings ───────────────────────────────────────────────────────────────
