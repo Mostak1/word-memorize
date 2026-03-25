@@ -21,7 +21,6 @@ jobs:
           username: fluentoo
           password: ${{ secrets.FTP_PASSWORD }}
           port: 22 # Standard SFTP port
-          protocol: sftp
           server-dir: public_html/vocapix.fluento.org/
           exclude: |
             **/.git*
