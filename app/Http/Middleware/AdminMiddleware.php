@@ -13,20 +13,9 @@ class AdminMiddleware
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-    // public function handle(Request $request, Closure $next): Response
-    // {
-    //     // Check if user is logged in and is admin
-    //     if (auth()->check() && auth()->user()->is_admin) {
-    //         return $next($request);
-    //     }
-
-    //     // Optionally redirect to login or abort
-    //     abort(403, 'Unauthorized access.');
-    // }
-
     public function handle(Request $request, Closure $next): Response
     {
-        if (!auth()->check() || !auth()->user()->is_admin) {
+        if (!auth()->check() || !auth()->user()->isAdmin()) {
             abort(403, 'Unauthorized action.');
         }
 

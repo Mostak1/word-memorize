@@ -20,7 +20,7 @@ class DashboardController extends Controller
 
         $stats = [
             'total_users' => User::count(),
-            'total_admins' => User::where('is_admin', true)->count(),
+            'total_admins' => User::where('role', 'admin')->count(),
             'total_categories' => WordListCategory::count(),
             'total_word_lists' => $totalWordLists,
             'active_users' => User::where('created_at', '>=', Carbon::now()->subDays(30))
@@ -77,8 +77,9 @@ class DashboardController extends Controller
     {
         $reports = [
             'users_by_role' => [
-                'admins' => User::where('is_admin', true)->count(),
-                'regular_users' => User::where('is_admin', false)->count(),
+                'admins' => User::where('role', 'admin')->count(),
+                'instructors' => User::where('role', 'instructor')->count(),
+                'students' => User::where('role', 'student')->count(),
             ],
             'users_by_verification' => [
                 'verified' => User::whereNotNull('email_verified_at')->count(),

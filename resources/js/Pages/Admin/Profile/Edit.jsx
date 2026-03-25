@@ -14,27 +14,54 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/Components/ui/alert-dialog";
-import { User, Mail, Lock, Trash2 } from "lucide-react";
+import { User, Lock, Trash2, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+
+// ─── Reusable password input with show/hide toggle ────────────────────────────
+function PasswordInput({ id, value, onChange, placeholder, required }) {
+    const [show, setShow] = useState(false);
+    return (
+        <div className="relative">
+            <Input
+                id={id}
+                type={show ? "text" : "password"}
+                value={value}
+                onChange={onChange}
+                placeholder={placeholder}
+                required={required}
+                className="pr-10"
+            />
+            <button
+                type="button"
+                onClick={() => setShow((s) => !s)}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+                tabIndex={-1}
+            >
+                {show ? (
+                    <EyeOff className="h-4 w-4" />
+                ) : (
+                    <Eye className="h-4 w-4" />
+                )}
+            </button>
+        </div>
+    );
+}
 
 export default function AdminProfile({ auth }) {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-    // Profile Information Form
     const {
         data: profileData,
         setData: setProfileData,
         patch: patchProfile,
         processing: processingProfile,
         errors: profileErrors,
-        reset: resetProfile,
     } = useForm({
         name: auth.user.name,
         email: auth.user.email,
     });
 
-    // Password Update Form
     const {
         data: passwordData,
         setData: setPasswordData,
@@ -52,31 +79,25 @@ export default function AdminProfile({ auth }) {
         e.preventDefault();
         patchProfile(route("admin.profile.update"), {
             preserveScroll: true,
-            onSuccess: () => {
-                toast.success("Profile updated successfully");
-            },
-            onError: () => {
-                toast.error("Failed to update profile");
-            },
+            onSuccess: () => toast.success("Profile updated successfully"),
+            onError: () => toast.error("Failed to update profile"),
         });
     };
 
     const handlePasswordSubmit = (e) => {
         e.preventDefault();
-        putPassword(route("admin.password.update"), {
+        // ✅ Fixed: was "admin.password.update" → correct route is "admin.profile.password.update"
+        putPassword(route("admin.profile.password.update"), {
             preserveScroll: true,
             onSuccess: () => {
                 toast.success("Password updated successfully");
                 resetPassword();
             },
-            onError: () => {
-                toast.error("Failed to update password");
-            },
+            onError: () => toast.error("Failed to update password"),
         });
     };
 
     const handleDeleteAccount = () => {
-        // Implement delete account logic
         toast.error("Account deletion is not available for admin users");
         setDeleteDialogOpen(false);
     };
@@ -109,7 +130,6 @@ export default function AdminProfile({ auth }) {
                             className="space-y-6"
                         >
                             <div className="grid gap-6 md:grid-cols-2">
-                                {/* Name */}
                                 <div className="space-y-2">
                                     <Label htmlFor="name">Name</Label>
                                     <Input
@@ -132,7 +152,6 @@ export default function AdminProfile({ auth }) {
                                     )}
                                 </div>
 
-                                {/* Email */}
                                 <div className="space-y-2">
                                     <Label htmlFor="email">Email</Label>
                                     <Input
@@ -156,7 +175,7 @@ export default function AdminProfile({ auth }) {
                                 </div>
                             </div>
 
-                            {/* User Info Display */}
+                            {/* Account info */}
                             <div className="rounded-lg border bg-muted/50 p-4">
                                 <h4 className="mb-3 font-semibold">
                                     Account Information
@@ -174,16 +193,9 @@ export default function AdminProfile({ auth }) {
                                         <dt className="text-muted-foreground">
                                             Account Type
                                         </dt>
-                                        <dd className="font-medium">
-                                            {auth.user.is_admin ? (
-                                                <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                                                    Administrator
-                                                </span>
-                                            ) : (
-                                                <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-800 dark:text-gray-200">
-                                                    User
-                                                </span>
-                                            )}
+                                        {/* ✅ Fixed: was auth.user.is_admin (boolean) → now auth.user.role (string) */}
+                                        <dd className="font-medium capitalize">
+                                            {auth.user.role}
                                         </dd>
                                     </div>
                                     <div className="flex justify-between">
@@ -198,22 +210,6 @@ export default function AdminProfile({ auth }) {
                                                 month: "long",
                                                 day: "numeric",
                                             })}
-                                        </dd>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <dt className="text-muted-foreground">
-                                            Email Status
-                                        </dt>
-                                        <dd className="font-medium">
-                                            {auth.user.email_verified_at ? (
-                                                <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-200">
-                                                    Verified
-                                                </span>
-                                            ) : (
-                                                <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-                                                    Not Verified
-                                                </span>
-                                            )}
                                         </dd>
                                     </div>
                                 </dl>
@@ -246,15 +242,13 @@ export default function AdminProfile({ auth }) {
                             onSubmit={handlePasswordSubmit}
                             className="space-y-6"
                         >
-                            <div className="grid gap-6 md:grid-cols-1 max-w-md">
-                                {/* Current Password */}
+                            <div className="grid gap-6 max-w-md">
                                 <div className="space-y-2">
                                     <Label htmlFor="current_password">
                                         Current Password
                                     </Label>
-                                    <Input
+                                    <PasswordInput
                                         id="current_password"
-                                        type="password"
                                         value={passwordData.current_password}
                                         onChange={(e) =>
                                             setPasswordData(
@@ -272,14 +266,12 @@ export default function AdminProfile({ auth }) {
                                     )}
                                 </div>
 
-                                {/* New Password */}
                                 <div className="space-y-2">
                                     <Label htmlFor="password">
                                         New Password
                                     </Label>
-                                    <Input
+                                    <PasswordInput
                                         id="password"
-                                        type="password"
                                         value={passwordData.password}
                                         onChange={(e) =>
                                             setPasswordData(
@@ -297,14 +289,12 @@ export default function AdminProfile({ auth }) {
                                     )}
                                 </div>
 
-                                {/* Confirm Password */}
                                 <div className="space-y-2">
                                     <Label htmlFor="password_confirmation">
                                         Confirm New Password
                                     </Label>
-                                    <Input
+                                    <PasswordInput
                                         id="password_confirmation"
-                                        type="password"
                                         value={
                                             passwordData.password_confirmation
                                         }
@@ -368,7 +358,6 @@ export default function AdminProfile({ auth }) {
                 </Card>
             </div>
 
-            {/* Delete Account Confirmation Dialog */}
             <AlertDialog
                 open={deleteDialogOpen}
                 onOpenChange={setDeleteDialogOpen}

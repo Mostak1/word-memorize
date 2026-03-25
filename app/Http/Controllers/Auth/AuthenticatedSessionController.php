@@ -45,7 +45,7 @@ class AuthenticatedSessionController extends Controller
         // Add success toast message
         $userName = $request->user()->name;
 
-        if ($request->user()->is_admin) {
+        if ($request->user()->isAdmin()) {
             // Log::info("Admin");
             return redirect()->intended(route('admin.dashboard'))
                 ->with('flash', [

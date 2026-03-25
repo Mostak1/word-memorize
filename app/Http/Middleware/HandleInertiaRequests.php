@@ -27,16 +27,6 @@ class HandleInertiaRequests extends Middleware
      *
      * @return array<string, mixed>
      */
-    // public function share(Request $request): array
-    // {
-    //     return [
-    //         ...parent::share($request),
-    //         'auth' => [
-    //             'user' => $request->user(),
-    //         ],
-    //     ];
-    // }
-
     public function share(Request $request): array
     {
         return [
@@ -46,7 +36,11 @@ class HandleInertiaRequests extends Middleware
                     'id' => $request->user()->id,
                     'name' => $request->user()->name,
                     'email' => $request->user()->email,
-                    'is_admin' => $request->user()->is_admin,
+                    'role' => $request->user()->role,           // ✅ Fixed: was is_admin (doesn't exist)
+                    'image' => $request->user()->image,
+                    'headline' => $request->user()->headline,
+                    'approve_status' => $request->user()->approve_status,
+                    'wallet' => $request->user()->wallet,
                     'email_verified_at' => $request->user()->email_verified_at,
                     'created_at' => $request->user()->created_at,
                     'updated_at' => $request->user()->updated_at,
@@ -54,10 +48,7 @@ class HandleInertiaRequests extends Middleware
             ],
             // ✅ Flash messages for Sonner toasts
             'flash' => [
-                // Nested flash structure (flash.toast.type, flash.toast.message)
                 'toast' => fn() => $request->session()->get('flash.toast'),
-
-                // Direct flash messages (also supported)
                 'success' => fn() => $request->session()->get('success'),
                 'error' => fn() => $request->session()->get('error'),
                 'warning' => fn() => $request->session()->get('warning'),
