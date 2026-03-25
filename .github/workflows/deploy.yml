@@ -20,7 +20,7 @@ jobs:
           username: vocapix@village.techseba.com
           password: ${{ secrets.FTP_PASSWORD }}
           port: 21
-          server-dir: /
+          server-dir: village.techseba.com/
           exclude: |
             **/.git*
             **/.git*/**
