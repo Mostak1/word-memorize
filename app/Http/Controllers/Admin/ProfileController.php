@@ -68,8 +68,8 @@ class ProfileController extends Controller
         $user = $request->user();
 
         // Prevent deleting the last admin
-        if ($user->is_admin) {
-            $adminCount = \App\Models\User::where('is_admin', true)->count();
+        if ($user->isAdmin()) {
+            $adminCount = \App\Models\User::where('role', 'admin')->count();
 
             if ($adminCount <= 1) {
                 return back()->withErrors([

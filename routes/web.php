@@ -15,7 +15,7 @@ use Inertia\Inertia;
 
 Route::get('/', function () {
     if (auth()->check()) {
-        if (auth()->user()->is_admin) {
+        if (auth()->user()->isAdmin()) {
             return redirect()->route('admin.dashboard');
         }
         return redirect()->route('dashboard');

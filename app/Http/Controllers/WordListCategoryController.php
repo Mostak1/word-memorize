@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MasteredWord;
 use App\Models\WordList;
 use App\Models\WordListCategory;
 use Illuminate\Http\Request;
@@ -14,7 +15,7 @@ class WordListCategoryController extends Controller
         if (!auth()->check() || empty($wordListIds))
             return [];
 
-        return \App\Models\MasteredWord::where('user_id', auth()->id())
+        return MasteredWord::where('user_id', auth()->id())
             ->whereHas('word', fn($q) => $q->whereIn('wordlist_id', $wordListIds))
             ->join('words', 'mastered_words.word_id', '=', 'words.id')
             ->selectRaw('words.wordlist_id, count(*) as cnt')

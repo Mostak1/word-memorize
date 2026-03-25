@@ -37,7 +37,7 @@ export default function Welcome({ auth }) {
                                 <img src={logo} className="h-5" alt="Logo" />
                             </div>
                             <span className="text-lg font-bold tracking-tight">
-                                WordWise
+                                Vocapix
                             </span>
                         </div>
                         {auth.user ? (

@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -18,10 +17,26 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
+        'role',
+        'image',
         'name',
+        'headline',
         'email',
+        'phone_number',
+        'profession',
+        'location',
+        'bio',
+        'gender',
+        'document',
         'password',
-        'is_admin',
+        'facebook',
+        'x',
+        'linkedin',
+        'website',
+        'github',
+        'approve_status',
+        'login_as',
+        'wallet',
     ];
 
     /**
@@ -44,9 +59,33 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'is_admin' => 'boolean',
+            'wallet' => 'double',
         ];
     }
+
+    // ─── Role Helpers ────────────────────────────────────────────────────────────
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isInstructor(): bool
+    {
+        return $this->role === 'instructor';
+    }
+
+    public function isStudent(): bool
+    {
+        return $this->role === 'student';
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->approve_status === 'approved';
+    }
+
+    // ─── Relationships ────────────────────────────────────────────────────────────
 
     public function reviewWords()
     {

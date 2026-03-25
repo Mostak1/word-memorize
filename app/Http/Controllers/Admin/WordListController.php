@@ -34,13 +34,14 @@ class WordListController extends Controller
     public function index()
     {
         $categories = WordListCategory::with([
+            'creator:id,name,email,role',   // ← updated from is_admin to role
             'wordLists' => function ($query) {
                 $query->withCount('words')
-                    ->orderByRaw('LENGTH(title), title');
+                    ->orderBy('id', 'asc');
             }
         ])
             ->withCount('wordLists')
-            ->orderBy('name')
+            ->orderBy('id', 'desc')
             ->paginate(10);
 
         return Inertia::render('Admin/WordLists/Index', [
@@ -58,6 +59,7 @@ class WordListController extends Controller
             'difficulty' => 'required|in:beginner,intermediate,advanced',
             'status' => 'required|boolean',
             'is_locked' => 'boolean',
+            'is_public' => 'boolean',
         ]);
 
         // Cast empty string from the "No category" select option to null
@@ -115,6 +117,7 @@ class WordListController extends Controller
             'difficulty' => 'required|in:beginner,intermediate,advanced',
             'status' => 'required|boolean',
             'is_locked' => 'boolean',
+            'is_public' => 'boolean',
         ]);
 
         $validated['word_list_category_id'] = $validated['word_list_category_id'] ?: null;

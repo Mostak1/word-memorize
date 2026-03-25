@@ -226,6 +226,14 @@ export default function ExerciseSession({
         "bg-indigo-100/70 text-indigo-700 border-indigo-200",
     ];
 
+    const wordFontSize = (w) => {
+        if (!w) return "text-4xl";
+        if (w.length <= 8) return "text-4xl";
+        if (w.length <= 12) return "text-3xl";
+        if (w.length <= 16) return "text-2xl";
+        return "text-xl";
+    };
+
     const images = word?.images?.length > 0 ? word.images : [];
     const activeImage = images[activeImageIndex] ?? null;
 
@@ -443,46 +451,53 @@ export default function ExerciseSession({
                             onTouchMove={onTouchMove}
                             onTouchEnd={onTouchEnd}
                         >
-                            {/* Top row: bookmark + speaker */}
-                            <div className="flex items-center justify-between px-5 pt-5 pb-2">
-                                <button
-                                    onClick={() => handleBookmark(word.id)}
-                                    className="p-1 transition-colors"
-                                    aria-label={
-                                        bookmarks[word.id]
-                                            ? "Remove bookmark"
-                                            : "Bookmark word"
-                                    }
-                                >
-                                    <Bookmark
-                                        className={`h-6 w-6 transition-colors ${
+                            {/* Top row: bookmark | word + POS | speaker */}
+                            <div className="flex items-center px-5 pt-5 pb-2">
+                                <div className="flex-none w-8 flex justify-start">
+                                    <button
+                                        onClick={() => handleBookmark(word.id)}
+                                        className="p-1 transition-colors"
+                                        aria-label={
                                             bookmarks[word.id]
-                                                ? "fill-yellow-400 text-yellow-400"
-                                                : "text-gray-400 hover:text-gray-600"
-                                        }`}
-                                        strokeWidth={1.8}
-                                    />
-                                </button>
+                                                ? "Remove bookmark"
+                                                : "Bookmark word"
+                                        }
+                                    >
+                                        <Bookmark
+                                            className={`h-6 w-6 transition-colors ${
+                                                bookmarks[word.id]
+                                                    ? "fill-yellow-400 text-yellow-400"
+                                                    : "text-gray-400 hover:text-gray-600"
+                                            }`}
+                                            strokeWidth={1.8}
+                                        />
+                                    </button>
+                                </div>
 
-                                <div className="flex items-center justify-center gap-2 flex-wrap">
-                                    <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight leading-tight">
+                                <div className="flex-1 flex flex-col items-center justify-center gap-1 text-center px-2">
+                                    <h1
+                                        className={`${wordFontSize(word.word)} font-extrabold text-gray-900 tracking-tight leading-tight text-center break-words w-full`}
+                                    >
                                         {word.word}
                                     </h1>
                                     {word.parts_of_speech_variations && (
-                                        <span className="bg-gray-100 text-gray-600 text-sm font-medium px-3 py-0.5 rounded-md self-center">
+                                        <span className="bg-gray-100 text-gray-600 text-sm font-medium px-3 py-0.5 rounded-md">
                                             {word.parts_of_speech_variations}
                                         </span>
                                     )}
                                 </div>
-                                <button
-                                    onClick={() => speakWord(word.word)}
-                                    className="p-1 text-gray-500 hover:text-gray-700 transition"
-                                >
-                                    <Volume2
-                                        className="h-6 w-6"
-                                        strokeWidth={1.8}
-                                    />
-                                </button>
+
+                                <div className="flex-none w-8 flex justify-end">
+                                    <button
+                                        onClick={() => speakWord(word.word)}
+                                        className="p-1 text-gray-500 hover:text-gray-700 transition"
+                                    >
+                                        <Volume2
+                                            className="h-6 w-6"
+                                            strokeWidth={1.8}
+                                        />
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Word + Pronunciation + POS */}

@@ -26,6 +26,7 @@ class WordController extends Controller
             'ai_prompt' => 'nullable|string',
             'synonym' => 'nullable|string',
             'antonym' => 'nullable|string',
+            'is_public' => 'boolean',
         ];
     }
 
@@ -46,6 +47,9 @@ class WordController extends Controller
         $validated = $request->validate(array_merge($this->wordRules(), $this->imageRules()));
 
         $wordData = collect($validated)->except(['images', 'new_captions'])->all();
+
+        $wordData['is_public'] = $wordData['is_public'] ?? true;  // ← add this
+        $wordData['created_by'] = auth()->id();
 
         $word = $wordList->words()->create($wordData);
 

@@ -35,7 +35,7 @@ Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin', 'as' => 'a
         Route::get('/{user}/edit', [UserController::class, 'edit'])->name('edit');
         Route::patch('/{user}', [UserController::class, 'update'])->name('update');
         Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
-        Route::post('/{user}/toggle-admin', [UserController::class, 'toggleAdmin'])->name('toggle-admin');
+        Route::patch('/{user}/update-role', [UserController::class, 'updateRole'])->name('update-role');
         Route::post('/{user}/reset-password', [UserController::class, 'resetPassword'])->name('reset-password');
     });
 

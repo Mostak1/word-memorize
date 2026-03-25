@@ -17,7 +17,7 @@ import {
     SelectValue,
 } from "@/Components/ui/select";
 import { Switch } from "@/Components/ui/switch";
-import { Lock } from "lucide-react";
+import { Globe, Lock } from "lucide-react";
 import { toast } from "sonner";
 
 export default function WordListFormDialog({
@@ -34,6 +34,7 @@ export default function WordListFormDialog({
         price: wordList?.price ?? 0,
         status: wordList?.status ?? true,
         is_locked: wordList?.is_locked ?? false,
+        is_public: wordList?.is_public ?? true,
         word_list_category_id:
             wordList?.word_list_category_id || categoryId || "",
     });
@@ -43,13 +44,13 @@ export default function WordListFormDialog({
 
     useEffect(() => {
         if (open) {
-            // Sync form when dialog opens (handles switching between edit targets)
             setData({
                 title: wordList?.title || "",
                 difficulty: wordList?.difficulty || "",
                 price: wordList?.price ?? 0,
                 status: wordList?.status ?? true,
                 is_locked: wordList?.is_locked ?? false,
+                is_public: wordList?.is_public ?? true,
                 word_list_category_id:
                     wordList?.word_list_category_id || categoryId || "",
             });
@@ -61,6 +62,7 @@ export default function WordListFormDialog({
                 price: 0,
                 status: true,
                 is_locked: false,
+                is_public: true,
                 word_list_category_id: "",
             });
             setErrors({});
@@ -205,6 +207,25 @@ export default function WordListFormDialog({
                             {data.is_locked
                                 ? "Locked (users must purchase)"
                                 : "Unlocked (free access)"}
+                        </span>
+                    </div>
+
+                    {/* Is Public */}
+                    <div className="flex items-center gap-3">
+                        <Label className="flex items-center gap-1.5">
+                            <Globe className="h-3.5 w-3.5" />
+                            Visibility
+                        </Label>
+                        <Switch
+                            checked={data.is_public}
+                            onCheckedChange={(checked) =>
+                                setData({ ...data, is_public: checked })
+                            }
+                        />
+                        <span className="text-sm text-muted-foreground">
+                            {data.is_public
+                                ? "Public (visible to all users)"
+                                : "Private (hidden from users)"}
                         </span>
                     </div>
 

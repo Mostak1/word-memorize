@@ -31,6 +31,7 @@ class WordListController extends Controller
     public function show(Request $request, $id)
     {
         $wordList = WordList::with('category')
+            ->where('status', true)
             ->withCount('words')
             ->findOrFail($id);
 
@@ -51,7 +52,9 @@ class WordListController extends Controller
 
     public function start($id)
     {
-        $wordList = WordList::findOrFail($id);
+        $wordList = WordList::where('id', $id)
+            ->where('status', true)
+            ->firstOrFail();
 
         if ($wordList->is_locked) {
             abort(403, 'This word list is locked.');
@@ -81,7 +84,10 @@ class WordListController extends Controller
 
     public function startSubcategory($wordListId, $subcategoryId)
     {
-        $wordList = WordList::findOrFail($wordListId);
+        // $wordList = WordList::findOrFail($wordListId);
+        $wordList = WordList::where('id', $wordListId)
+            ->where('status', true)
+            ->firstOrFail();
         $words = Word::with('images')
             ->where('wordlist_id', $wordListId)
             ->get()->shuffle()->values();
@@ -188,8 +194,13 @@ class WordListController extends Controller
     {
         $userId = auth()->id();
 
-        $wordlist = WordList::findOrFail($wordlistId);
+        $wordlist = WordList::where('id', $wordlistId)
+            ->where('status', true)
+            ->firstOrFail();
 
+        if ($wordlist->is_locked) {
+            abort(403, 'This word list is locked.');
+        }
         $words = Word::where('wordlist_id', $wordlistId)
             ->whereHas('masteredEntries', fn($q) => $q->where('user_id', $userId))
             ->paginate(15)

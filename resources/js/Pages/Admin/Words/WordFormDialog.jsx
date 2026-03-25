@@ -19,7 +19,8 @@ import {
 } from "@/Components/ui/select";
 import { Badge } from "@/Components/ui/badge";
 import { toast } from "sonner";
-import { X, Image as ImageIcon, Plus } from "lucide-react";
+import { Switch } from "@/Components/ui/switch";
+import { Globe, X, Image as ImageIcon, Plus } from "lucide-react";
 
 // ── Required word fields ──────────────────────────────────────────────────────
 const REQUIRED = {
@@ -98,6 +99,7 @@ export default function WordFormDialog({
         ai_prompt: word?.ai_prompt || "",
         synonym: word?.synonym || "",
         antonym: word?.antonym || "",
+        is_public: word?.is_public ?? true,
     });
 
     const [clientErrors, setClientErrors] = useState({});
@@ -214,10 +216,16 @@ export default function WordFormDialog({
         }
         setClientErrors({});
 
+        // const payload = new FormData();
         const payload = new FormData();
         Object.entries(data).forEach(([key, value]) => {
-            if (value === undefined || value === null) payload.append(key, "");
-            else payload.append(key, value);
+            if (value === undefined || value === null) {
+                payload.append(key, "");
+            } else if (typeof value === "boolean") {
+                payload.append(key, value ? "1" : "0"); // ← convert booleans to 1/0
+            } else {
+                payload.append(key, value);
+            }
         });
 
         if (isEditing) {
@@ -464,6 +472,25 @@ export default function WordFormDialog({
                             onChange={(e) => setData("antonym", e.target.value)}
                             placeholder="e.g., fail, abandon"
                         />
+                    </div>
+
+                    {/* Visibility */}
+                    <div className="flex items-center gap-3">
+                        <Label className="flex items-center gap-1.5">
+                            <Globe className="h-3.5 w-3.5" />
+                            Visibility
+                        </Label>
+                        <Switch
+                            checked={data.is_public}
+                            onCheckedChange={(checked) =>
+                                setData("is_public", checked)
+                            }
+                        />
+                        <span className="text-sm text-muted-foreground">
+                            {data.is_public
+                                ? "Public (visible to all users)"
+                                : "Private (hidden from users)"}
+                        </span>
                     </div>
 
                     {/* Images */}
