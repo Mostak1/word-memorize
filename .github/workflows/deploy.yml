@@ -1,4 +1,4 @@
-name: Deploy to cPanel via SFTP
+name: Deploy to cPanel via FTP
 
 on:
   push:
@@ -13,16 +13,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Upload to cPanel via SFTP
+      - name: Upload to cPanel via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          # Use sftp:// prefix to force SFTP
-          server: 139.99.120.183
-          username: fluentoo
+          server: ftp.fluento.org
+          username: vocapix@vocapix.fluento.org
           password: ${{ secrets.FTP_PASSWORD }}
-          port: 21 # Standard SFTP port
+          port: 21
           server-dir: public_html/vocapix.fluento.org/
-          timeout: 30000
           exclude: |
             **/.git*
             **/.git*/**
