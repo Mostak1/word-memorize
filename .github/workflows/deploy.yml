@@ -1,0 +1,30 @@
+name: Deploy to cPanel via FTP
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Upload to cPanel via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ftp.fluento.org
+          username: vocapix@fluento.org
+          password: 3XCxp84@~t._'*J
+          port: 21
+          server-dir: public_html/vocapix.fluento.org/
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github*
+            **/node_modules/**
+            **/vendor/**
+            **/.env
