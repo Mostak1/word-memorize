@@ -17,10 +17,10 @@ jobs:
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           # Use sftp:// prefix to force SFTP
-          server: sftp://139.99.120.183
+          server: 139.99.120.183
           username: fluentoo
           password: ${{ secrets.FTP_PASSWORD }}
-          port: 22 # Standard SFTP port
+          port: 21 # Standard SFTP port
           server-dir: public_html/vocapix.fluento.org/
           exclude: |
             **/.git*
