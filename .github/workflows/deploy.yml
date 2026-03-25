@@ -16,11 +16,11 @@ jobs:
       - name: Upload to cPanel via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ftp.fluento.org
-          username: vocapix@vocapix.fluento.org
+          server: ftp.techseba.com
+          username: vocapix@village.techseba.com
           password: ${{ secrets.FTP_PASSWORD }}
           port: 21
-          server-dir: public_html/vocapix.fluento.org/
+          server-dir: village.techseba.com/
           exclude: |
             **/.git*
             **/.git*/**
