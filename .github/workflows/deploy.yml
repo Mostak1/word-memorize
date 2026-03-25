@@ -22,6 +22,7 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           port: 21 # Standard SFTP port
           server-dir: public_html/vocapix.fluento.org/
+          timeout: 30000
           exclude: |
             **/.git*
             **/.git*/**
