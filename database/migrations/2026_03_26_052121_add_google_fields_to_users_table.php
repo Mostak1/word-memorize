@@ -11,9 +11,12 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            // Add Google SSO fields
-            $table->string('google_id')->nullable()->unique()->after('password');
-            $table->string('provider')->nullable()->after('google_id');
+            if (!Schema::hasColumn('users', 'google_id')) {
+                $table->string('google_id')->nullable()->unique()->after('password');
+            }
+            if (!Schema::hasColumn('users', 'provider')) {
+                $table->string('provider')->nullable()->after('google_id');
+            }
         });
     }
 
@@ -23,10 +26,13 @@ return new class extends Migration {
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            // Drop Google SSO fields on rollback
-            $table->dropUnique(['google_id']);
-            $table->dropColumn('google_id');
-            $table->dropColumn('provider');
+            if (Schema::hasColumn('users', 'google_id')) {
+                $table->dropUnique(['google_id']); // drop unique first
+                $table->dropColumn('google_id');
+            }
+            if (Schema::hasColumn('users', 'provider')) {
+                $table->dropColumn('provider');
+            }
         });
     }
 };
