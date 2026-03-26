@@ -37,6 +37,8 @@ class User extends Authenticatable
         'approve_status',
         'login_as',
         'wallet',
+        'google_id',
+        'provider',
     ];
 
     /**

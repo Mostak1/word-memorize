@@ -145,6 +145,22 @@ export default function WordDetail({
         return "text-xl";
     };
 
+    const formatIPA = (ipa) => {
+        if (!ipa) return "";
+
+        let formatted = ipa.trim();
+
+        if (!formatted.startsWith("/")) {
+            formatted = "/" + formatted;
+        }
+
+        if (!formatted.endsWith("/")) {
+            formatted = formatted + "/";
+        }
+
+        return formatted;
+    };
+
     const images = word.images?.length > 0 ? word.images : [];
     const activeImage = images[activeImageIndex] ?? null;
 
