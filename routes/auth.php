@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\CompleteProfileController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
@@ -15,6 +16,10 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('guest')->group(function () {
     Route::get('auth/google', [GoogleController::class, 'redirect'])->name('google.redirect');
     Route::get('auth/google/callback', [GoogleController::class, 'callback'])->name('google.callback');
+
+    // Complete profile step for new Google users (WhatsApp number prompt)
+    Route::get('complete-profile', [CompleteProfileController::class, 'show'])->name('complete.profile');
+    Route::post('complete-profile', [CompleteProfileController::class, 'store'])->name('complete.profile.store');
 
     Route::get('register', [RegisteredUserController::class, 'createUser'])
         ->name('register');

@@ -1,7 +1,7 @@
 import GuestLayout from "@/Layouts/GuestLayout";
 import { Head, Link, useForm } from "@inertiajs/react";
 import { useState } from "react";
-import { Eye, EyeOff, Mail, Lock, User as UserIcon } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User as UserIcon, Phone } from "lucide-react";
 import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
@@ -13,6 +13,7 @@ export default function Register() {
     const { data, setData, post, processing, errors, reset } = useForm({
         name: "",
         email: "",
+        phone_number: "",
         password: "",
         password_confirmation: "",
     });
@@ -26,11 +27,12 @@ export default function Register() {
         post(route("register"), {
             onFinish: () => reset("password", "password_confirmation"),
             onError: (errors) => {
-                // Show toast for validation errors
                 if (errors.name) {
                     toast.error(errors.name);
                 } else if (errors.email) {
                     toast.error(errors.email);
+                } else if (errors.phone_number) {
+                    toast.error(errors.phone_number);
                 } else if (errors.password) {
                     toast.error(errors.password);
                 } else if (errors.password_confirmation) {
@@ -111,6 +113,37 @@ export default function Register() {
                         {errors.email && (
                             <p className="text-sm text-red-600 dark:text-red-400">
                                 {errors.email}
+                            </p>
+                        )}
+                    </div>
+
+                    {/* WhatsApp Number Field */}
+                    <div className="space-y-2">
+                        <Label
+                            htmlFor="phone_number"
+                            className="text-sm font-medium"
+                        >
+                            WhatsApp Number
+                        </Label>
+                        <div className="relative">
+                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                            <Input
+                                id="phone_number"
+                                type="tel"
+                                name="phone_number"
+                                value={data.phone_number}
+                                onChange={(e) =>
+                                    setData("phone_number", e.target.value)
+                                }
+                                className="pl-10 h-12 border-gray-300 dark:border-zinc-700 focus:border-[#E5201C] focus:ring-[#E5201C]"
+                                placeholder="01XXXXXXXXX"
+                                autoComplete="tel"
+                                required
+                            />
+                        </div>
+                        {errors.phone_number && (
+                            <p className="text-sm text-red-600 dark:text-red-400">
+                                {errors.phone_number}
                             </p>
                         )}
                     </div>

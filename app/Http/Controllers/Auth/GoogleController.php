@@ -29,29 +29,38 @@ class GoogleController extends Controller
             $user = User::where('email', $googleUser->getEmail())->first();
 
             if ($user) {
-                // Link account
+                // Existing user — link Google account and log in as usual
                 $user->update([
                     'google_id' => $googleUser->getId(),
                     'provider' => 'google',
+                    // Only set avatar if the user doesn't already have one
+                    'image' => $user->image ?? $googleUser->getAvatar(),
                 ]);
             } else {
-                // 3. Create new user
-                $user = User::create([
-                    'name' => $googleUser->getName(),
-                    'email' => $googleUser->getEmail(),
-                    'google_id' => $googleUser->getId(),
-                    'provider' => 'google',
-                    'password' => bcrypt(str()->random(16)),
-
-                    // optional defaults for your schema
-                    'role' => 'student',
-                    'approve_status' => 'approved',
+                // 3. Brand-new user — store Google data in session and ask for WhatsApp
+                session([
+                    'google_pending_user' => [
+                        'name' => $googleUser->getName(),
+                        'email' => $googleUser->getEmail(),
+                        'google_id' => $googleUser->getId(),
+                        'avatar' => $googleUser->getAvatar(),  // stored → saved to image column on completion
+                    ],
                 ]);
+
+                return redirect()->route('complete.profile');
             }
         }
 
         Auth::login($user, true);
 
-        return redirect('/dashboard'); // your inertia route
+        $userName = $user->name;
+
+        return redirect('/dashboard')
+            ->with('flash', [
+                'toast' => [
+                    'type' => 'success',
+                    'message' => "Welcome back, {$userName}! 👋",
+                ],
+            ]);
     }
 }

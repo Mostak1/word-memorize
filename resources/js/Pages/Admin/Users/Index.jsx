@@ -58,9 +58,12 @@ import {
     MoreHorizontal,
     UserCog,
     RefreshCw,
+    Pencil,
 } from "lucide-react";
 import { useState, useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
+import UserInfoTooltip from "@/Pages/Admin/Users/UserInfoTooltip";
+import UserEditDialog from "@/Pages/Admin/Users/UserEditDialog";
 
 // ─── Role badge helper ─────────────────────────────────────────────────────────
 function RoleBadge({ role }) {
@@ -134,6 +137,7 @@ export default function UsersIndex({
         newRole: null,
     });
     const [resetDialog, setResetDialog] = useState({ open: false, user: null });
+    const [editDialog, setEditDialog] = useState({ open: false, user: null });
     const [newPassword, setNewPassword] = useState("12345678");
 
     // ── Filter state (controlled, synced from server) ─────────────────────────
@@ -142,6 +146,7 @@ export default function UsersIndex({
     const [statusFilter, setStatusFilter] = useState(
         filters.approve_status ?? "all",
     );
+    const [perPage, setPerPage] = useState(filters.per_page ?? 10);
 
     // ── Sorting state (client-side on current page) ───────────────────────────
     const [sorting, setSorting] = useState([]);
@@ -157,6 +162,7 @@ export default function UsersIndex({
                 search: overrides.search ?? search,
                 role: overrides.role ?? roleFilter,
                 approve_status: overrides.approve_status ?? statusFilter,
+                per_page: overrides.per_page ?? perPage,
             };
             // Strip "all" sentinel values
             if (params.role === "all") delete params.role;
@@ -169,7 +175,15 @@ export default function UsersIndex({
                 replace: true,
             });
         },
-        [search, roleFilter, statusFilter],
+        [search, roleFilter, statusFilter, perPage],
+    );
+
+    const handlePerPage = useCallback(
+        (value) => {
+            setPerPage(value);
+            applyFilters({ per_page: value });
+        },
+        [applyFilters],
     );
 
     const handleSearchChange = (e) => {
@@ -224,9 +238,23 @@ export default function UsersIndex({
             header: ({ column }) => (
                 <SortHeader column={column}>Name</SortHeader>
             ),
-            cell: ({ row }) => (
-                <div className="font-medium">{row.original.name}</div>
-            ),
+            cell: ({ row }) => {
+                const user = row.original;
+                return (
+                    <div className="flex items-center gap-1.5 group">
+                        <UserInfoTooltip user={user}>
+                            <span className="font-medium">{user.name}</span>
+                        </UserInfoTooltip>
+                        <button
+                            onClick={() => setEditDialog({ open: true, user })}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
+                            title="Edit user info"
+                        >
+                            <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                    </div>
+                );
+            },
         },
         {
             accessorKey: "email",
@@ -436,6 +464,35 @@ export default function UsersIndex({
                             <CardTitle>
                                 All Users ({users?.total ?? 0})
                             </CardTitle>
+
+                            {/* Per-page selector */}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="gap-1"
+                                    >
+                                        {perPage} / page
+                                        <ChevronDown className="h-3 w-3 opacity-60" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    {[10, 20, 50, 100].map((n) => (
+                                        <DropdownMenuItem
+                                            key={n}
+                                            onClick={() => handlePerPage(n)}
+                                            className={
+                                                perPage === n
+                                                    ? "font-semibold bg-muted text-foreground"
+                                                    : ""
+                                            }
+                                        >
+                                            {n} per page
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
 
                             {/* Column visibility toggle */}
                             <DropdownMenu>
@@ -673,6 +730,15 @@ export default function UsersIndex({
                     </CardContent>
                 </Card>
             </div>
+
+            {/* ── Edit User Info Dialog ──────────────────────────────────────────── */}
+            <UserEditDialog
+                user={editDialog.user}
+                open={editDialog.open}
+                onOpenChange={(open) =>
+                    !open && setEditDialog({ open: false, user: null })
+                }
+            />
 
             {/* ── Role Change Dialog ─────────────────────────────────────────────── */}
             <AlertDialog

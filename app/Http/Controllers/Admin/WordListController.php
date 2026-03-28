@@ -78,6 +78,9 @@ class WordListController extends Controller
             ? $request->input('sort')
             : 'word';
         $sortDir = $request->input('direction') === 'desc' ? 'desc' : 'asc';
+        $perPage = in_array((int) $request->input('per_page'), [10, 20, 50, 100])
+            ? (int) $request->input('per_page')
+            : 10;
 
         $words = $wordList->words()
             ->with('images')
@@ -89,21 +92,17 @@ class WordListController extends Controller
                 });
             })
             ->orderBy($sortCol, $sortDir)
-            ->paginate(10)
+            ->paginate($perPage)
             ->withQueryString();
-
-        // Pass categories so the "Edit List" dialog can populate its dropdown
-        // $categories = WordListCategory::orderBy('name')->get(['id', 'name']);
-        // dd($words);
 
         return Inertia::render('Admin/WordLists/Show', [
             'wordList' => $wordList->load('category'),
             'words' => $words,
-            // 'categories' => $categories,
             'filters' => [
                 'search' => $search,
                 'sort' => $sortCol,
                 'direction' => $sortDir,
+                'per_page' => $perPage,
             ],
         ]);
     }
