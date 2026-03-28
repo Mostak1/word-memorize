@@ -72,7 +72,11 @@ class WordListController extends Controller
             }
         }
 
-        $words = $wordsQuery->get()->shuffle()->values();
+        // $words = $wordsQuery->get()->shuffle()->values();
+        $words = $wordsQuery
+            ->orderBy('id', 'asc')
+            ->get()
+            ->values();
 
         return Inertia::render('ExerciseSession', [
             'wordList' => $wordList,

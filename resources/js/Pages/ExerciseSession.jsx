@@ -172,27 +172,34 @@ export default function ExerciseSession({
         if (isSubmitting) return;
 
         setResults((prev) => ({ ...prev, [word.id]: status }));
-
-        // Only call the API for "known"; skipping via swipe needs no API call
-        const routeName = status === "known" ? "word.know" : "word.learn";
         setIsSubmitting(true);
 
-        router.post(
-            route(routeName, word.id),
-            { from: "session" },
-            {
-                preserveScroll: true,
-                preserveState: true,
-                onFinish: () => {
-                    setIsSubmitting(false);
-                    advance();
-                },
-                onError: () => {
-                    setIsSubmitting(false);
-                    advance();
-                },
-            },
+        // Advance the card immediately — don't wait for the server.
+        advance();
+
+        // Use plain fetch instead of router.post so Inertia never re-runs start()
+        // and never replaces the `words` prop with a shorter array mid-session.
+        const routeName = status === "known" ? "word.know" : "word.learn";
+
+        // Inertia apps don't use a <meta csrf> tag — Laravel sets an XSRF-TOKEN cookie.
+        const csrfToken = decodeURIComponent(
+            document.cookie
+                .split("; ")
+                .find((row) => row.startsWith("XSRF-TOKEN="))
+                ?.split("=")[1] ?? "",
         );
+
+        fetch(route(routeName, word.id), {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-XSRF-TOKEN": csrfToken,
+                Accept: "application/json",
+            },
+            body: JSON.stringify({ from: "session" }),
+        }).finally(() => {
+            setIsSubmitting(false);
+        });
     };
 
     // Mark known via the Check button
@@ -225,6 +232,22 @@ export default function ExerciseSession({
         "bg-pink-100/70 text-pink-700 border-pink-200",
         "bg-indigo-100/70 text-indigo-700 border-indigo-200",
     ];
+
+    const formatIPA = (ipa) => {
+        if (!ipa) return "";
+
+        let formatted = ipa.trim();
+
+        if (!formatted.startsWith("/")) {
+            formatted = "/" + formatted;
+        }
+
+        if (!formatted.endsWith("/")) {
+            formatted = formatted + "/";
+        }
+
+        return formatted;
+    };
 
     const wordFontSize = (w) => {
         if (!w) return "text-4xl";
@@ -372,7 +395,7 @@ export default function ExerciseSession({
             <Head title={`Exercise — ${word?.word ?? ""}`} />
             <FlashMessages />
 
-            <div className="min-h-screen bg-[#F0F2F5] pb-32 pt-1 mt-2">
+            <div className="min-h-screen bg-[#F0F2F5] pb-32 pt-1 mt-3">
                 {/* Counter */}
                 {/* <div className="max-w-lg mx-auto px-3 pt-3 pb-1 flex items-center justify-between">
                     <Link
@@ -479,12 +502,14 @@ export default function ExerciseSession({
                                         className={`${wordFontSize(word.word)} font-extrabold text-gray-900 tracking-tight leading-tight text-center break-words w-full`}
                                     >
                                         {word.word}
+                                        {word.parts_of_speech_variations && (
+                                            <span className="bg-gray-100 text-gray-600 text-sm font-medium px-3 py-0.5 rounded-md">
+                                                {
+                                                    word.parts_of_speech_variations
+                                                }
+                                            </span>
+                                        )}
                                     </h1>
-                                    {word.parts_of_speech_variations && (
-                                        <span className="bg-gray-100 text-gray-600 text-sm font-medium px-3 py-0.5 rounded-md">
-                                            {word.parts_of_speech_variations}
-                                        </span>
-                                    )}
                                 </div>
 
                                 <div className="flex-none w-8 flex justify-end">
@@ -513,8 +538,11 @@ export default function ExerciseSession({
                                     )}
                                 </div> */}
                                 {word.pronunciation && (
-                                    <p className="text-base text-gray-400 font-mono mt-1">
-                                        {word.pronunciation} {word.ipa}{" "}
+                                    <p className="text-sm text-gray-500 font-mono mt-1">
+                                        {word.pronunciation}{" "}
+                                        <span className="text-black">|</span>{" "}
+                                        {formatIPA(word.ipa)}{" "}
+                                        <span className="text-black">|</span>{" "}
                                         {word.bangla_pronunciation}
                                     </p>
                                 )}

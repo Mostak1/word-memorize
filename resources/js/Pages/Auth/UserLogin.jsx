@@ -9,6 +9,7 @@ import { Checkbox } from "@/Components/ui/checkbox";
 import { Alert, AlertDescription } from "@/Components/ui/alert";
 import FlashMessages from "@/Components/FlashMessage";
 import { toast } from "sonner";
+import { FcGoogle } from "react-icons/fc";
 
 export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -167,6 +168,21 @@ export default function Login({ status, canResetPassword }) {
                     >
                         {processing ? "Logging in..." : "Log in"}
                     </Button>
+
+                    {/* Google Sign In */}
+                    <a
+                        href={route("google.redirect")}
+                        className="w-full mt-2 block"
+                    >
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full h-12 border-2 border-gray-300 dark:border-zinc-700 hover:border-gray-400 font-semibold rounded-full transition-all flex items-center justify-center gap-3"
+                        >
+                            <FcGoogle className="h-5 w-5" />
+                            Continue with Google
+                        </Button>
+                    </a>
                 </form>
 
                 {/* Divider */}

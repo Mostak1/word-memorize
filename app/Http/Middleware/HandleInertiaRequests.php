@@ -36,7 +36,7 @@ class HandleInertiaRequests extends Middleware
                     'id' => $request->user()->id,
                     'name' => $request->user()->name,
                     'email' => $request->user()->email,
-                    'role' => $request->user()->role,           // ✅ Fixed: was is_admin (doesn't exist)
+                    'role' => $request->user()->role,
                     'image' => $request->user()->image,
                     'headline' => $request->user()->headline,
                     'approve_status' => $request->user()->approve_status,
@@ -44,6 +44,11 @@ class HandleInertiaRequests extends Middleware
                     'email_verified_at' => $request->user()->email_verified_at,
                     'created_at' => $request->user()->created_at,
                     'updated_at' => $request->user()->updated_at,
+                    // ── Profile fields (were missing — caused empty inputs) ──
+                    'phone_number' => $request->user()->phone_number,
+                    'location' => $request->user()->location,
+                    'gender' => $request->user()->gender,
+                    'profession' => $request->user()->profession,
                 ] : null,
             ],
             // ✅ Flash messages for Sonner toasts

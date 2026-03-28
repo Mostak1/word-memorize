@@ -18,11 +18,6 @@ class RegisteredUserController extends Controller
     /**
      * Display the registration view.
      */
-    public function create(): Response
-    {
-        return Inertia::render('Auth/Register');
-    }
-
     public function createUser(): Response
     {
         return Inertia::render('Auth/UserRegister');
@@ -38,12 +33,14 @@ class RegisteredUserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
+            'phone_number' => 'required|string|max:20',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
+            'phone_number' => $request->phone_number,
             'password' => Hash::make($request->password),
         ]);
 
@@ -55,8 +52,8 @@ class RegisteredUserController extends Controller
             ->with('flash', [
                 'toast' => [
                     'type' => 'success',
-                    'message' => "Welcome to Memorize Words, {$user->name}! 🎉 Your account has been created successfully."
-                ]
+                    'message' => "Welcome to VocaPix, {$user->name}! 🎉 Your account has been created successfully.",
+                ],
             ]);
     }
 }

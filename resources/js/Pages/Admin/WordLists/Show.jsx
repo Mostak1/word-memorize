@@ -80,6 +80,7 @@ export default function Show({ wordList, words, filters }) {
     const [editingList, setEditingList] = useState(null); // ← was editingGroup
     const [deletingWord, setDeletingWord] = useState(null);
     const [search, setSearch] = useState(filters?.search ?? "");
+    const [perPage, setPerPage] = useState(filters?.per_page ?? 10);
     const [subDialogOpen, setSubDialogOpen] = useState(false);
     const [subPanelOpen, setSubPanelOpen] = useState(false);
     const debounceRef = useRef(null);
@@ -92,12 +93,12 @@ export default function Show({ wordList, words, filters }) {
             debounceRef.current = setTimeout(() => {
                 router.get(
                     route("admin.word-lists.show", wordList.id),
-                    { search: value, page: 1 },
+                    { search: value, page: 1, per_page: perPage },
                     { preserveState: true, replace: true },
                 );
             }, 400);
         },
-        [wordList.id],
+        [wordList.id, perPage],
     );
 
     // Server-side sort
@@ -109,11 +110,36 @@ export default function Show({ wordList, words, filters }) {
                     : "asc";
             router.get(
                 route("admin.word-lists.show", wordList.id),
-                { search, sort: column, direction: currentDir, page: 1 },
+                {
+                    search,
+                    sort: column,
+                    direction: currentDir,
+                    page: 1,
+                    per_page: perPage,
+                },
                 { preserveState: true, replace: true },
             );
         },
-        [filters, search, wordList.id],
+        [filters, search, wordList.id, perPage],
+    );
+
+    // Per-page change
+    const handlePerPage = useCallback(
+        (value) => {
+            setPerPage(value);
+            router.get(
+                route("admin.word-lists.show", wordList.id),
+                {
+                    search,
+                    sort: filters?.sort,
+                    direction: filters?.direction,
+                    page: 1,
+                    per_page: value,
+                },
+                { preserveState: true, replace: true },
+            );
+        },
+        [wordList.id, search, filters],
     );
 
     const SortableHeader = ({ column, label }) => (
@@ -352,16 +378,45 @@ export default function Show({ wordList, words, filters }) {
                     <CardHeader>
                         <div className="flex items-center justify-between gap-4">
                             <CardTitle>Words ({words.total})</CardTitle>
-                            <div className="relative w-64">
-                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="Search word, definition…"
-                                    value={search}
-                                    onChange={(e) =>
-                                        handleSearch(e.target.value)
-                                    }
-                                    className="pl-8"
-                                />
+                            <div className="flex items-center gap-2">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-9 gap-1.5"
+                                        >
+                                            {perPage} / page
+                                            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        {[10, 20, 50, 100].map((n) => (
+                                            <DropdownMenuItem
+                                                key={n}
+                                                onClick={() => handlePerPage(n)}
+                                                className={
+                                                    perPage === n
+                                                        ? "font-semibold bg-muted text-foreground"
+                                                        : ""
+                                                }
+                                            >
+                                                {n} per page
+                                            </DropdownMenuItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                                <div className="relative w-64">
+                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Search word, definition…"
+                                        value={search}
+                                        onChange={(e) =>
+                                            handleSearch(e.target.value)
+                                        }
+                                        className="pl-8"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </CardHeader>
@@ -444,7 +499,7 @@ export default function Show({ wordList, words, filters }) {
                                     onClick={() =>
                                         router.get(
                                             words.prev_page_url,
-                                            {},
+                                            { per_page: perPage },
                                             { preserveState: true },
                                         )
                                     }
@@ -463,7 +518,7 @@ export default function Show({ wordList, words, filters }) {
                                     onClick={() =>
                                         router.get(
                                             words.next_page_url,
-                                            {},
+                                            { per_page: perPage },
                                             { preserveState: true },
                                         )
                                     }

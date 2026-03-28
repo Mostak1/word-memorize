@@ -30,11 +30,18 @@ class UserController extends Controller
             });
         }
 
-        $users = $query->paginate(10)->withQueryString();
+        $perPage = in_array((int) $request->input('per_page'), [10, 20, 50, 100])
+            ? (int) $request->input('per_page')
+            : 10;
+
+        $users = $query->paginate($perPage)->withQueryString();
 
         return Inertia::render('Admin/Users/Index', [
             'users' => $users,
-            'filters' => $request->only('role', 'approve_status', 'search'),
+            'filters' => array_merge(
+                $request->only('role', 'approve_status', 'search'),
+                ['per_page' => $perPage]
+            ),
             'roles' => ['student', 'instructor', 'admin'],
             'approveStatuses' => ['pending', 'approved', 'rejected'],
         ]);
@@ -81,6 +88,7 @@ class UserController extends Controller
             'role' => ['required', 'in:student,instructor,admin'],
             'approve_status' => ['sometimes', 'in:pending,approved,rejected'],
             'wallet' => ['sometimes', 'numeric', 'min:0'],
+            'phone_number' => ['sometimes', 'nullable', 'string', 'max:30'],
         ]);
 
         // Prevent demoting the last admin
