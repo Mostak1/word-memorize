@@ -4,7 +4,6 @@ import { Phone } from "lucide-react";
 import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
-import { FcGoogle } from "react-icons/fc";
 
 export default function CompleteProfile({ googleUser }) {
     const { data, setData, post, processing, errors } = useForm({
@@ -43,7 +42,29 @@ export default function CompleteProfile({ googleUser }) {
                             />
                         ) : (
                             <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center">
-                                <FcGoogle className="h-6 w-6" />
+                                {/* Google SVG */}
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 48 48"
+                                    className="h-5 w-5"
+                                >
+                                    <path
+                                        fill="#EA4335"
+                                        d="M24 9.5c3.54 0 6.36 1.22 8.31 3.18l6.2-6.2C34.64 2.54 29.74 0 24 0 14.61 0 6.48 5.38 2.44 13.22l7.42 5.76C11.86 13.12 17.41 9.5 24 9.5z"
+                                    />
+                                    <path
+                                        fill="#4285F4"
+                                        d="M46.1 24.55c0-1.63-.15-3.2-.42-4.73H24v9.01h12.42c-.54 2.91-2.2 5.37-4.68 7.03l7.24 5.62C43.98 37.18 46.1 31.4 46.1 24.55z"
+                                    />
+                                    <path
+                                        fill="#FBBC05"
+                                        d="M9.86 28.98A14.5 14.5 0 0 1 9 24c0-1.73.3-3.4.86-4.98l-7.42-5.76A23.93 23.93 0 0 0 0 24c0 3.84.92 7.47 2.44 10.78l7.42-5.8z"
+                                    />
+                                    <path
+                                        fill="#34A853"
+                                        d="M24 48c6.48 0 11.92-2.13 15.89-5.8l-7.24-5.62c-2.02 1.36-4.6 2.17-8.65 2.17-6.59 0-12.14-3.62-14.14-8.98l-7.42 5.8C6.48 42.62 14.61 48 24 48z"
+                                    />
+                                </svg>
                             </div>
                         )}
                     </div>
@@ -57,7 +78,29 @@ export default function CompleteProfile({ googleUser }) {
                     </div>
                     <div className="ml-auto flex-shrink-0">
                         <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded-full">
-                            <FcGoogle className="h-3 w-3" />
+                            {/* Google SVG */}
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 48 48"
+                                className="h-5 w-5"
+                            >
+                                <path
+                                    fill="#EA4335"
+                                    d="M24 9.5c3.54 0 6.36 1.22 8.31 3.18l6.2-6.2C34.64 2.54 29.74 0 24 0 14.61 0 6.48 5.38 2.44 13.22l7.42 5.76C11.86 13.12 17.41 9.5 24 9.5z"
+                                />
+                                <path
+                                    fill="#4285F4"
+                                    d="M46.1 24.55c0-1.63-.15-3.2-.42-4.73H24v9.01h12.42c-.54 2.91-2.2 5.37-4.68 7.03l7.24 5.62C43.98 37.18 46.1 31.4 46.1 24.55z"
+                                />
+                                <path
+                                    fill="#FBBC05"
+                                    d="M9.86 28.98A14.5 14.5 0 0 1 9 24c0-1.73.3-3.4.86-4.98l-7.42-5.76A23.93 23.93 0 0 0 0 24c0 3.84.92 7.47 2.44 10.78l7.42-5.8z"
+                                />
+                                <path
+                                    fill="#34A853"
+                                    d="M24 48c6.48 0 11.92-2.13 15.89-5.8l-7.24-5.62c-2.02 1.36-4.6 2.17-8.65 2.17-6.59 0-12.14-3.62-14.14-8.98l-7.42 5.8C6.48 42.62 14.61 48 24 48z"
+                                />
+                            </svg>
                             Google
                         </span>
                     </div>
