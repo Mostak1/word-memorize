@@ -28,7 +28,7 @@ class AcademicWordListSeeder extends Seeder
      * Matching is case-insensitive, so "task.jpg", "Task.jpg", and "TASK.jpg"
      * all match the word "task".
      */
-    protected string $imagesPath = 'database/data/academic-images';
+    protected string $imagesPath = 'database/data/academic_word_images';
 
     /**
      * Supported image extensions (checked in this order).
@@ -227,7 +227,7 @@ class AcademicWordListSeeder extends Seeder
             return [];
         }
 
-        fgetcsv($handle); // Skip header
+        fgetcsv($handle); // Skip header row
 
         $rows = [];
         while (($row = fgetcsv($handle)) !== false) {
@@ -239,25 +239,34 @@ class AcademicWordListSeeder extends Seeder
         return $rows;
     }
 
+    /**
+     * Group rows by their Sublist column (col 0).
+     * Rows with a missing/empty word (col 1) are silently dropped.
+     * The sublist name is normalised to "Sublist N" so the output keys
+     * are consistent regardless of how the CSV stores the number.
+     */
     private function splitIntoSublists(array $rows): array
     {
         $sublists = [];
-        $currentName = 'Sublist 1';
 
         foreach ($rows as $row) {
-            $word = $this->clean($row[0] ?? null);
-            $col8 = $this->clean($row[8] ?? null);
+            $sublistRaw = $this->clean($row[0] ?? null);
+            $word = $this->clean($row[1] ?? null);
 
-            if ($word === null && $col8 !== null && str_starts_with($col8, 'Sublist')) {
-                $currentName = $col8;
+            if ($word === null || $word === '') {
                 continue;
             }
 
-            if ($word === null) {
-                continue;
+            // Normalise to "Sublist N" (handles plain integers or existing labels)
+            if ($sublistRaw !== null && ctype_digit($sublistRaw)) {
+                $sublistName = 'Sublist ' . $sublistRaw;
+            } elseif ($sublistRaw !== null) {
+                $sublistName = $sublistRaw;
+            } else {
+                $sublistName = 'Sublist 1';
             }
 
-            $sublists[$currentName][] = $row;
+            $sublists[$sublistName][] = $row;
         }
 
         return $sublists;
@@ -381,7 +390,7 @@ class AcademicWordListSeeder extends Seeder
         };
 
         foreach ($rows as $row) {
-            $word = $this->clean($row[0] ?? null);
+            $word = $this->clean($row[1] ?? null);
 
             if ($word === null || $word === '') {
                 $skipped++;
@@ -389,26 +398,26 @@ class AcademicWordListSeeder extends Seeder
             }
 
             $exampleSentences = implode(' ', array_filter([
-                $this->clean($row[9] ?? null),
                 $this->clean($row[10] ?? null),
-                $this->clean($row[15] ?? null),
+                $this->clean($row[11] ?? null),
+                $this->clean($row[16] ?? null),
             ]));
 
             $batch[] = [
                 'wordlist_id' => $wordList->id,
                 'word' => $word,
-                'parts_of_speech_variations' => $this->clean($row[1] ?? null) ?? '',
-                'ipa' => $this->clean($row[2] ?? null),
-                'pronunciation' => $this->clean($row[3] ?? null),
-                'bangla_pronunciation' => $this->clean($row[4] ?? null),
-                'definition' => $this->clean($row[6] ?? null) ?? '',
-                'bangla_meaning' => $this->clean($row[7] ?? null),
-                'collocations' => $this->clean($row[8] ?? null),
+                'parts_of_speech_variations' => $this->clean($row[2] ?? null) ?? '',
+                'ipa' => $this->clean($row[3] ?? null),
+                'pronunciation' => $this->clean($row[4] ?? null),
+                'bangla_pronunciation' => $this->clean($row[5] ?? null),
+                'definition' => $this->clean($row[7] ?? null) ?? '',
+                'bangla_meaning' => $this->clean($row[8] ?? null),
+                'collocations' => $this->clean($row[9] ?? null),
                 'example_sentences' => $exampleSentences ?: '',
-                'synonym' => $this->clean($row[11] ?? null),
-                'antonym' => $this->clean($row[12] ?? null),
-                'image_related_sentence' => $this->clean($row[13] ?? null),
-                'ai_prompt' => $this->clean($row[14] ?? null),
+                'synonym' => $this->clean($row[12] ?? null),
+                'antonym' => $this->clean($row[13] ?? null),
+                'image_related_sentence' => $this->clean($row[14] ?? null),
+                'ai_prompt' => $this->clean($row[15] ?? null),
                 'hyphenation' => null,
                 'image_url' => null,
                 'created_by' => $creatorId,
@@ -474,7 +483,7 @@ class AcademicWordListSeeder extends Seeder
         $skipped = 0;
 
         foreach ($rows as $row) {
-            $wordStr = $this->clean($row[0] ?? null);
+            $wordStr = $this->clean($row[1] ?? null);
 
             if ($wordStr === null || $wordStr === '') {
                 continue;
