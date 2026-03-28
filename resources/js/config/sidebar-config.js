@@ -7,6 +7,7 @@ import {
     BookMarked,
     Trophy,
     Flag,
+    Link2
 } from "lucide-react";
 
 /**
@@ -64,6 +65,11 @@ export const sidebarConfig = {
                     name: "Error Reports",
                     route: "admin.error-reports.index",
                     icon: Flag,
+                },
+                {
+                    name: "Link Tree",
+                    route: "admin.link-tree.index",
+                    icon: Link2,
                 },
             ],
         },

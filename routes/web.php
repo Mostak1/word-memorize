@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ErrorReportController;
+use App\Http\Controllers\PublicLinkTreeController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\UserWordController;
 use App\Http\Controllers\WordListCategoryController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+
 
 Route::get('/', function () {
     if (auth()->check()) {
@@ -86,6 +88,12 @@ Route::get('/run-unseeder', function () {
         return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
     }
 });
+
+// Public LinkTree page
+Route::get('/links', [PublicLinkTreeController::class, 'show'])->name('link-tree.show');
+
+// Click tracking + redirect
+Route::get('/l/{link}', [PublicLinkTreeController::class, 'redirect'])->name('link-tree.redirect');
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 // Uses DashboardController so streak data is included automatically
