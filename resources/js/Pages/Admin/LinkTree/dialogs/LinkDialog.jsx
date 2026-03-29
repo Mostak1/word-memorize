@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { router, useForm } from "@inertiajs/react";
+import { useForm } from "@inertiajs/react";
 import {
     Dialog,
     DialogContent,
@@ -13,13 +13,7 @@ import { Label } from "@/Components/ui/label";
 import { Switch } from "@/Components/ui/switch";
 import InputError from "@/Components/InputError";
 
-export default function LinkDialog({
-    open,
-    onClose,
-    editingLink,
-    onLinkAdded,
-    onLinkUpdated,
-}) {
+export default function LinkDialog({ open, onClose, editingLink }) {
     const { data, setData, post, patch, processing, errors, reset } = useForm({
         title: editingLink?.title ?? "",
         url: editingLink?.url ?? "",
@@ -44,25 +38,14 @@ export default function LinkDialog({
         e.preventDefault();
         if (editingLink) {
             patch(route("admin.link-tree.links.update", editingLink.id), {
-                onSuccess: (page) => {
-                    const updated = page.props.links?.find(
-                        (l) => l.id === editingLink.id,
-                    ) || { ...editingLink, ...data };
-                    onLinkUpdated?.(updated);
-                    onClose();
-                },
+                preserveScroll: true,
+                onSuccess: () => onClose(),
             });
         } else {
             post(route("admin.link-tree.links.store"), {
-                onSuccess: (page) => {
+                preserveScroll: true,
+                onSuccess: () => {
                     reset();
-                    const newLink =
-                        page.props.links?.[page.props.links.length - 1];
-                    if (newLink) {
-                        onLinkAdded?.(newLink);
-                    } else {
-                        router.reload({ preserveScroll: true });
-                    }
                     onClose();
                 },
             });

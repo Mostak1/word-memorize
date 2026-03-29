@@ -225,12 +225,6 @@ export default function Index({
                     setEditingLink(null);
                 }}
                 editingLink={editingLink}
-                onLinkAdded={(link) => setLinks((prev) => [...prev, link])}
-                onLinkUpdated={(updated) =>
-                    setLinks((prev) =>
-                        prev.map((l) => (l.id === updated.id ? updated : l)),
-                    )
-                }
             />
 
             <ThumbnailDialog
