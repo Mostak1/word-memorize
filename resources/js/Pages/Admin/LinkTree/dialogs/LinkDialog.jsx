@@ -11,11 +11,7 @@ import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
 import { Switch } from "@/Components/ui/switch";
-
-function InputError({ message }) {
-    if (!message) return null;
-    return <p className="text-sm text-destructive mt-1">{message}</p>;
-}
+import InputError from "@/Components/InputError";
 
 export default function LinkDialog({
     open,

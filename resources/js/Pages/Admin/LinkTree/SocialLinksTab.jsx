@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { router } from "@inertiajs/react";
 import {
     Card,
@@ -7,11 +7,20 @@ import {
     CardHeader,
     CardTitle,
 } from "@/Components/ui/card";
-import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
 import { Switch } from "@/Components/ui/switch";
-import { Save } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { PLATFORMS, SOCIAL_ICONS_SVG } from "./linkTreeConstants";
+
+// ── debounce hook ─────────────────────────────────────────────────────────────
+function useDebounce(value, delay = 800) {
+    const [debounced, setDebounced] = useState(value);
+    useEffect(() => {
+        const id = setTimeout(() => setDebounced(value), delay);
+        return () => clearTimeout(id);
+    }, [value, delay]);
+    return debounced;
+}
 
 export default function SocialLinksTab({ profile }) {
     const initLinks = () => {
@@ -28,12 +37,44 @@ export default function SocialLinksTab({ profile }) {
     };
 
     const [socialLinks, setSocialLinks] = useState(initLinks);
-    const [saving, setSaving] = useState(false);
+    const [saveStatus, setSaveStatus] = useState("idle"); // idle | saving | saved
+    const isFirstRender = useRef(true);
+
+    const debouncedLinks = useDebounce(socialLinks, 800);
+
+    // Auto-save whenever debounced value changes — skip the initial render
+    useEffect(() => {
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            return;
+        }
+
+        setSaveStatus("saving");
+        router.patch(
+            route("admin.link-tree.social-links.update"),
+            { social_links: debouncedLinks },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setSaveStatus("saved");
+                    setTimeout(() => setSaveStatus("idle"), 2000);
+                },
+                onError: () => setSaveStatus("idle"),
+            },
+        );
+    }, [debouncedLinks]);
 
     function handleUrlChange(platform, value) {
         setSocialLinks((prev) =>
             prev.map((s) =>
-                s.platform === platform ? { ...s, url: value } : s,
+                s.platform === platform
+                    ? {
+                          ...s,
+                          url: value,
+                          // auto-enable when URL is typed, auto-disable when cleared
+                          is_active: value.trim() !== "",
+                      }
+                    : s,
             ),
         );
     }
@@ -46,24 +87,38 @@ export default function SocialLinksTab({ profile }) {
         );
     }
 
-    function handleSave() {
-        setSaving(true);
-        router.patch(
-            route("admin.link-tree.social-links.update"),
-            { social_links: socialLinks },
-            { preserveScroll: true, onFinish: () => setSaving(false) },
-        );
-    }
-
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Social Icons</CardTitle>
-                <CardDescription>
-                    Add your social profiles. Active icons appear on your public
-                    page below your bio.
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <CardTitle>Social Icons</CardTitle>
+                        <CardDescription>
+                            Add your social profiles. Active icons appear on
+                            your public page below your bio.
+                        </CardDescription>
+                    </div>
+
+                    {/* Auto-save status */}
+                    <div className="flex items-center gap-1.5 text-xs min-w-[72px] justify-end">
+                        {saveStatus === "saving" && (
+                            <>
+                                <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                                <span className="text-muted-foreground">
+                                    Saving…
+                                </span>
+                            </>
+                        )}
+                        {saveStatus === "saved" && (
+                            <>
+                                <Check className="h-3.5 w-3.5 text-green-500" />
+                                <span className="text-green-500">Saved</span>
+                            </>
+                        )}
+                    </div>
+                </div>
             </CardHeader>
+
             <CardContent className="space-y-3">
                 {PLATFORMS.map((p) => {
                     const link = socialLinks.find((s) => s.platform === p.key);
@@ -90,21 +145,19 @@ export default function SocialLinksTab({ profile }) {
                                 }
                                 className="flex-1 h-8 text-sm"
                             />
-                            <Switch
-                                checked={link?.is_active ?? false}
-                                onCheckedChange={() => handleToggle(p.key)}
-                                disabled={!link?.url}
-                            />
+                            <div className="flex flex-col items-center gap-0.5 flex-shrink-0">
+                                <Switch
+                                    checked={link?.is_active ?? false}
+                                    onCheckedChange={() => handleToggle(p.key)}
+                                    disabled={!link?.url}
+                                />
+                                <span className="text-[10px] text-muted-foreground">
+                                    {link?.is_active ? "On" : "Off"}
+                                </span>
+                            </div>
                         </div>
                     );
                 })}
-
-                <div className="pt-2">
-                    <Button onClick={handleSave} disabled={saving}>
-                        <Save className="h-4 w-4 mr-1.5" />
-                        {saving ? "Saving…" : "Save Social Icons"}
-                    </Button>
-                </div>
             </CardContent>
         </Card>
     );

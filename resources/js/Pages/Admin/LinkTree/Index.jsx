@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AdminLayout from "@/Layouts/AdminLayout";
-import { Head, router, useForm } from "@inertiajs/react";
+import { Head, router } from "@inertiajs/react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/Components/ui/tabs";
 import { Button } from "@/Components/ui/button";
 import { Badge } from "@/Components/ui/badge";
@@ -36,22 +36,16 @@ export default function Index({
     flash,
 }) {
     const [links, setLinks] = useState(initialLinks ?? []);
+
+    // Sync local state whenever Inertia refreshes the page props
+    useEffect(() => {
+        setLinks(initialLinks ?? []);
+    }, [initialLinks]);
+
     const [showLinkDialog, setShowLinkDialog] = useState(false);
     const [editingLink, setEditingLink] = useState(null);
     const [deletingLink, setDeletingLink] = useState(null);
     const [thumbnailLink, setThumbnailLink] = useState(null);
-
-    const profileForm = useForm({
-        title: profile.title ?? "",
-        description: profile.description ?? "",
-        theme: profile.theme ?? "default",
-        custom_css: profile.custom_css ?? "",
-    });
-
-    function submitProfile(e) {
-        e.preventDefault();
-        profileForm.patch(route("admin.link-tree.profile.update"));
-    }
 
     function handleToggle(link) {
         router.patch(
@@ -130,7 +124,7 @@ export default function Index({
                 <FlashMessage flash={flash} />
 
                 <Tabs defaultValue="links" className="space-y-6">
-                    <TabsList className="w-full sm:w-auto flex flex-wrap h-auto gap-1 p-1">
+                    <TabsList className="grid w-full grid-cols-5">
                         <TabsTrigger value="links" className="gap-1.5">
                             <Link2 className="h-4 w-4" />
                             <span className="hidden sm:inline">Links</span>
@@ -172,15 +166,25 @@ export default function Index({
                             onMoveUp={(i) => moveLink(i, -1)}
                             onMoveDown={(i) => moveLink(i, 1)}
                             onThumbnail={(link) => setThumbnailLink(link)}
+                            onReorder={(newLinks) => {
+                                setLinks(newLinks);
+                                router.post(
+                                    route("admin.link-tree.links.reorder"),
+                                    {
+                                        links: newLinks.map((l, i) => ({
+                                            id: l.id,
+                                            order: i,
+                                        })),
+                                    },
+                                    { preserveScroll: true },
+                                );
+                            }}
                         />
                     </TabsContent>
 
                     <TabsContent value="profile" className="space-y-4">
-                        <ProfileForm
-                            profileForm={profileForm}
-                            themes={themes}
-                            onSubmit={submitProfile}
-                        />
+                        {/* ProfileForm is now self-contained with auto-save */}
+                        <ProfileForm profile={profile} themes={themes} />
                     </TabsContent>
 
                     <TabsContent value="social">

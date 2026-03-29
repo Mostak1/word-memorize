@@ -17,18 +17,34 @@ export default function LinkRow({
     link,
     index,
     total,
+    isDragOver,
     onEdit,
     onDelete,
     onToggle,
     onMoveUp,
     onMoveDown,
     onThumbnail,
+    onDragStart,
+    onDragOver,
+    onDrop,
+    onDragEnd,
 }) {
     return (
         <div
-            className={`group flex items-center gap-3 rounded-lg border bg-card px-3 py-2.5 transition-all ${!link.is_active ? "opacity-60" : ""}`}
+            draggable
+            onDragStart={onDragStart}
+            onDragOver={onDragOver}
+            onDrop={onDrop}
+            onDragEnd={onDragEnd}
+            className={`group flex items-center gap-3 rounded-lg border bg-card px-3 py-2.5 transition-all select-none
+                ${!link.is_active ? "opacity-60" : ""}
+                ${
+                    isDragOver
+                        ? "border-primary border-dashed bg-primary/5 scale-[1.01] shadow-md"
+                        : "cursor-grab active:cursor-grabbing active:shadow-lg active:scale-[1.02] active:opacity-80"
+                }`}
         >
-            {/* Order buttons */}
+            {/* Drag handle + order buttons */}
             <div className="flex flex-col gap-0.5 text-muted-foreground">
                 <button
                     onClick={onMoveUp}
@@ -38,7 +54,7 @@ export default function LinkRow({
                 >
                     <ChevronUp className="h-3.5 w-3.5" />
                 </button>
-                <GripVertical className="h-4 w-4 opacity-30" />
+                <GripVertical className="h-4 w-4 opacity-40 hover:opacity-80 transition-opacity" />
                 <button
                     onClick={onMoveDown}
                     disabled={index === total - 1}

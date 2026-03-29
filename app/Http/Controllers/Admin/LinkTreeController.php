@@ -158,6 +158,7 @@ class LinkTreeController extends Controller
       'gradient' => 'Gradient',
       'forest' => 'Forest',
       'ocean' => 'Ocean',
+      'fluento' => 'Fluento',
     ];
   }
 

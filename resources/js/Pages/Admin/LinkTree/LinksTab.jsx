@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import {
     Card,
     CardContent,
@@ -18,7 +19,45 @@ export default function LinksTab({
     onMoveUp,
     onMoveDown,
     onThumbnail,
+    onReorder,
 }) {
+    const [dragOverIndex, setDragOverIndex] = useState(null);
+    const dragIndexRef = useRef(null);
+
+    function handleDragStart(index) {
+        dragIndexRef.current = index;
+    }
+
+    function handleDragOver(e, index) {
+        e.preventDefault();
+        if (dragIndexRef.current === null || dragIndexRef.current === index)
+            return;
+        setDragOverIndex(index);
+    }
+
+    function handleDrop(e, dropIndex) {
+        e.preventDefault();
+        const dragIndex = dragIndexRef.current;
+        if (dragIndex === null || dragIndex === dropIndex) {
+            dragIndexRef.current = null;
+            setDragOverIndex(null);
+            return;
+        }
+
+        const newLinks = [...links];
+        const [moved] = newLinks.splice(dragIndex, 1);
+        newLinks.splice(dropIndex, 0, moved);
+
+        dragIndexRef.current = null;
+        setDragOverIndex(null);
+        onReorder?.(newLinks);
+    }
+
+    function handleDragEnd() {
+        dragIndexRef.current = null;
+        setDragOverIndex(null);
+    }
+
     return (
         <Card>
             <CardHeader className="pb-3">
@@ -26,8 +65,8 @@ export default function LinksTab({
                     <div>
                         <CardTitle>Your Links</CardTitle>
                         <CardDescription>
-                            Use the arrows to reorder. Click the image icon on a
-                            link to add a thumbnail.
+                            Drag rows to reorder, or use the arrows. Click the
+                            image icon to add a thumbnail.
                         </CardDescription>
                     </div>
                     <Button size="sm" onClick={onAddLink}>
@@ -53,12 +92,17 @@ export default function LinksTab({
                             link={link}
                             index={index}
                             total={links.length}
+                            isDragOver={dragOverIndex === index}
                             onEdit={() => onEdit(link)}
                             onDelete={() => onDelete(link)}
                             onToggle={() => onToggle(link)}
                             onMoveUp={() => onMoveUp(index)}
                             onMoveDown={() => onMoveDown(index)}
                             onThumbnail={() => onThumbnail(link)}
+                            onDragStart={() => handleDragStart(index)}
+                            onDragOver={(e) => handleDragOver(e, index)}
+                            onDrop={(e) => handleDrop(e, index)}
+                            onDragEnd={handleDragEnd}
                         />
                     ))
                 )}
