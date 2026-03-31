@@ -88,7 +88,7 @@ export default function UpdateProfileInformation({
                             setData("phone_number", e.target.value)
                         }
                         autoComplete="tel"
-                        placeholder="e.g. +8801XXXXXXXXX"
+                        placeholder="e.g. 01XXXXXXXXX"
                     />
                     <InputError
                         className="mt-2"

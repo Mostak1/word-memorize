@@ -7,6 +7,7 @@ use App\Models\MasteredWord;
 use App\Models\ReviewWord;
 use App\Models\WordList;
 use App\Models\Word;
+use App\Services\SrsService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -22,12 +23,6 @@ class WordListController extends Controller
             ->toArray();
     }
 
-    /**
-     * Display a specific word list.
-     * Passes `category` so WordlistDetail's back button returns to the
-     * correct category wordlist page.
-     * NOTE: The relationship on WordList is named category(), not wordListCategory().
-     */
     public function show(Request $request, $id)
     {
         $wordList = WordList::with('category')
@@ -46,52 +41,55 @@ class WordListController extends Controller
         return Inertia::render('WordlistDetail', [
             'wordList' => $wordList,
             'words' => $words,
-            'category' => $wordList->category,   // ← correct relationship name
+            'category' => $wordList->category,
         ]);
     }
 
-    public function start($id)
+    public function start(SrsService $srsService, $id)
     {
         $wordList = WordList::where('id', $id)
             ->where('status', true)
+            ->withCount('words')    // ← so totalWordsInList is always available
             ->firstOrFail();
 
         if ($wordList->is_locked) {
             abort(403, 'This word list is locked.');
         }
 
-        $wordsQuery = Word::with('images')->where('wordlist_id', $id);
-
-        // Exclude already-mastered words for logged-in users
         if (auth()->check()) {
-            $masteredWordIds = MasteredWord::where('user_id', auth()->id())
-                ->pluck('word_id');
-
-            if ($masteredWordIds->isNotEmpty()) {
-                $wordsQuery->whereNotIn('id', $masteredWordIds);
-            }
+            // Hybrid SRS: build the capped 20-word Active Queue
+            $words = $srsService->buildSessionQueue(auth()->user(), (int) $id);
+        } else {
+            // Guests: first 20 words in order, no SRS metadata
+            $words = Word::with('images')
+                ->where('wordlist_id', $id)
+                ->orderBy('id')
+                ->limit(20)
+                ->get()
+                ->map(function ($w) {
+                    $w->srs_box = 1;
+                    $w->srs_label = 'New';
+                    $w->srs_color = 'bg-gray-100 text-gray-600';
+                    return $w;
+                });
         }
-
-        // $words = $wordsQuery->get()->shuffle()->values();
-        $words = $wordsQuery
-            ->orderBy('id', 'asc')
-            ->get()
-            ->values();
 
         return Inertia::render('ExerciseSession', [
             'wordList' => $wordList,
-            'words' => $words,
+            'words' => $words->values(),
             'subcategory' => null,
+            'totalWordsInList' => $wordList->words_count, // full list size for progress display
             'bookmarkedWordIds' => $this->bookmarkedIds($words->pluck('id')->toArray()),
         ]);
     }
 
     public function startSubcategory($wordListId, $subcategoryId)
     {
-        // $wordList = WordList::findOrFail($wordListId);
         $wordList = WordList::where('id', $wordListId)
             ->where('status', true)
+            ->withCount('words')
             ->firstOrFail();
+
         $words = Word::with('images')
             ->where('wordlist_id', $wordListId)
             ->get()->shuffle()->values();
@@ -99,6 +97,7 @@ class WordListController extends Controller
         return Inertia::render('ExerciseSession', [
             'wordList' => $wordList,
             'words' => $words,
+            'totalWordsInList' => $wordList->words_count,
             'bookmarkedWordIds' => $this->bookmarkedIds($words->pluck('id')->toArray()),
         ]);
     }
@@ -118,13 +117,6 @@ class WordListController extends Controller
         ]);
     }
 
-    /**
-     * Display a single word detail page.
-     *
-     * When coming from=mastered, also resolves the previous and next word IDs
-     * in the user's mastered list (ordered latest-first, same as MasteredWords page)
-     * so the frontend can render Prev / Next navigation.
-     */
     public function showWord(Request $request, $id)
     {
         $word = Word::with(['wordList', 'images'])->findOrFail($id);
@@ -138,7 +130,6 @@ class WordListController extends Controller
         $nextWordId = null;
 
         if ($request->query('from') === 'mastered' && auth()->check()) {
-            // Get all mastered word IDs in the same order as the MasteredWords page
             $masteredIds = MasteredWord::where('user_id', auth()->id())
                 ->latest()
                 ->pluck('word_id')
@@ -147,12 +138,9 @@ class WordListController extends Controller
             $currentIndex = array_search($word->id, $masteredIds);
 
             if ($currentIndex !== false) {
-                // "Previous" = earlier in the list (lower index = more recently mastered)
                 $prevWordId = $currentIndex > 0
                     ? $masteredIds[$currentIndex - 1]
                     : null;
-
-                // "Next" = later in the list (higher index = older mastered)
                 $nextWordId = $currentIndex < count($masteredIds) - 1
                     ? $masteredIds[$currentIndex + 1]
                     : null;
@@ -174,7 +162,6 @@ class WordListController extends Controller
     {
         $userId = auth()->id();
 
-        // Wordlists that have at least one mastered word for this user
         $wordlists = WordList::whereHas('words.masteredEntries', function ($q) use ($userId) {
             $q->where('user_id', $userId);
         })
@@ -205,6 +192,7 @@ class WordListController extends Controller
         if ($wordlist->is_locked) {
             abort(403, 'This word list is locked.');
         }
+
         $words = Word::where('wordlist_id', $wordlistId)
             ->whereHas('masteredEntries', fn($q) => $q->where('user_id', $userId))
             ->paginate(15)

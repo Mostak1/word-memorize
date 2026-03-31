@@ -1,79 +1,72 @@
 import { Head, Link } from "@inertiajs/react";
 import AppLayout from "@/Layouts/AppLayout";
-import { BookOpen, ChevronRight, Lock, Play } from "lucide-react";
+import { BookOpen } from "lucide-react";
 
 export default function WordListCategoryIndex({ wordListCategories }) {
-    // const getDifficultyBadge = (difficulty) => {
-    //     const d = difficulty?.toLowerCase();
-    //     const star =
-    //         d === "easy" || d === "beginner"
-    //             ? "⭐"
-    //             : d === "medium" || d === "intermediate"
-    //               ? "⭐⭐"
-    //               : d === "hard" || d === "advanced"
-    //                 ? "⭐⭐⭐"
-    //                 : "⭐";
-    //     const color =
-    //         d === "easy" || d === "beginner"
-    //             ? "bg-green-50 text-green-700 border-green-200"
-    //             : d === "medium" || d === "intermediate"
-    //               ? "bg-yellow-50 text-yellow-700 border-yellow-200"
-    //               : "bg-red-50 text-red-700 border-red-200";
-    //     return { star, color };
-    // };
-
     return (
         <AppLayout>
-            <Head title="Exercises" />
+            <Head title="Word Lists" />
             <div className="min-h-screen bg-[#F0F2F5]">
                 <main className="max-w-2xl mx-auto px-4 py-5 pb-20">
                     {wordListCategories && wordListCategories.length > 0 ? (
-                        <div className="space-y-3">
-                            {wordListCategories.map(
-                                (wordListCategory, index) => {
-                                    return (
-                                        <Link
-                                            key={wordListCategory.id}
-                                            href={route(
-                                                "wordlistcategory.wordlists",
-                                                wordListCategory.id,
-                                            )}
-                                            className="block"
-                                        >
-                                            <div
-                                                className="bg-white rounded-2xl px-5 py-4 shadow-sm hover:shadow-md transition-all flex items-center justify-between gap-4"
-                                                style={{
-                                                    animationDelay: `${index * 0.07}s`,
-                                                    animation:
-                                                        "fadeInUp 0.4s ease-out forwards",
-                                                    opacity: 0,
-                                                }}
-                                            >
-                                                <div className="flex-1">
-                                                    <h2 className="text-base font-bold text-gray-900">
-                                                        {wordListCategory.name}
-                                                    </h2>
-
-                                                    <div className="mt-1 flex items-center gap-2 text-sm text-gray-500">
-                                                        <BookOpen className="h-4 w-4" />
-                                                        <span>
-                                                            {
-                                                                wordListCategory.wordlists_count
-                                                            }{" "}
-                                                            {wordListCategory.wordlists_count ===
-                                                            1
-                                                                ? "Word List"
-                                                                : "Word Lists"}
-                                                        </span>
-                                                    </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            {wordListCategories.map((category, index) => (
+                                <Link
+                                    key={category.id}
+                                    href={route(
+                                        "wordlistcategory.wordlists",
+                                        category.id,
+                                    )}
+                                    className="block"
+                                    style={{
+                                        animationDelay: `${index * 0.07}s`,
+                                        animation:
+                                            "fadeInUp 0.4s ease-out forwards",
+                                        opacity: 0,
+                                    }}
+                                >
+                                    <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md active:scale-[0.98] transition-all flex flex-col">
+                                        {/* Thumbnail */}
+                                        <div className="w-full aspect-[4/3] bg-gray-100 flex items-center justify-center overflow-hidden">
+                                            {category.thumbnail_url_full ? (
+                                                <img
+                                                    src={
+                                                        category.thumbnail_url_full
+                                                    }
+                                                    alt={category.name}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                /* Monogram placeholder */
+                                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-red-50 to-red-100">
+                                                    <span className="text-4xl font-black text-[#E5201C]/40 select-none">
+                                                        {category.name
+                                                            .charAt(0)
+                                                            .toUpperCase()}
+                                                    </span>
                                                 </div>
+                                            )}
+                                        </div>
 
-                                                <ChevronRight className="h-5 w-5 text-gray-400 shrink-0" />
+                                        {/* Info */}
+                                        <div className="px-3.5 py-3 h-[72px] flex flex-col justify-between">
+                                            <h2 className="text-sm font-bold text-gray-900 leading-snug line-clamp-2">
+                                                {category.name}
+                                            </h2>
+                                            <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                                                <BookOpen className="h-3.5 w-3.5 shrink-0" />
+                                                <span>
+                                                    {category.wordlists_count}{" "}
+                                                    {category.wordlists_count ===
+                                                    1
+                                                        ? "Word List"
+                                                        : "Word Lists"}
+                                                </span>
                                             </div>
-                                        </Link>
-                                    );
-                                },
-                            )}
+                                        </div>
+                                    </div>
+                                </Link>
+                            ))}
                         </div>
                     ) : (
                         <div className="bg-white rounded-2xl p-10 text-center shadow-sm">

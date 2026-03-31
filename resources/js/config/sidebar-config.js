@@ -20,7 +20,7 @@ import {
 export const sidebarConfig = {
     // Branding section at the top of the sidebar
     branding: {
-        title: "VocaPix",
+        title: "VocabPix",
         subtitle: "Admin Panel",
         icon: BookOpen,
         homeRoute: "admin.dashboard",

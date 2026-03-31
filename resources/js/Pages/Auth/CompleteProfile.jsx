@@ -119,7 +119,7 @@ export default function CompleteProfile({ googleUser }) {
                         <p className="text-xs text-gray-500 dark:text-gray-400">
                             Include your country code, e.g.{" "}
                             <span className="font-medium text-gray-700 dark:text-gray-300">
-                                +8801XXXXXXXXX
+                                01XXXXXXXXX
                             </span>
                         </p>
                         <div className="relative">
@@ -133,7 +133,7 @@ export default function CompleteProfile({ googleUser }) {
                                     setData("phone_number", e.target.value)
                                 }
                                 className="pl-10 h-12 border-gray-300 dark:border-zinc-700 focus:border-[#E5201C] focus:ring-[#E5201C]"
-                                placeholder="+8801XXXXXXXXX"
+                                placeholder="01XXXXXXXXX"
                                 autoComplete="tel"
                                 autoFocus
                             />

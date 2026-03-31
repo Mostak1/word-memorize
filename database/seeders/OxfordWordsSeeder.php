@@ -4,7 +4,9 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Word;
+use App\Models\WordImage;
 use App\Models\WordList;
 use App\Models\WordListCategory;
 use App\Models\User;
@@ -17,19 +19,48 @@ class OxfordWordsSeeder extends Seeder
     protected string $filePath = 'database/data/Oxford_3000_processed.csv';
 
     /**
+     * Path to the word images folder (relative to Laravel project root).
+     *
+     * Images are named after the word, optionally with a POS suffix and/or a
+     * trailing space before the extension, e.g.:
+     *   database/data/oxford_images/able .jpg
+     *   database/data/oxford_images/accept (v.).jpg
+     *   database/data/oxford_images/abroad .jpg
+     *
+     * Matching handles all three quirks automatically (see buildImageIndex).
+     */
+    protected string $imagesPath = 'database/data/oxford_images';
+
+    /**
+     * Supported image extensions (checked in this priority order).
+     */
+    private const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+
+    /**
+     * Storage disk for word images (maps to storage/app/public).
+     */
+    private const STORAGE_DISK = 'public';
+
+    /**
+     * Directory inside the public disk where images are stored.
+     * Results in: storage/app/public/words/filename.jpg
+     * Public URL:  /storage/words/filename.jpg
+     */
+    private const STORAGE_DIR = 'words';
+
+    /**
      * The single WordListCategory that owns all Oxford 3000 word lists.
      */
     private const CATEGORY_NAME = 'Oxford 3000 Essential Words';
 
     /**
-     * Admin email to use as creator
+     * Admin email to use as creator.
      */
     private const ADMIN_EMAIL = 'admin@gmail.com';
 
     /**
      * Columns updated when a word already exists (upsert).
-     *
-     * Now includes the three split pronunciation fields.
+     * Note: image_url is intentionally absent — images live in word_images table.
      */
     private const UPSERT_UPDATE_COLUMNS = [
         'parts_of_speech_variations',
@@ -61,20 +92,29 @@ class OxfordWordsSeeder extends Seeder
 
         $rows = $this->parseCsv($fullPath);
         $dataRowCount = $this->countNonEmpty($rows);
-
         $this->log('info', "{$dataRowCount} data row(s) found in the CSV.");
 
         $grouped = $this->groupBySubCategory($rows);
-
         $this->log('info', count($grouped) . ' word list(s) detected from Sub-Category column.');
+
+        // Build a case-insensitive image index once — O(1) lookups per word.
+        $imageIndex = $this->buildImageIndex();
+        $this->log('info', count($imageIndex) . ' image key(s) indexed from ' . $this->imagesPath . '.');
 
         $creatorId = $this->getCreatorId();
 
-        $counts = $this->seedAll($grouped, $creatorId);
+        [
+            'inserted' => $inserted,
+            'updated' => $updated,
+            'skipped' => $skipped,
+            'images_added' => $imagesAdded,
+            'images_skipped' => $imagesSkipped,
+        ] = $this->seedAll($grouped, $creatorId, $imageIndex);
 
         $this->log(
             'info',
-            "\nDone — inserted: {$counts['inserted']}, updated: {$counts['updated']}, skipped: {$counts['skipped']}."
+            "\nDone — words inserted: {$inserted}, updated: {$updated}, skipped: {$skipped}." .
+            "\n       images added: {$imagesAdded}, already existed / no file: {$imagesSkipped}."
         );
     }
 
@@ -101,6 +141,110 @@ class OxfordWordsSeeder extends Seeder
         });
 
         $this->log('info', '"' . self::CATEGORY_NAME . '" unseeded — category, word lists, and words removed.');
+    }
+
+    // ── Image index ────────────────────────────────────────────────────────
+
+    /**
+     * Scan the images folder and build a lookup map:
+     *   normalised-word-key => absolute-file-path
+     *
+     * Oxford image filenames have two quirks compared to the Academic seeder:
+     *
+     *  1. Trailing space before the extension:
+     *       "able .jpg"  →  pathinfo stem is "able " (with space)
+     *       Fix: trim() the stem before using it as a map key.
+     *
+     *  2. Part-of-speech suffix in parentheses:
+     *       "accept (v.).jpg"  →  stem "accept (v.)"
+     *       The CSV word column is just "accept", so we also index a second
+     *       key with the " (…)" suffix stripped — "accept".
+     *       The full-stem key is written first; a file whose own stem IS just
+     *       "accept.jpg" (no suffix) takes priority over the derived base key.
+     *
+     * @return array<string, string>  e.g. ['able' => '/abs/path/able .jpg']
+     */
+    private function buildImageIndex(): array
+    {
+        $dir = base_path($this->imagesPath);
+
+        if (!is_dir($dir)) {
+            $this->log('warn', "Images folder not found: {$this->imagesPath} — skipping image seeding.");
+            return [];
+        }
+
+        $index = [];
+
+        foreach (scandir($dir) as $file) {
+            if ($file === '.' || $file === '..') {
+                continue;
+            }
+
+            $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+
+            if (!in_array($ext, self::IMAGE_EXTENSIONS, true)) {
+                continue;
+            }
+
+            $absPath = $dir . DIRECTORY_SEPARATOR . $file;
+
+            // Fix 1: trim() removes the trailing space in stems like "able ".
+            $stem = trim(strtolower(pathinfo($file, PATHINFO_FILENAME)));
+
+            // Index full trimmed stem first (first-write wins across all files).
+            if (!isset($index[$stem])) {
+                $index[$stem] = $absPath;
+            }
+
+            // Fix 2: also index the base word with the POS suffix stripped
+            // so "accept (v.).jpg" is findable via key "accept".
+            $base = trim(preg_replace('/\s*\(.*\)\s*$/', '', $stem));
+            if ($base !== '' && $base !== $stem && !isset($index[$base])) {
+                $index[$base] = $absPath;
+            }
+        }
+
+        return $index;
+    }
+
+    /**
+     * Find the absolute source image path for a word string, or null.
+     *
+     * Try order (first hit wins):
+     *  1. Exact lowercase word          "accept"
+     *  2. Underscore-spaced variant     "a_lot"     (multi-word CSV entries)
+     *  3. Hyphen-spaced variant         "a-lot"
+     *  4. First token before ", "       "chairman"  (e.g. "chairman, chairwoman")
+     *
+     * @param  array<string, string> $imageIndex
+     */
+    private function findImageForWord(string $word, array $imageIndex): ?string
+    {
+        $key = strtolower(trim($word));
+
+        if (isset($imageIndex[$key])) {
+            return $imageIndex[$key];
+        }
+
+        $underscored = str_replace(' ', '_', $key);
+        if (isset($imageIndex[$underscored])) {
+            return $imageIndex[$underscored];
+        }
+
+        $hyphenated = str_replace(' ', '-', $key);
+        if (isset($imageIndex[$hyphenated])) {
+            return $imageIndex[$hyphenated];
+        }
+
+        // CSV entries like "chairman, chairwoman" — try first token only
+        if (str_contains($key, ',')) {
+            $firstToken = trim(explode(',', $key)[0]);
+            if (isset($imageIndex[$firstToken])) {
+                return $imageIndex[$firstToken];
+            }
+        }
+
+        return null;
     }
 
     // ── Helper: Get Creator ID ─────────────────────────────────────────────
@@ -144,16 +288,9 @@ class OxfordWordsSeeder extends Seeder
     /**
      * Parse the combined pronunciation column into its three parts.
      *
-     * CSV format:  'tʃeəmən/ চেয়ারম্যান/ chair-man
-     *              ─────────  ────────────  ─────────
-     *              IPA        Bangla        Romanized/hyphenated
-     *
-     * Rules:
-     *  - Split on '/' (max 3 parts, trimmed).
-     *  - Part 1 → ipa             (contains IPA characters)
-     *  - Part 2 → bangla_pronunciation  (contains Bengali script)
-     *  - Part 3 → pronunciation   (romanized / hyphenated spelling)
-     *  - Missing parts are stored as null.
+     * CSV format: "ˈtʃeəmən/ চেয়ারম্যান/ chair-man"
+     *              ──────────  ────────────  ─────────
+     *              IPA         Bangla        Romanized
      */
     private function parsePronunciation(?string $raw): array
     {
@@ -190,9 +327,9 @@ class OxfordWordsSeeder extends Seeder
         return $grouped;
     }
 
-    private function seedAll(array $grouped, int $creatorId): array
+    private function seedAll(array $grouped, int $creatorId, array $imageIndex): array
     {
-        return DB::transaction(function () use ($grouped, $creatorId): array {
+        return DB::transaction(function () use ($grouped, $creatorId, $imageIndex): array {
 
             $category = WordListCategory::firstOrCreate(
                 ['name' => self::CATEGORY_NAME],
@@ -208,32 +345,52 @@ class OxfordWordsSeeder extends Seeder
             $totalInserted = 0;
             $totalUpdated = 0;
             $totalSkipped = 0;
+            $totalImagesAdded = 0;
+            $totalImagesSkipped = 0;
             $listIndex = 0;
 
             foreach ($grouped as $subCatName => $rows) {
-                $isLocked = $listIndex >= 3;
-
                 $this->log(
                     'info',
-                    "\n── WordList [{$listIndex}]: \"{$subCatName}\" ("
-                    . count($rows) . ' words, locked: ' . ($isLocked ? 'yes' : 'no') . ') ──'
+                    "\n── WordList [{$listIndex}]: \"{$subCatName}\" (" . count($rows) . ' words) ──'
                 );
 
-                ['inserted' => $ins, 'updated' => $upd, 'skipped' => $skp] =
-                    $this->seedWordList($category->id, $subCatName, $rows, $isLocked, $creatorId);
+                [
+                    'inserted' => $ins,
+                    'updated' => $upd,
+                    'skipped' => $skp,
+                    'images_added' => $imgAdded,
+                    'images_skipped' => $imgSkip,
+                ] = $this->seedWordList($category->id, $subCatName, $rows, $listIndex, $creatorId, $imageIndex);
 
                 $totalInserted += $ins;
                 $totalUpdated += $upd;
                 $totalSkipped += $skp;
+                $totalImagesAdded += $imgAdded;
+                $totalImagesSkipped += $imgSkip;
                 $listIndex++;
             }
 
-            return ['inserted' => $totalInserted, 'updated' => $totalUpdated, 'skipped' => $totalSkipped];
+            return [
+                'inserted' => $totalInserted,
+                'updated' => $totalUpdated,
+                'skipped' => $totalSkipped,
+                'images_added' => $totalImagesAdded,
+                'images_skipped' => $totalImagesSkipped,
+            ];
         });
     }
 
-    private function seedWordList(int $categoryId, string $title, array $rows, bool $isLocked, int $creatorId): array
-    {
+    private function seedWordList(
+        int $categoryId,
+        string $title,
+        array $rows,
+        int $index,
+        int $creatorId,
+        array $imageIndex
+    ): array {
+        $isLocked = $index >= 3;
+
         $wordList = WordList::firstOrCreate(
             [
                 'word_list_category_id' => $categoryId,
@@ -256,7 +413,8 @@ class OxfordWordsSeeder extends Seeder
             : "  WordList already exists (ID: {$wordList->id}) — skipping creation."
         );
 
-        // Pre-fetch existing word keys
+        // ── Word upsert ────────────────────────────────────────────────────
+
         $existingKeys = DB::table('words')
             ->where('wordlist_id', $wordList->id)
             ->select('word', 'wordlist_id')
@@ -303,7 +461,6 @@ class OxfordWordsSeeder extends Seeder
                 continue;
             }
 
-            // ── Split the combined pronunciation column (CSV col 4) ──────────
             // Format: "IPA/ বাংলা উচ্চারণ/ romanized"
             $pron = $this->parsePronunciation($this->clean($row[4] ?? null));
 
@@ -337,9 +494,131 @@ class OxfordWordsSeeder extends Seeder
 
         $flush();
 
-        $this->log('info', "  Done — inserted: {$inserted}, updated: {$updated}, skipped: {$skipped}.");
+        // ── Image seeding ──────────────────────────────────────────────────
+        // Run after all words are upserted so word IDs are guaranteed to exist.
+        ['added' => $imagesAdded, 'skipped' => $imagesSkipped] =
+            $this->seedImagesForWordList($wordList->id, $rows, $imageIndex);
 
-        return ['inserted' => $inserted, 'updated' => $updated, 'skipped' => $skipped];
+        $this->log(
+            'info',
+            "  Done — words inserted: {$inserted}, updated: {$updated}, skipped: {$skipped}." .
+            " Images added: {$imagesAdded}, skipped: {$imagesSkipped}."
+        );
+
+        return [
+            'inserted' => $inserted,
+            'updated' => $updated,
+            'skipped' => $skipped,
+            'images_added' => $imagesAdded,
+            'images_skipped' => $imagesSkipped,
+        ];
+    }
+
+    /**
+     * For every word in this word list that has a matching image file,
+     * copy the file to the public storage disk and create a WordImage record.
+     *
+     * Skips words that already have at least one WordImage row (idempotent).
+     *
+     * @param  array<string, string> $imageIndex
+     * @return array{added: int, skipped: int}
+     */
+    private function seedImagesForWordList(int $wordListId, array $rows, array $imageIndex): array
+    {
+        if (empty($imageIndex)) {
+            return ['added' => 0, 'skipped' => 0];
+        }
+
+        // Load all words for this list: word => id
+        $wordMap = DB::table('words')
+            ->where('wordlist_id', $wordListId)
+            ->pluck('id', 'word')   // ['able' => 12, 'accept' => 13, ...]
+            ->toArray();
+
+        // Build a set of word_ids that already have at least one image (skip them)
+        $alreadyHasImage = WordImage::whereIn('word_id', array_values($wordMap))
+            ->pluck('word_id')
+            ->flip()
+            ->toArray();
+
+        $added = 0;
+        $skipped = 0;
+
+        foreach ($rows as $row) {
+            $wordStr = $this->clean($row[0] ?? null);   // col 0 = word
+
+            if ($wordStr === null || $wordStr === '') {
+                continue;
+            }
+
+            $wordId = $wordMap[$wordStr] ?? null;
+
+            if ($wordId === null) {
+                $skipped++;
+                continue;
+            }
+
+            if (isset($alreadyHasImage[$wordId])) {
+                $skipped++;
+                continue;
+            }
+
+            $sourcePath = $this->findImageForWord($wordStr, $imageIndex);
+
+            if ($sourcePath === null) {
+                $skipped++;
+                continue;
+            }
+
+            $storedPath = $this->copyImageToStorage($sourcePath, $wordStr);
+
+            if ($storedPath === null) {
+                $skipped++;
+                continue;
+            }
+
+            WordImage::create([
+                'word_id' => $wordId,
+                'image_url' => '/' . ltrim($storedPath, '/'),
+                'caption' => null,
+                'sort_order' => 0,
+            ]);
+
+            $alreadyHasImage[$wordId] = true; // prevent duplicate in same run
+            $added++;
+        }
+
+        return ['added' => $added, 'skipped' => $skipped];
+    }
+
+    /**
+     * Copy a source image into storage/app/public/words/ and return the
+     * storage-relative path (e.g. "words/able.jpg"), or null on failure.
+     *
+     * The destination filename is the clean lowercased word so URLs are
+     * consistent regardless of the quirky original filename on disk.
+     */
+    private function copyImageToStorage(string $sourcePath, string $word): ?string
+    {
+        $ext = strtolower(pathinfo($sourcePath, PATHINFO_EXTENSION));
+        $destFilename = strtolower(trim($word)) . '.' . $ext;    // e.g. "able.jpg"
+        $destPath = self::STORAGE_DIR . '/' . $destFilename; // e.g. "words/able.jpg"
+
+        // Already copied in a previous run — don't overwrite
+        if (Storage::disk(self::STORAGE_DISK)->exists($destPath)) {
+            return $destPath;
+        }
+
+        $contents = @file_get_contents($sourcePath);
+
+        if ($contents === false) {
+            $this->log('warn', "    Could not read image file: {$sourcePath}");
+            return null;
+        }
+
+        Storage::disk(self::STORAGE_DISK)->put($destPath, $contents);
+
+        return $destPath;
     }
 
     private function countNonEmpty(array $rows): int

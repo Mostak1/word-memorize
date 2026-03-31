@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -13,7 +12,14 @@ return new class extends Migration
     {
         Schema::create('personal_access_tokens', function (Blueprint $table) {
             $table->id();
-            $table->morphs('tokenable');
+
+            $table->unsignedBigInteger('tokenable_id');
+            $table->string('tokenable_type', 191);
+            $table->index(
+                ['tokenable_type', 'tokenable_id'],
+                'personal_access_tokens_tokenable_type_tokenable_id_index'
+            );
+
             $table->text('name');
             $table->string('token', 64)->unique();
             $table->text('abilities')->nullable();

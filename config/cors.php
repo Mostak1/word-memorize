@@ -21,8 +21,9 @@ return [
   'allowed_methods' => ['*'],
 
   'allowed_origins' => [
-    'http://localhost:5173',         // Vite dev server
-    // 'https://your-react-app.com', // ← add your production domain here
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'https://links.fluento.org',
   ],
 
   'allowed_origins_patterns' => [],

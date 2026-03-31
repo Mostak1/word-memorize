@@ -68,6 +68,12 @@ class Word extends Model
         return $this->hasMany(WordImage::class)->orderBy('sort_order')->orderBy('id');
     }
 
+    public function progress()
+    {
+        return $this->hasMany(WordProgress::class);
+    }
+
+
     public function reviewEntries()
     {
         return $this->hasMany(ReviewWord::class);

@@ -10,80 +10,108 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/Components/ui/alert-dialog";
-import {
-    Volume2,
-    Check,
-    BookOpen,
-    LogIn,
-    Bookmark,
-    ChevronLeft,
-    ChevronRight,
-    RotateCcw,
-} from "lucide-react";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { Volume2, LogIn, Bookmark, ChevronLeft, X, Check } from "lucide-react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import FlashMessages from "@/Components/FlashMessage";
 import { usePage } from "@inertiajs/react";
+
+// ── Constants ─────────────────────────────────────────────────────────────────
+const MASTERED_BOX = 4;
+
+const LEVEL_META = {
+    1: { label: "New", color: "bg-gray-100 text-gray-600", dot: "bg-gray-400" },
+    2: {
+        label: "Familiar",
+        color: "bg-blue-100 text-blue-600",
+        dot: "bg-blue-400",
+    },
+    3: {
+        label: "Solid",
+        color: "bg-yellow-100 text-yellow-700",
+        dot: "bg-yellow-400",
+    },
+    4: {
+        label: "Mastered",
+        color: "bg-green-100 text-green-700",
+        dot: "bg-green-500",
+    },
+};
+
+// Confetti pieces — stable (generated once outside component)
+const CONFETTI = Array.from({ length: 36 }, (_, i) => ({
+    id: i,
+    left: `${(i * 2.85) % 100}%`,
+    delay: `${(i * 0.055) % 0.5}s`,
+    duration: `${1.5 + (i % 5) * 0.18}s`,
+    color: [
+        "#E5201C",
+        "#22c55e",
+        "#3b82f6",
+        "#f59e0b",
+        "#8b5cf6",
+        "#ec4899",
+        "#14b8a6",
+    ][i % 7],
+    size: 6 + (i % 5) * 2,
+    borderRadius: i % 3 === 0 ? "50%" : "2px",
+}));
 
 export default function ExerciseSession({
     wordList,
     subcategory,
-    words,
+    words: initialWords,
+    totalWordsInList = 0,
     backUrl = null,
     bookmarkedWordIds = [],
 }) {
     const { auth } = usePage().props;
 
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [results, setResults] = useState({}); // { wordId: 'known' | 'unknown' }
+    // ── Queue state ───────────────────────────────────────────────────────────
+    // The Active Queue: queue[0] is always the current word.
+    // "I Know"       → remove from front (word leaves session).
+    // "I Don't Know" → move from front to back (word stays in session).
+    const [queue, setQueue] = useState(() =>
+        initialWords.map((w) => ({ ...w })),
+    );
+    const initialQueueSize = useMemo(() => initialWords.length, []); // cap at session start
+
+    // ── Session stats ─────────────────────────────────────────────────────────
+    const [promotedCount, setPromotedCount] = useState(0); // words answered "I Know"
+    const [dontKnowCount, setDontKnowCount] = useState(0); // total "I Don't Know" taps
+
+    // ── UI state ──────────────────────────────────────────────────────────────
     const [showLoginDialog, setShowLoginDialog] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [sessionDone, setSessionDone] = useState(false);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     const [bookmarks, setBookmarks] = useState(() =>
         Object.fromEntries(bookmarkedWordIds.map((id) => [id, true])),
     );
+    const [showMeaning, setShowMeaning] = useState(false);
 
-    // ── Swipe state ───────────────────────────────────────────────────────────
-    const touchStartX = useRef(null);
-    const touchStartY = useRef(null);
-    const [dragX, setDragX] = useState(0);
-    const [swipeHint, setSwipeHint] = useState(null); // 'prev' | 'next' | null
-    const SWIPE_THRESHOLD = 80;
-    const slideDir = useRef("left"); // 'left' | 'right' — direction new card enters from
-    const [cardKey, setCardKey] = useState(0); // bump to re-trigger entrance anim
-    const [exiting, setExiting] = useState(false); // true while old card flies out
+    // ── Card animation state ──────────────────────────────────────────────────
+    // exitDir: 'left' = I Know (word leaves), 'right' = I Don't Know (shuffles back)
+    const exitDir = useRef("left");
+    const [cardKey, setCardKey] = useState(0);
+    const [exiting, setExiting] = useState(false);
 
-    const handleBookmark = (wordId) => {
-        if (!auth?.user) {
-            setShowLoginDialog(true);
-            return;
-        }
+    // ── Gamification state ────────────────────────────────────────────────────
+    const [showConfetti, setShowConfetti] = useState(false);
+    const [masteryFlash, setMasteryFlash] = useState(false);
+    const [levelUpPulse, setLevelUpPulse] = useState(false);
 
-        setBookmarks((prev) => ({ ...prev, [wordId]: !prev[wordId] })); // optimistic
+    // Current word is always the front of the queue
+    const word = queue[0] ?? null;
+    const isDone = queue.length === 0 && !exiting;
 
-        router.post(
-            route("word.bookmark", wordId),
-            {},
-            {
-                preserveScroll: true,
-                preserveState: true,
-                onError: () =>
-                    setBookmarks((prev) => ({
-                        ...prev,
-                        [wordId]: !prev[wordId],
-                    })), // revert
-            },
-        );
-    };
+    const [openCollocationIndex, setOpenCollocationIndex] = useState(null);
 
-    const total = words.length;
-    const word = words[currentIndex] ?? null;
-    const isLastWord = currentIndex === total - 1;
-
-    // Reset image index when word changes
+    // Reset per-card UI when the front of the queue changes
     useEffect(() => {
         setActiveImageIndex(0);
-    }, [currentIndex]);
+        setShowMeaning(false);
+    }, [word?.id]);
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
 
     const speakWord = useCallback((text) => {
         if ("speechSynthesis" in window) {
@@ -108,88 +136,36 @@ export default function ExerciseSession({
         );
     };
 
-    const changeCard = (newIndex, direction) => {
-        if (newIndex < 0 || newIndex > total) return;
-        slideDir.current = direction;
-        setExiting(true);
-        setTimeout(() => {
-            setExiting(false);
-            if (newIndex >= total) {
-                setSessionDone(true);
-            } else {
-                setCurrentIndex(newIndex);
-                setCardKey((k) => k + 1);
-            }
-        }, 200); // exit anim duration
-    };
-
-    const advance = () => {
-        changeCard(isLastWord ? total : currentIndex + 1, "left");
-    };
-
-    const goToPrev = () => {
-        if (currentIndex > 0) changeCard(currentIndex - 1, "right");
-    };
-
-    // ── Touch / swipe handlers ────────────────────────────────────────────────
-    const onTouchStart = (e) => {
-        touchStartX.current = e.touches[0].clientX;
-        touchStartY.current = e.touches[0].clientY;
-        setDragX(0);
-        setSwipeHint(null);
-    };
-
-    const onTouchMove = (e) => {
-        if (touchStartX.current === null) return;
-        const dx = e.touches[0].clientX - touchStartX.current;
-        const dy = e.touches[0].clientY - touchStartY.current;
-        // Only track horizontal swipes (ignore vertical scrolling)
-        if (Math.abs(dy) > Math.abs(dx) && Math.abs(dx) < 10) return;
-        setDragX(dx);
-        if (dx > 30) setSwipeHint("prev");
-        else if (dx < -30) setSwipeHint("next");
-        else setSwipeHint(null);
-    };
-
-    const onTouchEnd = () => {
-        const dx = dragX;
-        setDragX(0);
-        setSwipeHint(null);
-        touchStartX.current = null;
-        if (dx > SWIPE_THRESHOLD) {
-            goToPrev(); // swipe right → previous word
-        } else if (dx < -SWIPE_THRESHOLD) {
-            advance(); // swipe left  → next word (skip)
-        }
-    };
-
-    const handleMarkWord = (status) => {
-        if (!word) return;
+    const handleBookmark = (wordId) => {
         if (!auth?.user) {
             setShowLoginDialog(true);
             return;
         }
-        if (isSubmitting) return;
+        setBookmarks((prev) => ({ ...prev, [wordId]: !prev[wordId] }));
+        router.post(
+            route("word.bookmark", wordId),
+            {},
+            {
+                preserveScroll: true,
+                preserveState: true,
+                onError: () =>
+                    setBookmarks((prev) => ({
+                        ...prev,
+                        [wordId]: !prev[wordId],
+                    })),
+            },
+        );
+    };
 
-        setResults((prev) => ({ ...prev, [word.id]: status }));
-        setIsSubmitting(true);
-
-        // Advance the card immediately — don't wait for the server.
-        advance();
-
-        // Use plain fetch instead of router.post so Inertia never re-runs start()
-        // and never replaces the `words` prop with a shorter array mid-session.
-        const routeName = status === "known" ? "word.know" : "word.learn";
-
-        // Inertia apps don't use a <meta csrf> tag — Laravel sets an XSRF-TOKEN cookie.
+    // ── Fire-and-forget server call ───────────────────────────────────────────
+    const pingServer = (routeName, wordId) => {
         const csrfToken = decodeURIComponent(
             document.cookie
                 .split("; ")
                 .find((row) => row.startsWith("XSRF-TOKEN="))
                 ?.split("=")[1] ?? "",
         );
-
-        fetch(route(routeName, word.id), {
+        fetch(route(routeName, wordId), {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -197,30 +173,145 @@ export default function ExerciseSession({
                 Accept: "application/json",
             },
             body: JSON.stringify({ from: "session" }),
-        }).finally(() => {
-            setIsSubmitting(false);
-        });
+        }).finally(() => setIsSubmitting(false));
     };
 
-    // Mark known via the Check button
-    const handleCheck = () => handleMarkWord("known");
+    // ── Animate then mutate queue ─────────────────────────────────────────────
+    const animateThen = (direction, callback) => {
+        exitDir.current = direction;
+        setExiting(true);
+        setTimeout(() => {
+            setExiting(false);
+            setCardKey((k) => k + 1);
+            callback();
+        }, 200);
+    };
 
-    // ── Stats for done screen ─────────────────────────────────────────────────
-    const knownCount = Object.values(results).filter(
-        (v) => v === "known",
-    ).length;
-    const unknownCount = Object.values(results).filter(
-        (v) => v === "unknown",
-    ).length;
-    const skippedCount = total - knownCount - unknownCount;
+    // ── Core actions ──────────────────────────────────────────────────────────
 
-    // ── Collocation chips ─────────────────────────────────────────────────────
-    const collocationList = word?.collocations
-        ? word.collocations
-              .split(/[\n,]+/)
-              .map((c) => c.trim())
-              .filter(Boolean)
-        : [];
+    /**
+     * "I Know"
+     *
+     * Level 1 (New/Learning):
+     *   → Remove from queue (promoted to L2 via server)
+     *
+     * Level 2 / 3 (Review):
+     *   → Remove from queue (promoted to next level via server)
+     *
+     * Level 3 → 4: triggers mastery celebration.
+     */
+    const handleKnow = () => {
+        if (!word) return;
+        if (!auth?.user) {
+            setShowLoginDialog(true);
+            return;
+        }
+        if (isSubmitting) return;
+
+        setIsSubmitting(true);
+
+        const currentBox = word.srs_box ?? 1;
+        const willMaster = currentBox >= MASTERED_BOX - 1; // L3 → L4
+        const willLevelUp = currentBox < MASTERED_BOX;
+
+        if (willMaster) {
+            setShowConfetti(true);
+            setMasteryFlash(true);
+            setTimeout(() => setMasteryFlash(false), 900);
+            setTimeout(() => setShowConfetti(false), 2800);
+        } else if (willLevelUp) {
+            setLevelUpPulse(true);
+            setTimeout(() => setLevelUpPulse(false), 500);
+        }
+
+        const wordId = word.id;
+        animateThen("left", () => {
+            setQueue((prev) => prev.slice(1)); // remove from front
+            setPromotedCount((c) => c + 1);
+        });
+
+        pingServer("word.know", wordId);
+    };
+
+    /**
+     * "I Don't Know"
+     *
+     * Level 1 (New/Learning):
+     *   → Shuffle to back of queue at L1 (server records incorrect, box stays 1).
+     *   → Word CANNOT leave the session until answered correctly.
+     *
+     * Level 2 / 3 (Review):
+     *   → Demote to L1 on server.
+     *   → Shuffle to back of queue with srs_box updated to 1 locally.
+     *   → Word re-enters the learning phase in this session.
+     */
+    const handleDontKnow = () => {
+        if (!word) return;
+        if (!auth?.user) {
+            setShowLoginDialog(true);
+            return;
+        }
+        if (isSubmitting) return;
+
+        setIsSubmitting(true);
+        setDontKnowCount((c) => c + 1);
+
+        const currentBox = word.srs_box ?? 1;
+        const wordId = word.id;
+
+        animateThen("right", () => {
+            setQueue((prev) => {
+                const [first, ...rest] = prev;
+                // If it was L2/L3, demote locally to L1 so the badge updates
+                const updated =
+                    currentBox >= 2
+                        ? {
+                              ...first,
+                              srs_box: 1,
+                              srs_label: "New",
+                              srs_color: LEVEL_META[1].color,
+                          }
+                        : first;
+                return [...rest, updated]; // shuffle to back
+            });
+        });
+
+        pingServer("word.learn", wordId);
+    };
+
+    // ── Layout helpers ────────────────────────────────────────────────────────
+
+    // const collocationList = word?.collocations
+    //     ? word.collocations
+    //           .split(/[\n,]+/)
+    //           .map((c) => c.trim())
+    //           .filter(Boolean)
+    //     : [];
+
+    const collocationList = (() => {
+        const raw = word?.collocations;
+
+        if (!raw) return [];
+
+        // Case 1: already array (ideal future case)
+        if (Array.isArray(raw)) return raw;
+
+        // Case 2: JSON string
+        try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) return parsed;
+        } catch (e) {}
+
+        // Case 3: fallback (old comma-separated string)
+        return raw
+            .split(/[\n,]+/)
+            .map((c) => c.trim())
+            .filter(Boolean)
+            .map((phrase) => ({
+                phrase,
+                example_sentence: "", // no example available
+            }));
+    })();
 
     const collocationColors = [
         "bg-red-100/70 text-red-700 border-red-200",
@@ -235,18 +326,10 @@ export default function ExerciseSession({
 
     const formatIPA = (ipa) => {
         if (!ipa) return "";
-
-        let formatted = ipa.trim();
-
-        if (!formatted.startsWith("/")) {
-            formatted = "/" + formatted;
-        }
-
-        if (!formatted.endsWith("/")) {
-            formatted = formatted + "/";
-        }
-
-        return formatted;
+        let f = ipa.trim();
+        if (!f.startsWith("/")) f = "/" + f;
+        if (!f.endsWith("/")) f = f + "/";
+        return f;
     };
 
     const wordFontSize = (w) => {
@@ -260,39 +343,32 @@ export default function ExerciseSession({
     const images = word?.images?.length > 0 ? word.images : [];
     const activeImage = images[activeImageIndex] ?? null;
 
-    const backHref = route(
-        "wordlistcategory.wordlists",
-        wordList.word_list_category_id,
-    );
-    // backUrl
-    //     ? backUrl
-    //     : subcategory
-    //       ? route("wordlist.subcategory", {
-    //             wordListId: wordList.id,
-    //             subcategoryId: subcategory.id,
-    //         })
-    //       : wordList.category?.id
-    //         ? route("wordlistcategory.wordlists", wordList.category.id)
-    //         : route("wordlist.show", wordList.id);
+    const backHref =
+        backUrl ??
+        (wordList?.word_list_category_id
+            ? route(
+                  "wordlistcategory.wordlists",
+                  wordList.word_list_category_id,
+              )
+            : route("wordlist.show", wordList?.id));
 
-    // ── Session complete screen ───────────────────────────────────────────────
-    // ── All words already mastered — nothing left to practice ────────────────
-    if (total === 0 || (!sessionDone && !word)) {
+    // ── Empty queue (nothing due, nothing new) ────────────────────────────────
+    if (initialQueueSize === 0) {
         return (
             <AppLayout>
-                <Head title="All Mastered" />
+                <Head title="All Caught Up!" />
                 <div className="min-h-screen bg-[#F0F2F5] flex flex-col items-center justify-center px-4 py-10">
                     <div className="bg-white rounded-3xl shadow-md w-full max-w-md p-8 text-center">
-                        <div className="text-6xl mb-4">🏆</div>
+                        <div className="text-6xl mb-4">🎯</div>
                         <h1 className="text-2xl font-extrabold text-gray-900 mb-1">
-                            All Words Mastered!
+                            All Caught Up!
                         </h1>
                         <p className="text-gray-400 text-sm mb-2">
                             {subcategory ? subcategory.name : wordList.title}
                         </p>
                         <p className="text-gray-500 text-sm mb-8">
-                            You've already mastered every word in this list.
-                            Great work!
+                            No words are due for review right now. Check back
+                            tomorrow to keep your streak going!
                         </p>
                         <div className="flex flex-col gap-3">
                             <Link
@@ -305,8 +381,7 @@ export default function ExerciseSession({
                                 href={backHref}
                                 className="w-full py-3.5 bg-white border border-gray-200 text-gray-700 font-semibold rounded-2xl flex items-center justify-center gap-2 hover:shadow-md transition"
                             >
-                                <ChevronLeft className="h-4 w-4" />
-                                Back to List
+                                <ChevronLeft className="h-4 w-4" /> Back to List
                             </Link>
                         </div>
                     </div>
@@ -315,13 +390,12 @@ export default function ExerciseSession({
         );
     }
 
-    // ── Session done screen ───────────────────────────────────────────────────
-    if (sessionDone) {
-        const skippedCount = Math.max(0, total - knownCount);
-
+    // ── Session complete screen ───────────────────────────────────────────────
+    if (isDone) {
+        const retries = dontKnowCount; // total "I Don't Know" taps during session
         return (
             <AppLayout>
-                <Head title="Exercise Complete" />
+                <Head title="Session Complete" />
                 <div className="min-h-screen bg-[#F0F2F5] flex flex-col items-center justify-center px-4 py-10">
                     <div className="bg-white rounded-3xl shadow-md w-full max-w-md p-8 text-center">
                         <div className="text-6xl mb-4">🎉</div>
@@ -332,55 +406,82 @@ export default function ExerciseSession({
                             {subcategory ? subcategory.name : wordList.title}
                         </p>
 
-                        {/* Result pills */}
-                        <div className="grid grid-cols-2 gap-3 mb-8">
+                        {/* Stats */}
+                        <div className="grid grid-cols-3 gap-3 mb-8">
                             <div className="bg-green-50 rounded-2xl py-4">
                                 <p className="text-2xl font-extrabold text-green-600">
-                                    {knownCount}
+                                    {promotedCount}
                                 </p>
                                 <p className="text-xs text-green-500 mt-0.5 font-medium">
-                                    Mastered
+                                    Cleared
                                 </p>
                             </div>
-                            <div className="bg-gray-50 rounded-2xl py-4">
-                                <p className="text-2xl font-extrabold text-gray-400">
-                                    {skippedCount}
+                            <div className="bg-red-50 rounded-2xl py-4">
+                                <p className="text-2xl font-extrabold text-red-400">
+                                    {retries}
                                 </p>
-                                <p className="text-xs text-gray-400 mt-0.5 font-medium">
-                                    Skipped
+                                <p className="text-xs text-red-400 mt-0.5 font-medium">
+                                    Retries
+                                </p>
+                            </div>
+                            <div className="bg-blue-50 rounded-2xl py-4">
+                                <p className="text-2xl font-extrabold text-blue-500">
+                                    {promotedCount + retries}
+                                </p>
+                                <p className="text-xs text-blue-400 mt-0.5 font-medium">
+                                    Total Reps
                                 </p>
                             </div>
                         </div>
 
-                        {/* Actions */}
+                        {/* List-level progress bar */}
+                        {totalWordsInList > 0 && (
+                            <div className="mb-8">
+                                <div className="flex justify-between text-xs text-gray-400 mb-1.5">
+                                    <span>List Progress</span>
+                                    <span>
+                                        {Math.round(
+                                            (promotedCount / totalWordsInList) *
+                                                100,
+                                        )}
+                                        %
+                                    </span>
+                                </div>
+                                <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-green-500 rounded-full transition-all"
+                                        style={{
+                                            width: `${Math.min((promotedCount / totalWordsInList) * 100, 100)}%`,
+                                        }}
+                                    />
+                                </div>
+                                <p className="text-xs text-gray-400 mt-1.5 text-center">
+                                    {promotedCount} of {totalWordsInList} words
+                                    in this session's queue
+                                </p>
+                            </div>
+                        )}
+
                         <div className="flex flex-col gap-3">
-                            {skippedCount > 0 && (
-                                <button
-                                    onClick={() => {
-                                        setCurrentIndex(0);
-                                        setResults({});
-                                        setSessionDone(false);
-                                    }}
-                                    className="w-full py-3.5 bg-[#E5201C] text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-red-700 transition"
-                                >
-                                    <RotateCcw className="h-4 w-4" />
-                                    Restart
-                                </button>
-                            )}
-                            {knownCount > 0 && (
+                            <Link
+                                href={route("wordlist.start", wordList.id)}
+                                className="w-full py-3.5 bg-[#E5201C] text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-red-700 transition"
+                            >
+                                New Session
+                            </Link>
+                            {/* {promotedCount > 0 && (
                                 <Link
                                     href={route("words.mastered")}
                                     className="w-full py-3.5 bg-green-600 text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-green-700 transition"
                                 >
                                     View Mastered Words
                                 </Link>
-                            )}
+                            )} */}
                             <Link
                                 href={backHref}
                                 className="w-full py-3.5 bg-white border border-gray-200 text-gray-700 font-semibold rounded-2xl flex items-center justify-center gap-2 hover:shadow-md transition"
                             >
-                                <ChevronLeft className="h-4 w-4" />
-                                Back to List
+                                <ChevronLeft className="h-4 w-4" /> Back to List
                             </Link>
                         </div>
                     </div>
@@ -390,91 +491,89 @@ export default function ExerciseSession({
     }
 
     // ── Main session card ─────────────────────────────────────────────────────
+    const currentBox = word?.srs_box ?? 1;
+    const meta = LEVEL_META[currentBox] ?? LEVEL_META[1];
+
+    // Progress within this session: how many of the initial queue have been cleared
+    const sessionProgress =
+        initialQueueSize > 0 ? (promotedCount / initialQueueSize) * 100 : 0;
+
     return (
         <AppLayout>
             <Head title={`Exercise — ${word?.word ?? ""}`} />
             <FlashMessages />
 
-            <div className="min-h-screen bg-[#F0F2F5] pb-32 pt-1 mt-3">
-                {/* Counter */}
-                {/* <div className="max-w-lg mx-auto px-3 pt-3 pb-1 flex items-center justify-between">
-                    <Link
-                        href={backHref}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 transition"
-                    >
-                        <ChevronLeft className="h-5 w-5" />
-                    </Link>
-                    <span className="text-sm text-gray-400 font-medium">
-                        {currentIndex + 1} / {total}
-                    </span>
-                    <div className="w-8" />
-                </div> */}
+            {/* ── Confetti burst on mastery ────────────────────────────────── */}
+            {showConfetti && (
+                <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+                    {CONFETTI.map((p) => (
+                        <div
+                            key={p.id}
+                            style={{
+                                position: "absolute",
+                                left: p.left,
+                                top: "-12px",
+                                width: `${p.size}px`,
+                                height: `${p.size}px`,
+                                backgroundColor: p.color,
+                                borderRadius: p.borderRadius,
+                                animation: `confettiFall ${p.duration} ${p.delay} ease-in forwards`,
+                            }}
+                        />
+                    ))}
+                    <div className="absolute inset-x-0 top-24 flex justify-center pointer-events-none">
+                        <div className="bg-white rounded-2xl shadow-xl px-8 py-4 text-center animate-bounce-in border border-green-100">
+                            <p className="text-3xl mb-1">🌟</p>
+                            <p className="text-lg font-extrabold text-green-600">
+                                Mastered!
+                            </p>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                                Word added to your Mastery Garden
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
-                {/* Mobile fixed side arrows */}
-                <button
-                    onClick={goToPrev}
-                    disabled={currentIndex === 0}
-                    className="md:hidden fixed left-1 top-1/2 -translate-y-1/2 z-30 flex items-center justify-center w-9 h-9 rounded-full bg-white/90 shadow-md border border-gray-100 text-gray-500 active:scale-95 disabled:opacity-20 transition-all"
-                    aria-label="Previous word"
-                >
-                    <ChevronLeft className="h-5 w-5" />
-                </button>
-                <button
-                    onClick={advance}
-                    className="md:hidden fixed right-1 top-1/2 -translate-y-1/2 z-30 flex items-center justify-center w-9 h-9 rounded-full bg-white/90 shadow-md border border-gray-100 text-gray-500 active:scale-95 transition-all"
-                    aria-label="Next word"
-                >
-                    <ChevronRight className="h-5 w-5" />
-                </button>
+            {/* ── Mastery green flash ──────────────────────────────────────── */}
+            {masteryFlash && (
+                <div className="fixed inset-0 pointer-events-none z-40 bg-green-400/20" />
+            )}
 
-                <div className="relative flex items-start justify-center w-full overflow-hidden">
-                    {/* Desktop prev button */}
-                    <button
-                        onClick={goToPrev}
-                        disabled={currentIndex === 0}
-                        className="hidden md:flex items-center justify-center self-center shrink-0 w-11 h-11 rounded-full bg-white shadow-md border border-gray-100 text-gray-500 hover:text-gray-800 hover:shadow-lg disabled:opacity-25 disabled:cursor-not-allowed transition-all mr-3 mt-6"
-                        aria-label="Previous word"
-                    >
-                        <ChevronLeft className="h-5 w-5" />
-                    </button>
+            <div className="min-h-screen bg-[#F0F2F5] pb-40 pt-1 mt-3">
+                {/* ── Session progress bar ─────────────────────────────────── */}
+                <div className="max-w-lg mx-auto px-3 pt-3 pb-2">
+                    <div className="flex items-center gap-2.5">
+                        <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-[#E5201C] rounded-full transition-all duration-500"
+                                style={{ width: `${sessionProgress}%` }}
+                            />
+                        </div>
+                        {/* Queue remaining badge */}
+                        <span className="shrink-0 text-xs font-semibold text-gray-500 bg-white border border-gray-200 rounded-full px-2.5 py-0.5 shadow-sm">
+                            {queue.length} left
+                        </span>
+                    </div>
+                </div>
 
+                {/* ── Card area ────────────────────────────────────────────── */}
+                <div className="flex items-start justify-center w-full">
                     <main className="max-w-lg w-full px-3">
-                        {/* Swipe hint labels */}
-                        {/* <div className="flex justify-between px-1 mb-1 h-5">
-                            <span
-                                className={`text-xs font-semibold text-gray-400 transition-opacity duration-150 flex items-center gap-1 ${swipeHint === "prev" ? "opacity-100" : "opacity-0"}`}
-                            >
-                                <ChevronLeft className="h-3.5 w-3.5" /> Previous
-                            </span>
-                            <span
-                                className={`text-xs font-semibold text-gray-400 transition-opacity duration-150 flex items-center gap-1 ${swipeHint === "next" ? "opacity-100" : "opacity-0"}`}
-                            >
-                                Next <ChevronRight className="h-3.5 w-3.5" />
-                            </span>
-                        </div> */}
+                        {/* Swipeable / animating card */}
                         <div
                             key={cardKey}
                             className={`bg-white rounded-3xl shadow-md overflow-hidden select-none ${
                                 exiting
-                                    ? slideDir.current === "left"
+                                    ? exitDir.current === "left"
                                         ? "card-exit-left"
                                         : "card-exit-right"
-                                    : slideDir.current === "left"
+                                    : exitDir.current === "left"
                                       ? "card-enter-right"
                                       : "card-enter-left"
                             }`}
-                            style={{
-                                transform: `translateX(${dragX * 0.35}px) rotate(${dragX * 0.015}deg)`,
-                                transition:
-                                    dragX === 0 && !exiting
-                                        ? "transform 0.25s ease"
-                                        : "none",
-                            }}
-                            onTouchStart={onTouchStart}
-                            onTouchMove={onTouchMove}
-                            onTouchEnd={onTouchEnd}
                         >
-                            {/* Top row: bookmark | word + POS | speaker */}
+                            {/* Top row: bookmark | word | speaker */}
                             <div className="flex items-center px-5 pt-5 pb-2">
                                 <div className="flex-none w-8 flex justify-start">
                                     <button
@@ -496,14 +595,13 @@ export default function ExerciseSession({
                                         />
                                     </button>
                                 </div>
-
-                                <div className="flex-1 flex flex-col items-center justify-center gap-1 text-center px-2">
+                                <div className="flex-1 flex flex-col items-center text-center px-2">
                                     <h1
-                                        className={`${wordFontSize(word.word)} font-extrabold text-gray-900 tracking-tight leading-tight text-center break-words w-full`}
+                                        className={`${wordFontSize(word.word)} font-extrabold text-gray-900 tracking-tight leading-tight break-words w-full`}
                                     >
                                         {word.word}
                                         {word.parts_of_speech_variations && (
-                                            <span className="bg-gray-100 text-gray-600 text-sm font-medium px-3 py-0.5 rounded-md">
+                                            <span className="bg-gray-100 text-gray-600 text-sm font-medium px-3 py-0.5 rounded-md ml-2">
                                                 {
                                                     word.parts_of_speech_variations
                                                 }
@@ -511,7 +609,6 @@ export default function ExerciseSession({
                                         )}
                                     </h1>
                                 </div>
-
                                 <div className="flex-none w-8 flex justify-end">
                                     <button
                                         onClick={() => speakWord(word.word)}
@@ -525,18 +622,42 @@ export default function ExerciseSession({
                                 </div>
                             </div>
 
-                            {/* Word + Pronunciation + POS */}
-                            <div className="px-5 pb-4 text-center">
-                                {/* <div className="flex items-center justify-center gap-2 flex-wrap">
-                                    <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight leading-tight">
-                                        {word.word}
-                                    </h1>
-                                    {word.parts_of_speech_variations && (
-                                        <span className="bg-gray-100 text-gray-600 text-sm font-medium px-3 py-0.5 rounded-md self-center">
-                                            {word.parts_of_speech_variations}
+                            {/* ── 4-dot level badge ──────────────────────────── */}
+                            {auth?.user && (
+                                <div className="flex justify-center pb-1">
+                                    <div
+                                        className="flex items-center gap-1.5"
+                                        style={{
+                                            transform: levelUpPulse
+                                                ? "scale(1.25)"
+                                                : "scale(1)",
+                                            transition:
+                                                "transform 0.3s cubic-bezier(0.34,1.56,0.64,1)",
+                                        }}
+                                    >
+                                        {[1, 2, 3, 4].map((box) => (
+                                            <div
+                                                key={box}
+                                                className={`rounded-full w-2 h-2 transition-all duration-300 ${
+                                                    box <= currentBox
+                                                        ? (LEVEL_META[box]
+                                                              ?.dot ??
+                                                          "bg-gray-400")
+                                                        : "bg-gray-200"
+                                                }`}
+                                            />
+                                        ))}
+                                        <span
+                                            className={`text-xs font-semibold px-2 py-0.5 rounded-full ml-1 ${meta.color}`}
+                                        >
+                                            {meta.label}
                                         </span>
-                                    )}
-                                </div> */}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Pronunciation */}
+                            <div className="px-5 pb-4 text-center">
                                 {word.pronunciation && (
                                     <p className="text-sm text-gray-500 font-mono mt-1">
                                         {word.pronunciation}{" "}
@@ -551,7 +672,7 @@ export default function ExerciseSession({
                             {/* Image */}
                             {images.length > 0 && (
                                 <div className="px-4 pb-3">
-                                    <div className="rounded-2xl overflow-hidden bg-[#EEF6F5]">
+                                    <div className="relative rounded-2xl overflow-hidden bg-[#EEF6F5]">
                                         <img
                                             src={activeImage?.image_url_full}
                                             alt={
@@ -564,6 +685,13 @@ export default function ExerciseSession({
                                                 objectFit: "cover",
                                             }}
                                         />
+                                        {currentBox >= MASTERED_BOX && (
+                                            <div className="absolute top-2 right-2">
+                                                <span className="bg-green-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md">
+                                                    ✨ Mastered
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
                                     {images.length > 1 && (
                                         <div className="flex justify-center gap-1.5 mt-2">
@@ -573,7 +701,11 @@ export default function ExerciseSession({
                                                     onClick={() =>
                                                         setActiveImageIndex(idx)
                                                     }
-                                                    className={`rounded-full transition-all ${idx === activeImageIndex ? "w-5 h-2 bg-gray-500" : "w-2 h-2 bg-gray-300"}`}
+                                                    className={`rounded-full transition-all ${
+                                                        idx === activeImageIndex
+                                                            ? "w-5 h-2 bg-gray-500"
+                                                            : "w-2 h-2 bg-gray-300"
+                                                    }`}
                                                 />
                                             ))}
                                         </div>
@@ -581,7 +713,7 @@ export default function ExerciseSession({
                                 </div>
                             )}
 
-                            {/* Example / Image-related Sentence */}
+                            {/* Example sentence */}
                             {(word.image_related_sentence ||
                                 word.example_sentences) && (
                                 <div className="mx-4 mb-4 border-l-4 border-green-400 pl-3 py-1">
@@ -595,124 +727,57 @@ export default function ExerciseSession({
                                 </div>
                             )}
 
-                            <div className="h-px bg-gray-100 mx-4" />
-
-                            {/* Definition two-column */}
-                            {(word.definition || word.bangla_meaning) && (
-                                <div className="grid grid-cols-2 gap-0 mx-4 my-4">
-                                    {word.definition && (
-                                        <div className="border-l-4 border-[#E5201C] pl-3 pr-2 py-1">
-                                            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
-                                                English Definition
-                                            </p>
-                                            <p className="text-sm text-gray-900 leading-snug">
-                                                {word.definition}
-                                            </p>
-                                        </div>
-                                    )}
-                                    {word.bangla_meaning && (
-                                        <div className="border-l-4 border-blue-400 pl-3 pr-2 py-1">
-                                            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
-                                                Bangla Definition
-                                            </p>
-                                            <p className="text-sm text-gray-800 leading-snug font-medium">
-                                                {word.bangla_meaning}
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Collocations */}
-                            {collocationList.length > 0 && (
-                                <div className="px-4 pb-4">
-                                    <div className="h-px bg-gray-100 mb-3" />
-                                    <p className="text-sm font-semibold text-gray-600 mb-2">
-                                        Common Collocations
-                                    </p>
-                                    <div className="flex flex-wrap gap-2">
-                                        {collocationList.map((col, i) => (
-                                            <span
-                                                key={i}
-                                                className={`text-sm px-3 py-1.5 rounded-full border ${collocationColors[i % collocationColors.length]}`}
+                            {/* Tap to see meaning */}
+                            <div className="px-4 pb-3">
+                                <button
+                                    onClick={() => setShowMeaning((v) => !v)}
+                                    className="w-full flex items-center justify-center gap-2 py-2.5 border border-dashed border-gray-200 rounded-xl text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 transition"
+                                >
+                                    {showMeaning ? (
+                                        <>
+                                            <svg
+                                                className="w-4 h-4"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
                                             >
-                                                {col}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Synonym / Antonym */}
-                            {(word.synonym ||
-                                word.antonym ||
-                                word.bangla_synonym ||
-                                word.bangla_antonym) && (
-                                <div className="pb-4">
-                                    <div className="h-px bg-gray-100 mx-4 mb-4" />
-                                    {/* English Synonyms | English Antonyms */}
-                                    {(word.synonym || word.antonym) && (
-                                        <div className="grid grid-cols-2 gap-0 mx-4 mb-4">
-                                            {word.synonym ? (
-                                                <div className="border-l-4 border-[#E5201C] pl-3 pr-2 py-1">
-                                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
-                                                        Synonyms
-                                                    </p>
-                                                    <p className="text-sm text-gray-800 leading-snug">
-                                                        {word.synonym}
-                                                    </p>
-                                                </div>
-                                            ) : (
-                                                <div />
-                                            )}
-                                            {word.antonym ? (
-                                                <div className="border-l-4 border-blue-400 pl-3 pr-2 py-1">
-                                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
-                                                        Antonyms
-                                                    </p>
-                                                    <p className="text-sm text-gray-800 leading-snug">
-                                                        {word.antonym}
-                                                    </p>
-                                                </div>
-                                            ) : (
-                                                <div />
-                                            )}
-                                        </div>
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+                                                />
+                                            </svg>
+                                            Hide Meaning
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg
+                                                className="w-4 h-4"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                                />
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                                />
+                                            </svg>
+                                            Tap to see meaning
+                                        </>
                                     )}
-                                    {/* Bangla Synonyms | Bangla Antonyms */}
-                                    {(word.bangla_synonym ||
-                                        word.bangla_antonym) && (
-                                        <div className="grid grid-cols-2 gap-0 mx-4">
-                                            {word.bangla_synonym ? (
-                                                <div className="border-l-4 border-[#E5201C] pl-3 pr-2 py-1">
-                                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
-                                                        প্রতিশব্দ
-                                                    </p>
-                                                    <p className="text-sm text-gray-800 leading-snug font-medium">
-                                                        {word.bangla_synonym}
-                                                    </p>
-                                                </div>
-                                            ) : (
-                                                <div />
-                                            )}
-                                            {word.bangla_antonym ? (
-                                                <div className="border-l-4 border-blue-400 pl-3 pr-2 py-1">
-                                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
-                                                        বিপরীত শব্দ
-                                                    </p>
-                                                    <p className="text-sm text-gray-800 leading-snug font-medium">
-                                                        {word.bangla_antonym}
-                                                    </p>
-                                                </div>
-                                            ) : (
-                                                <div />
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
+                                </button>
+                            </div>
 
-                            {/* Exercise group link */}
+                            {/* Exercise group label */}
                             <div className="px-4 pb-4">
                                 <div className="h-px bg-gray-100 mb-3" />
                                 <p className="text-xs text-gray-400 text-center">
@@ -723,107 +788,288 @@ export default function ExerciseSession({
                                 </p>
                             </div>
                         </div>
-                        {/* end swipeable card */}
-                    </main>
+                        {/* end main card */}
 
-                    {/* Desktop next button */}
-                    <button
-                        onClick={advance}
-                        className="hidden md:flex items-center justify-center self-center shrink-0 w-11 h-11 rounded-full bg-white shadow-md border border-gray-100 text-gray-500 hover:text-gray-800 hover:shadow-lg transition-all ml-3 mt-6"
-                        aria-label="Next word"
-                    >
-                        <ChevronRight className="h-5 w-5" />
-                    </button>
+                        {/* ── Meaning card ─────────────────────────────────────── */}
+                        <div
+                            className="overflow-hidden transition-all duration-300 ease-in-out"
+                            style={{
+                                maxHeight: showMeaning ? "1200px" : "0px",
+                                opacity: showMeaning ? 1 : 0,
+                                marginTop: showMeaning ? "12px" : "0px",
+                            }}
+                        >
+                            <div className="bg-white rounded-3xl shadow-md overflow-hidden pb-2">
+                                {(word.definition || word.bangla_meaning) && (
+                                    <div className="mx-4 mt-4 mb-4">
+                                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                                            Definition
+                                        </p>
+                                        <div className="border-l-4 border-[#E5201C] pl-3 py-1">
+                                            <p className="text-sm text-gray-900 leading-snug">
+                                                {word.definition}
+                                                {word.bangla_meaning && (
+                                                    <span className="text-gray-500 font-medium ml-1">
+                                                        ({word.bangla_meaning})
+                                                    </span>
+                                                )}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* {collocationList.length > 0 && (
+                                    <div className="px-4 pb-4">
+                                        <div className="h-px bg-gray-100 mb-3" />
+                                        <p className="text-sm font-semibold text-gray-600 mb-2">
+                                            Common Collocations
+                                        </p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {collocationList.map((col, i) => (
+                                                <span
+                                                    key={i}
+                                                    className={`text-sm px-3 py-1.5 rounded-full border ${collocationColors[i % collocationColors.length]}`}
+                                                >
+                                                    {col}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )} */}
+
+                                {collocationList.length > 0 && (
+                                    <div className="px-4 pb-4">
+                                        <div className="h-px bg-gray-100 mb-3" />
+                                        <p className="text-sm font-semibold text-gray-600 mb-3">
+                                            Common Collocations
+                                        </p>
+                                        <div className="flex flex-col gap-3">
+                                            {collocationList.map((col, i) => {
+                                                const colorClass =
+                                                    collocationColors[
+                                                        i %
+                                                            collocationColors.length
+                                                    ];
+
+                                                // Highlight the collocation phrase inside the example sentence
+                                                const renderHighlighted = (
+                                                    sentence,
+                                                    phrase,
+                                                ) => {
+                                                    if (!sentence || !phrase)
+                                                        return sentence;
+                                                    const regex = new RegExp(
+                                                        `(${phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+                                                        "gi",
+                                                    );
+                                                    return sentence
+                                                        .split(regex)
+                                                        .map((part, idx) =>
+                                                            regex.test(part) ? (
+                                                                <mark
+                                                                    key={idx}
+                                                                    className="font-bold bg-transparent underline underline-offset-2 decoration-2 not-italic"
+                                                                    style={{
+                                                                        textDecorationColor:
+                                                                            "currentColor",
+                                                                    }}
+                                                                >
+                                                                    {part}
+                                                                </mark>
+                                                            ) : (
+                                                                part
+                                                            ),
+                                                        );
+                                                };
+
+                                                return (
+                                                    <div
+                                                        key={i}
+                                                        className={`rounded-xl border px-3 py-2.5 ${colorClass}`}
+                                                    >
+                                                        {/* Phrase badge */}
+                                                        {/* <p className="text-xs font-bold uppercase tracking-wide mb-1 opacity-75">
+                                                            {col.phrase}
+                                                        </p> */}
+                                                        {/* Example sentence with phrase highlighted */}
+                                                        {col.example_sentence ? (
+                                                            <p className="text-sm leading-snug">
+                                                                {renderHighlighted(
+                                                                    col.example_sentence,
+                                                                    col.phrase,
+                                                                )}
+                                                            </p>
+                                                        ) : (
+                                                            <p className="text-xs font-bold uppercase tracking-wide mb-1 opacity-75">
+                                                                {col.phrase}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {(word.synonym ||
+                                    word.antonym ||
+                                    word.bangla_synonym ||
+                                    word.bangla_antonym) && (
+                                    <div className="pb-4">
+                                        <div className="h-px bg-gray-100 mx-4 mb-4" />
+                                        {(word.synonym || word.antonym) && (
+                                            <div className="grid grid-cols-2 gap-0 mx-4 mb-4">
+                                                {word.synonym ? (
+                                                    <div className="border-l-4 border-[#E5201C] pl-3 pr-2 py-1">
+                                                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                                                            Synonyms
+                                                        </p>
+                                                        <p className="text-sm text-gray-800 leading-snug">
+                                                            {word.synonym}
+                                                        </p>
+                                                    </div>
+                                                ) : (
+                                                    <div />
+                                                )}
+                                                {word.antonym ? (
+                                                    <div className="border-l-4 border-blue-400 pl-3 pr-2 py-1">
+                                                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                                                            Antonyms
+                                                        </p>
+                                                        <p className="text-sm text-gray-800 leading-snug">
+                                                            {word.antonym}
+                                                        </p>
+                                                    </div>
+                                                ) : (
+                                                    <div />
+                                                )}
+                                            </div>
+                                        )}
+                                        {(word.bangla_synonym ||
+                                            word.bangla_antonym) && (
+                                            <div className="grid grid-cols-2 gap-0 mx-4">
+                                                {word.bangla_synonym ? (
+                                                    <div className="border-l-4 border-[#E5201C] pl-3 pr-2 py-1">
+                                                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                                                            প্রতিশব্দ
+                                                        </p>
+                                                        <p className="text-sm text-gray-800 leading-snug font-medium">
+                                                            {
+                                                                word.bangla_synonym
+                                                            }
+                                                        </p>
+                                                    </div>
+                                                ) : (
+                                                    <div />
+                                                )}
+                                                {word.bangla_antonym ? (
+                                                    <div className="border-l-4 border-blue-400 pl-3 pr-2 py-1">
+                                                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                                                            বিপরীত শব্দ
+                                                        </p>
+                                                        <p className="text-sm text-gray-800 leading-snug font-medium">
+                                                            {
+                                                                word.bangla_antonym
+                                                            }
+                                                        </p>
+                                                    </div>
+                                                ) : (
+                                                    <div />
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        {/* end meaning card */}
+                    </main>
                 </div>
             </div>
 
-            {/* Fixed Bottom Action Bar */}
-            <div className="fixed bottom-0 left-0 right-0 z-20">
-                <div className="max-w-lg mx-auto px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-                    {/* Dot progress */}
-                    {/* <div className="flex justify-center gap-1 mb-3">
-                        {words
-                            .slice(
-                                Math.max(0, currentIndex - 3),
-                                currentIndex + 6,
-                            )
-                            .map((w, i) => {
-                                const absIdx =
-                                    Math.max(0, currentIndex - 3) + i;
-                                const result = results[w.id];
-                                const isCurrent = absIdx === currentIndex;
-                                const bg = isCurrent
-                                    ? "bg-gray-600 w-5"
-                                    : result === "known"
-                                      ? "bg-green-400"
-                                      : result === "unknown"
-                                        ? "bg-red-400"
-                                        : "bg-gray-200";
-                                return (
-                                    <div
-                                        key={w.id}
-                                        className={`h-2 rounded-full transition-all ${bg} ${isCurrent ? "" : "w-2"}`}
-                                    />
-                                );
-                            })}
-                    </div> */}
-
-                    <div className="max-w-lg mx-auto px-3 pt-3 pb-1 flex items-center justify-between">
+            {/* ── Fixed Bottom Action Bar ──────────────────────────────────────── */}
+            <div className="fixed bottom-0 left-0 right-0 z-20 bg-[#F0F2F5]/95 backdrop-blur-sm border-t border-gray-200/50">
+                <div className="max-w-lg mx-auto px-4 pt-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+                    {/* Back chevron + position label */}
+                    <div className="flex items-center justify-between mb-2 px-1">
                         <Link
                             href={backHref}
                             className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 transition"
                         >
                             <ChevronLeft className="h-5 w-5" />
                         </Link>
-                        <span className="text-sm text-gray-400 font-medium">
-                            {currentIndex + 1} / {total}
+                        <span className="text-xs text-gray-400 font-medium">
+                            {queue.length} of {initialQueueSize} remaining
                         </span>
                         <div className="w-8" />
                     </div>
 
-                    <button
-                        onClick={handleCheck}
-                        disabled={isSubmitting}
-                        className="w-full h-12 flex items-center justify-center gap-2 rounded-2xl text-base font-bold bg-green-600 text-white hover:bg-green-700 disabled:opacity-60 transition-all shadow-lg shadow-green-100"
-                    >
-                        <Check className="h-5 w-5" strokeWidth={2.5} />
-                        {isSubmitting ? "Saving…" : "Mastered!"}
-                    </button>
+                    {/* ── I Don't Know / I Know buttons ───────────────────────── */}
+                    <div className="flex gap-3">
+                        <button
+                            onClick={handleDontKnow}
+                            disabled={isSubmitting}
+                            className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl border-2 border-red-200 bg-red-50 text-red-600 font-bold text-[15px] hover:bg-red-100 active:scale-95 disabled:opacity-50 transition-all shadow-sm"
+                        >
+                            <X className="h-5 w-5" strokeWidth={2.5} />I Don't
+                            Know
+                        </button>
+                        <button
+                            onClick={handleKnow}
+                            disabled={isSubmitting}
+                            className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl bg-green-600 text-white font-bold text-[15px] hover:bg-green-700 active:scale-95 disabled:opacity-50 transition-all shadow-lg shadow-green-100"
+                        >
+                            <Check className="h-5 w-5" strokeWidth={2.5} />I
+                            Know
+                        </button>
+                    </div>
+
+                    {/* Context hint */}
+                    {auth?.user && (
+                        <p className="text-center text-[11px] text-gray-400 mt-2">
+                            {currentBox <= 1
+                                ? "New word — stay in session until correct ✓"
+                                : currentBox < MASTERED_BOX
+                                  ? `Level ${currentBox} review — due today`
+                                  : "✨ Already mastered — just confirming!"}
+                        </p>
+                    )}
                 </div>
             </div>
 
-            {/* Card transition keyframes */}
+            {/* Card animations + confetti keyframes */}
             <style>{`
                 @keyframes cardEnterRight {
-                    from { opacity: 0; transform: translateX(60px) rotate(3deg) scale(0.96); }
-                    to   { opacity: 1; transform: translateX(0) rotate(0deg) scale(1); }
+                    from { opacity: 0; transform: translateX(60px)  scale(0.96); }
+                    to   { opacity: 1; transform: translateX(0)      scale(1);    }
                 }
                 @keyframes cardEnterLeft {
-                    from { opacity: 0; transform: translateX(-60px) rotate(-3deg) scale(0.96); }
-                    to   { opacity: 1; transform: translateX(0) rotate(0deg) scale(1); }
+                    from { opacity: 0; transform: translateX(-60px) scale(0.96); }
+                    to   { opacity: 1; transform: translateX(0)      scale(1);    }
                 }
                 @keyframes cardExitLeft {
-                    from { opacity: 1; transform: translateX(0) rotate(0deg) scale(1); }
-                    to   { opacity: 0; transform: translateX(-80px) rotate(-4deg) scale(0.94); }
+                    from { opacity: 1; transform: translateX(0)    scale(1);    }
+                    to   { opacity: 0; transform: translateX(-80px) scale(0.94); }
                 }
                 @keyframes cardExitRight {
-                    from { opacity: 1; transform: translateX(0) rotate(0deg) scale(1); }
-                    to   { opacity: 0; transform: translateX(80px) rotate(4deg) scale(0.94); }
+                    from { opacity: 1; transform: translateX(0)   scale(1);    }
+                    to   { opacity: 0; transform: translateX(80px) scale(0.94); }
                 }
-                .card-enter-right {
-                    animation: cardEnterRight 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+                .card-enter-right { animation: cardEnterRight 0.28s cubic-bezier(0.22,1,0.36,1) forwards; }
+                .card-enter-left  { animation: cardEnterLeft  0.28s cubic-bezier(0.22,1,0.36,1) forwards; }
+                .card-exit-left   { animation: cardExitLeft   0.18s ease-in forwards; pointer-events: none; }
+                .card-exit-right  { animation: cardExitRight  0.18s ease-in forwards; pointer-events: none; }
+
+                @keyframes confettiFall {
+                    0%   { transform: translateY(-20px) rotate(0deg);   opacity: 1; }
+                    100% { transform: translateY(110vh)  rotate(720deg); opacity: 0; }
                 }
-                .card-enter-left {
-                    animation: cardEnterLeft 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+                @keyframes bounceIn {
+                    0%   { opacity: 0; transform: scale(0.5) translateY(-20px); }
+                    60%  { opacity: 1; transform: scale(1.08) translateY(4px);  }
+                    100% { opacity: 1; transform: scale(1)    translateY(0);    }
                 }
-                .card-exit-left {
-                    animation: cardExitLeft 0.18s ease-in forwards;
-                    pointer-events: none;
-                }
-                .card-exit-right {
-                    animation: cardExitRight 0.18s ease-in forwards;
-                    pointer-events: none;
-                }
+                .animate-bounce-in { animation: bounceIn 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards; }
             `}</style>
 
             {/* Login Dialog */}
@@ -843,10 +1089,7 @@ export default function ExerciseSession({
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-                        <AlertDialogCancel
-                            onClick={advance}
-                            className="w-full sm:w-auto"
-                        >
+                        <AlertDialogCancel className="w-full sm:w-auto">
                             Skip for now
                         </AlertDialogCancel>
                         <AlertDialogAction

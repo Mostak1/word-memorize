@@ -63,7 +63,7 @@ class CompleteProfileController extends Controller
       ->with('flash', [
         'toast' => [
           'type' => 'success',
-          'message' => "Welcome to VocaPix, {$user->name}! 🎉",
+          'message' => "Welcome to VocabPix, {$user->name}! 🎉",
         ],
       ]);
   }

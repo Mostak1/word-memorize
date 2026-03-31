@@ -179,7 +179,7 @@ export default function MasteredWords({ wordlists, totalMastered }) {
                                 No Mastered Words Yet
                             </h3>
                             <p className="text-gray-500 text-sm mb-5">
-                                Press "Check" on a word during exercise to mark
+                                Press "I know" on a word during exercise to mark
                                 it as mastered.
                             </p>
                             <Link

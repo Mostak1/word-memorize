@@ -3,6 +3,7 @@
 use App\Http\Controllers\ErrorReportController;
 use App\Http\Controllers\PublicLinkTreeController;
 use App\Http\Controllers\QuizController;
+use App\Http\Controllers\TTSController;
 use App\Http\Controllers\UserWordController;
 use App\Http\Controllers\WordListCategoryController;
 use App\Http\Controllers\WordListController;
@@ -14,7 +15,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-
+Route::get('/tts', [TTSController::class, 'generate'])->name('tts');
 Route::get('/', function () {
     if (auth()->check()) {
         if (auth()->user()->isAdmin()) {
@@ -49,14 +50,20 @@ Route::get('/run-seeder', function () {
             Artisan::call('db:seed', ['--class' => $class, '--force' => true]);
             $output = Artisan::output();
 
-            // Extract inserted/updated/skipped from the last "Done" line
+            // Extract word stats from the "Done" line
             preg_match('/inserted:\s*(\d+),\s*updated:\s*(\d+),\s*skipped:\s*(\d+)/i', $output, $m);
+
+            // Extract image stats — only present in OxfordWordsSeeder output:
+            // "images added: 123, already existed / no file: 45."
+            preg_match('/images added:\s*(\d+),\s*already existed \/ no file:\s*(\d+)/i', $output, $img);
 
             $results[$class] = [
                 'status' => 'success',
                 'inserted' => isset($m[1]) ? (int) $m[1] : null,
                 'updated' => isset($m[2]) ? (int) $m[2] : null,
                 'skipped' => isset($m[3]) ? (int) $m[3] : null,
+                'images_added' => isset($img[1]) ? (int) $img[1] : null,
+                'images_skipped' => isset($img[2]) ? (int) $img[2] : null,
             ];
         } catch (\Throwable $e) {
             $results[$class] = [

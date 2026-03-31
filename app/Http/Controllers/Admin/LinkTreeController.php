@@ -175,6 +175,9 @@ class LinkTreeController extends Controller
       'github' => 'GitHub',
       'email' => 'Email',
       'website' => 'Website',
+      'threads' => 'Threads',
+      'whatsapp_channel' => 'WhatsApp Channel',
+      'snapchat' => 'Snapchat',
     ];
   }
 }
