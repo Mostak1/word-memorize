@@ -17,6 +17,38 @@ export default function WordlistDetail({
 }) {
     const hasSubcategories = subcategories && subcategories.length > 0;
 
+    const collocationColors = [
+        "bg-red-100/70 text-red-700 border-red-200",
+        "bg-blue-100/70 text-blue-700 border-blue-200",
+        "bg-green-100/70 text-green-700 border-green-200",
+        "bg-amber-100/70 text-amber-700 border-amber-200",
+        "bg-purple-100/70 text-purple-700 border-purple-200",
+        "bg-teal-100/70 text-teal-700 border-teal-200",
+        "bg-pink-100/70 text-pink-700 border-pink-200",
+        "bg-indigo-100/70 text-indigo-700 border-indigo-200",
+    ];
+
+    // Parse word and show details
+    const getCollocationList = (raw) => {
+        if (!raw) return [];
+        // Case 1: already array
+        if (Array.isArray(raw)) return raw;
+        // Case 2: JSON string
+        try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) return parsed;
+        } catch (e) {}
+        // Case 3: fallback (comma-separated or newline-separated string)
+        return raw
+            .split(/[\n,]+/)
+            .map((c) => c.trim())
+            .filter(Boolean)
+            .map((phrase) => ({
+                phrase,
+                example_sentence: "",
+            }));
+    };
+
     const getDifficultyBadge = (difficulty) => {
         const d = difficulty?.toLowerCase();
         return d === "easy" || d === "beginner"
@@ -182,6 +214,48 @@ export default function WordlistDetail({
                                                                     }
                                                                 </p>
                                                             )}
+                                                            {(() => {
+                                                                const collocs =
+                                                                    getCollocationList(
+                                                                        word.collocations,
+                                                                    );
+                                                                return collocs.length >
+                                                                    0 ? (
+                                                                    <div className="flex flex-wrap gap-1.5 mt-2">
+                                                                        {collocs
+                                                                            .slice(
+                                                                                0,
+                                                                                3,
+                                                                            )
+                                                                            .map(
+                                                                                (
+                                                                                    c,
+                                                                                    idx,
+                                                                                ) => (
+                                                                                    <span
+                                                                                        key={
+                                                                                            idx
+                                                                                        }
+                                                                                        className={`text-xs px-2 py-1 rounded-full border ${collocationColors[idx % collocationColors.length]}`}
+                                                                                    >
+                                                                                        {typeof c ===
+                                                                                        "string"
+                                                                                            ? c
+                                                                                            : c.phrase}
+                                                                                    </span>
+                                                                                ),
+                                                                            )}
+                                                                        {collocs.length >
+                                                                            3 && (
+                                                                            <span className="text-xs text-gray-400 px-2 py-1">
+                                                                                +
+                                                                                {collocs.length -
+                                                                                    3}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                ) : null;
+                                                            })()}
                                                             <p className="text-xs text-[#E5201C] font-semibold mt-2">
                                                                 Click to view
                                                                 full details →

@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\BookmarkedWord;
-use App\Models\MasteredWord;
 use App\Models\ReviewWord;
 use App\Models\WordList;
 use App\Models\Word;
+use App\Models\WordProgress;
 use App\Services\SrsService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -130,7 +130,8 @@ class WordListController extends Controller
         $nextWordId = null;
 
         if ($request->query('from') === 'mastered' && auth()->check()) {
-            $masteredIds = MasteredWord::where('user_id', auth()->id())
+            $masteredIds = WordProgress::where('user_id', auth()->id())
+                ->where('box', '>=', WordProgress::MASTERED_BOX)
                 ->latest()
                 ->pluck('word_id')
                 ->toArray();
@@ -162,18 +163,27 @@ class WordListController extends Controller
     {
         $userId = auth()->id();
 
-        $wordlists = WordList::whereHas('words.masteredEntries', function ($q) use ($userId) {
-            $q->where('user_id', $userId);
+        // Get all wordlists that have at least one mastered word for this user
+        $wordlists = WordList::whereHas('words.progress', function ($q) use ($userId) {
+            $q->where('user_id', $userId)
+                ->where('box', '>=', WordProgress::MASTERED_BOX);
         })
             ->withCount([
                 'words as total_words',
                 'words as mastered_count' => function ($q) use ($userId) {
-                    $q->whereHas('masteredEntries', fn($q2) => $q2->where('user_id', $userId));
+                    $q->whereHas(
+                        'progress',
+                        fn($q2) => $q2
+                            ->where('user_id', $userId)
+                            ->where('box', '>=', WordProgress::MASTERED_BOX)
+                    );
                 },
             ])
             ->get(['id', 'title', 'difficulty']);
 
-        $totalMastered = MasteredWord::where('user_id', $userId)->count();
+        $totalMastered = WordProgress::where('user_id', $userId)
+            ->where('box', '>=', WordProgress::MASTERED_BOX)
+            ->count();
 
         return Inertia::render('MasteredWords', [
             'wordlists' => $wordlists,
@@ -194,7 +204,12 @@ class WordListController extends Controller
         }
 
         $words = Word::where('wordlist_id', $wordlistId)
-            ->whereHas('masteredEntries', fn($q) => $q->where('user_id', $userId))
+            ->whereHas(
+                'progress',
+                fn($q) => $q
+                    ->where('user_id', $userId)
+                    ->where('box', '>=', WordProgress::MASTERED_BOX)
+            )
             ->paginate(15)
             ->withQueryString();
 

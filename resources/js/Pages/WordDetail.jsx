@@ -37,6 +37,7 @@ export default function WordDetail({
     const [bookmarked, setBookmarked] = useState(initialBookmarked);
     const [showLoginDialog, setShowLoginDialog] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isDemoting, setIsDemoting] = useState(false);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
 
     useEffect(() => {
@@ -91,6 +92,28 @@ export default function WordDetail({
                 },
                 onFinish: () => {
                     setIsSubmitting(false);
+                },
+            },
+        );
+    };
+
+    const handleDemoteFromMastery = () => {
+        if (!auth.user) {
+            setShowLoginDialog(true);
+            return;
+        }
+        if (isDemoting) return;
+        setIsDemoting(true);
+        router.post(
+            route("word.demote-from-mastery", word.id),
+            {},
+            {
+                preserveScroll: false,
+                onError: () => {
+                    setIsDemoting(false);
+                },
+                onFinish: () => {
+                    setIsDemoting(false);
                 },
             },
         );
@@ -434,7 +457,7 @@ export default function WordDetail({
                 </main>
             </div>
 
-            {/* ── Mastered: Prev / Next navigation ── */}
+            {/* ── Mastered: Prev / Put Back / Next navigation ── */}
             {isMastered && (
                 <div className="fixed bottom-0 left-0 right-0 z-20">
                     <div className="max-w-lg mx-auto px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
@@ -448,21 +471,15 @@ export default function WordDetail({
                                 Previous
                             </button>
 
-                            <Link
-                                href={route("words.mastered")}
-                                className="flex items-center justify-center w-12 h-14 rounded-2xl bg-white border border-gray-200 text-gray-400 shadow-sm hover:shadow-md transition-all shrink-0"
-                                aria-label="Back to Mastered Words"
+                            <button
+                                onClick={handleDemoteFromMastery}
+                                disabled={isDemoting}
+                                className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl text-sm font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-sm hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                                aria-label="Put word back in the list"
                             >
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    className="h-5 w-5"
-                                >
-                                    <path d="M4 6h16M4 12h16M4 18h7" />
-                                </svg>
-                            </Link>
+                                <XIcon className="h-5 w-5" strokeWidth={2.5} />
+                                {isDemoting ? "Moving..." : "Put Back"}
+                            </button>
 
                             <button
                                 onClick={() => navigateTo(nextWordId)}

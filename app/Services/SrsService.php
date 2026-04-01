@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\MasteredWord;
 use App\Models\ReviewWord;
 use App\Models\User;
 use App\Models\Word;
@@ -28,11 +27,13 @@ class SrsService
    * Hybrid algorithm:
    *   L1 → L2 : schedule review in 1 day   (enters day-based system)
    *   L2 → L3 : schedule review in 3 days
-   *   L3 → L4 : Mastered — written to mastered_words, no more active reviews
+   *   L3 → L4 : Mastered — box = 4 indicates mastery, no more active reviews
    *
    * next_review_at is always set to the START of the target day (midnight)
    * so words are reliably due for the entire day they are scheduled for —
    * regardless of what time the user studied the previous day.
+   *
+   * Note: Mastery is now tracked entirely in word_progress.box (no separate mastered_words table).
    */
   public function recordCorrect(User $user, Word $word): WordProgress
   {
@@ -53,17 +54,13 @@ class SrsService
       'last_reviewed_at' => now(),
       'next_review_at' => $nextDue,
     ]);
-
-    // Word reached top level → write to mastered_words
+    // No longer needs focused review (only matters if moved to mastered)
     if ($newBox >= WordProgress::MASTERED_BOX) {
-      MasteredWord::firstOrCreate([
-        'user_id' => $user->id,
-        'word_id' => $word->id,
-      ]);
+      ReviewWord::where('user_id', $user->id)
+        ->where('word_id', $word->id)
+        ->delete();
     }
-
-    // No longer needs focused review
-    ReviewWord::where('user_id', $user->id)
+    here('user_id', $user->id)
       ->where('word_id', $word->id)
       ->delete();
 
@@ -86,23 +83,12 @@ class SrsService
   public function recordIncorrect(User $user, Word $word): WordProgress
   {
     $progress = $this->getOrCreate($user, $word);
-
+    // Demoted from mastered status (box reduced to L1
     $progress->update([
       'box' => 1,
       'incorrect_count' => $progress->incorrect_count + 1,
       'last_reviewed_at' => now(),
       'next_review_at' => null,  // intra-session — L1 has no day interval
-    ]);
-
-    // Remove from mastered — word slipped back to L1
-    MasteredWord::where('user_id', $user->id)
-      ->where('word_id', $word->id)
-      ->delete();
-
-    // Add to focused review list
-    ReviewWord::firstOrCreate([
-      'user_id' => $user->id,
-      'word_id' => $word->id,
     ]);
 
     return $progress->fresh();

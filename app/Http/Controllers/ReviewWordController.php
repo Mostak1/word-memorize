@@ -33,7 +33,10 @@ class ReviewWordController extends Controller
         $user = $request->user();
 
         $this->srsService->recordCorrect($user, $word);
-        $this->streakService->recordActivity($user);
+        // $this->streakService->recordActivity($user);
+        if ($request->input('from') !== 'session') {
+            $this->streakService->recordActivity($user);
+        }
 
         return $this->handleRedirect($request, $word);
     }
@@ -52,9 +55,24 @@ class ReviewWordController extends Controller
         $user = $request->user();
 
         $this->srsService->recordIncorrect($user, $word);
-        $this->streakService->recordActivity($user);
+        if ($request->input('from') !== 'session') {
+            $this->streakService->recordActivity($user);
+        }
 
         return $this->handleRedirect($request, $word);
+    }
+
+    public function sessionComplete(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $this->streakService->recordActivity($user);
+
+        return response()->json(['status' => 'ok']);
     }
 
     private function bookmarkedIds(array $wordIds): array

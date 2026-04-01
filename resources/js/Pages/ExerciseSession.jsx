@@ -104,12 +104,47 @@ export default function ExerciseSession({
     const isDone = queue.length === 0 && !exiting;
 
     const [openCollocationIndex, setOpenCollocationIndex] = useState(null);
+    const meaningCardRef = useRef(null);
 
     // Reset per-card UI when the front of the queue changes
     useEffect(() => {
         setActiveImageIndex(0);
         setShowMeaning(false);
     }, [word?.id]);
+
+    // Auto-scroll to meaning card when revealed
+    useEffect(() => {
+        if (showMeaning && meaningCardRef.current) {
+            setTimeout(() => {
+                meaningCardRef.current?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                });
+            }, 50);
+        }
+    }, [showMeaning]);
+
+    useEffect(() => {
+        if (!isDone || !auth?.user) return;
+
+        // Fire-and-forget completion signal (same style as your pingServer)
+        const csrfToken = decodeURIComponent(
+            document.cookie
+                .split("; ")
+                .find((row) => row.startsWith("XSRF-TOKEN="))
+                ?.split("=")[1] ?? "",
+        );
+
+        fetch(route("word.session-complete"), {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-XSRF-TOKEN": csrfToken,
+                Accept: "application/json",
+            },
+            body: JSON.stringify({}),
+        }).catch(() => {}); // silent fail - we don't want to break the UI
+    }, [isDone, auth?.user]);
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -542,8 +577,14 @@ export default function ExerciseSession({
 
             <div className="min-h-screen bg-[#F0F2F5] pb-40 pt-1 mt-3">
                 {/* ── Session progress bar ─────────────────────────────────── */}
-                <div className="max-w-lg mx-auto px-3 pt-3 pb-2">
+                <div className="max-w-lg mx-auto px-3 pb-2">
                     <div className="flex items-center gap-2.5">
+                        <Link
+                            href={backHref}
+                            className="flex-none p-1.5 rounded-lg text-gray-400 hover:text-gray-600 transition"
+                        >
+                            <ChevronLeft className="h-5 w-5" />
+                        </Link>
                         <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
                             <div
                                 className="h-full bg-[#E5201C] rounded-full transition-all duration-500"
@@ -561,6 +602,7 @@ export default function ExerciseSession({
                 <div className="flex items-start justify-center w-full">
                     <main className="max-w-lg w-full px-3">
                         {/* Swipeable / animating card */}
+
                         <div
                             key={cardKey}
                             className={`bg-white rounded-3xl shadow-md overflow-hidden select-none ${
@@ -573,6 +615,16 @@ export default function ExerciseSession({
                                       : "card-enter-left"
                             }`}
                         >
+                            {/* Exercise group label */}
+                            <div className="px-4">
+                                <div className="h-px bg-gray-100 mb-3" />
+                                <p className="text-xs text-gray-400 text-center">
+                                    Part of Exercise:{" "}
+                                    {subcategory
+                                        ? `${wordList.title} › ${subcategory.name}`
+                                        : wordList.title}
+                                </p>
+                            </div>
                             {/* Top row: bookmark | word | speaker */}
                             <div className="flex items-center px-5 pt-5 pb-2">
                                 <div className="flex-none w-8 flex justify-start">
@@ -595,6 +647,7 @@ export default function ExerciseSession({
                                         />
                                     </button>
                                 </div>
+
                                 <div className="flex-1 flex flex-col items-center text-center px-2">
                                     <h1
                                         className={`${wordFontSize(word.word)} font-extrabold text-gray-900 tracking-tight leading-tight break-words w-full`}
@@ -730,7 +783,7 @@ export default function ExerciseSession({
                             {/* Tap to see meaning */}
                             <div className="px-4 pb-3">
                                 <button
-                                    onClick={() => setShowMeaning((v) => !v)}
+                                    onClick={() => setShowMeaning(true)}
                                     className="w-full flex items-center justify-center gap-2 py-2.5 border border-dashed border-gray-200 rounded-xl text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 transition"
                                 >
                                     {showMeaning ? (
@@ -776,25 +829,15 @@ export default function ExerciseSession({
                                     )}
                                 </button>
                             </div>
-
-                            {/* Exercise group label */}
-                            <div className="px-4 pb-4">
-                                <div className="h-px bg-gray-100 mb-3" />
-                                <p className="text-xs text-gray-400 text-center">
-                                    Part of Exercise:{" "}
-                                    {subcategory
-                                        ? `${wordList.title} › ${subcategory.name}`
-                                        : wordList.title}
-                                </p>
-                            </div>
                         </div>
                         {/* end main card */}
 
                         {/* ── Meaning card ─────────────────────────────────────── */}
                         <div
+                            ref={meaningCardRef}
                             className="overflow-hidden transition-all duration-300 ease-in-out"
                             style={{
-                                maxHeight: showMeaning ? "1200px" : "0px",
+                                maxHeight: showMeaning ? "2000px" : "0px",
                                 opacity: showMeaning ? 1 : 0,
                                 marginTop: showMeaning ? "12px" : "0px",
                             }}
@@ -978,62 +1021,52 @@ export default function ExerciseSession({
                                                 )}
                                             </div>
                                         )}
+
+                                        {/* ── I Don't Know / I Know buttons ─────────── */}
+                                        <div className="px-4 pt-4 pb-5">
+                                            <div className="h-px bg-gray-100 mb-4" />
+                                            <div className="flex gap-3">
+                                                <button
+                                                    onClick={handleDontKnow}
+                                                    disabled={isSubmitting}
+                                                    className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl border-2 border-red-200 bg-red-50 text-red-600 font-bold text-[15px] hover:bg-red-100 active:scale-95 disabled:opacity-50 transition-all shadow-sm"
+                                                >
+                                                    <X
+                                                        className="h-5 w-5"
+                                                        strokeWidth={2.5}
+                                                    />
+                                                    I Don't Know
+                                                </button>
+                                                <button
+                                                    onClick={handleKnow}
+                                                    disabled={isSubmitting}
+                                                    className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl bg-green-600 text-white font-bold text-[15px] hover:bg-green-700 active:scale-95 disabled:opacity-50 transition-all shadow-lg shadow-green-100"
+                                                >
+                                                    <Check
+                                                        className="h-5 w-5"
+                                                        strokeWidth={2.5}
+                                                    />
+                                                    I Know
+                                                </button>
+                                            </div>
+                                            {/* Context hint */}
+                                            {auth?.user && (
+                                                <p className="text-center text-[11px] text-gray-400 mt-2">
+                                                    {currentBox <= 1
+                                                        ? "New word — stay in session until correct ✓"
+                                                        : currentBox <
+                                                            MASTERED_BOX
+                                                          ? `Level ${currentBox} review — due today`
+                                                          : "✨ Already mastered — just confirming!"}
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
                                 )}
                             </div>
                         </div>
                         {/* end meaning card */}
                     </main>
-                </div>
-            </div>
-
-            {/* ── Fixed Bottom Action Bar ──────────────────────────────────────── */}
-            <div className="fixed bottom-0 left-0 right-0 z-20 bg-[#F0F2F5]/95 backdrop-blur-sm border-t border-gray-200/50">
-                <div className="max-w-lg mx-auto px-4 pt-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-                    {/* Back chevron + position label */}
-                    <div className="flex items-center justify-between mb-2 px-1">
-                        <Link
-                            href={backHref}
-                            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 transition"
-                        >
-                            <ChevronLeft className="h-5 w-5" />
-                        </Link>
-                        <span className="text-xs text-gray-400 font-medium">
-                            {queue.length} of {initialQueueSize} remaining
-                        </span>
-                        <div className="w-8" />
-                    </div>
-
-                    {/* ── I Don't Know / I Know buttons ───────────────────────── */}
-                    <div className="flex gap-3">
-                        <button
-                            onClick={handleDontKnow}
-                            disabled={isSubmitting}
-                            className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl border-2 border-red-200 bg-red-50 text-red-600 font-bold text-[15px] hover:bg-red-100 active:scale-95 disabled:opacity-50 transition-all shadow-sm"
-                        >
-                            <X className="h-5 w-5" strokeWidth={2.5} />I Don't
-                            Know
-                        </button>
-                        <button
-                            onClick={handleKnow}
-                            disabled={isSubmitting}
-                            className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl bg-green-600 text-white font-bold text-[15px] hover:bg-green-700 active:scale-95 disabled:opacity-50 transition-all shadow-lg shadow-green-100"
-                        >
-                            <Check className="h-5 w-5" strokeWidth={2.5} />I
-                            Know
-                        </button>
-                    </div>
-
-                    {/* Context hint */}
-                    {auth?.user && (
-                        <p className="text-center text-[11px] text-gray-400 mt-2">
-                            {currentBox <= 1
-                                ? "New word — stay in session until correct ✓"
-                                : currentBox < MASTERED_BOX
-                                  ? `Level ${currentBox} review — due today`
-                                  : "✨ Already mastered — just confirming!"}
-                        </p>
-                    )}
                 </div>
             </div>
 

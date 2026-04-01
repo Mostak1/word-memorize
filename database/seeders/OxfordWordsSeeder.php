@@ -16,7 +16,7 @@ class OxfordWordsSeeder extends Seeder
     /**
      * Path to the CSV file (relative to Laravel project root).
      */
-    protected string $filePath = 'database/data/Oxford_3000_processed.csv';
+    protected string $filePath = 'database/data/Oxford_3000.csv';
 
     /**
      * Path to the word images folder (relative to Laravel project root).
@@ -475,7 +475,7 @@ class OxfordWordsSeeder extends Seeder
                 'bangla_meaning' => $this->clean($row[6] ?? null),
                 'example_sentences' => $this->clean($row[7] ?? null) ?? '',
                 'ai_prompt' => $this->clean($row[8] ?? null),
-                'collocations' => $this->clean($row[9] ?? null),
+                'collocations' => $this->parseCollocations($this->clean($row[9] ?? null)),
                 'synonym' => $this->clean($row[10] ?? null),
                 'antonym' => $this->clean($row[11] ?? null),
                 'hyphenation' => null,
@@ -624,6 +624,62 @@ class OxfordWordsSeeder extends Seeder
     private function countNonEmpty(array $rows): int
     {
         return count(array_filter($rows, fn($r) => $this->clean($r[0] ?? null) !== null));
+    }
+
+    /**
+     * Normalise the raw collocations value from the CSV into a clean JSON string.
+     *
+     * Expected CSV format (already JSON-encoded array of objects):
+     *   [{"phrase":"board chairman","example_sentence":"The board chairman..."}]
+     *
+     * Desired stored format (text column):
+     *   [
+     *     {"phrase":"board chairman","example_sentence":"The board chairman..."},
+     *     ...
+     *   ]
+     *
+     * Rules:
+     *  - If the value is null / empty → store null.
+     *  - If it decodes to a valid array of objects with at least a "phrase" key
+     *    → re-encode to compact JSON so the column is always consistent.
+     *  - If decoding fails or the structure is unexpected → store null and log a
+     *    warning so bad data is never silently persisted.
+     *
+     * Each item is normalised to guarantee both keys are present:
+     *   { "phrase": string, "example_sentence": string }
+     */
+    private function parseCollocations(?string $raw): ?string
+    {
+        if ($raw === null || $raw === '') {
+            return null;
+        }
+
+        $decoded = json_decode($raw, true);
+
+        if (!is_array($decoded) || empty($decoded)) {
+            $this->log('warn', "    [collocations] Could not decode JSON — storing null. Raw: " . mb_substr($raw, 0, 120));
+            return null;
+        }
+
+        $normalised = [];
+
+        foreach ($decoded as $item) {
+            if (!is_array($item) || !isset($item['phrase'])) {
+                // Skip malformed entries silently (keeps the rest of the array intact)
+                continue;
+            }
+
+            $normalised[] = [
+                'phrase' => trim((string) $item['phrase']),
+                'example_sentence' => trim((string) ($item['example_sentence'] ?? '')),
+            ];
+        }
+
+        if (empty($normalised)) {
+            return null;
+        }
+
+        return json_encode($normalised, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 
     private function clean(mixed $value): ?string

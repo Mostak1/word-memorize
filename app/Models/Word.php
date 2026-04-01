@@ -79,11 +79,6 @@ class Word extends Model
         return $this->hasMany(ReviewWord::class);
     }
 
-    public function masteredEntries()
-    {
-        return $this->hasMany(MasteredWord::class);
-    }
-
     public function bookmarkEntries()
     {
         return $this->hasMany(BookmarkedWord::class);

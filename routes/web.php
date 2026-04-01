@@ -10,6 +10,7 @@ use App\Http\Controllers\WordListController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewWordController;
 use App\Http\Controllers\BookmarkController;
+use App\Http\Controllers\WordProgressController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
@@ -137,6 +138,7 @@ Route::middleware('auth')->group(function () {
     // Word actions (exercise session triggers these)
     Route::post('/word/{word}/know', [ReviewWordController::class, 'know'])->name('word.know');
     Route::post('/word/{word}/learn', [ReviewWordController::class, 'learn'])->name('word.learn');
+    Route::post('words/session-complete', [ReviewWordController::class, 'sessionComplete'])->name('word.session-complete');
 
     // Quiz
     Route::get('/quiz', [QuizController::class, 'index'])->name('quiz.index');
@@ -152,6 +154,10 @@ Route::middleware('auth')->group(function () {
     // Bookmarks
     Route::post('/word/{word}/bookmark', [BookmarkController::class, 'toggle'])->name('word.bookmark');
     Route::get('/my/bookmarks', [BookmarkController::class, 'index'])->name('words.bookmarked');
+
+    // Word Progress (demote mastered words back to review)
+    Route::post('/word/{word}/demote-from-mastery', [WordProgressController::class, 'demoteFromMastery'])
+        ->name('word.demote-from-mastery');
 
     // Error reports
     Route::post('/error-reports', [ErrorReportController::class, 'store'])->name('error-reports.store');

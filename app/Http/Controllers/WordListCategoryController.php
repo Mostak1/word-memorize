@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\MasteredWord;
 use App\Models\WordList;
 use App\Models\WordListCategory;
+use App\Models\WordProgress;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -15,9 +15,10 @@ class WordListCategoryController extends Controller
         if (!auth()->check() || empty($wordListIds))
             return [];
 
-        return MasteredWord::where('user_id', auth()->id())
+        return WordProgress::where('user_id', auth()->id())
+            ->where('box', '>=', WordProgress::MASTERED_BOX)
             ->whereHas('word', fn($q) => $q->whereIn('wordlist_id', $wordListIds))
-            ->join('words', 'mastered_words.word_id', '=', 'words.id')
+            ->join('words', 'word_progress.word_id', '=', 'words.id')
             ->selectRaw('words.wordlist_id, count(*) as cnt')
             ->groupBy('words.wordlist_id')
             ->pluck('cnt', 'wordlist_id')

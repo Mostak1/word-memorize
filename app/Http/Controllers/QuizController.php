@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\MasteredWord;
 use App\Models\Word;
+use App\Models\WordProgress;
 use App\Services\StreakService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -27,7 +27,9 @@ class QuizController extends Controller
     {
         $userId = Auth::id();
 
-        $masteredWordIds = MasteredWord::where('user_id', $userId)
+        // Get all words the user has mastered (box >= 4 in word_progress)
+        $masteredWordIds = WordProgress::where('user_id', $userId)
+            ->where('box', '>=', WordProgress::MASTERED_BOX)
             ->pluck('word_id')
             ->toArray();
 
