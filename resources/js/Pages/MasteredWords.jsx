@@ -14,48 +14,48 @@ export default function MasteredWords({ wordlists, totalMastered }) {
         const d = difficulty?.toLowerCase();
         if (d === "easy" || d === "beginner")
             return {
-                badge: "bg-emerald-50 text-emerald-700 border-emerald-200",
-                bar: "bg-emerald-400",
-                glow: "shadow-emerald-100",
+                badge: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800",
+                bar: "bg-emerald-400 dark:bg-emerald-500",
+                glow: "shadow-emerald-100 dark:shadow-emerald-900/30",
             };
         if (d === "medium" || d === "intermediate")
             return {
-                badge: "bg-amber-50 text-amber-700 border-amber-200",
-                bar: "bg-amber-400",
-                glow: "shadow-amber-100",
+                badge: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800",
+                bar: "bg-amber-400 dark:bg-amber-500",
+                glow: "shadow-amber-100 dark:shadow-amber-900/30",
             };
         if (d === "hard" || d === "advanced")
             return {
-                badge: "bg-red-50 text-red-700 border-red-200",
-                bar: "bg-red-400",
-                glow: "shadow-red-100",
+                badge: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800",
+                bar: "bg-red-400 dark:bg-red-500",
+                glow: "shadow-red-100 dark:shadow-red-900/30",
             };
         return {
-            badge: "bg-gray-50 text-gray-600 border-gray-200",
-            bar: "bg-gray-300",
-            glow: "",
+            badge: "bg-gray-50 text-gray-600 border-gray-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
+            bar: "bg-gray-300 dark:bg-slate-600",
+            glow: "dark:shadow-slate-900/30",
         };
     };
 
     return (
         <AppLayout>
             <Head title="Mastered Words" />
-            <div className="min-h-screen bg-[#F0F2F5] pb-20">
+            <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 pb-20">
                 <div className="max-w-xl mx-auto px-4 pt-5">
                     {/* Header */}
                     <div className="flex items-center gap-3 mb-5">
                         <Link
                             href={route("dashboard")}
-                            className="p-2 rounded-xl bg-white shadow-sm hover:shadow-md transition text-gray-500"
+                            className="p-2 rounded-xl bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition text-gray-500 dark:text-gray-400"
                         >
                             <ChevronLeft className="h-5 w-5" />
                         </Link>
                         <div className="flex-1 min-w-0">
-                            <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2 leading-tight">
+                            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2 leading-tight">
                                 <Trophy className="h-5 w-5 text-green-600 shrink-0" />
                                 Mastered Words
                             </h1>
-                            <p className="text-xs text-gray-400 mt-0.5">
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                                 {totalMastered} word
                                 {totalMastered !== 1 ? "s" : ""} mastered across{" "}
                                 {wordlists?.length ?? 0} list
@@ -66,7 +66,7 @@ export default function MasteredWords({ wordlists, totalMastered }) {
 
                     {/* Total mastered banner */}
                     {totalMastered > 0 && (
-                        <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl px-5 py-4 mb-5 flex items-center gap-4 shadow-md shadow-green-100">
+                        <div className="bg-gradient-to-r from-green-500 to-emerald-600 dark:from-green-700 dark:to-emerald-800 rounded-2xl px-5 py-4 mb-5 flex items-center gap-4 shadow-md shadow-green-100 dark:shadow-green-900/30">
                             <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center shrink-0">
                                 <Trophy className="h-6 w-6 text-white" />
                             </div>
@@ -171,14 +171,14 @@ export default function MasteredWords({ wordlists, totalMastered }) {
                             })}
                         </div>
                     ) : (
-                        <div className="bg-white rounded-2xl p-10 text-center shadow-sm">
-                            <div className="w-20 h-20 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4">
-                                <Trophy className="h-10 w-10 text-green-300" />
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-10 text-center shadow-sm">
+                            <div className="w-20 h-20 rounded-full bg-green-50 dark:bg-green-950/30 flex items-center justify-center mx-auto mb-4">
+                                <Trophy className="h-10 w-10 text-green-300 dark:text-green-600" />
                             </div>
-                            <h3 className="text-lg font-bold text-gray-900 mb-2">
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
                                 No Mastered Words Yet
                             </h3>
-                            <p className="text-gray-500 text-sm mb-5">
+                            <p className="text-gray-500 dark:text-gray-400 text-sm mb-5">
                                 Press "I know" on a word during exercise to mark
                                 it as mastered.
                             </p>

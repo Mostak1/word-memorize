@@ -28,27 +28,27 @@ import { useState, useMemo } from "react";
 const TYPE_META = {
     fill_blank: {
         label: "Fill in the Blank",
-        color: "bg-blue-100 text-blue-700",
+        color: "bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400",
         icon: BookOpen,
     },
     match_pairs: {
         label: "Match the Pairs",
-        color: "bg-purple-100 text-purple-700",
+        color: "bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400",
         icon: ArrowLeftRight,
     },
     synonym: {
         label: "Synonym Quiz",
-        color: "bg-emerald-100 text-emerald-700",
+        color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400",
         icon: Shuffle,
     },
     antonym: {
         label: "Antonym Quiz",
-        color: "bg-orange-100 text-orange-700",
+        color: "bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400",
         icon: Shuffle,
     },
     translation_en_bn: {
         label: "Translation",
-        color: "bg-pink-100 text-pink-700",
+        color: "bg-pink-100 text-pink-700 dark:bg-pink-950/30 dark:text-pink-400",
         icon: Languages,
     },
 };
@@ -58,7 +58,7 @@ const TYPE_META = {
 function TypeBadge({ type }) {
     const meta = TYPE_META[type] ?? {
         label: type,
-        color: "bg-gray-100 text-gray-600",
+        color: "bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-300",
     };
     const Icon = meta.icon ?? BookOpen;
     return (
@@ -76,16 +76,16 @@ function MCQOptions({ options, answered, selected, correct, onAnswer }) {
         const base =
             "w-full px-4 py-3.5 rounded-2xl text-sm font-semibold border-2 transition-all text-left";
         if (!answered) {
-            return `${base} bg-white border-gray-200 text-gray-800 hover:border-[#E5201C] hover:bg-red-50 active:scale-[0.98] cursor-pointer`;
+            return `${base} bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 text-gray-800 dark:text-gray-200 hover:border-[#E5201C] hover:bg-red-50 dark:hover:bg-red-950/20 active:scale-[0.98] cursor-pointer`;
         }
         const isThisSelected = option === selected;
         const isThisCorrect = option.toLowerCase() === correct.toLowerCase();
 
         if (isThisSelected && isThisCorrect)
-            return `${base} bg-green-50 border-green-500 text-green-800`;
+            return `${base} bg-green-50 dark:bg-green-950/30 border-green-500 dark:border-green-600 text-green-800 dark:text-green-300`;
         if (isThisSelected && !isThisCorrect)
-            return `${base} bg-red-50 border-[#E5201C] text-red-700`;
-        return `${base} bg-white border-gray-200 text-gray-400`;
+            return `${base} bg-red-50 dark:bg-red-950/30 border-[#E5201C] dark:border-red-600 text-red-700 dark:text-red-300`;
+        return `${base} bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 text-gray-400 dark:text-gray-500`;
     };
 
     return (
@@ -121,8 +121,8 @@ function MCQOptions({ options, answered, selected, correct, onAnswer }) {
 function FillBlankQuestion({ q, answered, selected, isCorrect, onAnswer }) {
     return (
         <>
-            <div className="bg-white rounded-2xl px-5 py-5 shadow-sm mb-4">
-                <p className="text-base text-gray-800 leading-relaxed text-center font-medium">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl px-5 py-5 shadow-sm mb-4">
+                <p className="text-base text-gray-800 dark:text-gray-200 leading-relaxed text-center font-medium">
                     {q.sentence.split("___________").map((part, i, arr) => (
                         <span key={i}>
                             {part}
@@ -131,10 +131,10 @@ function FillBlankQuestion({ q, answered, selected, isCorrect, onAnswer }) {
                                     className={`inline-block mx-1 border-b-2 font-bold min-w-[80px] text-center transition-all
                                     ${
                                         !answered
-                                            ? "border-gray-400 text-transparent"
+                                            ? "border-gray-400 dark:border-slate-600 text-transparent"
                                             : isCorrect
-                                              ? "border-green-500 text-green-700"
-                                              : "border-gray-300 text-transparent"
+                                              ? "border-green-500 text-green-700 dark:text-green-400"
+                                              : "border-gray-300 dark:border-slate-600 text-transparent"
                                     }`}
                                 >
                                     {answered && isCorrect
@@ -184,8 +184,8 @@ function SimpleQuestion({ q, answered, selected, isCorrect, onAnswer }) {
 
     return (
         <>
-            <div className="bg-white rounded-2xl px-5 py-5 shadow-sm mb-4">
-                <p className="text-base text-gray-700 leading-relaxed text-center">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl px-5 py-5 shadow-sm mb-4">
+                <p className="text-base text-gray-700 dark:text-gray-200 leading-relaxed text-center">
                     {prompt}
                 </p>
             </div>
@@ -270,17 +270,23 @@ function MatchPairsQuestion({ q, onSubmit }) {
             return (
                 base +
                 (correct
-                    ? "bg-green-50 border-green-500 text-green-800"
-                    : "bg-red-50 border-red-400 text-red-700")
+                    ? "bg-green-50 dark:bg-green-950/30 border-green-500 text-green-800 dark:text-green-400"
+                    : "bg-red-50 dark:bg-red-950/30 border-red-400 text-red-700 dark:text-red-400")
             );
         }
         if (isSelected)
-            return base + "bg-blue-50 border-blue-500 text-blue-800";
+            return (
+                base +
+                "bg-blue-50 dark:bg-blue-950/30 border-blue-500 text-blue-800 dark:text-blue-400"
+            );
         if (isMatched)
-            return base + "bg-amber-50 border-amber-400 text-amber-800";
+            return (
+                base +
+                "bg-amber-50 dark:bg-amber-950/30 border-amber-400 text-amber-800 dark:text-amber-400"
+            );
         return (
             base +
-            "bg-white border-gray-200 text-gray-800 hover:border-[#E5201C] hover:bg-red-50 cursor-pointer"
+            "bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 text-gray-800 dark:text-gray-200 hover:border-[#E5201C] hover:bg-red-50 dark:hover:bg-red-950/20 cursor-pointer"
         );
     };
 
@@ -293,30 +299,39 @@ function MatchPairsQuestion({ q, onSubmit }) {
 
         if (submitted) {
             if (!takenByWord)
-                return base + "bg-gray-50 border-gray-200 text-gray-300";
+                return (
+                    base +
+                    "bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-300 dark:text-gray-500"
+                );
             const wordIndex = Number(takenByWord[0]);
             const correct = shuffledIndices[displayPos] === wordIndex;
             return (
                 base +
                 (correct
-                    ? "bg-green-50 border-green-500 text-green-700"
-                    : "bg-red-50 border-red-400 text-red-700")
+                    ? "bg-green-50 dark:bg-green-950/30 border-green-500 text-green-700 dark:text-green-400"
+                    : "bg-red-50 dark:bg-red-950/30 border-red-400 text-red-700 dark:text-red-400")
             );
         }
         if (takenByWord)
-            return base + "bg-amber-50 border-amber-400 text-amber-700";
+            return (
+                base +
+                "bg-amber-50 dark:bg-amber-950/30 border-amber-400 text-amber-700 dark:text-amber-400"
+            );
         if (selectedWord !== null)
             return (
                 base +
-                "bg-white border-gray-200 text-gray-700 hover:border-[#E5201C] hover:bg-red-50 cursor-pointer"
+                "bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 hover:border-[#E5201C] hover:bg-red-50 dark:hover:bg-red-950/20 cursor-pointer"
             );
-        return base + "bg-white border-gray-200 text-gray-500";
+        return (
+            base +
+            "bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 text-gray-500 dark:text-gray-400"
+        );
     };
 
     return (
         <div>
-            <div className="bg-white rounded-2xl px-4 py-4 shadow-sm mb-4">
-                <p className="text-sm text-gray-500 text-center mb-4">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl px-4 py-4 shadow-sm mb-4">
+                <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-4">
                     {submitted
                         ? "Here are the results:"
                         : selectedWord !== null
@@ -327,7 +342,7 @@ function MatchPairsQuestion({ q, onSubmit }) {
                 <div className="grid grid-cols-2 gap-3">
                     {/* Words column */}
                     <div className="space-y-2">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center mb-1">
+                        <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-center mb-1">
                             Words
                         </p>
                         {q.pairs.map((pair, wordIndex) => (
@@ -344,7 +359,7 @@ function MatchPairsQuestion({ q, onSubmit }) {
 
                     {/* Meanings column */}
                     <div className="space-y-2">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center mb-1">
+                        <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-center mb-1">
                             Meanings
                         </p>
                         {shuffledIndices.map((pairIndex, displayPos) => (
@@ -468,13 +483,13 @@ export default function Quiz({
         return (
             <AppLayout>
                 <Head title="Quiz Results" />
-                <div className="min-h-screen bg-[#F0F2F5] flex items-center justify-center px-4">
-                    <div className="bg-white rounded-3xl shadow-md w-full max-w-md p-8 text-center">
+                <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 flex items-center justify-center px-4">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-md w-full max-w-md p-8 text-center">
                         <div className="text-6xl mb-4">{emoji}</div>
-                        <h1 className="text-2xl font-extrabold text-gray-900 mb-1">
+                        <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 mb-1">
                             Quiz Complete!
                         </h1>
-                        <p className="text-gray-400 text-sm mb-6">
+                        <p className="text-gray-400 dark:text-gray-500 text-sm mb-6">
                             You answered {score} out of {total} correctly
                         </p>
 
@@ -489,8 +504,9 @@ export default function Quiz({
                                     cy="18"
                                     r="15.9"
                                     fill="none"
-                                    stroke="#F0F2F5"
+                                    stroke="currentColor"
                                     strokeWidth="3"
+                                    className="dark:stroke-slate-700 stroke-[#F0F2F5]"
                                 />
                                 <circle
                                     cx="18"
@@ -517,19 +533,19 @@ export default function Quiz({
                         </div>
 
                         <div className="grid grid-cols-2 gap-3 mb-8">
-                            <div className="bg-green-50 rounded-2xl py-4">
-                                <p className="text-2xl font-extrabold text-green-600">
+                            <div className="bg-green-50 dark:bg-green-950/30 rounded-2xl py-4">
+                                <p className="text-2xl font-extrabold text-green-600 dark:text-green-400">
                                     {score}
                                 </p>
-                                <p className="text-xs text-gray-400 mt-0.5">
+                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                                     Correct
                                 </p>
                             </div>
-                            <div className="bg-red-50 rounded-2xl py-4">
-                                <p className="text-2xl font-extrabold text-[#E5201C]">
+                            <div className="bg-red-50 dark:bg-red-950/30 rounded-2xl py-4">
+                                <p className="text-2xl font-extrabold text-[#E5201C] dark:text-red-400">
                                     {total - score}
                                 </p>
-                                <p className="text-xs text-gray-400 mt-0.5">
+                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                                     Wrong
                                 </p>
                             </div>
@@ -538,13 +554,13 @@ export default function Quiz({
                         <div className="flex flex-col gap-3">
                             <button
                                 onClick={handleRestart}
-                                className="w-full py-3.5 bg-[#E5201C] text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-red-700 transition"
+                                className="w-full py-3.5 bg-[#E5201C] dark:bg-red-700 text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-red-700 dark:hover:bg-red-800 transition"
                             >
                                 <RotateCcw className="h-4 w-4" /> Try Again
                             </button>
                             <Link
                                 href={route("dashboard")}
-                                className="w-full py-3.5 bg-white border border-gray-200 text-gray-700 font-semibold rounded-2xl flex items-center justify-center gap-2 hover:shadow-md transition"
+                                className="w-full py-3.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 font-semibold rounded-2xl flex items-center justify-center gap-2 hover:shadow-md dark:hover:shadow-md transition"
                             >
                                 <ChevronLeft className="h-4 w-4" /> Back to
                                 Dashboard
@@ -563,34 +579,34 @@ export default function Quiz({
             <Head title="Quiz" />
             <Toaster position="top-center" richColors />
 
-            <div className="min-h-screen bg-[#F0F2F5] pb-10">
+            <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 pb-10">
                 <div className="max-w-lg mx-auto px-4 pt-5">
                     {/* Header */}
                     <div className="flex items-center gap-3 mb-4">
                         <Link
                             href={route("dashboard")}
-                            className="p-2 rounded-xl bg-white shadow-sm hover:shadow-md transition text-gray-500"
+                            className="p-2 rounded-xl bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition text-gray-500 dark:text-gray-400"
                         >
                             <ChevronLeft className="h-5 w-5" />
                         </Link>
                         <div className="flex-1">
-                            <h1 className="text-lg font-bold text-gray-900">
+                            <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">
                                 Quiz
                             </h1>
-                            <p className="text-xs text-gray-400">
+                            <p className="text-xs text-gray-400 dark:text-gray-500">
                                 Mixed question types
                             </p>
                         </div>
-                        <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-xl shadow-sm">
+                        <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-xl shadow-sm dark:border dark:border-slate-700">
                             <Trophy className="h-4 w-4 text-amber-400" />
-                            <span className="text-sm font-bold text-gray-700">
+                            <span className="text-sm font-bold text-gray-700 dark:text-gray-200">
                                 {score}
                             </span>
                         </div>
                     </div>
 
                     {/* Progress bar */}
-                    <div className="h-1.5 bg-gray-200 rounded-full mb-5 overflow-hidden">
+                    <div className="h-1.5 bg-gray-200 dark:bg-slate-700 rounded-full mb-5 overflow-hidden">
                         <div
                             className="h-full bg-[#E5201C] rounded-full transition-all duration-500"
                             style={{ width: `${(current / total) * 100}%` }}
@@ -647,8 +663,8 @@ export default function Quiz({
                                 <div
                                     className={`rounded-2xl px-4 py-3 mb-4 text-sm font-semibold text-center ${
                                         matchCorrectCount >= matchPassThreshold
-                                            ? "bg-green-50 text-green-700"
-                                            : "bg-red-50 text-red-700"
+                                            ? "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400"
+                                            : "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400"
                                     }`}
                                     style={{
                                         animation: "fadeInUp 0.2s ease-out",
@@ -675,7 +691,7 @@ export default function Quiz({
                             {answered && (
                                 <button
                                     onClick={handleNext}
-                                    className="w-full bg-[#E5201C] hover:bg-red-700 text-white font-bold py-4 rounded-2xl transition-all shadow-md"
+                                    className="w-full bg-[#E5201C] dark:bg-red-700 hover:bg-red-700 dark:hover:bg-red-800 text-white font-bold py-4 rounded-2xl transition-all shadow-md"
                                     style={{
                                         animation: "fadeInUp 0.2s ease-out",
                                     }}

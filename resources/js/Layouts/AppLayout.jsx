@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import FlashMessages from "@/Components/FlashMessage";
 import ReportErrorDialog from "@/Components/ReportErrorDialog";
+import { ThemeToggle } from "@/Components/ThemeToggle";
 import logo from "/public/img/logo.png";
 
 export default function AppLayout({ children }) {
@@ -47,7 +48,7 @@ export default function AppLayout({ children }) {
     };
 
     return (
-        <div className="min-h-screen bg-[#F0F2F5]">
+        <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
             <FlashMessages />
 
             {/* Always-mounted controlled ReportErrorDialog (used by mobile menu) */}
@@ -95,6 +96,8 @@ export default function AppLayout({ children }) {
                                         <BookOpen className="h-4 w-4" />
                                         <span>WordLists</span>
                                     </Link>
+                                    {/* Theme toggle — visible to all users */}
+                                    {/* <ThemeToggle /> */}
                                     {/* Desktop report button — self-contained */}
                                     <ReportErrorDialog />
                                     <div className="relative group ml-1">
@@ -144,6 +147,8 @@ export default function AppLayout({ children }) {
                                         <LogIn className="h-4 w-4" />
                                         <span>Login</span>
                                     </Link>
+                                    {/* Theme toggle — visible to all users */}
+                                    <ThemeToggle />
                                     {/* Desktop report button — self-contained */}
                                     <ReportErrorDialog />
                                     <Link

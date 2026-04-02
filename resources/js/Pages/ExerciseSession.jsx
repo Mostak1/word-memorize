@@ -19,21 +19,25 @@ import { usePage } from "@inertiajs/react";
 const MASTERED_BOX = 4;
 
 const LEVEL_META = {
-    1: { label: "New", color: "bg-gray-100 text-gray-600", dot: "bg-gray-400" },
+    1: {
+        label: "New",
+        color: "bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-300",
+        dot: "bg-gray-400 dark:bg-slate-600",
+    },
     2: {
-        label: "Familiar",
-        color: "bg-blue-100 text-blue-600",
-        dot: "bg-blue-400",
+        label: "Learning",
+        color: "bg-cyan-100 text-cyan-600 dark:bg-cyan-950 dark:text-cyan-400",
+        dot: "bg-cyan-400 dark:bg-cyan-500",
     },
     3: {
-        label: "Solid",
-        color: "bg-yellow-100 text-yellow-700",
-        dot: "bg-yellow-400",
+        label: "Reviewing",
+        color: "bg-orange-100 text-orange-600 dark:bg-orange-950 dark:text-orange-400",
+        dot: "bg-orange-400 dark:bg-orange-500",
     },
     4: {
         label: "Mastered",
-        color: "bg-green-100 text-green-700",
-        dot: "bg-green-500",
+        color: "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400",
+        dot: "bg-green-500 dark:bg-green-400",
     },
 };
 
@@ -79,6 +83,9 @@ export default function ExerciseSession({
     const [promotedCount, setPromotedCount] = useState(0); // words answered "I Know"
     const [dontKnowCount, setDontKnowCount] = useState(0); // total "I Don't Know" taps
 
+    // NEW: Total cards processed in this session (used for progress bar)
+    const answeredCount = promotedCount + dontKnowCount;
+
     // ── UI state ──────────────────────────────────────────────────────────────
     const [showLoginDialog, setShowLoginDialog] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -112,13 +119,13 @@ export default function ExerciseSession({
         setShowMeaning(false);
     }, [word?.id]);
 
-    // Auto-scroll to meaning card when revealed
+    // Auto-scroll to bottom of meaning card (buttons) when revealed
     useEffect(() => {
         if (showMeaning && meaningCardRef.current) {
             setTimeout(() => {
                 meaningCardRef.current?.scrollIntoView({
                     behavior: "smooth",
-                    block: "start",
+                    block: "end",
                 });
             }, 50);
         }
@@ -291,24 +298,10 @@ export default function ExerciseSession({
         setIsSubmitting(true);
         setDontKnowCount((c) => c + 1);
 
-        const currentBox = word.srs_box ?? 1;
         const wordId = word.id;
 
         animateThen("right", () => {
-            setQueue((prev) => {
-                const [first, ...rest] = prev;
-                // If it was L2/L3, demote locally to L1 so the badge updates
-                const updated =
-                    currentBox >= 2
-                        ? {
-                              ...first,
-                              srs_box: 1,
-                              srs_label: "New",
-                              srs_color: LEVEL_META[1].color,
-                          }
-                        : first;
-                return [...rest, updated]; // shuffle to back
-            });
+            setQueue((prev) => prev.slice(1)); // ← word leaves session
         });
 
         pingServer("word.learn", wordId);
@@ -349,14 +342,14 @@ export default function ExerciseSession({
     })();
 
     const collocationColors = [
-        "bg-red-100/70 text-red-700 border-red-200",
-        "bg-blue-100/70 text-blue-700 border-blue-200",
-        "bg-green-100/70 text-green-700 border-green-200",
-        "bg-amber-100/70 text-amber-700 border-amber-200",
-        "bg-purple-100/70 text-purple-700 border-purple-200",
-        "bg-teal-100/70 text-teal-700 border-teal-200",
-        "bg-pink-100/70 text-pink-700 border-pink-200",
-        "bg-indigo-100/70 text-indigo-700 border-indigo-200",
+        "bg-red-100/70 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800",
+        "bg-blue-100/70 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800",
+        "bg-green-100/70 text-green-700 border-green-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800",
+        "bg-amber-100/70 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800",
+        "bg-purple-100/70 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800",
+        "bg-teal-100/70 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-400 dark:border-teal-800",
+        "bg-pink-100/70 text-pink-700 border-pink-200 dark:bg-pink-950/40 dark:text-pink-400 dark:border-pink-800",
+        "bg-indigo-100/70 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-800",
     ];
 
     const formatIPA = (ipa) => {
@@ -392,16 +385,16 @@ export default function ExerciseSession({
         return (
             <AppLayout>
                 <Head title="All Caught Up!" />
-                <div className="min-h-screen bg-[#F0F2F5] flex flex-col items-center justify-center px-4 py-10">
-                    <div className="bg-white rounded-3xl shadow-md w-full max-w-md p-8 text-center">
+                <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 flex flex-col items-center justify-center px-4 py-10">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-md dark:shadow-xl dark:shadow-slate-950 w-full max-w-md p-8 text-center">
                         <div className="text-6xl mb-4">🎯</div>
-                        <h1 className="text-2xl font-extrabold text-gray-900 mb-1">
+                        <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 mb-1">
                             All Caught Up!
                         </h1>
-                        <p className="text-gray-400 text-sm mb-2">
+                        <p className="text-gray-400 dark:text-gray-500 text-sm mb-2">
                             {subcategory ? subcategory.name : wordList.title}
                         </p>
-                        <p className="text-gray-500 text-sm mb-8">
+                        <p className="text-gray-500 dark:text-gray-400 text-sm mb-8">
                             No words are due for review right now. Check back
                             tomorrow to keep your streak going!
                         </p>
@@ -414,7 +407,7 @@ export default function ExerciseSession({
                             </Link>
                             <Link
                                 href={backHref}
-                                className="w-full py-3.5 bg-white border border-gray-200 text-gray-700 font-semibold rounded-2xl flex items-center justify-center gap-2 hover:shadow-md transition"
+                                className="w-full py-3.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 font-semibold rounded-2xl flex items-center justify-center gap-2 hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-slate-900 transition"
                             >
                                 <ChevronLeft className="h-4 w-4" /> Back to List
                             </Link>
@@ -431,39 +424,39 @@ export default function ExerciseSession({
         return (
             <AppLayout>
                 <Head title="Session Complete" />
-                <div className="min-h-screen bg-[#F0F2F5] flex flex-col items-center justify-center px-4 py-10">
-                    <div className="bg-white rounded-3xl shadow-md w-full max-w-md p-8 text-center">
+                <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 flex flex-col items-center justify-center px-4 py-10">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-md dark:shadow-xl dark:shadow-slate-950 w-full max-w-md p-8 text-center">
                         <div className="text-6xl mb-4">🎉</div>
-                        <h1 className="text-2xl font-extrabold text-gray-900 mb-1">
+                        <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 mb-1">
                             Session Complete!
                         </h1>
-                        <p className="text-gray-400 text-sm mb-6">
+                        <p className="text-gray-400 dark:text-gray-500 text-sm mb-6">
                             {subcategory ? subcategory.name : wordList.title}
                         </p>
 
                         {/* Stats */}
                         <div className="grid grid-cols-3 gap-3 mb-8">
-                            <div className="bg-green-50 rounded-2xl py-4">
-                                <p className="text-2xl font-extrabold text-green-600">
+                            <div className="bg-green-50 dark:bg-green-950/30 rounded-2xl py-4">
+                                <p className="text-2xl font-extrabold text-green-600 dark:text-green-400">
                                     {promotedCount}
                                 </p>
-                                <p className="text-xs text-green-500 mt-0.5 font-medium">
+                                <p className="text-xs text-green-600 dark:text-green-400 mt-0.5 font-medium">
                                     Cleared
                                 </p>
                             </div>
-                            <div className="bg-red-50 rounded-2xl py-4">
-                                <p className="text-2xl font-extrabold text-red-400">
+                            <div className="bg-red-50 dark:bg-red-950/30 rounded-2xl py-4">
+                                <p className="text-2xl font-extrabold text-red-400 dark:text-red-400">
                                     {retries}
                                 </p>
-                                <p className="text-xs text-red-400 mt-0.5 font-medium">
+                                <p className="text-xs text-red-500 dark:text-red-400 mt-0.5 font-medium">
                                     Retries
                                 </p>
                             </div>
-                            <div className="bg-blue-50 rounded-2xl py-4">
-                                <p className="text-2xl font-extrabold text-blue-500">
+                            <div className="bg-blue-50 dark:bg-blue-950/30 rounded-2xl py-4">
+                                <p className="text-2xl font-extrabold text-blue-500 dark:text-blue-400">
                                     {promotedCount + retries}
                                 </p>
-                                <p className="text-xs text-blue-400 mt-0.5 font-medium">
+                                <p className="text-xs text-blue-500 dark:text-blue-400 mt-0.5 font-medium">
                                     Total Reps
                                 </p>
                             </div>
@@ -472,7 +465,7 @@ export default function ExerciseSession({
                         {/* List-level progress bar */}
                         {totalWordsInList > 0 && (
                             <div className="mb-8">
-                                <div className="flex justify-between text-xs text-gray-400 mb-1.5">
+                                <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500 mb-1.5">
                                     <span>List Progress</span>
                                     <span>
                                         {Math.round(
@@ -482,7 +475,7 @@ export default function ExerciseSession({
                                         %
                                     </span>
                                 </div>
-                                <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div className="h-2.5 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden">
                                     <div
                                         className="h-full bg-green-500 rounded-full transition-all"
                                         style={{
@@ -490,7 +483,7 @@ export default function ExerciseSession({
                                         }}
                                     />
                                 </div>
-                                <p className="text-xs text-gray-400 mt-1.5 text-center">
+                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5 text-center">
                                     {promotedCount} of {totalWordsInList} words
                                     in this session's queue
                                 </p>
@@ -514,7 +507,7 @@ export default function ExerciseSession({
                             )} */}
                             <Link
                                 href={backHref}
-                                className="w-full py-3.5 bg-white border border-gray-200 text-gray-700 font-semibold rounded-2xl flex items-center justify-center gap-2 hover:shadow-md transition"
+                                className="w-full py-3.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 font-semibold rounded-2xl flex items-center justify-center gap-2 hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-slate-900 transition"
                             >
                                 <ChevronLeft className="h-4 w-4" /> Back to List
                             </Link>
@@ -530,8 +523,10 @@ export default function ExerciseSession({
     const meta = LEVEL_META[currentBox] ?? LEVEL_META[1];
 
     // Progress within this session: how many of the initial queue have been cleared
+    // const sessionProgress =
+    //     initialQueueSize > 0 ? (promotedCount / initialQueueSize) * 100 : 0;
     const sessionProgress =
-        initialQueueSize > 0 ? (promotedCount / initialQueueSize) * 100 : 0;
+        initialQueueSize > 0 ? (answeredCount / initialQueueSize) * 100 : 0;
 
     return (
         <AppLayout>
@@ -557,12 +552,12 @@ export default function ExerciseSession({
                         />
                     ))}
                     <div className="absolute inset-x-0 top-24 flex justify-center pointer-events-none">
-                        <div className="bg-white rounded-2xl shadow-xl px-8 py-4 text-center animate-bounce-in border border-green-100">
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl dark:shadow-2xl dark:shadow-slate-900 px-8 py-4 text-center animate-bounce-in border border-green-100 dark:border-green-900">
                             <p className="text-3xl mb-1">🌟</p>
-                            <p className="text-lg font-extrabold text-green-600">
+                            <p className="text-lg font-extrabold text-green-600 dark:text-green-400">
                                 Mastered!
                             </p>
-                            <p className="text-xs text-gray-400 mt-0.5">
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                                 Word added to your Mastery Garden
                             </p>
                         </div>
@@ -575,24 +570,24 @@ export default function ExerciseSession({
                 <div className="fixed inset-0 pointer-events-none z-40 bg-green-400/20" />
             )}
 
-            <div className="min-h-screen bg-[#F0F2F5] pb-40 pt-1 mt-3">
+            <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 pb-10 pt-1 mt-3">
                 {/* ── Session progress bar ─────────────────────────────────── */}
                 <div className="max-w-lg mx-auto px-3 pb-2">
                     <div className="flex items-center gap-2.5">
                         <Link
                             href={backHref}
-                            className="flex-none p-1.5 rounded-lg text-gray-400 hover:text-gray-600 transition"
+                            className="flex-none p-1.5 rounded-lg text-gray-400 dark:text-gray-600 hover:text-gray-600 dark:hover:text-gray-400 transition"
                         >
                             <ChevronLeft className="h-5 w-5" />
                         </Link>
-                        <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                        <div className="flex-1 h-1.5 bg-gray-200 dark:bg-slate-800 rounded-full overflow-hidden">
                             <div
                                 className="h-full bg-[#E5201C] rounded-full transition-all duration-500"
                                 style={{ width: `${sessionProgress}%` }}
                             />
                         </div>
                         {/* Queue remaining badge */}
-                        <span className="shrink-0 text-xs font-semibold text-gray-500 bg-white border border-gray-200 rounded-full px-2.5 py-0.5 shadow-sm">
+                        <span className="shrink-0 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-full px-2.5 py-0.5 shadow-sm dark:shadow-lg">
                             {queue.length} left
                         </span>
                     </div>
@@ -605,7 +600,7 @@ export default function ExerciseSession({
 
                         <div
                             key={cardKey}
-                            className={`bg-white rounded-3xl shadow-md overflow-hidden select-none ${
+                            className={`bg-white dark:bg-slate-900 rounded-3xl shadow-md dark:shadow-xl dark:shadow-slate-950 overflow-hidden select-none ${
                                 exiting
                                     ? exitDir.current === "left"
                                         ? "card-exit-left"
@@ -617,8 +612,8 @@ export default function ExerciseSession({
                         >
                             {/* Exercise group label */}
                             <div className="px-4">
-                                <div className="h-px bg-gray-100 mb-3" />
-                                <p className="text-xs text-gray-400 text-center">
+                                <div className="h-px bg-gray-100 dark:bg-slate-800 mb-3" />
+                                <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
                                     Part of Exercise:{" "}
                                     {subcategory
                                         ? `${wordList.title} › ${subcategory.name}`
@@ -641,7 +636,7 @@ export default function ExerciseSession({
                                             className={`h-6 w-6 transition-colors ${
                                                 bookmarks[word.id]
                                                     ? "fill-yellow-400 text-yellow-400"
-                                                    : "text-gray-400 hover:text-gray-600"
+                                                    : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                                             }`}
                                             strokeWidth={1.8}
                                         />
@@ -650,11 +645,11 @@ export default function ExerciseSession({
 
                                 <div className="flex-1 flex flex-col items-center text-center px-2">
                                     <h1
-                                        className={`${wordFontSize(word.word)} font-extrabold text-gray-900 tracking-tight leading-tight break-words w-full`}
+                                        className={`${wordFontSize(word.word)} font-extrabold text-gray-900 dark:text-gray-100 tracking-tight leading-tight break-words w-full`}
                                     >
                                         {word.word}
                                         {word.parts_of_speech_variations && (
-                                            <span className="bg-gray-100 text-gray-600 text-sm font-medium px-3 py-0.5 rounded-md ml-2">
+                                            <span className="bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 text-sm font-medium px-3 py-0.5 rounded-md ml-2">
                                                 {
                                                     word.parts_of_speech_variations
                                                 }
@@ -696,7 +691,7 @@ export default function ExerciseSession({
                                                         ? (LEVEL_META[box]
                                                               ?.dot ??
                                                           "bg-gray-400")
-                                                        : "bg-gray-200"
+                                                        : "bg-gray-200 dark:bg-slate-700"
                                                 }`}
                                             />
                                         ))}
@@ -712,7 +707,7 @@ export default function ExerciseSession({
                             {/* Pronunciation */}
                             <div className="px-5 pb-4 text-center">
                                 {word.pronunciation && (
-                                    <p className="text-sm text-gray-500 font-mono mt-1">
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 font-mono mt-1">
                                         {word.pronunciation}{" "}
                                         <span className="text-black">|</span>{" "}
                                         {formatIPA(word.ipa)}{" "}
@@ -725,7 +720,7 @@ export default function ExerciseSession({
                             {/* Image */}
                             {images.length > 0 && (
                                 <div className="px-4 pb-3">
-                                    <div className="relative rounded-2xl overflow-hidden bg-[#EEF6F5]">
+                                    <div className="relative rounded-2xl overflow-hidden bg-[#EEF6F5] dark:bg-slate-800">
                                         <img
                                             src={activeImage?.image_url_full}
                                             alt={
@@ -740,7 +735,7 @@ export default function ExerciseSession({
                                         />
                                         {currentBox >= MASTERED_BOX && (
                                             <div className="absolute top-2 right-2">
-                                                <span className="bg-green-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md">
+                                                <span className="bg-green-500 dark:bg-green-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md dark:shadow-lg">
                                                     ✨ Mastered
                                                 </span>
                                             </div>
@@ -756,8 +751,8 @@ export default function ExerciseSession({
                                                     }
                                                     className={`rounded-full transition-all ${
                                                         idx === activeImageIndex
-                                                            ? "w-5 h-2 bg-gray-500"
-                                                            : "w-2 h-2 bg-gray-300"
+                                                            ? "w-5 h-2 bg-gray-500 dark:bg-gray-400"
+                                                            : "w-2 h-2 bg-gray-300 dark:bg-slate-700"
                                                     }`}
                                                 />
                                             ))}
@@ -769,8 +764,8 @@ export default function ExerciseSession({
                             {/* Example sentence */}
                             {(word.image_related_sentence ||
                                 word.example_sentences) && (
-                                <div className="mx-4 mb-4 border-l-4 border-green-400 pl-3 py-1">
-                                    <p className="text-base text-gray-800 leading-snug">
+                                <div className="mx-4 mb-4 border-l-4 border-green-400 dark:border-green-600 pl-3 py-1">
+                                    <p className="text-base text-gray-800 dark:text-gray-200 leading-snug">
                                         {highlightWord(
                                             word.image_related_sentence ||
                                                 word.example_sentences,
@@ -784,7 +779,7 @@ export default function ExerciseSession({
                             <div className="px-4 pb-3">
                                 <button
                                     onClick={() => setShowMeaning(true)}
-                                    className="w-full flex items-center justify-center gap-2 py-2.5 border border-dashed border-gray-200 rounded-xl text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 transition"
+                                    className="w-full flex items-center justify-center gap-2 py-2.5 border border-dashed border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-slate-600 transition"
                                 >
                                     {showMeaning ? (
                                         <>
@@ -842,17 +837,17 @@ export default function ExerciseSession({
                                 marginTop: showMeaning ? "12px" : "0px",
                             }}
                         >
-                            <div className="bg-white rounded-3xl shadow-md overflow-hidden pb-2">
+                            <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-md dark:shadow-xl dark:shadow-slate-950 overflow-hidden pb-2">
                                 {(word.definition || word.bangla_meaning) && (
                                     <div className="mx-4 mt-4 mb-4">
-                                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                                        <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">
                                             Definition
                                         </p>
-                                        <div className="border-l-4 border-[#E5201C] pl-3 py-1">
-                                            <p className="text-sm text-gray-900 leading-snug">
+                                        <div className="border-l-4 border-[#E5201C] dark:border-red-600 pl-3 py-1">
+                                            <p className="text-sm text-gray-900 dark:text-gray-200 leading-snug">
                                                 {word.definition}
                                                 {word.bangla_meaning && (
-                                                    <span className="text-gray-500 font-medium ml-1">
+                                                    <span className="text-gray-500 dark:text-gray-400 font-medium ml-1">
                                                         ({word.bangla_meaning})
                                                     </span>
                                                 )}
@@ -882,8 +877,8 @@ export default function ExerciseSession({
 
                                 {collocationList.length > 0 && (
                                     <div className="px-4 pb-4">
-                                        <div className="h-px bg-gray-100 mb-3" />
-                                        <p className="text-sm font-semibold text-gray-600 mb-3">
+                                        <div className="h-px bg-gray-100 dark:bg-slate-800 mb-3" />
+                                        <p className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-3">
                                             Common Collocations
                                         </p>
                                         <div className="flex flex-col gap-3">
@@ -936,14 +931,14 @@ export default function ExerciseSession({
                                                         </p> */}
                                                         {/* Example sentence with phrase highlighted */}
                                                         {col.example_sentence ? (
-                                                            <p className="text-sm leading-snug">
+                                                            <p className="text-sm leading-snug dark:text-gray-100">
                                                                 {renderHighlighted(
                                                                     col.example_sentence,
                                                                     col.phrase,
                                                                 )}
                                                             </p>
                                                         ) : (
-                                                            <p className="text-xs font-bold uppercase tracking-wide mb-1 opacity-75">
+                                                            <p className="text-xs font-bold uppercase tracking-wide mb-1 opacity-75 dark:text-gray-100">
                                                                 {col.phrase}
                                                             </p>
                                                         )}
@@ -959,15 +954,15 @@ export default function ExerciseSession({
                                     word.bangla_synonym ||
                                     word.bangla_antonym) && (
                                     <div className="pb-4">
-                                        <div className="h-px bg-gray-100 mx-4 mb-4" />
+                                        <div className="h-px bg-gray-100 dark:bg-slate-800 mx-4 mb-4" />
                                         {(word.synonym || word.antonym) && (
                                             <div className="grid grid-cols-2 gap-0 mx-4 mb-4">
                                                 {word.synonym ? (
-                                                    <div className="border-l-4 border-[#E5201C] pl-3 pr-2 py-1">
-                                                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                                                    <div className="border-l-4 border-[#E5201C] dark:border-red-600 pl-3 pr-2 py-1">
+                                                        <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
                                                             Synonyms
                                                         </p>
-                                                        <p className="text-sm text-gray-800 leading-snug">
+                                                        <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug">
                                                             {word.synonym}
                                                         </p>
                                                     </div>
@@ -975,11 +970,11 @@ export default function ExerciseSession({
                                                     <div />
                                                 )}
                                                 {word.antonym ? (
-                                                    <div className="border-l-4 border-blue-400 pl-3 pr-2 py-1">
-                                                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                                                    <div className="border-l-4 border-blue-400 dark:border-blue-600 pl-3 pr-2 py-1">
+                                                        <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
                                                             Antonyms
                                                         </p>
-                                                        <p className="text-sm text-gray-800 leading-snug">
+                                                        <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug">
                                                             {word.antonym}
                                                         </p>
                                                     </div>
@@ -992,11 +987,11 @@ export default function ExerciseSession({
                                             word.bangla_antonym) && (
                                             <div className="grid grid-cols-2 gap-0 mx-4">
                                                 {word.bangla_synonym ? (
-                                                    <div className="border-l-4 border-[#E5201C] pl-3 pr-2 py-1">
-                                                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                                                    <div className="border-l-4 border-[#E5201C] dark:border-red-600 pl-3 pr-2 py-1">
+                                                        <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
                                                             প্রতিশব্দ
                                                         </p>
-                                                        <p className="text-sm text-gray-800 leading-snug font-medium">
+                                                        <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug font-medium">
                                                             {
                                                                 word.bangla_synonym
                                                             }
@@ -1006,11 +1001,11 @@ export default function ExerciseSession({
                                                     <div />
                                                 )}
                                                 {word.bangla_antonym ? (
-                                                    <div className="border-l-4 border-blue-400 pl-3 pr-2 py-1">
-                                                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                                                    <div className="border-l-4 border-blue-400 dark:border-blue-600 pl-3 pr-2 py-1">
+                                                        <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
                                                             বিপরীত শব্দ
                                                         </p>
-                                                        <p className="text-sm text-gray-800 leading-snug font-medium">
+                                                        <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug font-medium">
                                                             {
                                                                 word.bangla_antonym
                                                             }
@@ -1021,48 +1016,49 @@ export default function ExerciseSession({
                                                 )}
                                             </div>
                                         )}
-
-                                        {/* ── I Don't Know / I Know buttons ─────────── */}
-                                        <div className="px-4 pt-4 pb-5">
-                                            <div className="h-px bg-gray-100 mb-4" />
-                                            <div className="flex gap-3">
-                                                <button
-                                                    onClick={handleDontKnow}
-                                                    disabled={isSubmitting}
-                                                    className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl border-2 border-red-200 bg-red-50 text-red-600 font-bold text-[15px] hover:bg-red-100 active:scale-95 disabled:opacity-50 transition-all shadow-sm"
-                                                >
-                                                    <X
-                                                        className="h-5 w-5"
-                                                        strokeWidth={2.5}
-                                                    />
-                                                    I Don't Know
-                                                </button>
-                                                <button
-                                                    onClick={handleKnow}
-                                                    disabled={isSubmitting}
-                                                    className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl bg-green-600 text-white font-bold text-[15px] hover:bg-green-700 active:scale-95 disabled:opacity-50 transition-all shadow-lg shadow-green-100"
-                                                >
-                                                    <Check
-                                                        className="h-5 w-5"
-                                                        strokeWidth={2.5}
-                                                    />
-                                                    I Know
-                                                </button>
-                                            </div>
-                                            {/* Context hint */}
-                                            {auth?.user && (
-                                                <p className="text-center text-[11px] text-gray-400 mt-2">
-                                                    {currentBox <= 1
-                                                        ? "New word — stay in session until correct ✓"
-                                                        : currentBox <
-                                                            MASTERED_BOX
-                                                          ? `Level ${currentBox} review — due today`
-                                                          : "✨ Already mastered — just confirming!"}
-                                                </p>
-                                            )}
-                                        </div>
                                     </div>
                                 )}
+
+                                {/* ── I Don't Know / I Know buttons ─────────── */}
+                                <div className="px-4 pt-4 pb-5">
+                                    <div className="h-px bg-gray-100 dark:bg-slate-800 mb-4" />
+                                    <div className="flex gap-3">
+                                        <button
+                                            onClick={handleDontKnow}
+                                            disabled={isSubmitting}
+                                            className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl border-2 border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 font-bold text-[15px] hover:bg-red-100 dark:hover:bg-red-950/50 active:scale-95 disabled:opacity-50 transition-all shadow-sm dark:shadow-md"
+                                        >
+                                            <X
+                                                className="h-5 w-5"
+                                                strokeWidth={2.5}
+                                            />
+                                            I Don't Know
+                                        </button>
+                                        <button
+                                            onClick={handleKnow}
+                                            disabled={isSubmitting}
+                                            className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl bg-green-600 text-white font-bold text-[15px] hover:bg-green-700 active:scale-95 disabled:opacity-50 transition-all shadow-lg shadow-green-100 dark:shadow-green-900/30"
+                                        >
+                                            <Check
+                                                className="h-5 w-5"
+                                                strokeWidth={2.5}
+                                            />
+                                            I Know
+                                        </button>
+                                    </div>
+                                    {/* Context hint */}
+                                    {auth?.user && (
+                                        <p className="text-center text-[11px] text-gray-400 dark:text-gray-500 mt-2">
+                                            {currentBox <= 1
+                                                ? "New word — master it today in another session ✨"
+                                                : currentBox === 2
+                                                  ? "Learning — keep going, one more session!"
+                                                  : currentBox === 3
+                                                    ? "Reviewing — final push to mastery!"
+                                                    : "✨ Already mastered — just confirming!"}
+                                        </p>
+                                    )}
+                                </div>
                             </div>
                         </div>
                         {/* end meaning card */}

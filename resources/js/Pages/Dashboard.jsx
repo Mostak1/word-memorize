@@ -32,47 +32,47 @@ function StreakBanner({ streak }) {
     // ── Visual config per state ───────────────────────────────────────────────
     const config = active_today
         ? {
-              bg: "bg-orange-50 border-orange-200",
+              bg: "bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800",
               flame: "text-orange-500",
               label: null,
               message: "Great job! Come back tomorrow to keep it going.",
           }
         : is_frozen
           ? {
-                bg: "bg-blue-50 border-blue-300",
+                bg: "bg-blue-50 border-blue-300 dark:bg-blue-950/30 dark:border-blue-800",
                 flame: "text-blue-400",
                 label: {
                     text: "🧊 Streak Frozen",
-                    cls: "bg-blue-100 text-blue-700",
+                    cls: "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300",
                 },
                 message:
                     "You missed yesterday, but your streak is saved! Complete a quiz or exercise to continue.",
             }
           : at_risk
             ? {
-                  bg: "bg-yellow-50 border-yellow-300",
+                  bg: "bg-yellow-50 border-yellow-300 dark:bg-yellow-950/30 dark:border-yellow-800",
                   flame: "text-yellow-400",
                   label: {
                       text: "⚠️ At Risk",
-                      cls: "bg-yellow-100 text-yellow-700",
+                      cls: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300",
                   },
                   message:
                       "No activity yet today — do a quiz or exercise before midnight!",
               }
             : is_broken
               ? {
-                    bg: "bg-gray-100 border-gray-300",
+                    bg: "bg-gray-100 border-gray-300 dark:bg-slate-800 dark:border-slate-700",
                     flame: "text-gray-300",
                     label: {
                         text: "💀 Streak Lost",
-                        cls: "bg-gray-200 text-gray-600",
+                        cls: "bg-gray-200 text-gray-600 dark:bg-slate-700 dark:text-slate-300",
                     },
                     message:
                         "You missed too many days. Start a new streak today!",
                 }
               : {
                     // No streak yet (brand new user)
-                    bg: "bg-white border-gray-200",
+                    bg: "bg-white border-gray-200 dark:bg-slate-900 dark:border-slate-700",
                     flame: "text-gray-300",
                     label: null,
                     message:
@@ -91,32 +91,36 @@ function StreakBanner({ streak }) {
                         <Flame className={`h-8 w-8 ${config.flame}`} />
                     )}
                     <div>
-                        <p className="text-2xl font-extrabold text-gray-900 leading-none">
+                        <p className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 leading-none">
                             {current_streak}
-                            <span className="text-sm font-semibold text-gray-400 ml-1">
+                            <span className="text-sm font-semibold text-gray-400 dark:text-gray-500 ml-1">
                                 day{current_streak !== 1 ? "s" : ""}
                             </span>
                         </p>
-                        <p className="text-xs text-gray-400">Current streak</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">
+                            Current streak
+                        </p>
                     </div>
                 </div>
 
                 {/* Right side: status badge + best + safe days */}
                 <div className="flex items-center gap-3">
                     <div className="text-center">
-                        <p className="text-sm font-bold text-gray-700">
+                        <p className="text-sm font-bold text-gray-700 dark:text-gray-200">
                             {longest_streak}
                         </p>
-                        <p className="text-xs text-gray-400">Best</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">
+                            Best
+                        </p>
                     </div>
 
                     {freeze_count > 0 && (
                         <div className="flex flex-col items-center">
-                            <div className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-600">
+                            <div className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-300">
                                 <ShieldCheck className="h-3.5 w-3.5" />
                                 {freeze_count}
                             </div>
-                            <p className="text-xs text-gray-400 mt-0.5">
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                                 Safe {freeze_count === 1 ? "day" : "days"}
                             </p>
                         </div>
@@ -134,7 +138,9 @@ function StreakBanner({ streak }) {
             )}
 
             {/* Message */}
-            <p className="text-xs text-gray-500">{config.message}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+                {config.message}
+            </p>
 
             {/* Frozen CTA */}
             {is_frozen && (
@@ -147,7 +153,7 @@ function StreakBanner({ streak }) {
                     </Link>
                     <Link
                         href={route("wordlistcategory.index")}
-                        className="flex-1 text-center text-xs font-semibold bg-white border border-blue-300 text-blue-600 rounded-xl py-2 hover:bg-blue-50 transition-colors"
+                        className="flex-1 text-center text-xs font-semibold bg-white border border-blue-300 text-blue-600 rounded-xl py-2 hover:bg-blue-50 transition-colors dark:bg-slate-800 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-slate-700"
                     >
                         Do Exercise
                     </Link>
@@ -159,7 +165,7 @@ function StreakBanner({ streak }) {
                 !active_today &&
                 !is_broken &&
                 auto_save_available && (
-                    <p className="text-xs text-blue-400 mt-1.5">
+                    <p className="text-xs text-blue-400 dark:text-blue-300 mt-1.5">
                         🛡️ Auto-save available — if you miss a day this week
                         your streak will be saved.
                     </p>
@@ -178,9 +184,9 @@ export default function Dashboard({
     return (
         <AppLayout>
             <Head title="Dashboard" />
-            <div className="min-h-screen bg-[#F0F2F5]">
+            <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
                 <div className="w-full max-w-2xl mx-auto px-4 py-5">
-                    <p className="text-gray-500 text-sm mb-4">
+                    <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">
                         Start learning and expand your vocabulary
                     </p>
 
@@ -191,15 +197,15 @@ export default function Dashboard({
                             href={route("my.words.index") + "?new=1"}
                             className="block"
                         >
-                            <div className="bg-white rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm hover:shadow-md transition-shadow min-h-[160px]">
-                                <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
+                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm hover:shadow-md transition-shadow min-h-[160px]">
+                                <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-950/30 flex items-center justify-center">
                                     <Plus className="h-8 w-8 text-blue-500" />
                                 </div>
                                 <div className="text-center">
-                                    <p className="font-semibold text-gray-900 text-sm">
+                                    <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
                                         Add New Word
                                     </p>
-                                    <p className="text-xs text-gray-400 mt-0.5">
+                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                                         Expand vocabulary
                                     </p>
                                 </div>
@@ -210,15 +216,15 @@ export default function Dashboard({
                             href={route("wordlistcategory.index")}
                             className="block"
                         >
-                            <div className="bg-white rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm hover:shadow-md transition-shadow min-h-[160px]">
-                                <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center">
+                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm hover:shadow-md transition-shadow min-h-[160px]">
+                                <div className="w-16 h-16 rounded-full bg-purple-100 dark:bg-purple-950/30 flex items-center justify-center">
                                     <List className="h-8 w-8 text-purple-500" />
                                 </div>
                                 <div className="text-center">
-                                    <p className="font-semibold text-gray-900 text-sm">
+                                    <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
                                         WordLists
                                     </p>
-                                    <p className="text-xs text-gray-400 mt-0.5">
+                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                                         Browse All
                                     </p>
                                 </div>
@@ -226,15 +232,15 @@ export default function Dashboard({
                         </Link>
 
                         <Link href={route("words.mastered")} className="block">
-                            <div className="bg-white rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm hover:shadow-md transition-shadow min-h-[160px]">
-                                <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm hover:shadow-md transition-shadow min-h-[160px]">
+                                <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-950/30 flex items-center justify-center">
                                     <Trophy className="h-8 w-8 text-green-600" />
                                 </div>
                                 <div className="text-center">
-                                    <p className="font-semibold text-gray-900 text-sm">
+                                    <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
                                         Mastered Words
                                     </p>
-                                    <p className="text-xs text-gray-400 mt-0.5">
+                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                                         {masteredCount > 0 ? (
                                             <span className="font-extrabold text-green-600 text-base">
                                                 {masteredCount} words
@@ -248,15 +254,15 @@ export default function Dashboard({
                         </Link>
 
                         <Link href={route("quiz.index")} className="block">
-                            <div className="bg-white rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm hover:shadow-md transition-shadow min-h-[160px]">
-                                <div className="w-16 h-16 rounded-full bg-[#E5201C]/10 flex items-center justify-center">
+                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm hover:shadow-md transition-shadow min-h-[160px]">
+                                <div className="w-16 h-16 rounded-full bg-[#E5201C]/10 dark:bg-red-950/30 flex items-center justify-center">
                                     <BookOpen className="h-8 w-8 text-[#E5201C]" />
                                 </div>
                                 <div className="text-center">
-                                    <p className="font-semibold text-gray-900 text-sm">
+                                    <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
                                         Quiz
                                     </p>
-                                    <p className="text-xs text-gray-400 mt-0.5">
+                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                                         Practice now
                                     </p>
                                 </div>
@@ -265,28 +271,28 @@ export default function Dashboard({
                     </div>
 
                     <div className="grid grid-cols-3 gap-3 mb-4">
-                        <div className="bg-white rounded-2xl py-5 px-3 flex flex-col items-center justify-center gap-2 shadow-sm cursor-pointer hover:shadow-md transition-shadow">
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl py-5 px-3 flex flex-col items-center justify-center gap-2 shadow-sm cursor-pointer hover:shadow-md transition-shadow">
                             <Star className="h-6 w-6 text-amber-400" />
-                            <span className="text-xs font-medium text-gray-600 text-center">
+                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400 text-center">
                                 Rate 5 Stars
                             </span>
                         </div>
-                        <div className="bg-white rounded-2xl py-5 px-3 flex flex-col items-center justify-center gap-2 shadow-sm cursor-pointer hover:shadow-md transition-shadow">
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl py-5 px-3 flex flex-col items-center justify-center gap-2 shadow-sm cursor-pointer hover:shadow-md transition-shadow">
                             <Share2 className="h-6 w-6 text-blue-400" />
-                            <span className="text-xs font-medium text-gray-600 text-center">
+                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400 text-center">
                                 Share
                             </span>
                         </div>
-                        <div className="bg-white rounded-2xl py-5 px-3 flex flex-col items-center justify-center gap-2 shadow-sm cursor-pointer hover:shadow-md transition-shadow">
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl py-5 px-3 flex flex-col items-center justify-center gap-2 shadow-sm cursor-pointer hover:shadow-md transition-shadow">
                             <Settings className="h-6 w-6 text-gray-400" />
-                            <span className="text-xs font-medium text-gray-600 text-center">
+                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400 text-center">
                                 Settings
                             </span>
                         </div>
                     </div>
 
                     <Link href={route("my.words.index")}>
-                        <div className="bg-[#E5201C] rounded-2xl py-5 px-6 text-center shadow-md hover:bg-red-700 transition-colors cursor-pointer">
+                        <div className="bg-[#E5201C] dark:bg-red-700 rounded-2xl py-5 px-6 text-center shadow-md hover:bg-red-700 dark:hover:bg-red-800 transition-colors cursor-pointer">
                             <p className="text-white font-bold text-sm">
                                 My Word Collection
                             </p>

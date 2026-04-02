@@ -51,12 +51,9 @@ Route::get('/run-seeder', function () {
             Artisan::call('db:seed', ['--class' => $class, '--force' => true]);
             $output = Artisan::output();
 
-            // Extract word stats from the "Done" line
             preg_match('/inserted:\s*(\d+),\s*updated:\s*(\d+),\s*skipped:\s*(\d+)/i', $output, $m);
-
-            // Extract image stats — only present in OxfordWordsSeeder output:
-            // "images added: 123, already existed / no file: 45."
             preg_match('/images added:\s*(\d+),\s*already existed \/ no file:\s*(\d+)/i', $output, $img);
+            preg_match('/words_without_images:\s*(\[.*\])/i', $output, $wni);  // ← ADD THIS
 
             $results[$class] = [
                 'status' => 'success',
@@ -65,6 +62,7 @@ Route::get('/run-seeder', function () {
                 'skipped' => isset($m[3]) ? (int) $m[3] : null,
                 'images_added' => isset($img[1]) ? (int) $img[1] : null,
                 'images_skipped' => isset($img[2]) ? (int) $img[2] : null,
+                'words_without_images' => isset($wni[1]) ? json_decode($wni[1], true) : [],  // ← ADD THIS
             ];
         } catch (\Throwable $e) {
             $results[$class] = [

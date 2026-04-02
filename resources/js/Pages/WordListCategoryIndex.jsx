@@ -6,7 +6,7 @@ export default function WordListCategoryIndex({ wordListCategories }) {
     return (
         <AppLayout>
             <Head title="Word Lists" />
-            <div className="min-h-screen bg-[#F0F2F5]">
+            <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
                 <main className="max-w-2xl mx-auto px-4 py-5 pb-20">
                     {wordListCategories && wordListCategories.length > 0 ? (
                         <div className="grid grid-cols-2 gap-3">
@@ -25,9 +25,9 @@ export default function WordListCategoryIndex({ wordListCategories }) {
                                         opacity: 0,
                                     }}
                                 >
-                                    <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md active:scale-[0.98] transition-all flex flex-col">
+                                    <div className="bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-md active:scale-[0.98] transition-all flex flex-col">
                                         {/* Thumbnail */}
-                                        <div className="w-full aspect-[4/3] bg-gray-100 flex items-center justify-center overflow-hidden">
+                                        <div className="w-full aspect-[4/3] bg-gray-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden">
                                             {category.thumbnail_url_full ? (
                                                 <img
                                                     src={
@@ -38,8 +38,8 @@ export default function WordListCategoryIndex({ wordListCategories }) {
                                                 />
                                             ) : (
                                                 /* Monogram placeholder */
-                                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-red-50 to-red-100">
-                                                    <span className="text-4xl font-black text-[#E5201C]/40 select-none">
+                                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-red-50 dark:from-red-950/30 to-red-100 dark:to-red-900/30">
+                                                    <span className="text-4xl font-black text-[#E5201C]/40 dark:text-[#E5201C]/20 select-none">
                                                         {category.name
                                                             .charAt(0)
                                                             .toUpperCase()}
@@ -50,10 +50,10 @@ export default function WordListCategoryIndex({ wordListCategories }) {
 
                                         {/* Info */}
                                         <div className="px-3.5 py-3 h-[72px] flex flex-col justify-between">
-                                            <h2 className="text-sm font-bold text-gray-900 leading-snug line-clamp-2">
+                                            <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100 leading-snug line-clamp-2">
                                                 {category.name}
                                             </h2>
-                                            <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                                            <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
                                                 <BookOpen className="h-3.5 w-3.5 shrink-0" />
                                                 <span>
                                                     {category.wordlists_count}{" "}
@@ -69,14 +69,14 @@ export default function WordListCategoryIndex({ wordListCategories }) {
                             ))}
                         </div>
                     ) : (
-                        <div className="bg-white rounded-2xl p-10 text-center shadow-sm">
-                            <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
-                                <BookOpen className="h-10 w-10 text-gray-400" />
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-10 text-center shadow-sm">
+                            <div className="w-20 h-20 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4">
+                                <BookOpen className="h-10 w-10 text-gray-400 dark:text-slate-600" />
                             </div>
-                            <h3 className="text-lg font-bold text-gray-900 mb-2">
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
                                 No Word List Categories Available
                             </h3>
-                            <p className="text-gray-500 text-sm mb-5">
+                            <p className="text-gray-500 dark:text-gray-400 text-sm mb-5">
                                 There are no word list categories created yet.
                             </p>
                             <Link

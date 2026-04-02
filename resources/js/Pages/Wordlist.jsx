@@ -45,7 +45,7 @@ function Pagination({ links, meta }) {
 
     return (
         <div className="flex flex-col items-center gap-3 mt-6">
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-gray-400 dark:text-gray-500">
                 Showing {from}–{to} of {total} lists
             </p>
 
@@ -53,7 +53,7 @@ function Pagination({ links, meta }) {
                 <button
                     onClick={() => goTo(prevLink)}
                     disabled={!prevLink}
-                    className="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-200 bg-white text-gray-500 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+                    className="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-500 dark:text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-slate-800 hover:border-gray-300 dark:hover:border-slate-600 transition-all shadow-sm"
                     aria-label="Previous page"
                 >
                     <ChevronLeft className="h-4 w-4" />
@@ -78,8 +78,8 @@ function Pagination({ links, meta }) {
                             }}
                             className={`w-9 h-9 rounded-xl text-sm font-semibold transition-all shadow-sm border ${
                                 page === current_page
-                                    ? "bg-[#E5201C] text-white border-[#E5201C] shadow-md shadow-red-100"
-                                    : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                                    ? "bg-[#E5201C] text-white border-[#E5201C] shadow-md shadow-red-100 dark:shadow-red-900/30"
+                                    : "bg-white dark:bg-slate-900 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 hover:border-gray-300 dark:hover:border-slate-600"
                             }`}
                         >
                             {page}
@@ -90,7 +90,7 @@ function Pagination({ links, meta }) {
                 <button
                     onClick={() => goTo(nextLink)}
                     disabled={!nextLink}
-                    className="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-200 bg-white text-gray-500 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+                    className="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-500 dark:text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-slate-800 hover:border-gray-300 dark:hover:border-slate-600 transition-all shadow-sm"
                     aria-label="Next page"
                 >
                     <ChevronRight className="h-4 w-4" />
@@ -110,7 +110,7 @@ function MasteredProgress({ mastered, total }) {
     return (
         <div className="mt-3 pt-3 border-t border-gray-100">
             {/* Bar */}
-            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-2">
+            <div className="h-1.5 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden mb-2">
                 <div
                     className={`h-full rounded-full transition-all ${allDone ? "bg-green-500" : "bg-[#E5201C]"}`}
                     style={{ width: `${Math.min(100, pct)}%` }}
@@ -119,16 +119,16 @@ function MasteredProgress({ mastered, total }) {
 
             {/* Labels */}
             <div className="flex items-center justify-between">
-                <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700">
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 dark:text-green-400">
                     <Trophy className="h-3 w-3" />
                     {mastered} mastered
                 </span>
                 {allDone ? (
-                    <span className="text-xs font-bold text-green-600">
+                    <span className="text-xs font-bold text-green-600 dark:text-green-400">
                         ✓ Complete!
                     </span>
                 ) : (
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-gray-400 dark:text-gray-500">
                         {remaining} remaining
                     </span>
                 )}
@@ -171,14 +171,14 @@ export default function Wordlist({
     return (
         <AppLayout>
             <Head title="Exercises" />
-            <div className="min-h-screen bg-[#F0F2F5]">
+            <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
                 <main className="max-w-2xl mx-auto px-4 py-5 pb-20">
                     {(currentCategory || currentDifficulty) && (
                         <div className="mb-4 flex items-center gap-2">
-                            <span className="text-sm text-gray-500">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
                                 Showing:
                             </span>
-                            <span className="text-sm font-semibold text-gray-800 bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
+                            <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 bg-white dark:bg-slate-900 px-3 py-1 rounded-full border border-gray-200 dark:border-slate-700 shadow-sm">
                                 {currentCategory || currentDifficulty}
                             </span>
                         </div>
@@ -342,14 +342,14 @@ export default function Wordlist({
                             />
                         </>
                     ) : (
-                        <div className="bg-white rounded-2xl p-10 text-center shadow-sm">
-                            <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
-                                <BookOpen className="h-10 w-10 text-gray-400" />
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-10 text-center shadow-sm">
+                            <div className="w-20 h-20 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4">
+                                <BookOpen className="h-10 w-10 text-gray-400 dark:text-slate-600" />
                             </div>
-                            <h3 className="text-lg font-bold text-gray-900 mb-2">
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
                                 No Word Lists Available
                             </h3>
-                            <p className="text-gray-500 text-sm mb-5">
+                            <p className="text-gray-500 dark:text-gray-400 text-sm mb-5">
                                 There are no word lists created yet.
                             </p>
                             <Link

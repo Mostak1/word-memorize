@@ -16,7 +16,7 @@ class AcademicWordListSeeder extends Seeder
     /**
      * Path to the CSV file (relative to Laravel project root).
      */
-    protected string $filePath = 'database/data/Academic_word_list_updated_v2.csv';
+    protected string $filePath = 'database/data/Academic_word_list.csv';
 
     /**
      * Path to the word images folder (relative to Laravel project root).
@@ -107,7 +107,8 @@ class AcademicWordListSeeder extends Seeder
             'updated' => $updated,
             'skipped' => $skipped,
             'images_added' => $imagesAdded,
-            'images_skipped' => $imagesSkipped
+            'images_skipped' => $imagesSkipped,
+            'no_image_words' => $noImageWords,
         ] =
             $this->seedSublists($sublists, $creatorId, $imageIndex);
 
@@ -116,6 +117,8 @@ class AcademicWordListSeeder extends Seeder
             "\nDone — words inserted: {$inserted}, updated: {$updated}, skipped: {$skipped}." .
             "\n       images added: {$imagesAdded}, already existed / no file: {$imagesSkipped}."
         );
+
+        $this->log('info', 'words_without_images: ' . json_encode(array_values(array_unique($noImageWords))));
     }
 
     // ── Unseed ─────────────────────────────────────────────────────────────
@@ -292,6 +295,7 @@ class AcademicWordListSeeder extends Seeder
             $totalSkipped = 0;
             $totalImagesAdded = 0;
             $totalImagesSkip = 0;
+            $allNoImageWords = [];
 
             $sublistIndex = 0;
             foreach ($sublists as $sublistName => $rows) {
@@ -303,6 +307,7 @@ class AcademicWordListSeeder extends Seeder
                     'skipped' => $skp,
                     'images_added' => $imgAdded,
                     'images_skipped' => $imgSkip,
+                    'no_image_words' => $noImgWords,
                 ] = $this->seedWordList($category->id, $sublistName, $rows, $sublistIndex, $creatorId, $imageIndex);
 
                 $sublistIndex++;
@@ -312,6 +317,7 @@ class AcademicWordListSeeder extends Seeder
                 $totalSkipped += $skp;
                 $totalImagesAdded += $imgAdded;
                 $totalImagesSkip += $imgSkip;
+                $allNoImageWords = array_merge($allNoImageWords, $noImgWords);
             }
 
             return [
@@ -320,6 +326,7 @@ class AcademicWordListSeeder extends Seeder
                 'skipped' => $totalSkipped,
                 'images_added' => $totalImagesAdded,
                 'images_skipped' => $totalImagesSkip,
+                'no_image_words' => $allNoImageWords,
             ];
         });
     }
@@ -435,7 +442,7 @@ class AcademicWordListSeeder extends Seeder
 
         // ── Image seeding ──────────────────────────────────────────────────
         // Run after all words are upserted so word IDs are guaranteed to exist.
-        ['added' => $imagesAdded, 'skipped' => $imagesSkipped] =
+        ['added' => $imagesAdded, 'skipped' => $imagesSkipped, 'no_image_words' => $noImageWords] =
             $this->seedImagesForWordList($wordList->id, $rows, $imageIndex);
 
         $this->log(
@@ -450,6 +457,7 @@ class AcademicWordListSeeder extends Seeder
             'skipped' => $skipped,
             'images_added' => $imagesAdded,
             'images_skipped' => $imagesSkipped,
+            'no_image_words' => $noImageWords,
         ];
     }
 
@@ -481,6 +489,7 @@ class AcademicWordListSeeder extends Seeder
 
         $added = 0;
         $skipped = 0;
+        $noImageWords = [];
 
         foreach ($rows as $row) {
             $wordStr = $this->clean($row[1] ?? null);
@@ -507,6 +516,7 @@ class AcademicWordListSeeder extends Seeder
 
             if ($sourcePath === null) {
                 // No image file exists for this word
+                $noImageWords[] = $wordStr;
                 $skipped++;
                 continue;
             }
@@ -531,7 +541,7 @@ class AcademicWordListSeeder extends Seeder
             $added++;
         }
 
-        return ['added' => $added, 'skipped' => $skipped];
+        return ['added' => $added, 'skipped' => $skipped, 'no_image_words' => $noImageWords];
     }
 
     /**

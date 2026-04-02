@@ -29,7 +29,7 @@ class OxfordWordsSeeder extends Seeder
      *
      * Matching handles all three quirks automatically (see buildImageIndex).
      */
-    protected string $imagesPath = 'database/data/oxford_images';
+    protected string $imagesPath = 'database/data/new_oxford_images';
 
     /**
      * Supported image extensions (checked in this priority order).
@@ -109,6 +109,7 @@ class OxfordWordsSeeder extends Seeder
             'skipped' => $skipped,
             'images_added' => $imagesAdded,
             'images_skipped' => $imagesSkipped,
+            'no_image_words' => $noImageWords,
         ] = $this->seedAll($grouped, $creatorId, $imageIndex);
 
         $this->log(
@@ -116,6 +117,8 @@ class OxfordWordsSeeder extends Seeder
             "\nDone — words inserted: {$inserted}, updated: {$updated}, skipped: {$skipped}." .
             "\n       images added: {$imagesAdded}, already existed / no file: {$imagesSkipped}."
         );
+
+        $this->log('info', 'words_without_images: ' . json_encode(array_values(array_unique($noImageWords))));
     }
 
     // ── Unseed ─────────────────────────────────────────────────────────────
@@ -201,6 +204,20 @@ class OxfordWordsSeeder extends Seeder
             $base = trim(preg_replace('/\s*\(.*\)\s*$/', '', $stem));
             if ($base !== '' && $base !== $stem && !isset($index[$base])) {
                 $index[$base] = $absPath;
+            }
+
+            // Fix 3: strip trailing _word suffixes like "_cropped", "_edited", etc.
+            // so "approve_cropped.jpg" is findable via key "approve".
+            // Applied to both the full stem and the Fix-2 base so all combinations
+            // work, e.g. "approve (v.)_cropped.jpg":
+            //   stem → "approve (v.)_cropped"
+            //   Fix-2 base → "approve_cropped"
+            //   Fix-3 stripped → "approve"
+            foreach ([$stem, $base] as $candidate) {
+                $stripped = trim(preg_replace('/_[a-z0-9]+$/i', '', $candidate));
+                if ($stripped !== '' && $stripped !== $candidate && !isset($index[$stripped])) {
+                    $index[$stripped] = $absPath;
+                }
             }
         }
 
@@ -347,6 +364,7 @@ class OxfordWordsSeeder extends Seeder
             $totalSkipped = 0;
             $totalImagesAdded = 0;
             $totalImagesSkipped = 0;
+            $allNoImageWords = [];
             $listIndex = 0;
 
             foreach ($grouped as $subCatName => $rows) {
@@ -361,6 +379,7 @@ class OxfordWordsSeeder extends Seeder
                     'skipped' => $skp,
                     'images_added' => $imgAdded,
                     'images_skipped' => $imgSkip,
+                    'no_image_words' => $noImgWords,
                 ] = $this->seedWordList($category->id, $subCatName, $rows, $listIndex, $creatorId, $imageIndex);
 
                 $totalInserted += $ins;
@@ -368,6 +387,7 @@ class OxfordWordsSeeder extends Seeder
                 $totalSkipped += $skp;
                 $totalImagesAdded += $imgAdded;
                 $totalImagesSkipped += $imgSkip;
+                $allNoImageWords = array_merge($allNoImageWords, $noImgWords);
                 $listIndex++;
             }
 
@@ -377,6 +397,7 @@ class OxfordWordsSeeder extends Seeder
                 'skipped' => $totalSkipped,
                 'images_added' => $totalImagesAdded,
                 'images_skipped' => $totalImagesSkipped,
+                'no_image_words' => $allNoImageWords,
             ];
         });
     }
@@ -496,7 +517,7 @@ class OxfordWordsSeeder extends Seeder
 
         // ── Image seeding ──────────────────────────────────────────────────
         // Run after all words are upserted so word IDs are guaranteed to exist.
-        ['added' => $imagesAdded, 'skipped' => $imagesSkipped] =
+        ['added' => $imagesAdded, 'skipped' => $imagesSkipped, 'no_image_words' => $noImageWords] =
             $this->seedImagesForWordList($wordList->id, $rows, $imageIndex);
 
         $this->log(
@@ -511,6 +532,7 @@ class OxfordWordsSeeder extends Seeder
             'skipped' => $skipped,
             'images_added' => $imagesAdded,
             'images_skipped' => $imagesSkipped,
+            'no_image_words' => $noImageWords,
         ];
     }
 
@@ -543,6 +565,7 @@ class OxfordWordsSeeder extends Seeder
 
         $added = 0;
         $skipped = 0;
+        $noImageWords = [];
 
         foreach ($rows as $row) {
             $wordStr = $this->clean($row[0] ?? null);   // col 0 = word
@@ -566,6 +589,7 @@ class OxfordWordsSeeder extends Seeder
             $sourcePath = $this->findImageForWord($wordStr, $imageIndex);
 
             if ($sourcePath === null) {
+                $noImageWords[] = $wordStr;
                 $skipped++;
                 continue;
             }
@@ -588,7 +612,7 @@ class OxfordWordsSeeder extends Seeder
             $added++;
         }
 
-        return ['added' => $added, 'skipped' => $skipped];
+        return ['added' => $added, 'skipped' => $skipped, 'no_image_words' => $noImageWords];
     }
 
     /**

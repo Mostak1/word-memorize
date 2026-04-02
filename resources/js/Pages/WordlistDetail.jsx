@@ -18,14 +18,14 @@ export default function WordlistDetail({
     const hasSubcategories = subcategories && subcategories.length > 0;
 
     const collocationColors = [
-        "bg-red-100/70 text-red-700 border-red-200",
-        "bg-blue-100/70 text-blue-700 border-blue-200",
-        "bg-green-100/70 text-green-700 border-green-200",
-        "bg-amber-100/70 text-amber-700 border-amber-200",
-        "bg-purple-100/70 text-purple-700 border-purple-200",
-        "bg-teal-100/70 text-teal-700 border-teal-200",
-        "bg-pink-100/70 text-pink-700 border-pink-200",
-        "bg-indigo-100/70 text-indigo-700 border-indigo-200",
+        "bg-red-100/70 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800",
+        "bg-blue-100/70 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800",
+        "bg-green-100/70 text-green-700 border-green-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800",
+        "bg-amber-100/70 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800",
+        "bg-purple-100/70 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800",
+        "bg-teal-100/70 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-400 dark:border-teal-800",
+        "bg-pink-100/70 text-pink-700 border-pink-200 dark:bg-pink-950/40 dark:text-pink-400 dark:border-pink-800",
+        "bg-indigo-100/70 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-800",
     ];
 
     // Parse word and show details
@@ -78,24 +78,24 @@ export default function WordlistDetail({
     return (
         <AppLayout>
             <Head title={`${wordList.title}`} />
-            <div className="min-h-screen bg-[#F0F2F5] pb-20">
+            <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 pb-20">
                 <div className="max-w-xl mx-auto px-4 pt-5">
                     {/* Sub-header */}
                     <div className="flex items-center gap-3 mb-4">
                         <Link
                             href={backHref}
-                            className="p-2 rounded-xl bg-white shadow-sm hover:shadow-md transition text-gray-500"
+                            className="p-2 rounded-xl bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition text-gray-500 dark:text-gray-400"
                         >
                             <ChevronLeft className="h-5 w-5" />
                         </Link>
                         <div className="flex-1 min-w-0">
                             {/* Breadcrumb */}
                             {category && (
-                                <p className="text-xs text-gray-400 mb-0.5 truncate">
+                                <p className="text-xs text-gray-400 dark:text-gray-500 mb-0.5 truncate">
                                     {category.name}
                                 </p>
                             )}
-                            <h1 className="text-xl font-bold text-gray-900 leading-tight">
+                            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
                                 {wordList.title}
                             </h1>
                             <div className="flex items-center gap-2 mt-1">
@@ -104,7 +104,7 @@ export default function WordlistDetail({
                                 >
                                     {wordList.difficulty}
                                 </span>
-                                <span className="text-xs font-medium px-2.5 py-0.5 rounded-full border border-gray-200 bg-white text-gray-600">
+                                <span className="text-xs font-medium px-2.5 py-0.5 rounded-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-600 dark:text-gray-400">
                                     {wordList.words_count} words
                                 </span>
                             </div>
@@ -123,7 +123,7 @@ export default function WordlistDetail({
                     {/* ── SUBCATEGORY MODE ── */}
                     {hasSubcategories && (
                         <>
-                            <div className="flex items-center gap-2 text-gray-500 mb-3">
+                            <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-3">
                                 <Layers className="h-4 w-4" />
                                 <span className="text-sm font-semibold">
                                     Subcategories ({subcategories.length})
@@ -141,7 +141,7 @@ export default function WordlistDetail({
                                         className="block"
                                     >
                                         <div
-                                            className="bg-white rounded-2xl px-4 py-3.5 flex items-center gap-4 shadow-sm hover:shadow-md transition-all"
+                                            className="bg-white dark:bg-slate-900 rounded-2xl px-4 py-3.5 flex items-center gap-4 shadow-sm hover:shadow-md transition-all"
                                             style={{
                                                 animationDelay: `${index * 0.06}s`,
                                                 animation:
@@ -149,21 +149,21 @@ export default function WordlistDetail({
                                                 opacity: 0,
                                             }}
                                         >
-                                            <div className="w-11 h-11 rounded-full bg-[#E5201C]/10 flex items-center justify-center shrink-0">
+                                            <div className="w-11 h-11 rounded-full bg-[#E5201C]/10 dark:bg-red-950/30 flex items-center justify-center shrink-0">
                                                 <Layers className="h-5 w-5 text-[#E5201C]" />
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="font-semibold text-gray-900 text-sm">
+                                                <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
                                                     {sub.name}
                                                 </p>
-                                                <p className="text-xs text-gray-400 mt-0.5">
+                                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                                                     {sub.words_count}{" "}
                                                     {sub.words_count === 1
                                                         ? "word"
                                                         : "words"}
                                                 </p>
                                             </div>
-                                            <ChevronRight className="h-4 w-4 text-gray-300 shrink-0" />
+                                            <ChevronRight className="h-4 w-4 text-gray-300 dark:text-slate-600 shrink-0" />
                                         </div>
                                     </Link>
                                 ))}
@@ -247,7 +247,7 @@ export default function WordlistDetail({
                                                                             )}
                                                                         {collocs.length >
                                                                             3 && (
-                                                                            <span className="text-xs text-gray-400 px-2 py-1">
+                                                                            <span className="text-xs text-gray-400 dark:text-gray-500 px-2 py-1">
                                                                                 +
                                                                                 {collocs.length -
                                                                                     3}
@@ -269,7 +269,7 @@ export default function WordlistDetail({
                                                                     word.word,
                                                                 );
                                                             }}
-                                                            className="p-2 text-[#E5201C] hover:bg-red-50 rounded-full transition"
+                                                            className="p-2 text-[#E5201C] hover:bg-red-50 dark:hover:bg-red-950/20 rounded-full transition"
                                                         >
                                                             <Volume2 className="h-5 w-5" />
                                                         </button>
@@ -292,12 +292,12 @@ export default function WordlistDetail({
                                                         },
                                                     )
                                                 }
-                                                className="flex items-center gap-1 bg-white px-4 py-2 rounded-xl text-sm font-medium text-gray-700 shadow-sm hover:shadow-md disabled:opacity-40 transition"
+                                                className="flex items-center gap-1 bg-white dark:bg-slate-900 px-4 py-2 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 shadow-sm hover:shadow-md dark:border dark:border-slate-700 disabled:opacity-40 transition"
                                             >
                                                 <ChevronLeft className="h-4 w-4" />{" "}
                                                 Previous
                                             </button>
-                                            <span className="text-sm text-gray-400">
+                                            <span className="text-sm text-gray-400 dark:text-gray-500">
                                                 {words.current_page} /{" "}
                                                 {words.last_page}
                                             </span>
@@ -312,7 +312,7 @@ export default function WordlistDetail({
                                                         },
                                                     )
                                                 }
-                                                className="flex items-center gap-1 bg-white px-4 py-2 rounded-xl text-sm font-medium text-gray-700 shadow-sm hover:shadow-md disabled:opacity-40 transition"
+                                                className="flex items-center gap-1 bg-white dark:bg-slate-900 px-4 py-2 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 shadow-sm hover:shadow-md dark:border dark:border-slate-700 disabled:opacity-40 transition"
                                             >
                                                 Next{" "}
                                                 <ChevronRight className="h-4 w-4" />
@@ -321,12 +321,12 @@ export default function WordlistDetail({
                                     )}
                                 </>
                             ) : (
-                                <div className="bg-white rounded-2xl p-10 text-center shadow-sm">
-                                    <BookOpen className="h-14 w-14 text-gray-300 mx-auto mb-3" />
-                                    <h3 className="font-bold text-gray-800 mb-1">
+                                <div className="bg-white dark:bg-slate-900 rounded-2xl p-10 text-center shadow-sm">
+                                    <BookOpen className="h-14 w-14 text-gray-300 dark:text-slate-700 mx-auto mb-3" />
+                                    <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-1">
                                         No Words Yet
                                     </h3>
-                                    <p className="text-sm text-gray-400">
+                                    <p className="text-sm text-gray-400 dark:text-gray-500">
                                         This word list doesn't have any words
                                         yet.
                                     </p>
