@@ -7,6 +7,7 @@ use App\Models\ReviewWord;
 use App\Models\Word;
 use App\Services\SrsService;
 use App\Services\StreakService;
+use App\Services\XpService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -16,6 +17,7 @@ class ReviewWordController extends Controller
     public function __construct(
         private StreakService $streakService,
         private SrsService $srsService,
+        private XpService $xpService,
     ) {
     }
 
@@ -72,7 +74,13 @@ class ReviewWordController extends Controller
 
         $this->streakService->recordActivity($user);
 
-        return response()->json(['status' => 'ok']);
+        // Award XP for completing the session
+        $xpAwarded = $this->xpService->awardSessionXp($user);
+
+        return response()->json([
+            'status' => 'ok',
+            'xp_awarded' => $xpAwarded,
+        ]);
     }
 
     private function bookmarkedIds(array $wordIds): array

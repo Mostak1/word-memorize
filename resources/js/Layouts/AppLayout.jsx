@@ -10,6 +10,7 @@ import {
     UserPlus,
     BookOpen,
     Flag,
+    Zap,
 } from "lucide-react";
 import FlashMessages from "@/Components/FlashMessage";
 import ReportErrorDialog from "@/Components/ReportErrorDialog";
@@ -22,7 +23,9 @@ export default function AppLayout({ children }) {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [headerVisible, setHeaderVisible] = useState(true);
     const [reportDialogOpen, setReportDialogOpen] = useState(false);
+    const [xpData, setXpData] = useState(null);
     const lastScrollY = useRef(0);
+    const xpRefreshKey = useRef(0);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -46,6 +49,36 @@ export default function AppLayout({ children }) {
         setMobileOpen(false);
         setReportDialogOpen(true);
     };
+
+    // Fetch XP status from API
+    useEffect(() => {
+        if (!user) return;
+
+        const fetchXpStatus = async () => {
+            try {
+                const csrfToken = decodeURIComponent(
+                    document.cookie
+                        .split("; ")
+                        .find((row) => row.startsWith("XSRF-TOKEN="))
+                        ?.split("=")[1] ?? "",
+                );
+                const response = await fetch(route("api.xp-shop.status"), {
+                    headers: {
+                        "X-XSRF-TOKEN": csrfToken,
+                        Accept: "application/json",
+                    },
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setXpData(data.xp);
+                }
+            } catch (error) {
+                console.error("Failed to fetch XP status:", error);
+            }
+        };
+
+        fetchXpStatus();
+    }, [user, xpRefreshKey.current]);
 
     return (
         <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
@@ -96,6 +129,15 @@ export default function AppLayout({ children }) {
                                         <BookOpen className="h-4 w-4" />
                                         <span>WordLists</span>
                                     </Link>
+
+                                    {/* XP Display */}
+                                    {xpData && (
+                                        <div className="flex items-center gap-1.5 text-white text-sm font-semibold px-3 py-2 rounded-lg bg-white/10 ml-2">
+                                            <Zap className="h-4 w-4 text-yellow-300" />
+                                            <span>{xpData.balance}</span>
+                                        </div>
+                                    )}
+
                                     {/* Theme toggle — visible to all users */}
                                     {/* <ThemeToggle /> */}
                                     {/* Desktop report button — self-contained */}
@@ -205,6 +247,15 @@ export default function AppLayout({ children }) {
                                         <BookOpen className="h-4 w-4" />{" "}
                                         WordLists
                                     </Link>
+
+                                    {/* XP Display (Mobile) */}
+                                    {xpData && (
+                                        <div className="flex items-center gap-2 text-white font-semibold px-3 py-2 rounded-lg bg-white/10 mx-3 mt-1">
+                                            <Zap className="h-4 w-4 text-yellow-300" />
+                                            <span>{xpData.balance} XP</span>
+                                        </div>
+                                    )}
+
                                     {/* Mobile menu Report Error — uses lifted state so unmounting is safe */}
                                     <button
                                         onClick={openReportDialog}

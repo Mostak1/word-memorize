@@ -1,4 +1,5 @@
 import { Head, Link, router } from "@inertiajs/react";
+import { Player } from "@lottiefiles/react-lottie-player";
 import AppLayout from "@/Layouts/AppLayout";
 import {
     AlertDialog,
@@ -10,7 +11,15 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/Components/ui/alert-dialog";
-import { Volume2, LogIn, Bookmark, ChevronLeft, X, Check } from "lucide-react";
+import {
+    Volume2,
+    LogIn,
+    Bookmark,
+    ChevronLeft,
+    X,
+    Check,
+    Zap,
+} from "lucide-react";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import FlashMessages from "@/Components/FlashMessage";
 import { usePage } from "@inertiajs/react";
@@ -82,6 +91,7 @@ export default function ExerciseSession({
     // ── Session stats ─────────────────────────────────────────────────────────
     const [promotedCount, setPromotedCount] = useState(0); // words answered "I Know"
     const [dontKnowCount, setDontKnowCount] = useState(0); // total "I Don't Know" taps
+    const [sessionXpAwarded, setSessionXpAwarded] = useState(0); // XP earned this session
 
     // NEW: Total cards processed in this session (used for progress bar)
     const answeredCount = promotedCount + dontKnowCount;
@@ -134,7 +144,7 @@ export default function ExerciseSession({
     useEffect(() => {
         if (!isDone || !auth?.user) return;
 
-        // Fire-and-forget completion signal (same style as your pingServer)
+        // Fire-and-forget completion signal with XP tracking
         const csrfToken = decodeURIComponent(
             document.cookie
                 .split("; ")
@@ -150,7 +160,14 @@ export default function ExerciseSession({
                 Accept: "application/json",
             },
             body: JSON.stringify({}),
-        }).catch(() => {}); // silent fail - we don't want to break the UI
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.xp_awarded) {
+                    setSessionXpAwarded(data.xp_awarded);
+                }
+            })
+            .catch(() => {}); // silent fail - we don't want to break the UI
     }, [isDone, auth?.user]);
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -426,7 +443,16 @@ export default function ExerciseSession({
                 <Head title="Session Complete" />
                 <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 flex flex-col items-center justify-center px-4 py-10">
                     <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-md dark:shadow-xl dark:shadow-slate-950 w-full max-w-md p-8 text-center">
-                        <div className="text-6xl mb-4">🎉</div>
+                        {/* Lottie celebration animation */}
+                        <div className="flex justify-center -mt-2 -mb-2">
+                            <Player
+                                autoplay
+                                loop={false}
+                                keepLastFrame
+                                src="https://assets9.lottiefiles.com/packages/lf20_jbrw3hcz.json"
+                                style={{ height: 160, width: 160 }}
+                            />
+                        </div>
                         <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 mb-1">
                             Session Complete!
                         </h1>
@@ -461,6 +487,22 @@ export default function ExerciseSession({
                                 </p>
                             </div>
                         </div>
+
+                        {/* XP Earned Display */}
+                        {sessionXpAwarded > 0 && (
+                            <div className="bg-yellow-50 dark:bg-yellow-950/30 rounded-2xl py-6 px-4 mb-8 text-center border-2 border-yellow-200 dark:border-yellow-800">
+                                <div className="flex items-center justify-center gap-2 mb-2">
+                                    <Zap className="h-6 w-6 text-yellow-500" />
+                                    <p className="text-3xl font-extrabold text-yellow-600 dark:text-yellow-400">
+                                        +{sessionXpAwarded}
+                                    </p>
+                                    <Zap className="h-6 w-6 text-yellow-500" />
+                                </div>
+                                <p className="text-sm font-medium text-yellow-700 dark:text-yellow-300">
+                                    Experience Points Earned
+                                </p>
+                            </div>
+                        )}
 
                         {/* List-level progress bar */}
                         {totalWordsInList > 0 && (
@@ -727,10 +769,9 @@ export default function ExerciseSession({
                                                 activeImage?.caption ||
                                                 word.word
                                             }
-                                            className="w-full object-cover"
+                                            className="w-full h-auto object-contain"
                                             style={{
-                                                maxHeight: "220px",
-                                                objectFit: "cover",
+                                                maxHeight: "300px",
                                             }}
                                         />
                                         {currentBox >= MASTERED_BOX && (

@@ -99,4 +99,14 @@ class User extends Authenticatable
     {
         return $this->hasOne(UserStreak::class);
     }
+
+    public function xp()
+    {
+        return $this->hasOne(UserXp::class);
+    }
+
+    public function streakFreezePurchases()
+    {
+        return $this->hasMany(StreakFreezePurchase::class);
+    }
 }

@@ -11,6 +11,10 @@ use Illuminate\Support\Collection;
 
 class SrsService
 {
+  public function __construct(private XpService $xpService)
+  {
+  }
+
   // ── Session queue config ──────────────────────────────────────────────────
 
   /** Max total words in one session's Active Queue. */
@@ -38,6 +42,7 @@ class SrsService
   public function recordCorrect(User $user, Word $word): WordProgress
   {
     $progress = $this->getOrCreate($user, $word);
+    $oldBox = $progress->box;
     $newBox = min($progress->box + 1, WordProgress::MASTERED_BOX);
 
     $dayIntervals = [
@@ -54,15 +59,18 @@ class SrsService
       'last_reviewed_at' => now(),
       'next_review_at' => $nextDue,
     ]);
+
     // No longer needs focused review (only matters if moved to mastered)
     if ($newBox >= WordProgress::MASTERED_BOX) {
       ReviewWord::where('user_id', $user->id)
         ->where('word_id', $word->id)
         ->delete();
+
+      // Award XP for mastering the word (only on first mastery)
+      if ($oldBox < WordProgress::MASTERED_BOX) {
+        $this->xpService->awardMasteryXp($user, $word->id);
+      }
     }
-    here('user_id', $user->id)
-      ->where('word_id', $word->id)
-      ->delete();
 
     return $progress->fresh();
   }
