@@ -20,7 +20,7 @@ import {
 import { Badge } from "@/Components/ui/badge";
 import { toast } from "sonner";
 import { Switch } from "@/Components/ui/switch";
-import { Globe, X, Image as ImageIcon, Plus } from "lucide-react";
+import { Globe, X, Image as ImageIcon, Plus, GripVertical } from "lucide-react";
 
 // ── Required word fields ──────────────────────────────────────────────────────
 const REQUIRED = {
@@ -30,6 +30,37 @@ const REQUIRED = {
     bangla_meaning: "Bangla Meaning is required.",
     example_sentences: "Example Sentences is required.",
 };
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/**
+ * Parse a collocations value coming from the server.
+ * The DB stores a JSON string; Inertia forwards it as-is.
+ * Returns an array of { phrase, example_sentence } objects.
+ */
+function parseCollocations(raw) {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw;
+    try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+}
+
+/** Serialize the collocations array to a JSON string for the FormData payload. */
+function serializeCollocations(items) {
+    const clean = items
+        .filter((c) => c.phrase.trim() || c.example_sentence.trim())
+        .map((c) => ({
+            phrase: c.phrase.trim(),
+            example_sentence: c.example_sentence.trim(),
+        }));
+    return clean.length ? JSON.stringify(clean) : "";
+}
+
+const emptyCollocation = () => ({ phrase: "", example_sentence: "" });
 
 // ── Sub-component: single image card ─────────────────────────────────────────
 function ImageCard({ src, caption, onCaptionChange, onRemove, isNew = false }) {
@@ -71,6 +102,57 @@ function ImageCard({ src, caption, onCaptionChange, onRemove, isNew = false }) {
     );
 }
 
+// ── Sub-component: collocation row ────────────────────────────────────────────
+function CollocationRow({ index, item, onChange, onRemove, isOnly }) {
+    return (
+        <div className="group relative rounded-md border bg-muted/20 p-3 space-y-2">
+            {/* Row header */}
+            <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    #{index + 1}
+                </span>
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-muted-foreground hover:text-red-500"
+                    onClick={onRemove}
+                    disabled={isOnly}
+                    title="Remove"
+                >
+                    <X className="h-3.5 w-3.5" />
+                </Button>
+            </div>
+
+            {/* Phrase */}
+            <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Phrase</Label>
+                <Input
+                    value={item.phrase}
+                    onChange={(e) => onChange("phrase", e.target.value)}
+                    placeholder='e.g., "critically analyse"'
+                    className="h-8 text-sm"
+                />
+            </div>
+
+            {/* Example sentence */}
+            <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">
+                    Example Sentence
+                </Label>
+                <Input
+                    value={item.example_sentence}
+                    onChange={(e) =>
+                        onChange("example_sentence", e.target.value)
+                    }
+                    placeholder="e.g., Students must critically analyse the evidence."
+                    className="h-8 text-sm"
+                />
+            </div>
+        </div>
+    );
+}
+
 // ── Main dialog ───────────────────────────────────────────────────────────────
 export default function WordFormDialog({
     wordList,
@@ -89,18 +171,23 @@ export default function WordFormDialog({
     } = useForm({
         word: word?.word || "",
         pronunciation: word?.pronunciation || "",
+        ipa: word?.ipa || "",
         bangla_pronunciation: word?.bangla_pronunciation || "",
         hyphenation: word?.hyphenation || "",
         parts_of_speech_variations: word?.parts_of_speech_variations || "",
         definition: word?.definition || "",
         bangla_meaning: word?.bangla_meaning || "",
-        collocations: word?.collocations || "",
         example_sentences: word?.example_sentences || "",
         ai_prompt: word?.ai_prompt || "",
         synonym: word?.synonym || "",
         antonym: word?.antonym || "",
         is_public: word?.is_public ?? true,
     });
+
+    // ── Collocations state (structured) ───────────────────────────────────────
+    const [collocations, setCollocations] = useState(
+        () => parseCollocations(word?.collocations) || [emptyCollocation()],
+    );
 
     const [clientErrors, setClientErrors] = useState({});
     const errors = { ...clientErrors, ...serverErrors };
@@ -118,6 +205,8 @@ export default function WordFormDialog({
 
     useEffect(() => {
         if (open) {
+            const parsed = parseCollocations(word?.collocations);
+            setCollocations(parsed.length ? parsed : [emptyCollocation()]);
             setExistingImages(
                 word?.images?.map((img) => ({
                     id: img.id,
@@ -130,13 +219,34 @@ export default function WordFormDialog({
             setClientErrors({});
         } else {
             reset();
+            setCollocations([emptyCollocation()]);
             setExistingImages([]);
             setNewImages([]);
             setClientErrors({});
         }
     }, [open]);
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // ── Collocation handlers ──────────────────────────────────────────────────
+    const updateCollocation = (index, key, value) => {
+        setCollocations((prev) =>
+            prev.map((item, i) =>
+                i === index ? { ...item, [key]: value } : item,
+            ),
+        );
+    };
+
+    const addCollocation = () => {
+        setCollocations((prev) => [...prev, emptyCollocation()]);
+    };
+
+    const removeCollocation = (index) => {
+        setCollocations((prev) => {
+            if (prev.length <= 1) return [emptyCollocation()];
+            return prev.filter((_, i) => i !== index);
+        });
+    };
+
+    // ── Generic helpers ───────────────────────────────────────────────────────
     const field = (name, value) => {
         setData(name, value);
         if (clientErrors[name]) {
@@ -216,17 +326,21 @@ export default function WordFormDialog({
         }
         setClientErrors({});
 
-        // const payload = new FormData();
         const payload = new FormData();
+
+        // Append all scalar fields
         Object.entries(data).forEach(([key, value]) => {
             if (value === undefined || value === null) {
                 payload.append(key, "");
             } else if (typeof value === "boolean") {
-                payload.append(key, value ? "1" : "0"); // ← convert booleans to 1/0
+                payload.append(key, value ? "1" : "0");
             } else {
                 payload.append(key, value);
             }
         });
+
+        // Serialize collocations as a JSON string
+        payload.append("collocations", serializeCollocations(collocations));
 
         if (isEditing) {
             payload.append("_method", "patch");
@@ -313,6 +427,16 @@ export default function WordFormDialog({
                                 setData("pronunciation", e.target.value)
                             }
                             placeholder="e.g., /əˈkɒmplɪʃ/"
+                        />
+                    </div>
+
+                    {/* IPA */}
+                    <div className="space-y-2">
+                        <Label>IPA</Label>
+                        <Input
+                            value={data.ipa}
+                            onChange={(e) => setData("ipa", e.target.value)}
+                            placeholder="e.g., əˈkɒmplɪʃ"
                         />
                     </div>
 
@@ -406,17 +530,60 @@ export default function WordFormDialog({
                         )}
                     </div>
 
-                    {/* Collocations */}
-                    <div className="space-y-2">
-                        <Label>Collocations</Label>
-                        <Textarea
-                            value={data.collocations}
-                            onChange={(e) =>
-                                setData("collocations", e.target.value)
-                            }
-                            placeholder="e.g., accomplish a goal, accomplish a task"
-                            rows={2}
-                        />
+                    {/* ── Collocations (structured) ─────────────────────────── */}
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                            <Label className="text-sm font-semibold">
+                                Collocations
+                                {collocations.filter(
+                                    (c) =>
+                                        c.phrase.trim() ||
+                                        c.example_sentence.trim(),
+                                ).length > 0 && (
+                                    <Badge
+                                        variant="secondary"
+                                        className="ml-2 text-xs"
+                                    >
+                                        {
+                                            collocations.filter(
+                                                (c) =>
+                                                    c.phrase.trim() ||
+                                                    c.example_sentence.trim(),
+                                            ).length
+                                        }
+                                    </Badge>
+                                )}
+                            </Label>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={addCollocation}
+                            >
+                                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                                Add Collocation
+                            </Button>
+                        </div>
+
+                        <div className="space-y-2">
+                            {collocations.map((item, index) => (
+                                <CollocationRow
+                                    key={index}
+                                    index={index}
+                                    item={item}
+                                    onChange={(key, value) =>
+                                        updateCollocation(index, key, value)
+                                    }
+                                    onRemove={() => removeCollocation(index)}
+                                    isOnly={collocations.length === 1}
+                                />
+                            ))}
+                        </div>
+
+                        <p className="text-xs text-muted-foreground">
+                            Each entry is saved as structured JSON. Leave all
+                            fields empty to store no collocations.
+                        </p>
                     </div>
 
                     {/* Example Sentences * */}

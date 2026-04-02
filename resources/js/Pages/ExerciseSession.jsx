@@ -838,12 +838,20 @@ export default function ExerciseSession({
                             }}
                         >
                             <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-md dark:shadow-xl dark:shadow-slate-950 overflow-hidden pb-2">
+                                <div className="mx-4 mt-4 mb-3">
+                                    <p
+                                        className={`text-center text-lg font-bold text-gray-500 underline dark:text-gray-600 tracking-tight`}
+                                    >
+                                        {word.word}
+                                    </p>
+                                </div>
+
                                 {(word.definition || word.bangla_meaning) && (
                                     <div className="mx-4 mt-4 mb-4">
-                                        <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">
-                                            Definition
-                                        </p>
                                         <div className="border-l-4 border-[#E5201C] dark:border-red-600 pl-3 py-1">
+                                            <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">
+                                                Definition
+                                            </p>
                                             <p className="text-sm text-gray-900 dark:text-gray-200 leading-snug">
                                                 {word.definition}
                                                 {word.bangla_meaning && (
@@ -882,70 +890,89 @@ export default function ExerciseSession({
                                             Common Collocations
                                         </p>
                                         <div className="flex flex-col gap-3">
-                                            {collocationList.map((col, i) => {
-                                                const colorClass =
-                                                    collocationColors[
-                                                        i %
-                                                            collocationColors.length
-                                                    ];
+                                            {collocationList
+                                                .slice(0, 3)
+                                                .map((col, i) => {
+                                                    const colorClass =
+                                                        collocationColors[
+                                                            i %
+                                                                collocationColors.length
+                                                        ];
 
-                                                // Highlight the collocation phrase inside the example sentence
-                                                const renderHighlighted = (
-                                                    sentence,
-                                                    phrase,
-                                                ) => {
-                                                    if (!sentence || !phrase)
-                                                        return sentence;
-                                                    const regex = new RegExp(
-                                                        `(${phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
-                                                        "gi",
-                                                    );
-                                                    return sentence
-                                                        .split(regex)
-                                                        .map((part, idx) =>
-                                                            regex.test(part) ? (
-                                                                <mark
-                                                                    key={idx}
-                                                                    className="font-bold bg-transparent underline underline-offset-2 decoration-2 not-italic"
-                                                                    style={{
-                                                                        textDecorationColor:
-                                                                            "currentColor",
-                                                                    }}
-                                                                >
-                                                                    {part}
-                                                                </mark>
-                                                            ) : (
-                                                                part
-                                                            ),
-                                                        );
-                                                };
+                                                    // Highlight the collocation phrase inside the example sentence
+                                                    const renderHighlighted = (
+                                                        sentence,
+                                                        phrase,
+                                                    ) => {
+                                                        if (
+                                                            !sentence ||
+                                                            !phrase
+                                                        )
+                                                            return sentence;
+                                                        const regex =
+                                                            new RegExp(
+                                                                `(${phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+                                                                "gi",
+                                                            );
+                                                        return sentence
+                                                            .split(regex)
+                                                            .map((part, idx) =>
+                                                                regex.test(
+                                                                    part,
+                                                                ) ? (
+                                                                    <mark
+                                                                        key={
+                                                                            idx
+                                                                        }
+                                                                        className="font-bold bg-transparent underline underline-offset-2 decoration-2 not-italic"
+                                                                        style={{
+                                                                            textDecorationColor:
+                                                                                "currentColor",
+                                                                        }}
+                                                                    >
+                                                                        {part}
+                                                                    </mark>
+                                                                ) : (
+                                                                    part
+                                                                ),
+                                                            );
+                                                    };
 
-                                                return (
-                                                    <div
-                                                        key={i}
-                                                        className={`rounded-xl border px-3 py-2.5 ${colorClass}`}
-                                                    >
-                                                        {/* Phrase badge */}
-                                                        {/* <p className="text-xs font-bold uppercase tracking-wide mb-1 opacity-75">
+                                                    return (
+                                                        <div
+                                                            key={i}
+                                                            className={`rounded-xl border px-3 py-2.5 ${colorClass}`}
+                                                        >
+                                                            {/* Phrase badge */}
+                                                            {/* <p className="text-xs font-bold uppercase tracking-wide mb-1 opacity-75">
                                                             {col.phrase}
                                                         </p> */}
-                                                        {/* Example sentence with phrase highlighted */}
-                                                        {col.example_sentence ? (
-                                                            <p className="text-sm leading-snug dark:text-gray-100">
-                                                                {renderHighlighted(
-                                                                    col.example_sentence,
-                                                                    col.phrase,
-                                                                )}
-                                                            </p>
-                                                        ) : (
-                                                            <p className="text-xs font-bold uppercase tracking-wide mb-1 opacity-75 dark:text-gray-100">
-                                                                {col.phrase}
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                );
-                                            })}
+                                                            {/* Example sentence with phrase highlighted */}
+                                                            {col.example_sentence ? (
+                                                                <p className="text-sm leading-snug dark:text-gray-100">
+                                                                    {renderHighlighted(
+                                                                        col.example_sentence,
+                                                                        col.phrase,
+                                                                    )}
+                                                                </p>
+                                                            ) : (
+                                                                <p className="text-xs font-bold uppercase tracking-wide mb-1 opacity-75 dark:text-gray-100">
+                                                                    {col.phrase}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
                                         </div>
+                                        {/* {collocationList.length > 3 && (
+                                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">
+                                                +{collocationList.length - 3}{" "}
+                                                more collocation
+                                                {collocationList.length - 3 > 1
+                                                    ? "s"
+                                                    : ""}
+                                            </p>
+                                        )} */}
                                     </div>
                                 )}
 

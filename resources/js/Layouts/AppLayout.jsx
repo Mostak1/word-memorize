@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import FlashMessages from "@/Components/FlashMessage";
 import ReportErrorDialog from "@/Components/ReportErrorDialog";
-import { ThemeToggle } from "@/Components/ThemeToggle";
+// import { ThemeToggle } from "@/Components/ThemeToggle";
 import logo from "/public/img/logo.png";
 
 export default function AppLayout({ children }) {
@@ -148,7 +148,7 @@ export default function AppLayout({ children }) {
                                         <span>Login</span>
                                     </Link>
                                     {/* Theme toggle — visible to all users */}
-                                    <ThemeToggle />
+                                    {/* <ThemeToggle /> */}
                                     {/* Desktop report button — self-contained */}
                                     <ReportErrorDialog />
                                     <Link
