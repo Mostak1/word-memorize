@@ -803,7 +803,7 @@ export default function ExerciseSession({
                             )}
 
                             {/* Example sentence */}
-                            {(word.image_related_sentence ||
+                            {/* {(word.image_related_sentence ||
                                 word.example_sentences) && (
                                 <div className="mx-4 mb-4 border-l-4 border-green-400 dark:border-green-600 pl-3 py-1">
                                     <p className="text-base text-gray-800 dark:text-gray-200 leading-snug">
@@ -814,7 +814,22 @@ export default function ExerciseSession({
                                         )}
                                     </p>
                                 </div>
-                            )}
+                            )} */}
+
+                            {/* Example sentence */}
+                            {word.show_example_sentences &&
+                                (word.image_related_sentence ||
+                                    word.example_sentences) && (
+                                    <div className="mx-4 mb-4 border-l-4 border-green-400 dark:border-green-600 pl-3 py-1">
+                                        <p className="text-base text-gray-800 dark:text-gray-200 leading-snug">
+                                            {highlightWord(
+                                                word.image_related_sentence ||
+                                                    word.example_sentences,
+                                                word.word,
+                                            )}
+                                        </p>
+                                    </div>
+                                )}
 
                             {/* Tap to see meaning */}
                             <div className="px-4 pb-3">

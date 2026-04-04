@@ -15,9 +15,14 @@ class WordListCategory extends Model
     protected $fillable = [
         'name',
         'description',
-        'thumbnail', // ✅ added
+        'thumbnail',
+        'show_example_sentences',
         'status',
         'created_by'
+    ];
+
+    protected $casts = [
+        'show_example_sentences' => 'boolean',
     ];
 
     protected $appends = ['thumbnail_url_full']; // ✅ accessor

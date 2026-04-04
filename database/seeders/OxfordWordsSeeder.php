@@ -354,6 +354,7 @@ class OxfordWordsSeeder extends Seeder
                     'description' => null,
                     'status' => true,
                     'created_by' => $creatorId,
+                    'show_example_sentences' => false,
                 ]
             );
 

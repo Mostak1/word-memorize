@@ -124,7 +124,7 @@ class SrsService
     $userId = $user->id;
 
     // ── Priority 1: overdue L2 / L3 reviews ─────────────────────────────
-    $reviewWords = Word::with(['images', 'progress' => fn($q) => $q->where('user_id', $userId)])
+    $reviewWords = Word::with(['images', 'wordList.category:id,show_example_sentences', 'progress' => fn($q) => $q->where('user_id', $userId)])
       ->where('wordlist_id', $wordlistId)
       ->whereHas('progress', function ($q) use ($userId) {
         $q->where('user_id', $userId)
@@ -145,7 +145,10 @@ class SrsService
     // ── Priority 2: new (never-seen) words ───────────────────────────────
     $newWords = collect();
     if ($slotsLeft > 0) {
-      $newWords = Word::with('images')
+      $newWords = Word::with([
+        'images',
+        'wordList.category:id,show_example_sentences',
+      ])
         ->where('wordlist_id', $wordlistId)
         ->whereDoesntHave('progress', fn($q) => $q->where('user_id', $userId))
         ->orderBy('id')
@@ -165,7 +168,7 @@ class SrsService
   {
     $userId = $user->id;
 
-    return Word::with(['images', 'wordList', 'progress' => fn($q) => $q->where('user_id', $userId)])
+    return Word::with(['images', 'wordList.category:id,show_example_sentences', 'wordList', 'progress' => fn($q) => $q->where('user_id', $userId)])
       ->whereIn('id', $wordIds)
       ->get()
       ->sortBy(fn($w) => $w->progress->first()?->box ?? 1)
@@ -198,6 +201,8 @@ class SrsService
     $word->srs_next_review_at = $progress?->next_review_at?->toDateString();
     $word->srs_correct = $progress?->correct_count ?? 0;
     $word->srs_incorrect = $progress?->incorrect_count ?? 0;
+    $word->show_example_sentences =
+      $word->wordList?->category?->show_example_sentences ?? true;
 
     return $word;
   }

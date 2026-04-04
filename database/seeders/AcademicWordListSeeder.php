@@ -285,6 +285,7 @@ class AcademicWordListSeeder extends Seeder
                     'description' => 'High-frequency words commonly found in academic texts.',
                     'status' => true,
                     'created_by' => $creatorId,
+                    'show_example_sentences' => true,
                 ]
             );
 

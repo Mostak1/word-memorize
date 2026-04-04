@@ -61,7 +61,10 @@ class WordListController extends Controller
             $words = $srsService->buildSessionQueue(auth()->user(), (int) $id);
         } else {
             // Guests: first 20 words in order, no SRS metadata
-            $words = Word::with('images')
+            $words = Word::with([
+                'images',
+                'wordList.category:id,show_example_sentences'
+            ])
                 ->where('wordlist_id', $id)
                 ->orderBy('id')
                 ->limit(20)
@@ -70,6 +73,9 @@ class WordListController extends Controller
                     $w->srs_box = 1;
                     $w->srs_label = 'New';
                     $w->srs_color = 'bg-gray-100 text-gray-600';
+                    // ✅ Add this line so guests match the same shape as auth users
+                    $w->show_example_sentences =
+                        $w->wordList?->category?->show_example_sentences ?? true;
                     return $w;
                 });
         }
@@ -90,7 +96,10 @@ class WordListController extends Controller
             ->withCount('words')
             ->firstOrFail();
 
-        $words = Word::with('images')
+        $words = Word::with([
+            'images',
+            'wordList.category:id,show_example_sentences'
+        ])
             ->where('wordlist_id', $wordListId)
             ->get()->shuffle()->values();
 
