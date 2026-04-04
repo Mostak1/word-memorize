@@ -1,1 +1,0 @@
-import{c as o,r as a,t as e}from"./app-CkCTplLo.js";function f(){const{flash:r,errors:t}=o().props;return a.useEffect(()=>{if(r?.success&&e.success(r.success),r?.error&&e.error(r.error),r?.message&&e(r.message),t&&Object.keys(t).length>0){const s=Object.values(t)[0];Array.isArray(s)&&s.length>0?e.error(s[0]):typeof s=="string"&&e.error(s)}},[r,t]),null}export{f as F};

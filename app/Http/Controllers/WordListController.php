@@ -8,11 +8,16 @@ use App\Models\WordList;
 use App\Models\Word;
 use App\Models\WordProgress;
 use App\Services\SrsService;
+use App\Services\StreakService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class WordListController extends Controller
 {
+    public function __construct(private StreakService $streakService)
+    {
+    }
+
     private function bookmarkedIds(array $wordIds): array
     {
         if (!auth()->check())
@@ -86,6 +91,7 @@ class WordListController extends Controller
             'subcategory' => null,
             'totalWordsInList' => $wordList->words_count, // full list size for progress display
             'bookmarkedWordIds' => $this->bookmarkedIds($words->pluck('id')->toArray()),
+            'streak' => auth()->check() ? $this->streakService->getSummary(auth()->user()) : null,
         ]);
     }
 
@@ -108,6 +114,7 @@ class WordListController extends Controller
             'words' => $words,
             'totalWordsInList' => $wordList->words_count,
             'bookmarkedWordIds' => $this->bookmarkedIds($words->pluck('id')->toArray()),
+            'streak' => auth()->check() ? $this->streakService->getSummary(auth()->user()) : null,
         ]);
     }
 

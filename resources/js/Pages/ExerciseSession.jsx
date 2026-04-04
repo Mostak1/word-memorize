@@ -76,8 +76,13 @@ export default function ExerciseSession({
     totalWordsInList = 0,
     backUrl = null,
     bookmarkedWordIds = [],
+    streak: initialStreak = null,
 }) {
     const { auth } = usePage().props;
+    const [streak, setStreak] = useState(initialStreak);
+    const [streakChange, setStreakChange] = useState(null);
+    const [showStreakEffect, setShowStreakEffect] = useState(false);
+    const previousStreak = useRef(initialStreak?.current_streak ?? 0);
 
     // ── Queue state ───────────────────────────────────────────────────────────
     // The Active Queue: queue[0] is always the current word.
@@ -152,6 +157,8 @@ export default function ExerciseSession({
                 ?.split("=")[1] ?? "",
         );
 
+        let timeout;
+
         fetch(route("word.session-complete"), {
             method: "POST",
             headers: {
@@ -166,8 +173,33 @@ export default function ExerciseSession({
                 if (data.xp_awarded) {
                     setSessionXpAwarded(data.xp_awarded);
                 }
+                if (data.streak) {
+                    const newStreak = data.streak.current_streak ?? 0;
+                    const prevStreak = previousStreak.current;
+
+                    if (newStreak > prevStreak) {
+                        setStreakChange("up");
+                        setShowStreakEffect(true);
+                        timeout = setTimeout(
+                            () => setShowStreakEffect(false),
+                            2800,
+                        );
+                    } else if (newStreak < prevStreak) {
+                        setStreakChange("down");
+                        setShowStreakEffect(true);
+                        timeout = setTimeout(
+                            () => setShowStreakEffect(false),
+                            2800,
+                        );
+                    }
+
+                    previousStreak.current = newStreak;
+                    setStreak(data.streak);
+                }
             })
             .catch(() => {}); // silent fail - we don't want to break the UI
+
+        return () => clearTimeout(timeout);
     }, [isDone, auth?.user]);
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -441,6 +473,37 @@ export default function ExerciseSession({
         return (
             <AppLayout>
                 <Head title="Session Complete" />
+                {showStreakEffect && streakChange && (
+                    <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center bg-black/20 px-4 py-6">
+                        <div className="bg-white dark:bg-slate-950 rounded-3xl shadow-2xl border border-white/40 dark:border-slate-700 p-5 max-w-md w-full text-center">
+                            <Player
+                                autoplay
+                                loop={false}
+                                keepLastFrame
+                                src={
+                                    streakChange === "up"
+                                        ? "https://assets9.lottiefiles.com/packages/lf20_jbrw3hcz.json"
+                                        : "https://assets9.lottiefiles.com/packages/lf20_jbrw3hcz.json"
+                                }
+                                style={{
+                                    height: 180,
+                                    width: 180,
+                                    margin: "0 auto",
+                                }}
+                            />
+                            <p className="text-lg font-extrabold text-gray-900 dark:text-gray-100 mt-3">
+                                {streakChange === "up"
+                                    ? "Streak Continued!"
+                                    : "Streak Reset"}
+                            </p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                {streakChange === "up"
+                                    ? "You kept your streak alive today."
+                                    : "You restarted your streak by completing this session."}
+                            </p>
+                        </div>
+                    </div>
+                )}
                 <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 flex flex-col items-center justify-center px-4 py-10">
                     <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-md dark:shadow-xl dark:shadow-slate-950 w-full max-w-md p-8 text-center">
                         {/* Lottie celebration animation */}
@@ -449,7 +512,7 @@ export default function ExerciseSession({
                                 autoplay
                                 loop={false}
                                 keepLastFrame
-                                src="https://assets9.lottiefiles.com/packages/lf20_jbrw3hcz.json"
+                                src="/lottie/Approved.json"
                                 style={{ height: 160, width: 160 }}
                             />
                         </div>
@@ -500,6 +563,22 @@ export default function ExerciseSession({
                                 </div>
                                 <p className="text-sm font-medium text-yellow-700 dark:text-yellow-300">
                                     Experience Points Earned
+                                </p>
+                            </div>
+                        )}
+
+                        {streak && (
+                            <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl py-4 px-4 mb-6 border border-gray-200 dark:border-slate-700">
+                                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                                    Current Streak: {streak.current_streak} day
+                                    {streak.current_streak !== 1 ? "s" : ""}
+                                </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                    {streakChange === "up"
+                                        ? "Streak increased — keep it going!"
+                                        : streakChange === "down"
+                                          ? "Your streak reset, but you restarted it today."
+                                          : "Your streak status is unchanged."}
                                 </p>
                             </div>
                         )}

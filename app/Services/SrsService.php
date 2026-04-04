@@ -48,10 +48,10 @@ class SrsService
     $dayIntervals = [
       2 => 1,   // L1 → L2 : review tomorrow
       3 => 3,   // L2 → L3 : review in 3 days
-      4 => 30,  // L3 → L4 : mastered (excluded from active queue anyway)
+      4 => 5,  // L3 → L4 : mastered (excluded from active queue anyway)
     ];
 
-    $nextDue = Carbon::today()->addDays($dayIntervals[$newBox] ?? 30);
+    $nextDue = Carbon::today()->addDays($dayIntervals[$newBox] ?? 5);
 
     $progress->update([
       'box' => $newBox,

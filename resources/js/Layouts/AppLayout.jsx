@@ -11,10 +11,10 @@ import {
     BookOpen,
     Flag,
     Zap,
+    ShoppingBag,
 } from "lucide-react";
 import FlashMessages from "@/Components/FlashMessage";
 import ReportErrorDialog from "@/Components/ReportErrorDialog";
-// import { ThemeToggle } from "@/Components/ThemeToggle";
 import logo from "/public/img/logo.png";
 
 export default function AppLayout({ children }) {
@@ -23,7 +23,7 @@ export default function AppLayout({ children }) {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [headerVisible, setHeaderVisible] = useState(true);
     const [reportDialogOpen, setReportDialogOpen] = useState(false);
-    const [xpData, setXpData] = useState(null);
+    const [xpData, setXpData] = useState(user?.xp ?? null);
     const lastScrollY = useRef(0);
     const xpRefreshKey = useRef(0);
 
@@ -44,7 +44,6 @@ export default function AppLayout({ children }) {
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
-    // Opens the report dialog and closes the mobile menu
     const openReportDialog = () => {
         setMobileOpen(false);
         setReportDialogOpen(true);
@@ -52,7 +51,7 @@ export default function AppLayout({ children }) {
 
     // Fetch XP status from API
     useEffect(() => {
-        if (!user) return;
+        if (!user || xpData) return;
 
         const fetchXpStatus = async () => {
             try {
@@ -63,28 +62,35 @@ export default function AppLayout({ children }) {
                         ?.split("=")[1] ?? "",
                 );
                 const response = await fetch(route("api.xp-shop.status"), {
+                    credentials: "include",
                     headers: {
                         "X-XSRF-TOKEN": csrfToken,
                         Accept: "application/json",
                     },
                 });
-                if (response.ok) {
-                    const data = await response.json();
-                    setXpData(data.xp);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error(
+                        "Failed to fetch XP status:",
+                        response.status,
+                        errorText,
+                    );
+                    return;
                 }
+                const data = await response.json();
+                setXpData(data.xp);
             } catch (error) {
                 console.error("Failed to fetch XP status:", error);
             }
         };
 
         fetchXpStatus();
-    }, [user, xpRefreshKey.current]);
+    }, [user, xpData, xpRefreshKey.current]);
 
     return (
         <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
             <FlashMessages />
 
-            {/* Always-mounted controlled ReportErrorDialog (used by mobile menu) */}
             <ReportErrorDialog
                 controlledOpen={reportDialogOpen}
                 onControlledOpenChange={setReportDialogOpen}
@@ -130,44 +136,58 @@ export default function AppLayout({ children }) {
                                         <span>WordLists</span>
                                     </Link>
 
-                                    {/* XP Display */}
+                                    {/* XP balance pill — links to shop */}
                                     {xpData && (
-                                        <div className="flex items-center gap-1.5 text-white text-sm font-semibold px-3 py-2 rounded-lg bg-white/10 ml-2">
+                                        <Link
+                                            href={route("xp-shop")}
+                                            className="flex items-center gap-1.5 text-white text-sm font-semibold px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors ml-2"
+                                            title="XP Shop"
+                                        >
                                             <Zap className="h-4 w-4 text-yellow-300" />
-                                            <span>{xpData.balance}</span>
-                                        </div>
+                                            <span>
+                                                {xpData.balance.toLocaleString()}
+                                            </span>
+                                        </Link>
                                     )}
 
-                                    {/* Theme toggle — visible to all users */}
-                                    {/* <ThemeToggle /> */}
-                                    {/* Desktop report button — self-contained */}
+                                    {/* Shop link */}
+                                    <Link
+                                        href={route("xp-shop")}
+                                        className="flex items-center gap-1.5 text-white text-sm font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
+                                    >
+                                        <ShoppingBag className="h-4 w-4" />
+                                        <span>Shop</span>
+                                    </Link>
+
                                     <ReportErrorDialog />
+
+                                    {/* Profile dropdown */}
                                     <div className="relative group ml-1">
-                                        <button className="flex items-center gap-2 text-white font-medium px-2 py-1.5 rounded-lg hover:bg-white/10 transition-colors">
-                                            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-semibold text-sm">
+                                        <button className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg transition-colors text-sm font-medium">
+                                            <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
                                                 {user.name
                                                     .charAt(0)
                                                     .toUpperCase()}
                                             </div>
-                                            <span className="hidden lg:inline text-sm">
+                                            <span className="max-w-[100px] truncate">
                                                 {user.name}
                                             </span>
                                         </button>
-                                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 py-1 overflow-hidden">
+                                        <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-lg border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50">
                                             <Link
                                                 href={route("profile.edit")}
-                                                className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                                                className="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-t-xl transition-colors"
                                             >
-                                                <User className="w-4 h-4" />{" "}
+                                                <User className="h-4 w-4" />{" "}
                                                 Profile
                                             </Link>
                                             <Link
                                                 href={route("logout")}
                                                 method="post"
                                                 as="button"
-                                                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                                                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-b-xl transition-colors border-t border-gray-100"
                                             >
-                                                <LogOut className="w-4 h-4" />{" "}
+                                                <LogOut className="h-4 w-4" />{" "}
                                                 Log Out
                                             </Link>
                                         </div>
@@ -175,13 +195,7 @@ export default function AppLayout({ children }) {
                                 </>
                             ) : (
                                 <>
-                                    <Link
-                                        href={route("wordlistcategory.index")}
-                                        className="flex items-center gap-1.5 text-white text-sm font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
-                                    >
-                                        <BookOpen className="h-4 w-4" />
-                                        <span>WordLists</span>
-                                    </Link>
+                                    <ReportErrorDialog />
                                     <Link
                                         href={route("login")}
                                         className="flex items-center gap-1.5 text-white text-sm font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
@@ -189,10 +203,6 @@ export default function AppLayout({ children }) {
                                         <LogIn className="h-4 w-4" />
                                         <span>Login</span>
                                     </Link>
-                                    {/* Theme toggle — visible to all users */}
-                                    {/* <ThemeToggle /> */}
-                                    {/* Desktop report button — self-contained */}
-                                    <ReportErrorDialog />
                                     <Link
                                         href={route("register")}
                                         className="flex items-center gap-1.5 bg-white text-[#E5201C] text-sm font-semibold px-3 py-2 rounded-lg hover:bg-red-50 transition-colors"
@@ -206,7 +216,6 @@ export default function AppLayout({ children }) {
 
                         {/* Mobile Toggle */}
                         <div className="sm:hidden flex items-center gap-2">
-                            {/* Mobile header flag — opens controlled dialog directly */}
                             <button
                                 onClick={openReportDialog}
                                 className="flex items-center gap-1.5 text-xs font-medium text-white/80 hover:text-white border border-white/30 hover:border-white/60 rounded-full px-2.5 py-1.5 transition-all"
@@ -248,15 +257,30 @@ export default function AppLayout({ children }) {
                                         WordLists
                                     </Link>
 
-                                    {/* XP Display (Mobile) */}
+                                    {/* Shop link (mobile) */}
+                                    <Link
+                                        href={route("xp-shop")}
+                                        onClick={() => setMobileOpen(false)}
+                                        className="flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
+                                    >
+                                        <ShoppingBag className="h-4 w-4" /> Shop
+                                    </Link>
+
+                                    {/* XP balance (mobile) */}
                                     {xpData && (
-                                        <div className="flex items-center gap-2 text-white font-semibold px-3 py-2 rounded-lg bg-white/10 mx-3 mt-1">
+                                        <Link
+                                            href={route("xp-shop")}
+                                            onClick={() => setMobileOpen(false)}
+                                            className="flex items-center gap-2 text-white font-semibold px-3 py-2 rounded-lg bg-white/10 mx-3 mt-1"
+                                        >
                                             <Zap className="h-4 w-4 text-yellow-300" />
-                                            <span>{xpData.balance} XP</span>
-                                        </div>
+                                            <span>
+                                                {xpData.balance.toLocaleString()}{" "}
+                                                XP
+                                            </span>
+                                        </Link>
                                     )}
 
-                                    {/* Mobile menu Report Error — uses lifted state so unmounting is safe */}
                                     <button
                                         onClick={openReportDialog}
                                         className="flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors w-full"
@@ -264,6 +288,7 @@ export default function AppLayout({ children }) {
                                         <Flag className="h-4 w-4 shrink-0" />
                                         Report Error
                                     </button>
+
                                     <div className="pt-3 mt-3 border-t border-white/20">
                                         <div className="flex items-center gap-3 px-3 mb-3">
                                             <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center font-semibold">
@@ -316,7 +341,6 @@ export default function AppLayout({ children }) {
                                     >
                                         <LogIn className="h-4 w-4" /> Login
                                     </Link>
-                                    {/* Mobile menu Report Error — uses lifted state */}
                                     <button
                                         onClick={openReportDialog}
                                         className="flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors w-full"

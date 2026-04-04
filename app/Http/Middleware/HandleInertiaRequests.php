@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\XpService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -49,6 +50,7 @@ class HandleInertiaRequests extends Middleware
                     'location' => $request->user()->location,
                     'gender' => $request->user()->gender,
                     'profession' => $request->user()->profession,
+                    'xp' => app(XpService::class)->getSummary($request->user()),
                 ] : null,
             ],
             // ✅ Flash messages for Sonner toasts

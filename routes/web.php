@@ -12,6 +12,7 @@ use App\Http\Controllers\ReviewWordController;
 use App\Http\Controllers\BookmarkController;
 use App\Http\Controllers\WordProgressController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\XpShopController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -53,7 +54,7 @@ Route::get('/run-seeder', function () {
 
             preg_match('/inserted:\s*(\d+),\s*updated:\s*(\d+),\s*skipped:\s*(\d+)/i', $output, $m);
             preg_match('/images added:\s*(\d+),\s*already existed \/ no file:\s*(\d+)/i', $output, $img);
-            preg_match('/words_without_images:\s*(\[.*\])/i', $output, $wni);  // ← ADD THIS
+            preg_match('/words_without_images:\s*(\[.*\])/i', $output, $wni);
 
             $results[$class] = [
                 'status' => 'success',
@@ -62,7 +63,7 @@ Route::get('/run-seeder', function () {
                 'skipped' => isset($m[3]) ? (int) $m[3] : null,
                 'images_added' => isset($img[1]) ? (int) $img[1] : null,
                 'images_skipped' => isset($img[2]) ? (int) $img[2] : null,
-                'words_without_images' => isset($wni[1]) ? json_decode($wni[1], true) : [],  // ← ADD THIS
+                'words_without_images' => isset($wni[1]) ? json_decode($wni[1], true) : [],
             ];
         } catch (\Throwable $e) {
             $results[$class] = [
@@ -102,7 +103,6 @@ Route::get('/links', [PublicLinkTreeController::class, 'show'])->name('link-tree
 Route::get('/l/{link}', [PublicLinkTreeController::class, 'redirect'])->name('link-tree.redirect');
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
-// Uses DashboardController so streak data is included automatically
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
@@ -127,9 +127,7 @@ Route::middleware('auth')->group(function () {
 
     // My Words
     Route::get('/my/words', [UserWordController::class, 'index'])->name('my.words.index');
-    // Route::get('/my/words/create', [UserWordController::class, 'create'])->name('my.words.create');
     Route::post('/my/words', [UserWordController::class, 'store'])->name('my.words.store');
-    // Route::get('/my/words/{word}/edit', [UserWordController::class, 'edit'])->name('my.words.edit');
     Route::put('/my/words/{word}', [UserWordController::class, 'update'])->name('my.words.update');
     Route::delete('/my/words/{word}', [UserWordController::class, 'destroy'])->name('my.words.destroy');
 
@@ -140,7 +138,7 @@ Route::middleware('auth')->group(function () {
 
     // Quiz
     Route::get('/quiz', [QuizController::class, 'index'])->name('quiz.index');
-    Route::post('/quiz/finish', [QuizController::class, 'finish'])->name('quiz.finish');   // ← NEW
+    Route::post('/quiz/finish', [QuizController::class, 'finish'])->name('quiz.finish');
 
     // Mastered / review lists
     Route::get('/my/mastered', [WordListController::class, 'masteredWords'])->name('words.mastered');
@@ -159,6 +157,20 @@ Route::middleware('auth')->group(function () {
 
     // Error reports
     Route::post('/error-reports', [ErrorReportController::class, 'store'])->name('error-reports.store');
+
+    // ── XP Shop ───────────────────────────────────────────────────────────────
+    // Inertia page — renders the shop UI
+    Route::get('/shop', function () {
+        return Inertia::render('XpShop');
+    })->name('xp-shop');
+
+    // JSON API — used by AppLayout (XP balance pill) and the shop page itself
+    Route::get('/api/xp-shop/status', [XpShopController::class, 'getStatus'])
+        ->name('api.xp-shop.status');
+
+    // JSON API — purchase a streak freeze
+    Route::post('/api/xp-shop/buy-freeze', [XpShopController::class, 'buyStreakFreeze'])
+        ->name('api.xp-shop.buy-freeze');
 });
 
 require __DIR__ . '/auth.php';

@@ -80,6 +80,7 @@ class ReviewWordController extends Controller
         return response()->json([
             'status' => 'ok',
             'xp_awarded' => $xpAwarded,
+            'streak' => $this->streakService->getSummary($user),
         ]);
     }
 
@@ -111,12 +112,15 @@ class ReviewWordController extends Controller
             'difficulty' => 'Mixed',
         ];
 
+        $user = auth()->user();
+
         return Inertia::render('ExerciseSession', [
             'wordList' => $wordList,
             'words' => $words->values(),
             'subcategory' => null,
             'bookmarkedWordIds' => $this->bookmarkedIds($words->pluck('id')->toArray()),
             'backUrl' => route('words.review'),
+            'streak' => $this->streakService->getSummary($user),
         ]);
     }
 
