@@ -200,8 +200,9 @@ class OxfordWordsSeeder extends Seeder
             }
 
             // Fix 2: also index the base word with the POS suffix stripped
-            // so "accept (v.).jpg" is findable via key "accept".
-            $base = trim(preg_replace('/\s*\(.*\)\s*$/', '', $stem));
+            // so "accept (v.).jpg"  → key "accept"
+            //    "furniture (n.)."  → key "furniture"  (note optional trailing dot)
+            $base = trim(preg_replace('/\s*\(.*?\)\.?\s*$/', '', $stem));
             if ($base !== '' && $base !== $stem && !isset($index[$base])) {
                 $index[$base] = $absPath;
             }
@@ -213,10 +214,22 @@ class OxfordWordsSeeder extends Seeder
             //   stem → "approve (v.)_cropped"
             //   Fix-2 base → "approve_cropped"
             //   Fix-3 stripped → "approve"
+            //
+            // Also handles "furniture (n.)._cropped.jpg":
+            //   stem → "furniture (n.)._cropped"
+            //   Fix-3 stripped → "furniture (n.)."
+            //   Fix-3 + Fix-2 (POS strip applied to stripped result) → "furniture"
             foreach ([$stem, $base] as $candidate) {
                 $stripped = trim(preg_replace('/_[a-z0-9]+$/i', '', $candidate));
                 if ($stripped !== '' && $stripped !== $candidate && !isset($index[$stripped])) {
                     $index[$stripped] = $absPath;
+                }
+
+                // Also strip POS suffix from the _suffix-stripped result so that
+                // "furniture (n.)._cropped" ultimately resolves to "furniture".
+                $strippedBase = trim(preg_replace('/\s*\(.*?\)\.?\s*$/', '', $stripped));
+                if ($strippedBase !== '' && $strippedBase !== $stripped && !isset($index[$strippedBase])) {
+                    $index[$strippedBase] = $absPath;
                 }
             }
         }
