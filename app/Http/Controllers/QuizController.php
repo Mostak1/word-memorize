@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Word;
+use App\Models\WordList;
 use App\Models\WordProgress;
 use App\Services\StreakService;
 use Illuminate\Http\Request;
@@ -229,6 +230,152 @@ class QuizController extends Controller
             'noMasteredWords' => false,
             'noUsableSentences' => false,
             'matchPassThreshold' => self::MATCH_PASS_THRESHOLD,
+        ]);
+    }
+
+    /**
+     * GET /quiz/wordlist/{wordlist}
+     * Quiz built from all words the user has at least seen once (box >= 2) in a wordlist.
+     */
+    public function indexByWordlist(WordList $wordlist)
+    {
+        $userId = Auth::id();
+
+        // All words in this wordlist where the user has progress box >= 2
+        $eligibleWordIds = WordProgress::where('user_id', $userId)
+            ->where('box', '>=', 2)
+            ->join('words', 'word_progress.word_id', '=', 'words.id')
+            ->where('words.wordlist_id', $wordlist->id)
+            ->pluck('word_progress.word_id')
+            ->toArray();
+
+        if (empty($eligibleWordIds)) {
+            return Inertia::render('Quiz', [
+                'questions' => [],
+                'noMasteredWords' => true,
+                'noUsableSentences' => false,
+                'wordListTitle' => $wordlist->title,
+            ]);
+        }
+
+        $words = Word::whereIn('id', $eligibleWordIds)->get();
+
+        // ── Bucket into question types (same logic as index()) ────────────────
+        $fillBlankWords = $words->filter(
+            fn($w) => !empty($w->example_sentences)
+            && stripos($w->example_sentences, $w->word) !== false
+        )->values();
+
+        $synonymWords = $words->filter(fn($w) => !empty(trim($w->synonym ?? '')))->values();
+        $antonymWords = $words->filter(fn($w) => !empty(trim($w->antonym ?? '')))->values();
+        $translationWords = $words->filter(fn($w) => !empty(trim($w->bangla_meaning ?? '')))->values();
+        $matchPairWords = $words->filter(
+            fn($w) => !empty(trim($w->definition ?? '')) || !empty(trim($w->bangla_meaning ?? ''))
+        )->values();
+
+        $totalEligible = $fillBlankWords->count() + $synonymWords->count()
+            + $antonymWords->count() + $translationWords->count() + $matchPairWords->count();
+
+        if ($totalEligible < 1) {
+            return Inertia::render('Quiz', [
+                'questions' => [],
+                'noMasteredWords' => false,
+                'noUsableSentences' => true,
+                'wordListTitle' => $wordlist->title,
+            ]);
+        }
+
+        $questions = collect();
+        $usedIds = [];
+
+        // Match the Pairs
+        if ($matchPairWords->count() >= 4) {
+            $pairWords = $matchPairWords->shuffle()->take(4);
+            foreach ($pairWords as $w) {
+                $usedIds[] = $w->id;
+            }
+
+            $pairs = $pairWords->map(function ($w) {
+                $meaning = !empty(trim($w->definition ?? '')) ? $w->definition : $w->bangla_meaning;
+                return ['word' => $w->word, 'meaning' => $meaning];
+            })->values()->toArray();
+
+            $questions->push(['type' => 'match_pairs', 'pairs' => $pairs]);
+        }
+
+        $pool = [];
+
+        // Fill-in-the-blank
+        foreach ($fillBlankWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(4) as $word) {
+            $blank = '___________';
+            $pattern = '/' . preg_quote($word->word, '/') . '/i';
+            $sentence = $this->pickSentenceWithBlank($word->example_sentences, $pattern, $blank);
+            if (!$sentence)
+                continue;
+            $wrongOptions = $this->buildWrongOptions($word, $eligibleWordIds);
+            $options = array_merge([$word->word], $wrongOptions);
+            shuffle($options);
+            $pool[] = ['type' => 'fill_blank', 'word' => $word->word, 'sentence' => $sentence, 'options' => $options, 'correct' => $word->word];
+        }
+
+        // Synonym
+        foreach ($synonymWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(3) as $word) {
+            $list = $this->splitWordList($word->synonym);
+            if (empty($list))
+                continue;
+            $correct = $list[array_rand($list)];
+            $wrongOptions = $this->buildWordDistractors($correct, $word->word, $words, 3);
+            $options = array_merge([$correct], $wrongOptions);
+            shuffle($options);
+            $pool[] = ['type' => 'synonym', 'word' => $word->word, 'options' => $options, 'correct' => $correct];
+        }
+
+        // Antonym
+        foreach ($antonymWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(3) as $word) {
+            $list = $this->splitWordList($word->antonym);
+            if (empty($list))
+                continue;
+            $correct = $list[array_rand($list)];
+            $wrongOptions = $this->buildWordDistractors($correct, $word->word, $words, 3);
+            $options = array_merge([$correct], $wrongOptions);
+            shuffle($options);
+            $pool[] = ['type' => 'antonym', 'word' => $word->word, 'options' => $options, 'correct' => $correct];
+        }
+
+        // Translation EN → BN
+        foreach ($translationWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(4) as $word) {
+            $distractors = $translationWords
+                ->filter(fn($w2) => $w2->id !== $word->id && !empty(trim($w2->bangla_meaning ?? '')))
+                ->shuffle()->take(3)->pluck('bangla_meaning')->toArray();
+            if (count($distractors) < 3)
+                continue;
+            $options = array_merge([$word->bangla_meaning], $distractors);
+            shuffle($options);
+            $pool[] = ['type' => 'translation_en_bn', 'word' => $word->word, 'options' => $options, 'correct' => $word->bangla_meaning];
+        }
+
+        shuffle($pool);
+        $remaining = self::MAX_QUESTIONS - $questions->count();
+        foreach (array_slice($pool, 0, $remaining) as $q) {
+            $questions->push($q);
+        }
+        $questions = $questions->shuffle()->values();
+
+        if ($questions->count() < 1) {
+            return Inertia::render('Quiz', [
+                'questions' => [],
+                'noMasteredWords' => false,
+                'noUsableSentences' => true,
+                'wordListTitle' => $wordlist->title,
+            ]);
+        }
+
+        return Inertia::render('Quiz', [
+            'questions' => $questions,
+            'noMasteredWords' => false,
+            'noUsableSentences' => false,
+            'matchPassThreshold' => self::MATCH_PASS_THRESHOLD,
+            'wordListTitle' => $wordlist->title,
         ]);
     }
 

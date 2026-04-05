@@ -13,6 +13,7 @@ import {
     Clock,
     XCircle,
     CheckCircle,
+    GraduationCap,
 } from "lucide-react";
 
 function Pagination({ links, meta }) {
@@ -172,7 +173,8 @@ export default function Wordlist({
     currentDifficulty,
     currentCategory,
     masteredCounts,
-    userOrders = {}, // { [wordListId]: 'pending' | 'approved' | 'rejected' }
+    userOrders = {},
+    quizEligibleIds = [],
     bkashNumber = "01825236112",
 }) {
     const { auth } = usePage().props;
@@ -440,8 +442,30 @@ export default function Wordlist({
                                                             />
                                                         )}
 
-                                                        {/* Start button — hide label if complete */}
-                                                        <div className="flex justify-end mt-3">
+                                                        {/* Action row: Start Exercise + optional Take a Quiz */}
+                                                        <div className="flex items-center justify-between mt-3">
+                                                            <div>
+                                                                {quizEligibleIds.includes(
+                                                                    wordList.id,
+                                                                ) && (
+                                                                    <a
+                                                                        href={route(
+                                                                            "quiz.wordlist",
+                                                                            wordList.id,
+                                                                        )}
+                                                                        className="flex items-center gap-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                                                                        onClick={(
+                                                                            e,
+                                                                        ) =>
+                                                                            e.stopPropagation()
+                                                                        }
+                                                                    >
+                                                                        <GraduationCap className="h-3.5 w-3.5" />
+                                                                        Take a
+                                                                        Quiz
+                                                                    </a>
+                                                                )}
+                                                            </div>
                                                             <span className="text-[#E5201C] text-sm font-semibold flex items-center gap-1">
                                                                 {mastered !==
                                                                     null &&

@@ -404,6 +404,7 @@ export default function Quiz({
     noMasteredWords = false,
     noUsableSentences = false,
     matchPassThreshold = 3,
+    wordListTitle = null,
 }) {
     const [current, setCurrent] = useState(0);
     const [selected, setSelected] = useState(null);
@@ -609,10 +610,12 @@ export default function Quiz({
                         </Link>
                         <div className="flex-1">
                             <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                                Quiz
+                                {wordListTitle ? wordListTitle : "Quiz"}
                             </h1>
                             <p className="text-xs text-gray-400 dark:text-gray-500">
-                                Mixed question types
+                                {wordListTitle
+                                    ? "Word list quiz"
+                                    : "Mixed question types"}
                             </p>
                         </div>
                         <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-xl shadow-sm dark:border dark:border-slate-700">

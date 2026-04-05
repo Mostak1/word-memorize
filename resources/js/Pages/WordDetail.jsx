@@ -1,5 +1,6 @@
 import { Head, Link, router } from "@inertiajs/react";
 import AppLayout from "@/Layouts/AppLayout";
+import { usePuter } from "@/hooks/usePuter";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -20,7 +21,7 @@ import {
     ChevronLeft,
     ChevronRight,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import FlashMessages from "@/Components/FlashMessage";
 
 export default function WordDetail({
@@ -40,6 +41,12 @@ export default function WordDetail({
     const [isDemoting, setIsDemoting] = useState(false);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
 
+    const [aiExplanation, setAiExplanation] = useState(null);
+    const [aiLoading, setAiLoading] = useState(false);
+
+    const { puter, ready } = usePuter();
+    const ttsRef = useRef(null);
+
     useEffect(() => {
         setWordStatus(null);
         setIsSubmitting(false);
@@ -47,13 +54,60 @@ export default function WordDetail({
         setBookmarked(initialBookmarked);
     }, [word.id, initialBookmarked]);
 
-    const speakWord = (text) => {
-        if ("speechSynthesis" in window) {
+    // const speakWord = (text) => {
+    //     if ("speechSynthesis" in window) {
+    //         window.speechSynthesis.cancel();
+    //         const u = new SpeechSynthesisUtterance(text);
+    //         u.lang = "en-US";
+    //         u.rate = 0.8;
+    //         window.speechSynthesis.speak(u);
+    //     }
+    // };
+
+    const speakWord = async (text) => {
+        // Fallback to browser TTS if Puter not ready
+        if (!ready || !puter) {
             window.speechSynthesis.cancel();
             const u = new SpeechSynthesisUtterance(text);
             u.lang = "en-US";
             u.rate = 0.8;
             window.speechSynthesis.speak(u);
+            return;
+        }
+
+        try {
+            // Stop previous audio if playing
+            if (ttsRef.current) {
+                ttsRef.current.pause();
+            }
+
+            const audio = await puter.ai.txt2speech(text, "en-US");
+            ttsRef.current = audio;
+            audio.play();
+        } catch (err) {
+            console.warn("Puter TTS failed, falling back:", err);
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = "en-US";
+            u.rate = 0.8;
+            window.speechSynthesis.speak(u);
+        }
+    };
+
+    const handleAiExplain = async () => {
+        if (!ready || !puter || aiLoading) return;
+        setAiLoading(true);
+        try {
+            const response = await puter.ai.chat(
+                `Explain the English word "${word.word}" in simple terms.
+             Give: 1) a one-line meaning, 2) one memory tip, 3) one real-life usage example.
+             Be concise. Format as plain text, no markdown.`,
+            );
+            setAiExplanation(response?.message?.content ?? response);
+        } catch (err) {
+            setAiExplanation("Could not load explanation. Try again.");
+        } finally {
+            setAiLoading(false);
         }
     };
 
@@ -370,6 +424,25 @@ export default function WordDetail({
                             </div>
                         )}
 
+                        {ready && (
+                            <div className="mx-4 mb-3">
+                                <button
+                                    onClick={handleAiExplain}
+                                    disabled={aiLoading}
+                                    className="w-full py-2 rounded-xl text-sm font-medium bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 transition disabled:opacity-50"
+                                >
+                                    {aiLoading
+                                        ? "Thinking…"
+                                        : "✨ Explain with AI"}
+                                </button>
+                                {aiExplanation && (
+                                    <p className="mt-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-slate-800 rounded-xl p-3 leading-relaxed">
+                                        {aiExplanation}
+                                    </p>
+                                )}
+                            </div>
+                        )}
+
                         {/* Collocations */}
                         {collocationList.length > 0 && (
                             <div className="px-4 pb-4">
@@ -514,16 +587,16 @@ export default function WordDetail({
                             <div className="px-4 pb-4">
                                 <div className="h-px bg-gray-100 dark:bg-slate-700 mb-3" />
                                 <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
-                                    <Link
-                                        href={route(
-                                            "wordlist.show",
-                                            wordList.id,
-                                        )}
+                                    <div
+                                        // href={route(
+                                        //     "wordlist.show",
+                                        //     wordList.id,
+                                        // )}
                                         className="inline-flex items-center gap-1 hover:text-gray-600 transition"
                                     >
                                         <BookOpen className="h-3.5 w-3.5" />
                                         Part of: {wordList.title}
-                                    </Link>
+                                    </div>
                                 </p>
                             </div>
                         )}

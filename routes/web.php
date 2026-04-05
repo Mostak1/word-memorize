@@ -164,6 +164,7 @@ Route::middleware('auth')->group(function () {
 
     // Quiz
     Route::get('/quiz', [QuizController::class, 'index'])->name('quiz.index');
+    Route::get('/quiz/wordlist/{wordlist}', [QuizController::class, 'indexByWordlist'])->name('quiz.wordlist');
     Route::post('/quiz/finish', [QuizController::class, 'finish'])->name('quiz.finish');
 
     // Mastered / review lists

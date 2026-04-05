@@ -83,12 +83,11 @@ class WordListCategoryController extends Controller
         // Fetch the latest order per wordlist for the current user
         $userOrders = [];
         if (auth()->check()) {
-            // Get only the most recent order per wordlist (latest() + keyBy gives the last one)
             $orders = WordListOrder::where('user_id', auth()->id())
                 ->whereIn('wordlist_id', $ids)
                 ->latest()
                 ->get(['wordlist_id', 'status', 'admin_note', 'address', 'name', 'phone_number', 'profession'])
-                ->keyBy('wordlist_id'); // keyBy on a latest() collection keeps the first (= newest) per key
+                ->keyBy('wordlist_id');
 
             $userOrders = $orders->map(fn($o) => [
                 'status' => $o->status,
@@ -100,12 +99,32 @@ class WordListCategoryController extends Controller
             ])->toArray();
         }
 
+        // Quiz eligibility: wordlists where at least 20 words have box >= 2 (learning stage)
+        $quizEligibleIds = [];
+        if (auth()->check() && !empty($ids)) {
+            $learnedCounts = WordProgress::where('user_id', auth()->id())
+                ->where('box', '>=', 2)
+                ->join('words', 'word_progress.word_id', '=', 'words.id')
+                ->whereIn('words.wordlist_id', $ids)
+                ->selectRaw('words.wordlist_id, count(*) as cnt')
+                ->groupBy('words.wordlist_id')
+                ->pluck('cnt', 'wordlist_id')
+                ->toArray();
+
+            foreach ($wordLists as $wl) {
+                if (($learnedCounts[$wl->id] ?? 0) >= 20) {
+                    $quizEligibleIds[] = $wl->id;
+                }
+            }
+        }
+
         return Inertia::render('Wordlist', [
             'wordLists' => $wordLists,
             'category' => $category,
             'currentCategory' => $category->name,
             'masteredCounts' => $masteredCounts,
-            'userOrders' => $userOrders, // send to frontend
+            'userOrders' => $userOrders,
+            'quizEligibleIds' => $quizEligibleIds,
             'bkashNumber' => env('BKASH_NUMBER', '01825236112'),
         ]);
     }
