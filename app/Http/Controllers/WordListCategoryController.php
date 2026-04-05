@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\WordList;
 use App\Models\WordListCategory;
+use App\Models\WordListOrder;
 use App\Models\WordProgress;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -77,11 +78,35 @@ class WordListCategoryController extends Controller
 
         $ids = $wordLists->pluck('id')->toArray();
 
+        $masteredCounts = $this->getMasteredCounts($ids);
+
+        // Fetch the latest order per wordlist for the current user
+        $userOrders = [];
+        if (auth()->check()) {
+            // Get only the most recent order per wordlist (latest() + keyBy gives the last one)
+            $orders = WordListOrder::where('user_id', auth()->id())
+                ->whereIn('wordlist_id', $ids)
+                ->latest()
+                ->get(['wordlist_id', 'status', 'admin_note', 'address', 'name', 'phone_number', 'profession'])
+                ->keyBy('wordlist_id'); // keyBy on a latest() collection keeps the first (= newest) per key
+
+            $userOrders = $orders->map(fn($o) => [
+                'status' => $o->status,
+                'admin_note' => $o->admin_note,
+                'address' => $o->address,
+                'name' => $o->name,
+                'phone_number' => $o->phone_number,
+                'profession' => $o->profession,
+            ])->toArray();
+        }
+
         return Inertia::render('Wordlist', [
             'wordLists' => $wordLists,
             'category' => $category,
             'currentCategory' => $category->name,
-            'masteredCounts' => $this->getMasteredCounts($ids),  // ← add this
+            'masteredCounts' => $masteredCounts,
+            'userOrders' => $userOrders, // send to frontend
+            'bkashNumber' => env('BKASH_NUMBER', '01825236112'),
         ]);
     }
 }

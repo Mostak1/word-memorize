@@ -7,7 +7,8 @@ import {
     BookMarked,
     Trophy,
     Flag,
-    Link2
+    Link2,
+    ClipboardList 
 } from "lucide-react";
 
 /**
@@ -60,6 +61,11 @@ export const sidebarConfig = {
                     name: "Mastered Words",
                     route: "admin.mastered-words.index",
                     icon: Trophy,
+                },
+                {
+                    name: "Word List Orders",
+                    route: "admin.wordlist-orders.index",
+                    icon: ClipboardList,
                 },
                 {
                     name: "Error Reports",

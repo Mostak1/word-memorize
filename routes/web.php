@@ -1,10 +1,12 @@
 <?php
 
+use App\Http\Controllers\Admin\WordListOrderController;
 use App\Http\Controllers\ErrorReportController;
 use App\Http\Controllers\PublicLinkTreeController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\TTSController;
 use App\Http\Controllers\UserWordController;
+use App\Http\Controllers\UserWordListOrderController;
 use App\Http\Controllers\WordListCategoryController;
 use App\Http\Controllers\WordListController;
 use App\Http\Controllers\ProfileController;
@@ -140,6 +142,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // My Orders (user's order history)
+    Route::get('/my/orders', [UserWordListOrderController::class, 'index'])
+        ->name('my.orders');
+
+    // Place an order for a locked word list
+    Route::post('/wordlist/{wordList}/order', [UserWordListOrderController::class, 'store'])
+        ->name('wordlist.order.store');
 
     // My Words
     Route::get('/my/words', [UserWordController::class, 'index'])->name('my.words.index');

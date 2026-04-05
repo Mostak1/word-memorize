@@ -11,6 +11,7 @@ import {
     Flame,
     ShieldCheck,
     Snowflake,
+    ShoppingBag,
 } from "lucide-react";
 
 // ── Streak Banner ─────────────────────────────────────────────────────────────
@@ -266,6 +267,23 @@ export default function Dashboard({
                                         Practice now
                                     </p>
                                 </div>
+                            </div>
+                        </Link>
+
+                        <Link
+                            href={route("my.orders")}
+                            className="block bg-white dark:bg-slate-900 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm hover:shadow-md transition-shadow min-h-[160px]"
+                        >
+                            <div className="w-16 h-16 rounded-full bg-indigo-100 dark:bg-indigo-950/30 flex items-center justify-center">
+                                <ShoppingBag className="h-8 w-8 text-indigo-500" />
+                            </div>
+                            <div className="text-center">
+                                <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
+                                    My Orders
+                                </p>
+                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                                    View your order history
+                                </p>
                             </div>
                         </Link>
                     </div>

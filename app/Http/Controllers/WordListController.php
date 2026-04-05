@@ -58,7 +58,12 @@ class WordListController extends Controller
             ->firstOrFail();
 
         if ($wordList->is_locked) {
-            abort(403, 'This word list is locked.');
+            // Allow access if the authenticated user has an approved order
+            $hasApprovedOrder = auth()->check() && $wordList->userHasAccess(auth()->id());
+
+            if (!$hasApprovedOrder) {
+                abort(403, 'This word list is locked.');
+            }
         }
 
         if (auth()->check()) {

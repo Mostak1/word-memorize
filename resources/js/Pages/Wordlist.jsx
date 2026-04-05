@@ -1,5 +1,7 @@
-import { Head, Link, router } from "@inertiajs/react";
+import { useState } from "react";
+import { Head, Link, router, usePage } from "@inertiajs/react";
 import AppLayout from "@/Layouts/AppLayout";
+import PurchaseOrderDialog from "@/Components/PurchaseOrderDialog";
 import {
     BookOpen,
     ChevronRight,
@@ -7,6 +9,10 @@ import {
     Lock,
     Play,
     Trophy,
+    ShoppingCart,
+    Clock,
+    XCircle,
+    CheckCircle,
 } from "lucide-react";
 
 function Pagination({ links, meta }) {
@@ -137,12 +143,43 @@ function MasteredProgress({ mastered, total }) {
     );
 }
 
+/** Badge showing order status on locked card */
+function OrderStatusBadge({ status }) {
+    if (!status) return null;
+    if (status === "pending")
+        return (
+            <div className="flex items-center gap-1 bg-amber-100 dark:bg-amber-900/30 px-2.5 py-0.5 rounded-full">
+                <Clock className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                <span className="text-xs font-bold text-amber-700 dark:text-amber-400">
+                    Pending Review
+                </span>
+            </div>
+        );
+    if (status === "rejected")
+        return (
+            <div className="flex items-center gap-1 bg-red-100 dark:bg-red-900/30 px-2.5 py-0.5 rounded-full">
+                <XCircle className="h-3 w-3 text-red-600 dark:text-red-400" />
+                <span className="text-xs font-bold text-red-700 dark:text-red-400">
+                    Rejected
+                </span>
+            </div>
+        );
+    return null;
+}
+
 export default function Wordlist({
     wordLists,
     currentDifficulty,
     currentCategory,
-    masteredCounts, // { [wordListId]: count } — only present when auth'd
+    masteredCounts,
+    userOrders = {}, // { [wordListId]: 'pending' | 'approved' | 'rejected' }
+    bkashNumber = "01825236112",
 }) {
+    const { auth } = usePage().props;
+    const user = auth?.user ?? null;
+
+    const [purchaseTarget, setPurchaseTarget] = useState(null); // wordList object
+
     const getDifficultyBadge = (difficulty) => {
         const d = difficulty?.toLowerCase();
         const star =
@@ -194,13 +231,23 @@ export default function Wordlist({
                                     const mastered =
                                         masteredCounts?.[wordList.id] ?? null;
                                     const total = wordList.words_count ?? 0;
+                                    // userOrders values are now objects: { status, admin_note, address, ... }
+                                    const orderData =
+                                        userOrders?.[wordList.id] ?? null;
+                                    const orderStatus =
+                                        orderData?.status ?? null;
+
+                                    // An approved order overrides the lock
+                                    const effectivelyLocked =
+                                        wordList.is_locked &&
+                                        orderStatus !== "approved";
 
                                     return (
                                         <div key={wordList.id}>
-                                            {wordList.is_locked ? (
-                                                /* ── LOCKED card — not clickable ── */
+                                            {effectivelyLocked ? (
+                                                /* ── LOCKED card ── */
                                                 <div
-                                                    className="bg-white rounded-2xl px-5 py-4 shadow-sm opacity-75 cursor-not-allowed select-none"
+                                                    className="bg-white dark:bg-slate-900 rounded-2xl px-5 py-4 shadow-sm"
                                                     style={{
                                                         animationDelay: `${index * 0.07}s`,
                                                         animation:
@@ -209,16 +256,29 @@ export default function Wordlist({
                                                     }}
                                                 >
                                                     <div className="flex items-start justify-between gap-3 mb-3">
-                                                        <h2 className="text-base font-bold text-gray-500 leading-snug flex-1">
+                                                        <h2 className="text-base font-bold text-gray-700 dark:text-gray-300 leading-snug flex-1">
                                                             {wordList.title}
                                                         </h2>
-                                                        <div className="flex items-center gap-2 shrink-0">
-                                                            <div className="flex items-center gap-1 bg-gray-100 px-2.5 py-0.5 rounded-full">
-                                                                <Lock className="h-3.5 w-3.5 text-gray-500" />
-                                                                <span className="text-xs font-bold text-gray-500">
-                                                                    Locked
-                                                                </span>
-                                                            </div>
+                                                        <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                                                            {/* Price badge */}
+                                                            {wordList.price >
+                                                                0 && (
+                                                                <div className="flex items-center gap-1 bg-amber-100 dark:bg-amber-900/30 px-2.5 py-0.5 rounded-full">
+                                                                    <Lock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                                                                    <span className="text-xs font-bold text-amber-700 dark:text-amber-400">
+                                                                        ৳
+                                                                        {
+                                                                            wordList.price
+                                                                        }
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                            {/* Order status */}
+                                                            <OrderStatusBadge
+                                                                status={
+                                                                    orderStatus
+                                                                }
+                                                            />
                                                         </div>
                                                     </div>
 
@@ -232,17 +292,82 @@ export default function Wordlist({
                                                             }
                                                         </span>
                                                         {total > 0 && (
-                                                            <span className="text-xs font-medium px-2.5 py-0.5 rounded-full border border-gray-200 bg-gray-50 text-gray-400">
+                                                            <span className="text-xs font-medium px-2.5 py-0.5 rounded-full border border-gray-200 bg-gray-50 dark:bg-slate-800 dark:border-slate-700 text-gray-400">
                                                                 {total} words
                                                             </span>
                                                         )}
                                                     </div>
 
-                                                    <div className="flex justify-end mt-3">
-                                                        <span className="text-gray-400 text-sm font-semibold flex items-center gap-1.5">
-                                                            <Lock className="h-3.5 w-3.5" />
-                                                            Content Locked
-                                                        </span>
+                                                    {/* Action area */}
+                                                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
+                                                        {orderStatus ===
+                                                        "pending" ? (
+                                                            <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                                                                Your order is
+                                                                under review.
+                                                                We'll notify you
+                                                                once approved.
+                                                            </p>
+                                                        ) : orderStatus ===
+                                                          "rejected" ? (
+                                                            <div className="flex items-center justify-between w-full">
+                                                                <p className="text-xs text-red-600 dark:text-red-400 font-medium">
+                                                                    Your order
+                                                                    was
+                                                                    rejected.
+                                                                </p>
+                                                                {user && (
+                                                                    <button
+                                                                        onClick={() =>
+                                                                            setPurchaseTarget(
+                                                                                {
+                                                                                    ...wordList,
+                                                                                    _rejectedOrder:
+                                                                                        orderData,
+                                                                                },
+                                                                            )
+                                                                        }
+                                                                        className="text-[#E5201C] text-sm font-semibold flex items-center gap-1.5 hover:underline"
+                                                                    >
+                                                                        <ShoppingCart className="h-3.5 w-3.5" />
+                                                                        Try
+                                                                        Again
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        ) : user ? (
+                                                            <div className="w-full flex justify-end">
+                                                                <button
+                                                                    onClick={() =>
+                                                                        setPurchaseTarget(
+                                                                            wordList,
+                                                                        )
+                                                                    }
+                                                                    className="flex items-center gap-1.5 bg-[#E5201C] hover:bg-red-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition"
+                                                                >
+                                                                    <ShoppingCart className="h-3.5 w-3.5" />
+                                                                    Purchase
+                                                                    Access
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="w-full flex items-center justify-between">
+                                                                <span className="text-gray-400 text-sm font-semibold flex items-center gap-1.5">
+                                                                    <Lock className="h-3.5 w-3.5" />
+                                                                    Content
+                                                                    Locked
+                                                                </span>
+                                                                <Link
+                                                                    href={route(
+                                                                        "login",
+                                                                    )}
+                                                                    className="text-[#E5201C] text-sm font-semibold hover:underline"
+                                                                >
+                                                                    Login to
+                                                                    Purchase
+                                                                </Link>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             ) : (
@@ -255,7 +380,7 @@ export default function Wordlist({
                                                     className="block"
                                                 >
                                                     <div
-                                                        className="bg-white rounded-2xl px-5 py-4 shadow-sm hover:shadow-md transition-all"
+                                                        className="bg-white dark:bg-slate-900 rounded-2xl px-5 py-4 shadow-sm hover:shadow-md transition-all"
                                                         style={{
                                                             animationDelay: `${index * 0.07}s`,
                                                             animation:
@@ -264,7 +389,7 @@ export default function Wordlist({
                                                         }}
                                                     >
                                                         <div className="flex items-start justify-between gap-3 mb-3">
-                                                            <h2 className="text-base font-bold text-gray-900 leading-snug flex-1">
+                                                            <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 leading-snug flex-1">
                                                                 {wordList.title}
                                                             </h2>
                                                             <div className="flex items-center gap-2 shrink-0">
@@ -273,7 +398,7 @@ export default function Wordlist({
                                                                     <div className="flex items-center gap-1 bg-amber-100 px-2.5 py-0.5 rounded-full">
                                                                         <Lock className="h-3.5 w-3.5 text-amber-600" />
                                                                         <span className="text-xs font-bold text-amber-700">
-                                                                            $
+                                                                            ৳
                                                                             {
                                                                                 wordList.price
                                                                             }
@@ -368,6 +493,16 @@ export default function Wordlist({
                     }
                 `}</style>
             </div>
+
+            {/* Purchase Dialog */}
+            {purchaseTarget && (
+                <PurchaseOrderDialog
+                    open={!!purchaseTarget}
+                    onClose={() => setPurchaseTarget(null)}
+                    wordList={purchaseTarget}
+                    bkashNumber={bkashNumber}
+                />
+            )}
         </AppLayout>
     );
 }

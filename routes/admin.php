@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\SubcategoryController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\ErrorReportController;
+use App\Http\Controllers\Admin\WordListOrderController;
 use Illuminate\Support\Facades\Route;
 
 Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin', 'as' => 'admin.'], function () {
@@ -88,6 +89,12 @@ Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin', 'as' => 'a
         Route::delete('/{errorReport}', [ErrorReportController::class, 'destroy'])->name('destroy');
     });
 
+    Route::prefix('wordlist-orders')->name('wordlist-orders.')->group(function () {
+        Route::get('/', [WordListOrderController::class, 'index'])->name('index');
+        Route::patch('/{order}', [WordListOrderController::class, 'update'])->name('update');
+        Route::delete('/{order}', [WordListOrderController::class, 'destroy'])->name('destroy');
+    });
+
     // ── Settings ───────────────────────────────────────────────────────────────
     Route::prefix('settings')->name('settings.')->group(function () {
         Route::get('/', [SettingsController::class, 'index'])->name('index');
@@ -128,4 +135,3 @@ Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin', 'as' => 'a
         });
     });
 });
-
