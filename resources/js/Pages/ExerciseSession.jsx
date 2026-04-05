@@ -212,44 +212,44 @@ export default function ExerciseSession({
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    // const speakWord = useCallback((text) => {
-    //     if ("speechSynthesis" in window) {
+    const speakWord = useCallback((text) => {
+        if ("speechSynthesis" in window) {
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = "en-US";
+            window.speechSynthesis.speak(u);
+        }
+    }, []);
+
+    // const speakWord = async (text) => {
+    //     // Fallback to browser TTS if Puter not ready
+    //     if (!ready || !puter) {
     //         window.speechSynthesis.cancel();
     //         const u = new SpeechSynthesisUtterance(text);
     //         u.lang = "en-US";
+    //         u.rate = 0.8;
+    //         window.speechSynthesis.speak(u);
+    //         return;
+    //     }
+
+    //     try {
+    //         // Stop previous audio if playing
+    //         if (ttsRef.current) {
+    //             ttsRef.current.pause();
+    //         }
+
+    //         const audio = await puter.ai.txt2speech(text, "en-US");
+    //         ttsRef.current = audio;
+    //         audio.play();
+    //     } catch (err) {
+    //         console.warn("Puter TTS failed, falling back:", err);
+    //         window.speechSynthesis.cancel();
+    //         const u = new SpeechSynthesisUtterance(text);
+    //         u.lang = "en-US";
+    //         u.rate = 0.8;
     //         window.speechSynthesis.speak(u);
     //     }
-    // }, []);
-
-    const speakWord = async (text) => {
-        // Fallback to browser TTS if Puter not ready
-        if (!ready || !puter) {
-            window.speechSynthesis.cancel();
-            const u = new SpeechSynthesisUtterance(text);
-            u.lang = "en-US";
-            u.rate = 0.8;
-            window.speechSynthesis.speak(u);
-            return;
-        }
-
-        try {
-            // Stop previous audio if playing
-            if (ttsRef.current) {
-                ttsRef.current.pause();
-            }
-
-            const audio = await puter.ai.txt2speech(text, "en-US");
-            ttsRef.current = audio;
-            audio.play();
-        } catch (err) {
-            console.warn("Puter TTS failed, falling back:", err);
-            window.speechSynthesis.cancel();
-            const u = new SpeechSynthesisUtterance(text);
-            u.lang = "en-US";
-            u.rate = 0.8;
-            window.speechSynthesis.speak(u);
-        }
-    };
+    // };
 
     const handleAiExplain = async () => {
         if (!ready || !puter || aiLoading) return;

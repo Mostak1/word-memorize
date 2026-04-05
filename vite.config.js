@@ -34,7 +34,7 @@ export default defineConfig({
         name: 'VocabPix',
         short_name: 'VocabPix',
         description: 'Your language learning app',
-        theme_color: '#4f46e5',
+        theme_color: '#e70013',
         background_color: '#ffffff',
         display: 'standalone',
         start_url: '/',
