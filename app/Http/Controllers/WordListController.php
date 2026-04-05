@@ -146,10 +146,12 @@ class WordListController extends Controller
         $nextWordId = null;
 
         if ($request->query('from') === 'mastered' && auth()->check()) {
-            $masteredIds = WordProgress::where('user_id', auth()->id())
-                ->where('box', '>=', WordProgress::MASTERED_BOX)
-                ->latest()
-                ->pluck('word_id')
+            $masteredIds = WordProgress::where('word_progress.user_id', auth()->id())
+                ->where('word_progress.box', '>=', WordProgress::MASTERED_BOX)
+                ->join('words', 'word_progress.word_id', '=', 'words.id')
+                ->where('words.wordlist_id', $word->wordlist_id)
+                ->orderBy('words.id')
+                ->pluck('word_progress.word_id')
                 ->toArray();
 
             $currentIndex = array_search($word->id, $masteredIds);

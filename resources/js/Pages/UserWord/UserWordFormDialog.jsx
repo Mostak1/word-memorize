@@ -13,7 +13,6 @@ import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
 import { Textarea } from "@/Components/ui/textarea";
-import { Switch } from "@/Components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/Components/ui/tabs";
 import {
     Select,
@@ -23,20 +22,96 @@ import {
     SelectValue,
 } from "@/Components/ui/select";
 import { Separator } from "@/Components/ui/separator";
-import {
-    BookOpen,
-    ChevronLeft,
-    Globe,
-    Lock,
-    Plus,
-    Loader2,
-} from "lucide-react";
+import { BookOpen, ChevronLeft, Plus, Loader2, X } from "lucide-react";
 
-// ── Tiny helpers ──────────────────────────────────────────────────────────────
+// ── Collocation helpers ───────────────────────────────────────────────────────
+
+/**
+ * Parse a collocations value coming from the server.
+ * The DB stores a JSON string; Inertia forwards it as-is.
+ * Returns an array of { phrase, example_sentence } objects.
+ */
+function parseCollocations(raw) {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw;
+    try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+}
+
+/** Serialize the collocations array to a JSON string for the payload. */
+function serializeCollocations(items) {
+    const clean = items
+        .filter((c) => c.phrase.trim() || c.example_sentence.trim())
+        .map((c) => ({
+            phrase: c.phrase.trim(),
+            example_sentence: c.example_sentence.trim(),
+        }));
+    return clean.length ? JSON.stringify(clean) : "";
+}
+
+const emptyCollocation = () => ({ phrase: "", example_sentence: "" });
+
+// ── Sub-component: single collocation row ─────────────────────────────────────
+
+function CollocationRow({ index, item, onChange, onRemove, isOnly }) {
+    return (
+        <div className="relative rounded-xl border border-gray-200 bg-gray-50/60 p-3 space-y-2.5">
+            {/* Row header */}
+            <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                    #{index + 1}
+                </span>
+                <button
+                    type="button"
+                    onClick={onRemove}
+                    disabled={isOnly}
+                    className="h-5 w-5 rounded flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    title="Remove"
+                >
+                    <X className="h-3.5 w-3.5" />
+                </button>
+            </div>
+
+            {/* Phrase */}
+            <div className="space-y-1">
+                <Label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">
+                    Phrase
+                </Label>
+                <Input
+                    value={item.phrase}
+                    onChange={(e) => onChange("phrase", e.target.value)}
+                    placeholder='e.g. "critically analyse"'
+                    className="rounded-lg border-gray-200 bg-white h-8 text-sm"
+                />
+            </div>
+
+            {/* Example sentence */}
+            <div className="space-y-1">
+                <Label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">
+                    Example Sentence
+                </Label>
+                <Input
+                    value={item.example_sentence}
+                    onChange={(e) =>
+                        onChange("example_sentence", e.target.value)
+                    }
+                    placeholder="e.g. Students must critically analyse the evidence."
+                    className="rounded-lg border-gray-200 bg-white h-8 text-sm"
+                />
+            </div>
+        </div>
+    );
+}
+
+// ── Tiny field wrapper ────────────────────────────────────────────────────────
 
 function Field({ label, optional = true, error, children }) {
     return (
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 [&_input::placeholder]:text-gray-300 [&_textarea::placeholder]:text-gray-300">
             <Label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
                 {label}
                 {optional && (
@@ -51,6 +126,10 @@ function Field({ label, optional = true, error, children }) {
     );
 }
 
+// ── Form defaults ─────────────────────────────────────────────────────────────
+// collocations is kept as a serialized JSON string in the form so Inertia
+// can send it normally; the structured array state drives the UI.
+
 const EMPTY_FORM = {
     wordlist_id: "",
     new_wordlist_title: "",
@@ -58,15 +137,13 @@ const EMPTY_FORM = {
     pronunciation: "",
     ipa: "",
     bangla_pronunciation: "",
-    // hyphenation: "",
     parts_of_speech_variations: "",
     definition: "",
     bangla_meaning: "",
-    collocations: "",
+    collocations: "", // JSON string — serialized from the array below
     example_sentences: "",
     synonym: "",
     antonym: "",
-    // is_public: false,
 };
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -81,6 +158,9 @@ export default function UserWordFormDialog({
     const isEditing = !!word;
     const [showNewList, setShowNewList] = useState(false);
     const [tab, setTab] = useState("basic");
+
+    // Collocations are managed as a local array, serialized to JSON on submit
+    const [collocations, setCollocations] = useState([emptyCollocation()]);
 
     const { data, setData, post, put, processing, errors, clearErrors, reset } =
         useForm({ ...EMPTY_FORM });
@@ -99,20 +179,20 @@ export default function UserWordFormDialog({
                     pronunciation: word.pronunciation ?? "",
                     ipa: word.ipa ?? "",
                     bangla_pronunciation: word.bangla_pronunciation ?? "",
-                    // hyphenation: word.hyphenation ?? "",
                     parts_of_speech_variations:
                         word.parts_of_speech_variations ?? "",
                     definition: word.definition ?? "",
                     bangla_meaning: word.bangla_meaning ?? "",
-                    collocations: word.collocations ?? "",
                     example_sentences: word.example_sentences ?? "",
                     synonym: word.synonym ?? "",
                     antonym: word.antonym ?? "",
-                    // is_public: word.is_public ?? false,
                 });
+                const parsed = parseCollocations(word.collocations);
+                setCollocations(parsed.length ? parsed : [emptyCollocation()]);
                 setShowNewList(false);
             } else {
                 reset();
+                setCollocations([emptyCollocation()]);
                 setShowNewList(wordLists.length === 0);
             }
             setTab("basic");
@@ -120,12 +200,43 @@ export default function UserWordFormDialog({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, word]);
 
+    // Keep the form's collocations field in sync with the structured array
+    // so that Inertia sends the serialized JSON automatically on submit.
+    useEffect(() => {
+        setData("collocations", serializeCollocations(collocations));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [collocations]);
+
+    // ── Collocation handlers ──────────────────────────────────────────────────
+
+    const updateCollocation = (index, key, value) => {
+        setCollocations((prev) =>
+            prev.map((item, i) =>
+                i === index ? { ...item, [key]: value } : item,
+            ),
+        );
+    };
+
+    const addCollocation = () => {
+        setCollocations((prev) => [...prev, emptyCollocation()]);
+    };
+
+    const removeCollocation = (index) => {
+        setCollocations((prev) => {
+            if (prev.length <= 1) return [emptyCollocation()];
+            return prev.filter((_, i) => i !== index);
+        });
+    };
+
+    // ── Submit ────────────────────────────────────────────────────────────────
+
     function handleSubmit(e) {
         e?.preventDefault();
         const opts = {
             preserveScroll: true,
             onSuccess: () => {
                 reset();
+                setCollocations([emptyCollocation()]);
                 onOpenChange(false);
             },
         };
@@ -144,7 +255,6 @@ export default function UserWordFormDialog({
         "pronunciation",
         "ipa",
         "bangla_pronunciation",
-        // "hyphenation",
         "parts_of_speech_variations",
     ];
     const meaningFields = ["definition", "bangla_meaning"];
@@ -164,6 +274,10 @@ export default function UserWordFormDialog({
             </span>
         );
     }
+
+    const filledCollocationCount = collocations.filter(
+        (c) => c.phrase.trim() || c.example_sentence.trim(),
+    ).length;
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -391,22 +505,6 @@ export default function UserWordFormDialog({
                                         className="rounded-lg border-gray-200 h-9 font-mono text-sm"
                                     />
                                 </Field>
-                                {/* <Field
-                                    label="Hyphenation"
-                                    error={errors.hyphenation}
-                                >
-                                    <Input
-                                        value={data.hyphenation}
-                                        onChange={(e) =>
-                                            setData(
-                                                "hyphenation",
-                                                e.target.value,
-                                            )
-                                        }
-                                        placeholder="e·phem·er·al"
-                                        className="rounded-lg border-gray-200 h-9 text-sm"
-                                    />
-                                </Field> */}
                             </div>
 
                             <Field
@@ -426,36 +524,6 @@ export default function UserWordFormDialog({
                                     dir="auto"
                                 />
                             </Field>
-
-                            {/* Visibility toggle */}
-                            {/* <div className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3">
-                                <div className="flex items-center gap-2.5">
-                                    {data.is_public ? (
-                                        <Globe className="h-4 w-4 text-blue-500 shrink-0" />
-                                    ) : (
-                                        <Lock className="h-4 w-4 text-gray-400 shrink-0" />
-                                    )}
-                                    <div>
-                                        <p className="text-sm font-semibold text-gray-800">
-                                            {data.is_public
-                                                ? "Public"
-                                                : "Private"}
-                                        </p>
-                                        <p className="text-[11px] text-gray-400">
-                                            {data.is_public
-                                                ? "All users can see this word"
-                                                : "Only visible to you"}
-                                        </p>
-                                    </div>
-                                </div>
-                                <Switch
-                                    checked={data.is_public}
-                                    onCheckedChange={(v) =>
-                                        setData("is_public", v)
-                                    }
-                                    className="data-[state=checked]:bg-blue-500"
-                                />
-                            </div> */}
                         </TabsContent>
 
                         {/* ─── MEANINGS TAB ─── */}
@@ -465,6 +533,7 @@ export default function UserWordFormDialog({
                         >
                             <Field
                                 label="English Definition"
+                                optional={false}
                                 error={errors.definition}
                             >
                                 <Textarea
@@ -519,20 +588,63 @@ export default function UserWordFormDialog({
                                     rows={5}
                                 />
                             </Field>
-                            <Field
-                                label="Collocations"
-                                error={errors.collocations}
-                            >
-                                <Textarea
-                                    value={data.collocations}
-                                    onChange={(e) =>
-                                        setData("collocations", e.target.value)
-                                    }
-                                    placeholder="ephemeral beauty, ephemeral pleasure…"
-                                    className="rounded-lg border-gray-200 resize-none text-sm"
-                                    rows={4}
-                                />
-                            </Field>
+
+                            {/* ── Collocations (structured JSON) ── */}
+                            <div className="space-y-2.5">
+                                <div className="flex items-center justify-between">
+                                    <Label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                                        Collocations
+                                        <span className="ml-1 normal-case font-normal text-gray-400 tracking-normal">
+                                            (optional)
+                                        </span>
+                                        {filledCollocationCount > 0 && (
+                                            <span className="ml-2 inline-flex items-center justify-center h-4 min-w-4 rounded-full bg-[#E5201C]/10 text-[#E5201C] text-[10px] font-bold px-1">
+                                                {filledCollocationCount}
+                                            </span>
+                                        )}
+                                    </Label>
+                                    <button
+                                        type="button"
+                                        onClick={addCollocation}
+                                        className="flex items-center gap-1 text-[#E5201C] text-xs font-semibold hover:underline"
+                                    >
+                                        <Plus className="h-3 w-3" /> Add
+                                    </button>
+                                </div>
+
+                                <div className="space-y-2">
+                                    {collocations.map((item, index) => (
+                                        <CollocationRow
+                                            key={index}
+                                            index={index}
+                                            item={item}
+                                            onChange={(key, value) =>
+                                                updateCollocation(
+                                                    index,
+                                                    key,
+                                                    value,
+                                                )
+                                            }
+                                            onRemove={() =>
+                                                removeCollocation(index)
+                                            }
+                                            isOnly={collocations.length === 1}
+                                        />
+                                    ))}
+                                </div>
+
+                                <p className="text-[10px] text-gray-400">
+                                    Each entry is saved as structured JSON.
+                                    Leave all fields empty to store no
+                                    collocations.
+                                </p>
+
+                                {errors.collocations && (
+                                    <p className="text-[11px] text-red-500">
+                                        {errors.collocations}
+                                    </p>
+                                )}
+                            </div>
                         </TabsContent>
 
                         {/* ─── SYNONYMS TAB ─── */}

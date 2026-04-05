@@ -29,7 +29,7 @@ class SrsService
    * User answered CORRECTLY ("I Know" button).
    *
    * Hybrid algorithm:
-   *   L1 → L2 : schedule review in 1 day   (enters day-based system)
+   *   L1 → L2 : schedule review in 0 day   (enters day-based system)
    *   L2 → L3 : schedule review in 3 days
    *   L3 → L4 : Mastered — box = 4 indicates mastery, no more active reviews
    *
@@ -46,9 +46,9 @@ class SrsService
     $newBox = min($progress->box + 1, WordProgress::MASTERED_BOX);
 
     $dayIntervals = [
-      2 => 1,   // L1 → L2 : review tomorrow
-      3 => 3,   // L2 → L3 : review in 3 days
-      4 => 5,  // L3 → L4 : mastered (excluded from active queue anyway)
+      2 => 0,   // L1 → L2 : review tomorrow
+      3 => 0,   // L2 → L3 : review in 3 days
+      4 => 0,  // L3 → L4 : mastered (excluded from active queue anyway)
     ];
 
     $nextDue = Carbon::today()->addDays($dayIntervals[$newBox] ?? 5);

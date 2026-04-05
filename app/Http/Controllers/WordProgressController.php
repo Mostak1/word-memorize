@@ -43,7 +43,7 @@ class WordProgressController extends Controller
     // Demote from mastery (box 4) back to Level 3
     $progress->update([
       'box' => 3,
-      'next_review_at' => now()->addDays(3), // Schedule for review in 3 days
+      'next_review_at' => now()->addDays(0), // Schedule for review in 0 days
     ]);
 
     // Check if there are any mastered words left in this wordlist
@@ -56,7 +56,7 @@ class WordProgressController extends Controller
       )
       ->exists();
 
-    $message = 'Word moved back to your review list! It will reappear in 3 days.';
+    $message = 'Word moved back to the wordlist!.';
 
     // If this was the last mastered word in the list, redirect to all mastered words
     if (!$remainingMastered) {

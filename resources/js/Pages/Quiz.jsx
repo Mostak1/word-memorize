@@ -1,3 +1,5 @@
+import { Player } from "@lottiefiles/react-lottie-player";
+import doneAnimation from "../../../public/lottie/Done.json";
 import { Head, Link } from "@inertiajs/react";
 import AppLayout from "@/Layouts/AppLayout";
 import {
@@ -413,6 +415,7 @@ export default function Quiz({
     const [showNoWordsDialog, setShowNoWordsDialog] = useState(
         noMasteredWords || noUsableSentences,
     );
+    const [showAnimation, setShowAnimation] = useState(true);
 
     const q = questions[current] ?? null;
     const total = questions.length;
@@ -483,6 +486,21 @@ export default function Quiz({
         return (
             <AppLayout>
                 <Head title="Quiz Results" />
+                {/* Fullscreen Lottie overlay */}
+                {showAnimation && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                        <Player
+                            autoplay
+                            keepLastFrame={false}
+                            src={doneAnimation}
+                            style={{ height: "100%", width: "100%" }}
+                            onEvent={(event) => {
+                                if (event === "complete")
+                                    setShowAnimation(false);
+                            }}
+                        />
+                    </div>
+                )}
                 <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 flex items-center justify-center px-4">
                     <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-md w-full max-w-md p-8 text-center">
                         <div className="text-6xl mb-4">{emoji}</div>

@@ -114,6 +114,14 @@ export default function WordDetail({
                 },
                 onFinish: () => {
                     setIsDemoting(false);
+                    if (nextWordId) {
+                        navigateTo(nextWordId);
+                    } else if (prevWordId) {
+                        navigateTo(prevWordId);
+                    } else {
+                        // Redirect to mastered words list
+                        router.get(route("words.mastered"));
+                    }
                 },
             },
         );

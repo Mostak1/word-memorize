@@ -98,6 +98,46 @@ class UserWordController extends Controller
     }
   }
 
+  // ── Collocations helpers ───────────────────────────────────────────────────
+
+  /**
+   * Validate that a collocations value is either empty or valid JSON
+   * representing an array of { phrase, example_sentence } objects.
+   *
+   * Returns the canonical JSON string (or null) to store in the DB.
+   */
+  private function normalizeCollocations(?string $raw): ?string
+  {
+    if (blank($raw)) {
+      return null;
+    }
+
+    $decoded = json_decode($raw, true);
+
+    if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
+      // Treat a non-JSON string as a legacy plain-text value — store as-is
+      // so old data is not accidentally corrupted; the frontend always sends JSON.
+      return $raw;
+    }
+
+    // Re-encode only the expected keys so we don't store garbage
+    $clean = array_values(
+      array_filter(
+        array_map(function ($item) {
+          if (!is_array($item))
+            return null;
+          $phrase = trim($item['phrase'] ?? '');
+          $sentence = trim($item['example_sentence'] ?? '');
+          if ($phrase === '' && $sentence === '')
+            return null;
+          return ['phrase' => $phrase, 'example_sentence' => $sentence];
+        }, $decoded)
+      )
+    );
+
+    return count($clean) ? json_encode($clean, JSON_UNESCAPED_UNICODE) : null;
+  }
+
   // ── Controller actions ────────────────────────────────────────────────────
 
   /**
@@ -127,21 +167,6 @@ class UserWordController extends Controller
   }
 
   /**
-   * GET /my/words/create
-   * Show the "Add New Word" form.
-   */
-  // public function create()
-  // {
-  //   $category = $this->getOrCreatePersonalCategory();
-  //   $wordLists = $this->personalWordLists($category);
-
-  //   return Inertia::render('UserWord/Create', [
-  //     'category' => $category,
-  //     'wordLists' => $wordLists,
-  //   ]);
-  // }
-
-  /**
    * POST /my/words
    * Persist a new personal word.
    */
@@ -164,24 +189,6 @@ class UserWordController extends Controller
         'message' => 'Word added successfully!',
       ]);
   }
-
-  /**
-   * GET /my/words/{word}/edit
-   * Show the edit form pre-filled with the word's current data.
-   */
-  // public function edit(Word $word)
-  // {
-  //   $this->authorizeWord($word);
-
-  //   $category = $this->getOrCreatePersonalCategory();
-  //   $wordLists = $this->personalWordLists($category);
-
-  //   return Inertia::render('UserWord/Create', [
-  //     'word' => $word,
-  //     'category' => $category,
-  //     'wordLists' => $wordLists,
-  //   ]);
-  // }
 
   /**
    * PUT /my/words/{word}
@@ -231,18 +238,17 @@ class UserWordController extends Controller
       'wordlist_id' => ['nullable', 'integer'],
       'new_wordlist_title' => ['nullable', 'string', 'max:255'],
       'word' => ['required', 'string', 'max:255'],
-      'pronunciation' => ['required', 'string', 'max:255'],
+      'pronunciation' => ['nullable', 'string', 'max:255'],
       'ipa' => ['nullable', 'string', 'max:255'],
       'bangla_pronunciation' => ['nullable', 'string', 'max:255'],
-      // 'hyphenation' => ['nullable', 'string', 'max:255'],
       'parts_of_speech_variations' => ['nullable', 'string', 'max:255'],
       'definition' => ['required', 'string'],
       'bangla_meaning' => ['nullable', 'string'],
+      // collocations arrives as a JSON string (array of {phrase, example_sentence})
       'collocations' => ['nullable', 'string'],
       'example_sentences' => ['nullable', 'string'],
       'synonym' => ['nullable', 'string', 'max:1000'],
       'antonym' => ['nullable', 'string', 'max:1000'],
-      // 'is_public' => ['boolean'],
     ]);
   }
 
@@ -257,11 +263,11 @@ class UserWordController extends Controller
       'parts_of_speech_variations' => $v['parts_of_speech_variations'] ?? null,
       'definition' => $v['definition'] ?? null,
       'bangla_meaning' => $v['bangla_meaning'] ?? null,
-      'collocations' => $v['collocations'] ?? null,
+      // Normalize: validate structure and re-encode cleanly
+      'collocations' => $this->normalizeCollocations($v['collocations'] ?? null),
       'example_sentences' => $v['example_sentences'] ?? null,
       'synonym' => $v['synonym'] ?? null,
       'antonym' => $v['antonym'] ?? null,
-      // 'is_public' => $v['is_public'] ?? false,
     ];
   }
 }

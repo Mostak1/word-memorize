@@ -39,6 +39,22 @@ Route::get('/clear-cache', function () {
     return 'Laravel cache cleared!';
 });
 
+Route::get('/storage-link', function () {
+    try {
+        Artisan::call('storage:link');
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Storage link created successfully',
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => false,
+            'message' => $e->getMessage(),
+        ]);
+    }
+});
+
 Route::get('/run-seeder', function () {
     $results = [];
 

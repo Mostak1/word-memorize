@@ -12,7 +12,7 @@ use Inertia\Inertia;
 class QuizController extends Controller
 {
     // How many questions to target per quiz
-    private const MAX_QUESTIONS = 10;
+    private const MAX_QUESTIONS = 20;
 
     // Min correct pairs to award a point on match_pairs
     private const MATCH_PASS_THRESHOLD = 3;
@@ -45,7 +45,6 @@ class QuizController extends Controller
         $words = Word::whereIn('id', $masteredWordIds)->get();
 
         // ── Bucket words by which quiz types they can serve ───────────────────
-
         $fillBlankWords = $words->filter(
             fn($w) => !empty($w->example_sentences)
             && stripos($w->example_sentences, $w->word) !== false

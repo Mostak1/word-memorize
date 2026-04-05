@@ -127,6 +127,7 @@ export default function ExerciseSession({
 
     const [openCollocationIndex, setOpenCollocationIndex] = useState(null);
     const meaningCardRef = useRef(null);
+    const buttonsRef = useRef(null);
 
     // Reset per-card UI when the front of the queue changes
     useEffect(() => {
@@ -134,15 +135,15 @@ export default function ExerciseSession({
         setShowMeaning(false);
     }, [word?.id]);
 
-    // Auto-scroll to bottom of meaning card (buttons) when revealed
+    // Auto-scroll to I Know / I Don't Know buttons when meaning is revealed
     useEffect(() => {
-        if (showMeaning && meaningCardRef.current) {
+        if (showMeaning && buttonsRef.current) {
             setTimeout(() => {
-                meaningCardRef.current?.scrollIntoView({
+                buttonsRef.current?.scrollIntoView({
                     behavior: "smooth",
                     block: "end",
                 });
-            }, 50);
+            }, 250);
         }
     }, [showMeaning]);
 
@@ -807,7 +808,7 @@ export default function ExerciseSession({
                                         {[1, 2, 3, 4].map((box) => (
                                             <div
                                                 key={box}
-                                                className={`rounded-full w-2 h-2 transition-all duration-300 ${
+                                                className={`rounded-full w-2 h-2 transition-all duration-200 ${
                                                     box <= currentBox
                                                         ? (LEVEL_META[box]
                                                               ?.dot ??
@@ -913,7 +914,9 @@ export default function ExerciseSession({
                             {/* Tap to see meaning */}
                             <div className="px-4 pb-3">
                                 <button
-                                    onClick={() => setShowMeaning(true)}
+                                    onClick={() =>
+                                        setShowMeaning((prev) => !prev)
+                                    }
                                     className="w-full flex items-center justify-center gap-2 py-2.5 border border-dashed border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-slate-600 transition"
                                 >
                                     {showMeaning ? (
@@ -1182,7 +1185,10 @@ export default function ExerciseSession({
                                 )}
 
                                 {/* ── I Don't Know / I Know buttons ─────────── */}
-                                <div className="px-4 pt-4 pb-5">
+                                <div
+                                    ref={buttonsRef}
+                                    className="px-4 pt-4 pb-5"
+                                >
                                     <div className="h-px bg-gray-100 dark:bg-slate-800 mb-4" />
                                     <div className="flex gap-3">
                                         <button

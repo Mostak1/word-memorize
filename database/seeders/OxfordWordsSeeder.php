@@ -202,7 +202,9 @@ class OxfordWordsSeeder extends Seeder
             // Fix 2: also index the base word with the POS suffix stripped
             // so "accept (v.).jpg"  → key "accept"
             //    "furniture (n.)."  → key "furniture"  (note optional trailing dot)
-            $base = trim(preg_replace('/\s*\(.*?\)\.?\s*$/', '', $stem));
+            // $base = trim(preg_replace('/\s*\(.*?\)\.?\s*$/', '', $stem));
+            $base = trim(preg_replace('/\s*\(.*?\)\.*\s*$/', '', $stem));
+
             if ($base !== '' && $base !== $stem && !isset($index[$base])) {
                 $index[$base] = $absPath;
             }
@@ -227,7 +229,8 @@ class OxfordWordsSeeder extends Seeder
 
                 // Also strip POS suffix from the _suffix-stripped result so that
                 // "furniture (n.)._cropped" ultimately resolves to "furniture".
-                $strippedBase = trim(preg_replace('/\s*\(.*?\)\.?\s*$/', '', $stripped));
+                // $strippedBase = trim(preg_replace('/\s*\(.*?\)\.?\s*$/', '', $stripped));
+                $strippedBase = trim(preg_replace('/\s*\(.*?\)\.*\s*$/', '', $stripped));
                 if ($strippedBase !== '' && $strippedBase !== $stripped && !isset($index[$strippedBase])) {
                     $index[$strippedBase] = $absPath;
                 }
@@ -252,26 +255,40 @@ class OxfordWordsSeeder extends Seeder
     {
         $key = strtolower(trim($word));
 
-        if (isset($imageIndex[$key])) {
+        if (isset($imageIndex[$key]))
             return $imageIndex[$key];
+
+        // ── NEW: strip trailing parenthetical from the word itself ──────
+        // Handles: "April (abbr. Apr.)"  → "april"
+        //          "television (also TV)" → "television"
+        //          "can (modal)"          → "can"
+        $baseWord = trim(preg_replace('/\s*\(.*?\)\.*\s*$/', '', $key));
+        if ($baseWord !== '' && $baseWord !== $key) {
+            if (isset($imageIndex[$baseWord]))
+                return $imageIndex[$baseWord];
+
+            $underscored = str_replace(' ', '_', $baseWord);
+            if (isset($imageIndex[$underscored]))
+                return $imageIndex[$underscored];
+
+            $hyphenated = str_replace(' ', '-', $baseWord);
+            if (isset($imageIndex[$hyphenated]))
+                return $imageIndex[$hyphenated];
         }
+        // ───────────────────────────────────────────────────────────────
 
         $underscored = str_replace(' ', '_', $key);
-        if (isset($imageIndex[$underscored])) {
+        if (isset($imageIndex[$underscored]))
             return $imageIndex[$underscored];
-        }
 
         $hyphenated = str_replace(' ', '-', $key);
-        if (isset($imageIndex[$hyphenated])) {
+        if (isset($imageIndex[$hyphenated]))
             return $imageIndex[$hyphenated];
-        }
 
-        // CSV entries like "chairman, chairwoman" — try first token only
         if (str_contains($key, ',')) {
             $firstToken = trim(explode(',', $key)[0]);
-            if (isset($imageIndex[$firstToken])) {
+            if (isset($imageIndex[$firstToken]))
                 return $imageIndex[$firstToken];
-            }
         }
 
         return null;
