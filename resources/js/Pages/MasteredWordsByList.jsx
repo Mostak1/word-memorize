@@ -22,29 +22,29 @@ export default function MasteredWordsByList({ words, wordlist }) {
     const getDifficultyBadge = (difficulty) => {
         const d = difficulty?.toLowerCase();
         return d === "easy" || d === "beginner"
-            ? "bg-green-50 text-green-700 border-green-200"
+            ? "bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800"
             : d === "medium" || d === "intermediate"
-              ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+              ? "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950/30 dark:text-yellow-400 dark:border-yellow-800"
               : d === "hard" || d === "advanced"
-                ? "bg-red-50 text-red-700 border-red-200"
-                : "bg-gray-50 text-gray-600 border-gray-200";
+                ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800"
+                : "bg-gray-50 text-gray-600 border-gray-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700";
     };
 
     return (
         <AppLayout>
             <Head title={`Mastered — ${wordlist?.title ?? "Word List"}`} />
-            <div className="min-h-screen bg-[#F0F2F5] pb-20">
+            <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 pb-20">
                 <div className="max-w-xl mx-auto px-4 pt-5">
                     {/* Header */}
                     <div className="flex items-center gap-3 mb-5">
                         <Link
                             href={route("words.mastered")}
-                            className="p-2 rounded-xl bg-white shadow-sm hover:shadow-md transition text-gray-500"
+                            className="p-2 rounded-xl bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition text-gray-500 dark:text-gray-400"
                         >
                             <ChevronLeft className="h-5 w-5" />
                         </Link>
                         <div className="flex-1 min-w-0">
-                            <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2 leading-tight truncate">
+                            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2 leading-tight truncate">
                                 <Trophy className="h-5 w-5 text-green-600 shrink-0" />
                                 <span className="truncate">
                                     {wordlist?.title ?? "Word List"}
@@ -78,7 +78,7 @@ export default function MasteredWordsByList({ words, wordlist }) {
                                         className="block"
                                     >
                                         <div
-                                            className="bg-white rounded-2xl px-5 py-4 shadow-sm hover:shadow-md transition-all"
+                                            className="bg-white dark:bg-slate-900 rounded-2xl px-5 py-4 shadow-sm hover:shadow-md transition-all"
                                             style={{
                                                 animationDelay: `${index * 0.05}s`,
                                                 animation:
@@ -89,17 +89,17 @@ export default function MasteredWordsByList({ words, wordlist }) {
                                             <div className="flex items-start justify-between gap-3">
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center gap-2 flex-wrap">
-                                                        <h3 className="text-lg font-bold text-gray-900">
+                                                        <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
                                                             {word.word}
                                                         </h3>
-                                                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+                                                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400">
                                                             <Trophy className="h-3 w-3" />
                                                             Mastered
                                                         </span>
                                                     </div>
 
                                                     {word.parts_of_speech_variations && (
-                                                        <span className="inline-block mt-1 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md border border-gray-200">
+                                                        <span className="inline-block mt-1 text-xs bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded-md border border-gray-200 dark:border-slate-700">
                                                             {
                                                                 word.parts_of_speech_variations
                                                             }
@@ -107,7 +107,7 @@ export default function MasteredWordsByList({ words, wordlist }) {
                                                     )}
 
                                                     {word.definition && (
-                                                        <p className="text-sm text-gray-500 mt-2 line-clamp-2">
+                                                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 line-clamp-2">
                                                             {word.definition}
                                                         </p>
                                                     )}
@@ -123,7 +123,7 @@ export default function MasteredWordsByList({ words, wordlist }) {
                                                         e.stopPropagation();
                                                         speakWord(word.word);
                                                     }}
-                                                    className="p-2 text-[#E5201C] hover:bg-red-50 rounded-full transition shrink-0"
+                                                    className="p-2 text-[#E5201C] hover:bg-red-50 dark:hover:bg-red-950/20 rounded-full transition shrink-0"
                                                 >
                                                     <Volume2 className="h-5 w-5" />
                                                 </button>
@@ -145,12 +145,12 @@ export default function MasteredWordsByList({ words, wordlist }) {
                                                 { preserveScroll: true },
                                             )
                                         }
-                                        className="flex items-center gap-1 bg-white px-4 py-2 rounded-xl text-sm font-medium text-gray-700 shadow-sm hover:shadow-md disabled:opacity-40 transition"
+                                        className="flex items-center gap-1 bg-white dark:bg-slate-900 px-4 py-2 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 shadow-sm hover:shadow-md dark:border dark:border-slate-700 disabled:opacity-40 transition"
                                     >
                                         <ChevronLeft className="h-4 w-4" />{" "}
                                         Previous
                                     </button>
-                                    <span className="text-sm text-gray-400">
+                                    <span className="text-sm text-gray-400 dark:text-gray-500">
                                         {words.current_page} / {words.last_page}
                                     </span>
                                     <button
@@ -162,7 +162,7 @@ export default function MasteredWordsByList({ words, wordlist }) {
                                                 { preserveScroll: true },
                                             )
                                         }
-                                        className="flex items-center gap-1 bg-white px-4 py-2 rounded-xl text-sm font-medium text-gray-700 shadow-sm hover:shadow-md disabled:opacity-40 transition"
+                                        className="flex items-center gap-1 bg-white dark:bg-slate-900 px-4 py-2 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 shadow-sm hover:shadow-md dark:border dark:border-slate-700 disabled:opacity-40 transition"
                                     >
                                         Next{" "}
                                         <ChevronRight className="h-4 w-4" />

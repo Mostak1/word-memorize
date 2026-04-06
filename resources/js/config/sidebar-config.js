@@ -7,6 +7,8 @@ import {
     BookMarked,
     Trophy,
     Flag,
+    Link2,
+    ClipboardList 
 } from "lucide-react";
 
 /**
@@ -19,7 +21,7 @@ import {
 export const sidebarConfig = {
     // Branding section at the top of the sidebar
     branding: {
-        title: "VocaPix",
+        title: "VocabPix",
         subtitle: "Admin Panel",
         icon: BookOpen,
         homeRoute: "admin.dashboard",
@@ -61,9 +63,19 @@ export const sidebarConfig = {
                     icon: Trophy,
                 },
                 {
+                    name: "Word List Orders",
+                    route: "admin.wordlist-orders.index",
+                    icon: ClipboardList,
+                },
+                {
                     name: "Error Reports",
                     route: "admin.error-reports.index",
                     icon: Flag,
+                },
+                {
+                    name: "Link Tree",
+                    route: "admin.link-tree.index",
+                    icon: Link2,
                 },
             ],
         },

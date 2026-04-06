@@ -3,15 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Models\BookmarkedWord;
-use App\Models\MasteredWord;
 use App\Models\ReviewWord;
 use App\Models\WordList;
 use App\Models\Word;
+use App\Models\WordProgress;
+use App\Services\SrsService;
+use App\Services\StreakService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class WordListController extends Controller
 {
+    public function __construct(private StreakService $streakService)
+    {
+    }
+
     private function bookmarkedIds(array $wordIds): array
     {
         if (!auth()->check())
@@ -22,12 +28,6 @@ class WordListController extends Controller
             ->toArray();
     }
 
-    /**
-     * Display a specific word list.
-     * Passes `category` so WordlistDetail's back button returns to the
-     * correct category wordlist page.
-     * NOTE: The relationship on WordList is named category(), not wordListCategory().
-     */
     public function show(Request $request, $id)
     {
         $wordList = WordList::with('category')
@@ -46,60 +46,80 @@ class WordListController extends Controller
         return Inertia::render('WordlistDetail', [
             'wordList' => $wordList,
             'words' => $words,
-            'category' => $wordList->category,   // ← correct relationship name
+            'category' => $wordList->category,
         ]);
     }
 
-    public function start($id)
+    public function start(SrsService $srsService, $id)
     {
         $wordList = WordList::where('id', $id)
             ->where('status', true)
+            ->withCount('words')    // ← so totalWordsInList is always available
             ->firstOrFail();
 
         if ($wordList->is_locked) {
-            abort(403, 'This word list is locked.');
-        }
+            // Allow access if the authenticated user has an approved order
+            $hasApprovedOrder = auth()->check() && $wordList->userHasAccess(auth()->id());
 
-        $wordsQuery = Word::with('images')->where('wordlist_id', $id);
-
-        // Exclude already-mastered words for logged-in users
-        if (auth()->check()) {
-            $masteredWordIds = MasteredWord::where('user_id', auth()->id())
-                ->pluck('word_id');
-
-            if ($masteredWordIds->isNotEmpty()) {
-                $wordsQuery->whereNotIn('id', $masteredWordIds);
+            if (!$hasApprovedOrder) {
+                abort(403, 'This word list is locked.');
             }
         }
 
-        // $words = $wordsQuery->get()->shuffle()->values();
-        $words = $wordsQuery
-            ->orderBy('id', 'asc')
-            ->get()
-            ->values();
+        if (auth()->check()) {
+            // Hybrid SRS: build the capped 20-word Active Queue
+            $words = $srsService->buildSessionQueue(auth()->user(), (int) $id);
+        } else {
+            // Guests: first 20 words in order, no SRS metadata
+            $words = Word::with([
+                'images',
+                'wordList.category:id,show_example_sentences'
+            ])
+                ->where('wordlist_id', $id)
+                ->orderBy('id')
+                ->limit(20)
+                ->get()
+                ->map(function ($w) {
+                    $w->srs_box = 1;
+                    $w->srs_label = 'New';
+                    $w->srs_color = 'bg-gray-100 text-gray-600';
+                    // ✅ Add this line so guests match the same shape as auth users
+                    $w->show_example_sentences =
+                        $w->wordList?->category?->show_example_sentences ?? true;
+                    return $w;
+                });
+        }
 
         return Inertia::render('ExerciseSession', [
             'wordList' => $wordList,
-            'words' => $words,
+            'words' => $words->values(),
             'subcategory' => null,
+            'totalWordsInList' => $wordList->words_count, // full list size for progress display
             'bookmarkedWordIds' => $this->bookmarkedIds($words->pluck('id')->toArray()),
+            'streak' => auth()->check() ? $this->streakService->getSummary(auth()->user()) : null,
         ]);
     }
 
     public function startSubcategory($wordListId, $subcategoryId)
     {
-        // $wordList = WordList::findOrFail($wordListId);
         $wordList = WordList::where('id', $wordListId)
             ->where('status', true)
+            ->withCount('words')
             ->firstOrFail();
-        $words = Word::with('images')
+
+        $words = Word::with([
+            'images',
+            'wordList.category:id,show_example_sentences'
+        ])
             ->where('wordlist_id', $wordListId)
             ->get()->shuffle()->values();
 
         return Inertia::render('ExerciseSession', [
             'wordList' => $wordList,
             'words' => $words,
+            'totalWordsInList' => $wordList->words_count,
             'bookmarkedWordIds' => $this->bookmarkedIds($words->pluck('id')->toArray()),
+            'streak' => auth()->check() ? $this->streakService->getSummary(auth()->user()) : null,
         ]);
     }
 
@@ -118,13 +138,6 @@ class WordListController extends Controller
         ]);
     }
 
-    /**
-     * Display a single word detail page.
-     *
-     * When coming from=mastered, also resolves the previous and next word IDs
-     * in the user's mastered list (ordered latest-first, same as MasteredWords page)
-     * so the frontend can render Prev / Next navigation.
-     */
     public function showWord(Request $request, $id)
     {
         $word = Word::with(['wordList', 'images'])->findOrFail($id);
@@ -138,21 +151,20 @@ class WordListController extends Controller
         $nextWordId = null;
 
         if ($request->query('from') === 'mastered' && auth()->check()) {
-            // Get all mastered word IDs in the same order as the MasteredWords page
-            $masteredIds = MasteredWord::where('user_id', auth()->id())
-                ->latest()
-                ->pluck('word_id')
+            $masteredIds = WordProgress::where('word_progress.user_id', auth()->id())
+                ->where('word_progress.box', '>=', WordProgress::MASTERED_BOX)
+                ->join('words', 'word_progress.word_id', '=', 'words.id')
+                ->where('words.wordlist_id', $word->wordlist_id)
+                ->orderBy('words.id')
+                ->pluck('word_progress.word_id')
                 ->toArray();
 
             $currentIndex = array_search($word->id, $masteredIds);
 
             if ($currentIndex !== false) {
-                // "Previous" = earlier in the list (lower index = more recently mastered)
                 $prevWordId = $currentIndex > 0
                     ? $masteredIds[$currentIndex - 1]
                     : null;
-
-                // "Next" = later in the list (higher index = older mastered)
                 $nextWordId = $currentIndex < count($masteredIds) - 1
                     ? $masteredIds[$currentIndex + 1]
                     : null;
@@ -174,19 +186,27 @@ class WordListController extends Controller
     {
         $userId = auth()->id();
 
-        // Wordlists that have at least one mastered word for this user
-        $wordlists = WordList::whereHas('words.masteredEntries', function ($q) use ($userId) {
-            $q->where('user_id', $userId);
+        // Get all wordlists that have at least one mastered word for this user
+        $wordlists = WordList::whereHas('words.progress', function ($q) use ($userId) {
+            $q->where('user_id', $userId)
+                ->where('box', '>=', WordProgress::MASTERED_BOX);
         })
             ->withCount([
                 'words as total_words',
                 'words as mastered_count' => function ($q) use ($userId) {
-                    $q->whereHas('masteredEntries', fn($q2) => $q2->where('user_id', $userId));
+                    $q->whereHas(
+                        'progress',
+                        fn($q2) => $q2
+                            ->where('user_id', $userId)
+                            ->where('box', '>=', WordProgress::MASTERED_BOX)
+                    );
                 },
             ])
             ->get(['id', 'title', 'difficulty']);
 
-        $totalMastered = MasteredWord::where('user_id', $userId)->count();
+        $totalMastered = WordProgress::where('user_id', $userId)
+            ->where('box', '>=', WordProgress::MASTERED_BOX)
+            ->count();
 
         return Inertia::render('MasteredWords', [
             'wordlists' => $wordlists,
@@ -205,8 +225,14 @@ class WordListController extends Controller
         if ($wordlist->is_locked) {
             abort(403, 'This word list is locked.');
         }
+
         $words = Word::where('wordlist_id', $wordlistId)
-            ->whereHas('masteredEntries', fn($q) => $q->where('user_id', $userId))
+            ->whereHas(
+                'progress',
+                fn($q) => $q
+                    ->where('user_id', $userId)
+                    ->where('box', '>=', WordProgress::MASTERED_BOX)
+            )
             ->paginate(15)
             ->withQueryString();
 

@@ -52,7 +52,7 @@ class RegisteredUserController extends Controller
             ->with('flash', [
                 'toast' => [
                     'type' => 'success',
-                    'message' => "Welcome to VocaPix, {$user->name}! 🎉 Your account has been created successfully.",
+                    'message' => "Welcome to VocabPix, {$user->name}! 🎉 Your account has been created successfully.",
                 ],
             ]);
     }

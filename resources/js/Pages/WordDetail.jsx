@@ -1,5 +1,6 @@
 import { Head, Link, router } from "@inertiajs/react";
 import AppLayout from "@/Layouts/AppLayout";
+import { usePuter } from "@/hooks/usePuter";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -20,7 +21,7 @@ import {
     ChevronLeft,
     ChevronRight,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import FlashMessages from "@/Components/FlashMessage";
 
 export default function WordDetail({
@@ -37,7 +38,14 @@ export default function WordDetail({
     const [bookmarked, setBookmarked] = useState(initialBookmarked);
     const [showLoginDialog, setShowLoginDialog] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isDemoting, setIsDemoting] = useState(false);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+    const [aiExplanation, setAiExplanation] = useState(null);
+    const [aiLoading, setAiLoading] = useState(false);
+
+    const { puter, ready } = usePuter();
+    const ttsRef = useRef(null);
 
     useEffect(() => {
         setWordStatus(null);
@@ -53,6 +61,53 @@ export default function WordDetail({
             u.lang = "en-US";
             u.rate = 0.8;
             window.speechSynthesis.speak(u);
+        }
+    };
+
+    // const speakWord = async (text) => {
+    //     // Fallback to browser TTS if Puter not ready
+    //     if (!ready || !puter) {
+    //         window.speechSynthesis.cancel();
+    //         const u = new SpeechSynthesisUtterance(text);
+    //         u.lang = "en-US";
+    //         u.rate = 0.8;
+    //         window.speechSynthesis.speak(u);
+    //         return;
+    //     }
+
+    //     try {
+    //         // Stop previous audio if playing
+    //         if (ttsRef.current) {
+    //             ttsRef.current.pause();
+    //         }
+
+    //         const audio = await puter.ai.txt2speech(text, "en-US");
+    //         ttsRef.current = audio;
+    //         audio.play();
+    //     } catch (err) {
+    //         console.warn("Puter TTS failed, falling back:", err);
+    //         window.speechSynthesis.cancel();
+    //         const u = new SpeechSynthesisUtterance(text);
+    //         u.lang = "en-US";
+    //         u.rate = 0.8;
+    //         window.speechSynthesis.speak(u);
+    //     }
+    // };
+
+    const handleAiExplain = async () => {
+        if (!ready || !puter || aiLoading) return;
+        setAiLoading(true);
+        try {
+            const response = await puter.ai.chat(
+                `Explain the English word "${word.word}" in simple terms.
+             Give: 1) a one-line meaning, 2) one memory tip, 3) one real-life usage example.
+             Be concise. Format as plain text, no markdown.`,
+            );
+            setAiExplanation(response?.message?.content ?? response);
+        } catch (err) {
+            setAiExplanation("Could not load explanation. Try again.");
+        } finally {
+            setAiLoading(false);
         }
     };
 
@@ -96,6 +151,36 @@ export default function WordDetail({
         );
     };
 
+    const handleDemoteFromMastery = () => {
+        if (!auth.user) {
+            setShowLoginDialog(true);
+            return;
+        }
+        if (isDemoting) return;
+        setIsDemoting(true);
+        router.post(
+            route("word.demote-from-mastery", word.id),
+            {},
+            {
+                preserveScroll: false,
+                onError: () => {
+                    setIsDemoting(false);
+                },
+                onFinish: () => {
+                    setIsDemoting(false);
+                    if (nextWordId) {
+                        navigateTo(nextWordId);
+                    } else if (prevWordId) {
+                        navigateTo(prevWordId);
+                    } else {
+                        // Redirect to mastered words list
+                        router.get(route("words.mastered"));
+                    }
+                },
+            },
+        );
+    };
+
     const navigateTo = (wordId) => {
         if (!wordId) return;
         router.get(
@@ -119,22 +204,40 @@ export default function WordDetail({
         );
     };
 
-    const collocationList = word.collocations
-        ? word.collocations
-              .split(/[\n,]+/)
-              .map((c) => c.trim())
-              .filter(Boolean)
-        : [];
+    const collocationList = (() => {
+        const raw = word.collocations;
+
+        if (!raw) return [];
+
+        // Case 1: already an array (ideal future case)
+        if (Array.isArray(raw)) return raw;
+
+        // Case 2: JSON string
+        try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) return parsed;
+        } catch (e) {}
+
+        // Case 3: fallback (old comma-separated string)
+        return raw
+            .split(/[\n,]+/)
+            .map((c) => c.trim())
+            .filter(Boolean)
+            .map((phrase) => ({
+                phrase,
+                example_sentence: "", // no example available
+            }));
+    })();
 
     const collocationColors = [
-        "bg-red-100/70 text-red-700 border-red-200",
-        "bg-blue-100/70 text-blue-700 border-blue-200",
-        "bg-green-100/70 text-green-700 border-green-200",
-        "bg-amber-100/70 text-amber-700 border-amber-200",
-        "bg-purple-100/70 text-purple-700 border-purple-200",
-        "bg-teal-100/70 text-teal-700 border-teal-200",
-        "bg-pink-100/70 text-pink-700 border-pink-200",
-        "bg-indigo-100/70 text-indigo-700 border-indigo-200",
+        "bg-red-100/70 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800",
+        "bg-blue-100/70 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800",
+        "bg-green-100/70 text-green-700 border-green-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800",
+        "bg-amber-100/70 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800",
+        "bg-purple-100/70 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800",
+        "bg-teal-100/70 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-400 dark:border-teal-800",
+        "bg-pink-100/70 text-pink-700 border-pink-200 dark:bg-pink-950/40 dark:text-pink-400 dark:border-pink-800",
+        "bg-indigo-100/70 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-800",
     ];
 
     const wordFontSize = (w) => {
@@ -170,10 +273,10 @@ export default function WordDetail({
             <FlashMessages />
 
             <div
-                className={`min-h-screen bg-[#F0F2F5] ${isMastered ? "pb-24" : "pb-32"} pt-1 mt-2`}
+                className={`min-h-screen bg-[#F0F2F5] dark:bg-slate-950 ${isMastered ? "pb-24" : "pb-32"} pt-1 mt-2`}
             >
                 <main className="max-w-lg mx-auto px-3">
-                    <div className="bg-white rounded-3xl shadow-md overflow-hidden">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-md overflow-hidden">
                         {/* Top row: bookmark | word + POS | speaker */}
                         <div className="flex items-center px-5 pt-5 pb-2">
                             <div className="flex-none w-8 flex justify-start">
@@ -199,12 +302,12 @@ export default function WordDetail({
 
                             <div className="flex-1 flex flex-col items-center justify-center gap-1 text-center px-2">
                                 <h1
-                                    className={`${wordFontSize(word.word)} font-extrabold text-gray-900 tracking-tight leading-tight text-center break-words w-full`}
+                                    className={`${wordFontSize(word.word)} font-extrabold text-gray-900 dark:text-gray-100 tracking-tight leading-tight text-center break-words w-full`}
                                 >
                                     {word.word}
                                 </h1>
                                 {word.parts_of_speech_variations && (
-                                    <span className="bg-gray-100 text-gray-600 text-sm font-medium px-3 py-0.5 rounded-md">
+                                    <span className="bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 text-sm font-medium px-3 py-0.5 rounded-md">
                                         {word.parts_of_speech_variations}
                                     </span>
                                 )}
@@ -213,7 +316,7 @@ export default function WordDetail({
                             <div className="flex-none w-8 flex justify-end">
                                 <button
                                     onClick={() => speakWord(word.word)}
-                                    className="p-1 text-gray-500 hover:text-gray-700 transition"
+                                    className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition"
                                 >
                                     <Volume2
                                         className="h-6 w-6"
@@ -228,7 +331,7 @@ export default function WordDetail({
                             word.ipa ||
                             word.bangla_pronunciation) && (
                             <div className="px-5 pb-4 text-center">
-                                <p className="text-base text-gray-400 font-mono mt-1">
+                                <p className="text-base text-gray-400 dark:text-gray-500 font-mono mt-1">
                                     {[
                                         word.pronunciation,
                                         word.ipa,
@@ -243,7 +346,7 @@ export default function WordDetail({
                         {/* Images */}
                         {images.length > 0 && (
                             <div className="px-4 pb-3">
-                                <div className="rounded-2xl overflow-hidden bg-[#EEF6F5]">
+                                <div className="rounded-2xl overflow-hidden bg-[#EEF6F5] dark:bg-slate-800">
                                     <img
                                         src={activeImage?.image_url_full}
                                         alt={activeImage?.caption || word.word}
@@ -255,7 +358,7 @@ export default function WordDetail({
                                     />
                                 </div>
                                 {activeImage?.caption && (
-                                    <p className="text-xs text-gray-400 text-center mt-1.5 italic">
+                                    <p className="text-xs text-gray-400 dark:text-gray-500 text-center mt-1.5 italic">
                                         {activeImage.caption}
                                     </p>
                                 )}
@@ -269,8 +372,8 @@ export default function WordDetail({
                                                 }
                                                 className={`rounded-full transition-all ${
                                                     idx === activeImageIndex
-                                                        ? "w-5 h-2 bg-gray-500"
-                                                        : "w-2 h-2 bg-gray-300"
+                                                        ? "w-5 h-2 bg-gray-500 dark:bg-gray-400"
+                                                        : "w-2 h-2 bg-gray-300 dark:bg-slate-600"
                                                 }`}
                                             />
                                         ))}
@@ -283,7 +386,7 @@ export default function WordDetail({
                         {(word.image_related_sentence ||
                             word.example_sentences) && (
                             <div className="mx-4 mb-4 border-l-4 border-green-400 pl-3 py-1">
-                                <p className="text-base text-gray-800 leading-snug">
+                                <p className="text-base text-gray-800 dark:text-gray-200 leading-snug">
                                     {highlightWord(
                                         word.image_related_sentence ||
                                             word.example_sentences,
@@ -293,27 +396,27 @@ export default function WordDetail({
                             </div>
                         )}
 
-                        <div className="h-px bg-gray-100 mx-4" />
+                        <div className="h-px bg-gray-100 dark:bg-slate-700 mx-4" />
 
                         {/* Definition two-column */}
                         {(word.definition || word.bangla_meaning) && (
                             <div className="grid grid-cols-2 gap-0 mx-4 my-4">
                                 {word.definition && (
                                     <div className="border-l-4 border-[#E5201C] pl-3 pr-2 py-1">
-                                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                                        <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
                                             English Definition
                                         </p>
-                                        <p className="text-sm text-gray-900 leading-snug">
+                                        <p className="text-sm text-gray-900 dark:text-gray-100 leading-snug">
                                             {word.definition}
                                         </p>
                                     </div>
                                 )}
                                 {word.bangla_meaning && (
                                     <div className="border-l-4 border-blue-400 pl-3 pr-2 py-1">
-                                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                                        <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
                                             Bangla Definition
                                         </p>
-                                        <p className="text-sm text-gray-800 leading-snug font-medium">
+                                        <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug font-medium">
                                             {word.bangla_meaning}
                                         </p>
                                     </div>
@@ -321,22 +424,89 @@ export default function WordDetail({
                             </div>
                         )}
 
+                        {/* {ready && (
+                            <div className="mx-4 mb-3">
+                                <button
+                                    onClick={handleAiExplain}
+                                    disabled={aiLoading}
+                                    className="w-full py-2 rounded-xl text-sm font-medium bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 transition disabled:opacity-50"
+                                >
+                                    {aiLoading
+                                        ? "Thinking…"
+                                        : "✨ Explain with AI"}
+                                </button>
+                                {aiExplanation && (
+                                    <p className="mt-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-slate-800 rounded-xl p-3 leading-relaxed">
+                                        {aiExplanation}
+                                    </p>
+                                )}
+                            </div>
+                        )} */}
+
                         {/* Collocations */}
                         {collocationList.length > 0 && (
                             <div className="px-4 pb-4">
-                                <div className="h-px bg-gray-100 mb-3" />
-                                <p className="text-sm font-semibold text-gray-600 mb-2">
+                                <div className="h-px bg-gray-100 dark:bg-slate-700 mb-3" />
+                                <p className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-3">
                                     Common Collocations
                                 </p>
-                                <div className="flex flex-wrap gap-2">
-                                    {collocationList.map((col, i) => (
-                                        <span
-                                            key={i}
-                                            className={`text-sm px-3 py-1.5 rounded-full border ${collocationColors[i % collocationColors.length]}`}
-                                        >
-                                            {col}
-                                        </span>
-                                    ))}
+                                <div className="flex flex-col gap-3">
+                                    {collocationList.map((col, i) => {
+                                        const colorClass =
+                                            collocationColors[
+                                                i % collocationColors.length
+                                            ];
+
+                                        const renderHighlighted = (
+                                            sentence,
+                                            phrase,
+                                        ) => {
+                                            if (!sentence || !phrase)
+                                                return sentence;
+                                            const regex = new RegExp(
+                                                `(${phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+                                                "gi",
+                                            );
+                                            return sentence
+                                                .split(regex)
+                                                .map((part, idx) =>
+                                                    regex.test(part) ? (
+                                                        <mark
+                                                            key={idx}
+                                                            className="font-bold bg-transparent underline underline-offset-2 decoration-2 not-italic"
+                                                            style={{
+                                                                textDecorationColor:
+                                                                    "currentColor",
+                                                            }}
+                                                        >
+                                                            {part}
+                                                        </mark>
+                                                    ) : (
+                                                        part
+                                                    ),
+                                                );
+                                        };
+
+                                        return (
+                                            <div
+                                                key={i}
+                                                className={`rounded-xl border px-3 py-2.5 ${colorClass}`}
+                                            >
+                                                {col.example_sentence ? (
+                                                    <p className="text-sm leading-snug">
+                                                        {renderHighlighted(
+                                                            col.example_sentence,
+                                                            col.phrase,
+                                                        )}
+                                                    </p>
+                                                ) : (
+                                                    <p className="text-xs font-bold uppercase tracking-wide mb-1 opacity-75">
+                                                        {col.phrase}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         )}
@@ -347,17 +517,17 @@ export default function WordDetail({
                             word.bangla_synonym ||
                             word.bangla_antonym) && (
                             <div className="pb-4">
-                                <div className="h-px bg-gray-100 mx-4 mb-4" />
+                                <div className="h-px bg-gray-100 dark:bg-slate-700 mx-4 mb-4" />
 
                                 {/* English */}
                                 {(word.synonym || word.antonym) && (
                                     <div className="grid grid-cols-2 gap-0 mx-4 mb-4">
                                         {word.synonym ? (
                                             <div className="border-l-4 border-[#E5201C] pl-3 pr-2 py-1">
-                                                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                                                <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
                                                     Synonyms
                                                 </p>
-                                                <p className="text-sm text-gray-800 leading-snug">
+                                                <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug">
                                                     {word.synonym}
                                                 </p>
                                             </div>
@@ -366,10 +536,10 @@ export default function WordDetail({
                                         )}
                                         {word.antonym ? (
                                             <div className="border-l-4 border-blue-400 pl-3 pr-2 py-1">
-                                                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                                                <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
                                                     Antonyms
                                                 </p>
-                                                <p className="text-sm text-gray-800 leading-snug">
+                                                <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug">
                                                     {word.antonym}
                                                 </p>
                                             </div>
@@ -385,10 +555,10 @@ export default function WordDetail({
                                     <div className="grid grid-cols-2 gap-0 mx-4">
                                         {word.bangla_synonym ? (
                                             <div className="border-l-4 border-[#E5201C] pl-3 pr-2 py-1">
-                                                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                                                <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
                                                     প্রতিশব্দ
                                                 </p>
-                                                <p className="text-sm text-gray-800 leading-snug font-medium">
+                                                <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug font-medium">
                                                     {word.bangla_synonym}
                                                 </p>
                                             </div>
@@ -397,10 +567,10 @@ export default function WordDetail({
                                         )}
                                         {word.bangla_antonym ? (
                                             <div className="border-l-4 border-blue-400 pl-3 pr-2 py-1">
-                                                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                                                <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
                                                     বিপরীত শব্দ
                                                 </p>
-                                                <p className="text-sm text-gray-800 leading-snug font-medium">
+                                                <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug font-medium">
                                                     {word.bangla_antonym}
                                                 </p>
                                             </div>
@@ -415,18 +585,18 @@ export default function WordDetail({
                         {/* WordList link */}
                         {wordList && (
                             <div className="px-4 pb-4">
-                                <div className="h-px bg-gray-100 mb-3" />
-                                <p className="text-xs text-gray-400 text-center">
-                                    <Link
-                                        href={route(
-                                            "wordlist.show",
-                                            wordList.id,
-                                        )}
+                                <div className="h-px bg-gray-100 dark:bg-slate-700 mb-3" />
+                                <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
+                                    <div
+                                        // href={route(
+                                        //     "wordlist.show",
+                                        //     wordList.id,
+                                        // )}
                                         className="inline-flex items-center gap-1 hover:text-gray-600 transition"
                                     >
                                         <BookOpen className="h-3.5 w-3.5" />
                                         Part of: {wordList.title}
-                                    </Link>
+                                    </div>
                                 </p>
                             </div>
                         )}
@@ -434,7 +604,7 @@ export default function WordDetail({
                 </main>
             </div>
 
-            {/* ── Mastered: Prev / Next navigation ── */}
+            {/* ── Mastered: Prev / Put Back / Next navigation ── */}
             {isMastered && (
                 <div className="fixed bottom-0 left-0 right-0 z-20">
                     <div className="max-w-lg mx-auto px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
@@ -442,32 +612,26 @@ export default function WordDetail({
                             <button
                                 onClick={() => navigateTo(prevWordId)}
                                 disabled={!prevWordId}
-                                className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl text-sm font-bold bg-white border border-gray-200 text-gray-700 shadow-sm hover:shadow-md disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl text-sm font-bold bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 shadow-sm hover:shadow-md disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                             >
                                 <ChevronLeft className="h-5 w-5" />
                                 Previous
                             </button>
 
-                            <Link
-                                href={route("words.mastered")}
-                                className="flex items-center justify-center w-12 h-14 rounded-2xl bg-white border border-gray-200 text-gray-400 shadow-sm hover:shadow-md transition-all shrink-0"
-                                aria-label="Back to Mastered Words"
+                            <button
+                                onClick={handleDemoteFromMastery}
+                                disabled={isDemoting}
+                                className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl text-sm font-bold bg-amber-500 dark:bg-amber-600 hover:bg-amber-600 dark:hover:bg-amber-700 text-white shadow-sm hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                                aria-label="Put word back in the list"
                             >
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    className="h-5 w-5"
-                                >
-                                    <path d="M4 6h16M4 12h16M4 18h7" />
-                                </svg>
-                            </Link>
+                                <XIcon className="h-5 w-5" strokeWidth={2.5} />
+                                {isDemoting ? "Moving..." : "Put Back"}
+                            </button>
 
                             <button
                                 onClick={() => navigateTo(nextWordId)}
                                 disabled={!nextWordId}
-                                className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl text-sm font-bold bg-white border border-gray-200 text-gray-700 shadow-sm hover:shadow-md disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl text-sm font-bold bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 shadow-sm hover:shadow-md disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                             >
                                 Next
                                 <ChevronRight className="h-5 w-5" />
@@ -485,7 +649,7 @@ export default function WordDetail({
                             <button
                                 onClick={() => handleMarkWord("unknown")}
                                 disabled={isSubmitting}
-                                className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl text-base font-bold bg-[#E5201C] text-white hover:bg-red-700 disabled:opacity-60 transition-all shadow-lg shadow-red-100"
+                                className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl text-base font-bold bg-[#E5201C] dark:bg-red-700 text-white hover:bg-red-700 dark:hover:bg-red-800 disabled:opacity-60 transition-all shadow-lg shadow-red-100 dark:shadow-red-900/30"
                             >
                                 <XIcon className="h-5 w-5" strokeWidth={2.5} />
                                 {isSubmitting && wordStatus === "unknown"
@@ -495,7 +659,7 @@ export default function WordDetail({
                             <button
                                 onClick={() => handleMarkWord("known")}
                                 disabled={isSubmitting}
-                                className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl text-base font-bold bg-green-600 text-white hover:bg-green-700 disabled:opacity-60 transition-all shadow-lg shadow-green-100"
+                                className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl text-base font-bold bg-green-600 dark:bg-green-700 text-white hover:bg-green-700 dark:hover:bg-green-800 disabled:opacity-60 transition-all shadow-lg shadow-green-100 dark:shadow-green-900/30"
                             >
                                 <Check className="h-5 w-5" strokeWidth={2.5} />
                                 {isSubmitting && wordStatus === "known"

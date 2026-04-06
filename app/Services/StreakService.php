@@ -9,6 +9,10 @@ use Carbon\Carbon;
 
 class StreakService
 {
+  public function __construct(private XpService $xpService)
+  {
+  }
+
   /**
    * Call this when a user completes a quiz or exercise session.
    * This is the ONLY place streak advances — not on login.
@@ -78,6 +82,9 @@ class StreakService
     $streak->longest_streak = max($streak->longest_streak, $newStreak);
     $streak->last_activity_date = $today;
     $streak->save();
+
+    // Award XP for milestone if applicable
+    $this->xpService->awardStreakMilestoneXp($user, $newStreak);
 
     return $streak;
   }

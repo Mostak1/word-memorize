@@ -16,6 +16,7 @@ class WordController extends Controller
         return [
             'word' => 'required|string|max:255',
             'pronunciation' => 'nullable|string|max:255',
+            'ipa' => 'nullable|string|max:255',
             'bangla_pronunciation' => 'nullable|string|max:255',
             'hyphenation' => 'nullable|string',
             'parts_of_speech_variations' => 'required|string',

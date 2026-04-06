@@ -1,18 +1,25 @@
 <?php
 
+use App\Http\Controllers\Admin\WordListOrderController;
 use App\Http\Controllers\ErrorReportController;
+use App\Http\Controllers\PublicLinkTreeController;
 use App\Http\Controllers\QuizController;
+use App\Http\Controllers\TTSController;
 use App\Http\Controllers\UserWordController;
+use App\Http\Controllers\UserWordListOrderController;
 use App\Http\Controllers\WordListCategoryController;
 use App\Http\Controllers\WordListController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewWordController;
 use App\Http\Controllers\BookmarkController;
+use App\Http\Controllers\WordProgressController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\XpShopController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+Route::get('/tts', [TTSController::class, 'generate'])->name('tts');
 Route::get('/', function () {
     if (auth()->check()) {
         if (auth()->user()->isAdmin()) {
@@ -34,6 +41,22 @@ Route::get('/clear-cache', function () {
     return 'Laravel cache cleared!';
 });
 
+Route::get('/storage-link', function () {
+    try {
+        Artisan::call('storage:link');
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Storage link created successfully',
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => false,
+            'message' => $e->getMessage(),
+        ]);
+    }
+});
+
 Route::get('/run-seeder', function () {
     $results = [];
 
@@ -47,14 +70,18 @@ Route::get('/run-seeder', function () {
             Artisan::call('db:seed', ['--class' => $class, '--force' => true]);
             $output = Artisan::output();
 
-            // Extract inserted/updated/skipped from the last "Done" line
             preg_match('/inserted:\s*(\d+),\s*updated:\s*(\d+),\s*skipped:\s*(\d+)/i', $output, $m);
+            preg_match('/images added:\s*(\d+),\s*already existed \/ no file:\s*(\d+)/i', $output, $img);
+            preg_match('/words_without_images:\s*(\[.*\])/i', $output, $wni);
 
             $results[$class] = [
                 'status' => 'success',
                 'inserted' => isset($m[1]) ? (int) $m[1] : null,
                 'updated' => isset($m[2]) ? (int) $m[2] : null,
                 'skipped' => isset($m[3]) ? (int) $m[3] : null,
+                'images_added' => isset($img[1]) ? (int) $img[1] : null,
+                'images_skipped' => isset($img[2]) ? (int) $img[2] : null,
+                'words_without_images' => isset($wni[1]) ? json_decode($wni[1], true) : [],
             ];
         } catch (\Throwable $e) {
             $results[$class] = [
@@ -87,8 +114,13 @@ Route::get('/run-unseeder', function () {
     }
 });
 
+// Public LinkTree page
+Route::get('/links', [PublicLinkTreeController::class, 'show'])->name('link-tree.show');
+
+// Click tracking + redirect
+Route::get('/l/{link}', [PublicLinkTreeController::class, 'redirect'])->name('link-tree.redirect');
+
 // ── Dashboard ─────────────────────────────────────────────────────────────────
-// Uses DashboardController so streak data is included automatically
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
@@ -111,21 +143,29 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // My Orders (user's order history)
+    Route::get('/my/orders', [UserWordListOrderController::class, 'index'])
+        ->name('my.orders');
+
+    // Place an order for a locked word list
+    Route::post('/wordlist/{wordList}/order', [UserWordListOrderController::class, 'store'])
+        ->name('wordlist.order.store');
+
     // My Words
     Route::get('/my/words', [UserWordController::class, 'index'])->name('my.words.index');
-    // Route::get('/my/words/create', [UserWordController::class, 'create'])->name('my.words.create');
     Route::post('/my/words', [UserWordController::class, 'store'])->name('my.words.store');
-    // Route::get('/my/words/{word}/edit', [UserWordController::class, 'edit'])->name('my.words.edit');
     Route::put('/my/words/{word}', [UserWordController::class, 'update'])->name('my.words.update');
     Route::delete('/my/words/{word}', [UserWordController::class, 'destroy'])->name('my.words.destroy');
 
     // Word actions (exercise session triggers these)
     Route::post('/word/{word}/know', [ReviewWordController::class, 'know'])->name('word.know');
     Route::post('/word/{word}/learn', [ReviewWordController::class, 'learn'])->name('word.learn');
+    Route::post('words/session-complete', [ReviewWordController::class, 'sessionComplete'])->name('word.session-complete');
 
     // Quiz
     Route::get('/quiz', [QuizController::class, 'index'])->name('quiz.index');
-    Route::post('/quiz/finish', [QuizController::class, 'finish'])->name('quiz.finish');   // ← NEW
+    Route::get('/quiz/wordlist/{wordlist}', [QuizController::class, 'indexByWordlist'])->name('quiz.wordlist');
+    Route::post('/quiz/finish', [QuizController::class, 'finish'])->name('quiz.finish');
 
     // Mastered / review lists
     Route::get('/my/mastered', [WordListController::class, 'masteredWords'])->name('words.mastered');
@@ -138,8 +178,26 @@ Route::middleware('auth')->group(function () {
     Route::post('/word/{word}/bookmark', [BookmarkController::class, 'toggle'])->name('word.bookmark');
     Route::get('/my/bookmarks', [BookmarkController::class, 'index'])->name('words.bookmarked');
 
+    // Word Progress (demote mastered words back to review)
+    Route::post('/word/{word}/demote-from-mastery', [WordProgressController::class, 'demoteFromMastery'])
+        ->name('word.demote-from-mastery');
+
     // Error reports
     Route::post('/error-reports', [ErrorReportController::class, 'store'])->name('error-reports.store');
+
+    // ── XP Shop ───────────────────────────────────────────────────────────────
+    // Inertia page — renders the shop UI
+    Route::get('/shop', function () {
+        return Inertia::render('XpShop');
+    })->name('xp-shop');
+
+    // JSON API — used by AppLayout (XP balance pill) and the shop page itself
+    Route::get('/api/xp-shop/status', [XpShopController::class, 'getStatus'])
+        ->name('api.xp-shop.status');
+
+    // JSON API — purchase a streak freeze
+    Route::post('/api/xp-shop/buy-freeze', [XpShopController::class, 'buyStreakFreeze'])
+        ->name('api.xp-shop.buy-freeze');
 });
 
 require __DIR__ . '/auth.php';

@@ -157,8 +157,21 @@ export default function Index({ categories }) {
             {list.map((category) => (
                 <AccordionItem key={category.id} value={`cat-${category.id}`}>
                     <AccordionTrigger className="flex items-center justify-between w-full px-4 py-3 group hover:bg-muted/50 rounded-lg transition-colors [&>svg]:ml-3 [&>svg]:shrink-0 data-[state=open]:[&>svg]:rotate-180">
-                        {/* Left side: name + count + creator badge */}
+                        {/* Left side: thumbnail + name + count + creator badge */}
                         <div className="flex items-center gap-3 min-w-0 flex-1">
+                            {/* Thumbnail */}
+                            {category.thumbnail_url_full ? (
+                                <img
+                                    src={category.thumbnail_url_full}
+                                    alt={category.name}
+                                    className="h-9 w-9 rounded-md object-cover shrink-0 border border-border shadow-sm"
+                                />
+                            ) : (
+                                <div className="h-9 w-9 rounded-md shrink-0 bg-muted border border-border flex items-center justify-center text-muted-foreground text-sm font-semibold select-none">
+                                    {category.name.charAt(0).toUpperCase()}
+                                </div>
+                            )}
+
                             <span className="font-medium text-lg truncate">
                                 {category.name}
                             </span>

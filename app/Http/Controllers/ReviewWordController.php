@@ -3,70 +3,85 @@
 namespace App\Http\Controllers;
 
 use App\Models\BookmarkedWord;
-use App\Models\MasteredWord;
 use App\Models\ReviewWord;
 use App\Models\Word;
+use App\Services\SrsService;
 use App\Services\StreakService;
+use App\Services\XpService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class ReviewWordController extends Controller
 {
-    public function __construct(private StreakService $streakService)
-    {
+    public function __construct(
+        private StreakService $streakService,
+        private SrsService $srsService,
+        private XpService $xpService,
+    ) {
     }
 
     /**
-     * ✅ "Check" — user knows this word.
+     * ✅ "I Know" — user knew this word.
      *
-     * 1. Remove from review_words  (if it was there)
-     * 2. Add to mastered_words     (skip if already mastered)
-     * 3. Record streak activity
-     * 4. Redirect — back to session OR to the next word detail page
+     * Delegates to SrsService::recordCorrect which:
+     *   - Moves word up one Leitner box (1→2→3→4).
+     *   - Inserts into mastered_words when box 4 is reached.
+     *   - Removes from review_words.
+     *   - Schedules next review according to the 3-Step algorithm.
      */
     public function know(Request $request, Word $word)
     {
-        $userId = Auth::id();
+        $user = $request->user();
 
-        ReviewWord::where('user_id', $userId)
-            ->where('word_id', $word->id)
-            ->delete();
-
-        MasteredWord::firstOrCreate([
-            'user_id' => $userId,
-            'word_id' => $word->id,
-        ]);
-
-        $this->streakService->recordActivity($request->user());
+        $this->srsService->recordCorrect($user, $word);
+        // $this->streakService->recordActivity($user);
+        if ($request->input('from') !== 'session') {
+            $this->streakService->recordActivity($user);
+        }
 
         return $this->handleRedirect($request, $word);
     }
 
     /**
-     * ❌ "Didn't Know" — user still needs to learn this word.
+     * ❌ "I Don't Know" — user still needs to learn this word.
      *
-     * 1. Remove from mastered_words  (if it was there)
-     * 2. Add to review_words         (skip if already present)
-     * 3. Record streak activity
-     * 4. Redirect — back to session OR to the next word detail page
+     * Delegates to SrsService::recordIncorrect which:
+     *   - Resets word all the way back to Box 1 (hard Leitner reset).
+     *   - Removes from mastered_words (word has slipped).
+     *   - Adds to review_words for focused practice.
+     *   - Schedules next review for today.
      */
     public function learn(Request $request, Word $word)
     {
-        $userId = Auth::id();
+        $user = $request->user();
 
-        MasteredWord::where('user_id', $userId)
-            ->where('word_id', $word->id)
-            ->delete();
-
-        ReviewWord::firstOrCreate([
-            'user_id' => $userId,
-            'word_id' => $word->id,
-        ]);
-
-        $this->streakService->recordActivity($request->user());
+        $this->srsService->recordIncorrect($user, $word);
+        if ($request->input('from') !== 'session') {
+            $this->streakService->recordActivity($user);
+        }
 
         return $this->handleRedirect($request, $word);
+    }
+
+    public function sessionComplete(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $this->streakService->recordActivity($user);
+
+        // Award XP for completing the session
+        $xpAwarded = $this->xpService->awardSessionXp($user);
+
+        return response()->json([
+            'status' => 'ok',
+            'xp_awarded' => $xpAwarded,
+            'streak' => $this->streakService->getSummary($user),
+        ]);
     }
 
     private function bookmarkedIds(array $wordIds): array
@@ -86,11 +101,10 @@ class ReviewWordController extends Controller
     {
         $wordIds = ReviewWord::where('user_id', Auth::id())->pluck('word_id');
 
-        $words = Word::with(['images', 'wordList'])
-            ->whereIn('id', $wordIds)
-            ->get()
-            ->shuffle()
-            ->values();
+        $words = $this->srsService->getDueWordsByIds(
+            auth()->user(),
+            $wordIds->toArray()
+        );
 
         $wordList = (object) [
             'id' => null,
@@ -98,12 +112,15 @@ class ReviewWordController extends Controller
             'difficulty' => 'Mixed',
         ];
 
+        $user = auth()->user();
+
         return Inertia::render('ExerciseSession', [
             'wordList' => $wordList,
-            'words' => $words,
+            'words' => $words->values(),
             'subcategory' => null,
             'bookmarkedWordIds' => $this->bookmarkedIds($words->pluck('id')->toArray()),
             'backUrl' => route('words.review'),
+            'streak' => $this->streakService->getSummary($user),
         ]);
     }
 
@@ -111,10 +128,10 @@ class ReviewWordController extends Controller
      * Decide where to redirect after marking a word.
      *
      * - Called from ExerciseSession  →  from=session in POST body
-     *   → redirect()->back() so Inertia stays on the session page
+     *   → redirect()->back() so Inertia stays on the session page.
      *
      * - Called from WordDetail page  →  no from param
-     *   → redirect to the next word in the list, or back to the list when done
+     *   → redirect to the next word in the list, or back to the list when done.
      */
     private function handleRedirect(Request $request, Word $word)
     {

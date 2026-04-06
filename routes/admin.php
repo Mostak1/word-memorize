@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\LinkTreeController;
+use App\Http\Controllers\Admin\LinkTreeLinkController;
 use App\Http\Controllers\Admin\MasteredWordController;
 use App\Http\Controllers\Admin\ReviewWordController;
 use App\Http\Controllers\Admin\UserController;
@@ -12,6 +14,7 @@ use App\Http\Controllers\Admin\SubcategoryController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\ErrorReportController;
+use App\Http\Controllers\Admin\WordListOrderController;
 use Illuminate\Support\Facades\Route;
 
 Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin', 'as' => 'admin.'], function () {
@@ -86,6 +89,12 @@ Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin', 'as' => 'a
         Route::delete('/{errorReport}', [ErrorReportController::class, 'destroy'])->name('destroy');
     });
 
+    Route::prefix('wordlist-orders')->name('wordlist-orders.')->group(function () {
+        Route::get('/', [WordListOrderController::class, 'index'])->name('index');
+        Route::patch('/{order}', [WordListOrderController::class, 'update'])->name('update');
+        Route::delete('/{order}', [WordListOrderController::class, 'destroy'])->name('destroy');
+    });
+
     // ── Settings ───────────────────────────────────────────────────────────────
     Route::prefix('settings')->name('settings.')->group(function () {
         Route::get('/', [SettingsController::class, 'index'])->name('index');
@@ -96,5 +105,33 @@ Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin', 'as' => 'a
     Route::prefix('reports')->name('reports.')->group(function () {
         Route::get('/overview', [DashboardController::class, 'reports'])->name('overview');
         Route::get('/users', [DashboardController::class, 'userReports'])->name('users');
+    });
+
+    Route::prefix('link-tree')->name('link-tree.')->group(function () {
+
+        Route::get('/', [LinkTreeController::class, 'index'])->name('index');
+
+        // Profile info
+        Route::patch('/profile', [LinkTreeController::class, 'updateProfile'])->name('profile.update');
+
+        // Social links
+        Route::patch('/social-links', [LinkTreeController::class, 'updateSocialLinks'])->name('social-links.update');
+
+        // Profile images
+        Route::post('/profile/image', [LinkTreeController::class, 'uploadProfileImage'])->name('profile.image.upload');
+        Route::delete('/profile/image', [LinkTreeController::class, 'deleteProfileImage'])->name('profile.image.delete');
+        Route::post('/profile/cover', [LinkTreeController::class, 'uploadCoverImage'])->name('profile.cover.upload');
+        Route::delete('/profile/cover', [LinkTreeController::class, 'deleteCoverImage'])->name('profile.cover.delete');
+
+        // Links CRUD + reorder + thumbnails
+        Route::prefix('links')->name('links.')->group(function () {
+            Route::post('/', [LinkTreeLinkController::class, 'store'])->name('store');
+            Route::patch('/{link}', [LinkTreeLinkController::class, 'update'])->name('update');
+            Route::patch('/{link}/toggle', [LinkTreeLinkController::class, 'toggle'])->name('toggle');
+            Route::post('/reorder', [LinkTreeLinkController::class, 'reorder'])->name('reorder');
+            Route::delete('/{link}', [LinkTreeLinkController::class, 'destroy'])->name('destroy');
+            Route::post('/{link}/thumbnail', [LinkTreeLinkController::class, 'uploadThumbnail'])->name('thumbnail.upload');
+            Route::delete('/{link}/thumbnail', [LinkTreeLinkController::class, 'deleteThumbnail'])->name('thumbnail.delete');
+        });
     });
 });

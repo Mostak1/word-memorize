@@ -44,6 +44,17 @@ class WordList extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function orders()
+    {
+        return $this->hasMany(WordListOrder::class, 'wordlist_id');
+    }
+
+    // check if a user has access
+    public function userHasAccess($userId)
+    {
+        return $this->orders()->where('user_id', $userId)->where('status', 'approved')->exists();
+    }
+
     /**
      * Scope: Filter by difficulty
      */

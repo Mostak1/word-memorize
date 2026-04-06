@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ReviewWord;
-use App\Models\MasteredWord;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -20,29 +19,33 @@ class ReviewWordController extends Controller
             'word.wordList:id,title,difficulty',
         ])
             ->when($search, function ($query, $search) {
-                $query->whereHas('word', fn($q) =>
+                $query->whereHas(
+                    'word',
+                    fn($q) =>
                     $q->where('word', 'like', "%{$search}%")
-                      ->orWhere('definition', 'like', "%{$search}%")
+                        ->orWhere('definition', 'like', "%{$search}%")
                 )
-                ->orWhereHas('user', fn($q) =>
-                    $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('email', 'like', "%{$search}%")
-                );
+                    ->orWhereHas(
+                        'user',
+                        fn($q) =>
+                        $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%")
+                    );
             })
             ->latest()
             ->paginate(20)
             ->withQueryString();
 
         $stats = [
-            'total'        => ReviewWord::count(),
+            'total' => ReviewWord::count(),
             'unique_users' => ReviewWord::distinct('user_id')->count('user_id'),
             'unique_words' => ReviewWord::distinct('word_id')->count('word_id'),
         ];
 
         return Inertia::render('Admin/ReviewWords/Index', [
             'reviewWords' => $reviewWords,
-            'stats'       => $stats,
-            'filters'     => ['search' => $search],
+            'stats' => $stats,
+            'filters' => ['search' => $search],
         ]);
     }
 
