@@ -140,7 +140,7 @@ export default function Welcome({ auth }) {
                         </Link>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3 mb-4">
+                    {/* <div className="grid grid-cols-3 gap-3 mb-4">
                         <div className="bg-white dark:bg-slate-900 rounded-2xl py-5 px-3 flex flex-col items-center justify-center gap-2 shadow-sm cursor-pointer hover:shadow-md transition-shadow">
                             <Star className="h-6 w-6 text-amber-400" />
                             <span className="text-xs font-medium text-gray-600 dark:text-gray-400 text-center">
@@ -159,7 +159,7 @@ export default function Welcome({ auth }) {
                                 Settings
                             </span>
                         </div>
-                    </div>
+                    </div> */}
 
                     <div className="bg-[#E5201C] dark:bg-red-700 rounded-2xl py-5 px-6 text-center shadow-md hover:bg-red-700 dark:hover:bg-red-800 cursor-pointer transition-colors">
                         <p className="text-white font-bold text-sm">

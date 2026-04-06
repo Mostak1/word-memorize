@@ -25,17 +25,6 @@ class WordListCategoryController extends Controller
             ->pluck('cnt', 'wordlist_id')
             ->toArray();
     }
-    // public function index()
-    // {
-    //     $wordListCategories = WordListCategory::withCount('wordlists')
-    //         ->where('status', true)
-    //         ->orderBy('created_at', 'desc')
-    //         ->get();
-
-    //     return Inertia::render('WordListCategoryIndex', [
-    //         'wordListCategories' => $wordListCategories,
-    //     ]);
-    // }
 
     public function index()
     {

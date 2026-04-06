@@ -120,7 +120,7 @@ export default function ReportErrorDialog({
                     >
                         <Flag className="h-3.5 w-3.5 shrink-0" />
                         <span className="hidden xs:inline sm:inline">
-                            Report Error
+                            Report
                         </span>
                     </button>
                 ))}

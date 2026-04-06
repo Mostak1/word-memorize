@@ -18,7 +18,8 @@ class WordListCategory extends Model
         'thumbnail',
         'show_example_sentences',
         'status',
-        'created_by'
+        'created_by',
+        'price',
     ];
 
     protected $casts = [

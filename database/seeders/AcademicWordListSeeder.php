@@ -17,6 +17,7 @@ class AcademicWordListSeeder extends Seeder
      * Path to the CSV file (relative to Laravel project root).
      */
     protected string $filePath = 'database/data/Academic_word_list.csv';
+    protected $price = 399;
 
     /**
      * Path to the word images folder (relative to Laravel project root).
@@ -286,6 +287,7 @@ class AcademicWordListSeeder extends Seeder
                     'status' => true,
                     'created_by' => $creatorId,
                     'show_example_sentences' => true,
+                    'price' => $this->price,
                 ]
             );
 
@@ -348,7 +350,7 @@ class AcademicWordListSeeder extends Seeder
                 'title' => $title,
             ],
             [
-                'price' => 0,
+                // 'price' => 0,
                 'difficulty' => 'intermediate',
                 'status' => true,
                 'is_locked' => $isLocked,

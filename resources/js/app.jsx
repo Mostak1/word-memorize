@@ -108,12 +108,25 @@ createInertiaApp({
 //     });
 // }
 
-registerSW({
+// registerSW({
+//     immediate: true,
+//     onNeedRefresh() {
+//         console.log("New version available");
+//     },
+//     onOfflineReady() {
+//         console.log("App ready for offline use");
+//     },
+// });
+
+// PWA Registration (recommended way)
+const updateSW = registerSW({
     immediate: true,
     onNeedRefresh() {
-        console.log("New version available");
+        // Show a toast/notification to user: "New version available. Reload?"
+        console.log("New content available, please refresh.");
+        // You can integrate with sonner here if you want a nice prompt
     },
     onOfflineReady() {
-        console.log("App ready for offline use");
+        console.log("App ready to work offline.");
     },
 });

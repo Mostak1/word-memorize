@@ -270,9 +270,9 @@ export default function Dashboard({
                             </div>
                         </Link>
 
-                        <Link
+                        {/* <Link
                             href={route("my.orders")}
-                            className="block bg-white dark:bg-slate-900 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm hover:shadow-md transition-shadow min-h-[160px]"
+                            className=" bg-white dark:bg-slate-900 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm hover:shadow-md transition-shadow min-h-[160px]"
                         >
                             <div className="w-16 h-16 rounded-full bg-indigo-100 dark:bg-indigo-950/30 flex items-center justify-center">
                                 <ShoppingBag className="h-8 w-8 text-indigo-500" />
@@ -285,7 +285,7 @@ export default function Dashboard({
                                     View your order history
                                 </p>
                             </div>
-                        </Link>
+                        </Link> */}
                     </div>
 
                     <div className="grid grid-cols-3 gap-3 mb-4">
@@ -295,12 +295,12 @@ export default function Dashboard({
                                 Rate 5 Stars
                             </span>
                         </div>
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl py-5 px-3 flex flex-col items-center justify-center gap-2 shadow-sm cursor-pointer hover:shadow-md transition-shadow">
+                        {/* <div className="bg-white dark:bg-slate-900 rounded-2xl py-5 px-3 flex flex-col items-center justify-center gap-2 shadow-sm cursor-pointer hover:shadow-md transition-shadow">
                             <Share2 className="h-6 w-6 text-blue-400" />
                             <span className="text-xs font-medium text-gray-600 dark:text-gray-400 text-center">
                                 Share
                             </span>
-                        </div>
+                        </div> */}
                         <div className="bg-white dark:bg-slate-900 rounded-2xl py-5 px-3 flex flex-col items-center justify-center gap-2 shadow-sm cursor-pointer hover:shadow-md transition-shadow">
                             <Settings className="h-6 w-6 text-gray-400" />
                             <span className="text-xs font-medium text-gray-600 dark:text-gray-400 text-center">

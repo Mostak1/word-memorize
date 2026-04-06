@@ -1,7 +1,7 @@
 import { Head, Link, router } from "@inertiajs/react";
 import { Player } from "@lottiefiles/react-lottie-player";
 import AppLayout from "@/Layouts/AppLayout";
-import { usePuter } from "@/hooks/usePuter";
+import approvedAnimation from "../../../public/lottie/Approved.json";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -85,12 +85,6 @@ export default function ExerciseSession({
     const [showStreakEffect, setShowStreakEffect] = useState(false);
     const previousStreak = useRef(initialStreak?.current_streak ?? 0);
 
-    const [aiExplanation, setAiExplanation] = useState(null);
-    const [aiLoading, setAiLoading] = useState(false);
-
-    const { puter, ready } = usePuter();
-    const ttsRef = useRef(null);
-
     // ── Queue state ───────────────────────────────────────────────────────────
     // The Active Queue: queue[0] is always the current word.
     // "I Know"       → remove from front (word leaves session).
@@ -144,9 +138,14 @@ export default function ExerciseSession({
 
     // Auto-scroll to I Know / I Don't Know buttons when meaning is revealed
     useEffect(() => {
-        if (showMeaning && buttonsRef.current) {
+        if (showMeaning && meaningCardRef.current) {
             setTimeout(() => {
-                buttonsRef.current?.scrollIntoView({
+                // buttonsRef.current?.scrollIntoView({
+                //     behavior: "smooth",
+                //     block: "end",
+                // });
+
+                meaningCardRef.current?.scrollIntoView({
                     behavior: "smooth",
                     block: "end",
                 });
@@ -209,6 +208,21 @@ export default function ExerciseSession({
 
         return () => clearTimeout(timeout);
     }, [isDone, auth?.user]);
+
+    // Reset scroll position smoothly when a new word appears
+    useEffect(() => {
+        if (!word?.id) return;
+
+        // Small delay so the new card has rendered
+        const timer = setTimeout(() => {
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth",
+            });
+        }, 50);
+
+        return () => clearTimeout(timer);
+    }, [word?.id]);
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -323,14 +337,41 @@ export default function ExerciseSession({
     };
 
     // ── Animate then mutate queue ─────────────────────────────────────────────
+    // const animateThen = (direction, callback) => {
+    //     exitDir.current = direction;
+
+    //     setShowMeaning(false);
+
+    //     setExiting(true);
+
+    //     setTimeout(() => {
+    //         setExiting(false);
+    //         setCardKey((k) => k + 1);
+    //         callback();
+    //     }, 200);
+    // };
+
     const animateThen = (direction, callback) => {
         exitDir.current = direction;
+
+        // Force close meaning card immediately
+        setShowMeaning(false);
+
+        // Prevent layout shift scroll by saving current scroll position
+        const currentScroll = window.scrollY;
+
         setExiting(true);
+
         setTimeout(() => {
             setExiting(false);
             setCardKey((k) => k + 1);
             callback();
-        }, 200);
+
+            // Restore scroll position after queue update (prevents jump to top)
+            setTimeout(() => {
+                window.scrollTo(0, currentScroll);
+            }, 10);
+        }, 200); // slightly increased timeout
     };
 
     // ── Core actions ──────────────────────────────────────────────────────────
@@ -567,7 +608,7 @@ export default function ExerciseSession({
                                 autoplay
                                 loop={false}
                                 keepLastFrame
-                                src="/lottie/Approved.json"
+                                src={approvedAnimation}
                                 style={{ height: 160, width: 160 }}
                             />
                         </div>
@@ -1022,10 +1063,11 @@ export default function ExerciseSession({
                         {/* ── Meaning card ─────────────────────────────────────── */}
                         <div
                             ref={meaningCardRef}
-                            className="overflow-hidden transition-all duration-300 ease-in-out"
+                            className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                                showMeaning ? "opacity-100" : "opacity-0"
+                            }`}
                             style={{
-                                maxHeight: showMeaning ? "2000px" : "0px",
-                                opacity: showMeaning ? 1 : 0,
+                                maxHeight: showMeaning ? "1600px" : "0px", // lowered from 2000px
                                 marginTop: showMeaning ? "12px" : "0px",
                             }}
                         >
