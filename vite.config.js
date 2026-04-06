@@ -1,80 +1,97 @@
-// import { defineConfig } from 'vite';
-// import laravel from 'laravel-vite-plugin';
-// import react from '@vitejs/plugin-react';
-
-// export default defineConfig({
-//     plugins: [
-//         laravel({
-//             input: 'resources/js/app.jsx',
-//             refresh: true,
-//         }),
-//         react(),
-//     ],
-// });
-
-
-import { defineConfig } from 'vite';
-import laravel from 'laravel-vite-plugin';
-import react from '@vitejs/plugin-react';
-import { VitePWA } from 'vite-plugin-pwa';
+import { defineConfig } from "vite";
+import laravel from "laravel-vite-plugin";
+import react from "@vitejs/plugin-react";
+import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
-  plugins: [
-    laravel({
-      input: 'resources/js/app.jsx',
-      refresh: true,
-    }),
-    react(),
-
-    VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'robots.txt', 'icons/*.png'],
-
-      manifest: {
-        name: 'VocabPix',
-        short_name: 'VocabPix',
-        description: 'Your language learning app',
-        theme_color: '#e70013',
-        background_color: '#ffffff',
-        display: 'standalone',
-        start_url: '/',
-        icons: [
-          {
-            src: 'icons/icon-192x192.png',
-            sizes: '192x192',
-            type: 'image/png',
-          },
-          {
-            src: 'icons/icon-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-          },
-        ],
-      },
-
-      // ✅ THIS is where your code goes
-      workbox: {
-        navigateFallback: '/', // 🔥 IMPORTANT for Inertia
-
-        runtimeCaching: [
-          {
-            urlPattern: ({ request }) =>
-              request.destination === 'script' ||
-              request.destination === 'style' ||
-              request.destination === 'image',
-
-            handler: 'CacheFirst',
-
-            options: {
-              cacheName: 'assets-cache',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 7 * 24 * 60 * 60,
-              },
+    plugins: [
+        laravel({
+            input: ["resources/css/app.css", "resources/js/app.jsx"],
+            refresh: true,
+        }),
+        react(),
+        VitePWA({
+            registerType: "autoUpdate",
+            injectRegister: "auto",
+            includeAssets: [
+                "favicon.ico",
+                "apple-touch-icon.png",
+                "masked-icon.svg",
+            ],
+            manifest: {
+                name: "VocabPix",
+                short_name: "VocabPix",
+                description: "Learn and memorize vocabulary with a fast installable app.",
+                id: "/",
+                lang: "en",
+                theme_color: "#e70013",
+                background_color: "#ffffff",
+                display: "standalone",
+                display_override: ["window-controls-overlay", "standalone", "minimal-ui", "browser"],
+                start_url: "/",
+                scope: "/",
+                orientation: "portrait",
+                categories: ["education", "productivity"],
+                icons: [
+                    {
+                        src: "/icons/icon-192x192.png",
+                        sizes: "192x192",
+                        type: "image/png",
+                    },
+                    {
+                        src: "/icons/icon-512x512.png",
+                        sizes: "512x512",
+                        type: "image/png",
+                    },
+                    {
+                        src: "/icons/icon-maskable-512x512.png",
+                        sizes: "512x512",
+                        type: "image/png",
+                        purpose: "any maskable",
+                    },
+                ],
             },
-          },
-        ],
-      },
-    }),
-  ],
+            workbox: {
+                globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
+                cleanupOutdatedCaches: true,
+                runtimeCaching: [
+                    {
+                        urlPattern: ({ request }) =>
+                            request.destination === "document",
+                        handler: "NetworkFirst",
+                        options: {
+                            cacheName: "pages",
+                            networkTimeoutSeconds: 5,
+                        },
+                    },
+                    {
+                        urlPattern: ({ request }) =>
+                            ["style", "script", "worker"].includes(
+                                request.destination
+                            ),
+                        handler: "StaleWhileRevalidate",
+                        options: {
+                            cacheName: "assets",
+                        },
+                    },
+                    {
+                        urlPattern: ({ request }) =>
+                            request.destination === "image",
+                        handler: "CacheFirst",
+                        options: {
+                            cacheName: "images",
+                        },
+                    },
+                ],
+            },
+            devOptions: {
+                enabled: true,
+            },
+        }),
+    ],
+    resolve: {
+        alias: {
+            "@": "/resources/js",
+        },
+    },
 });
