@@ -80,7 +80,7 @@ export default function ExerciseSession({
     bookmarkedWordIds = [],
     streak: initialStreak = null,
 }) {
-    const { auth } = usePage().props;
+    const { auth, userSettings } = usePage().props;
     const [streak, setStreak] = useState(initialStreak);
     const [streakChange, setStreakChange] = useState(null);
     const [showStreakEffect, setShowStreakEffect] = useState(false);
@@ -914,11 +914,29 @@ export default function ExerciseSession({
                             <div className="px-5 pb-4 text-center">
                                 {word.pronunciation && (
                                     <p className="text-sm text-gray-500 dark:text-gray-400 font-mono mt-1">
-                                        {word.pronunciation}{" "}
+                                        <span className="text-blue-600 dark:text-blue-400">
+                                            {word.pronunciation}{" "}
+                                        </span>
                                         <span className="text-black">|</span>{" "}
-                                        {formatIPA(word.ipa)}{" "}
-                                        <span className="text-black">|</span>{" "}
-                                        {word.bangla_pronunciation}
+                                        <span className="text-teal-600 dark:text-teal-400">
+                                            {formatIPA(word.ipa)}{" "}
+                                        </span>
+                                        {userSettings?.show_bangla}
+                                        {/* Show Bangla only if user setting allows it */}
+                                        {userSettings?.show_bangla &&
+                                            word.bangla_pronunciation && (
+                                                <>
+                                                    {" "}
+                                                    <span className="text-black">
+                                                        |
+                                                    </span>{" "}
+                                                    <span className="text-orange-600 dark:text-orange-400">
+                                                        {
+                                                            word.bangla_pronunciation
+                                                        }
+                                                    </span>
+                                                </>
+                                            )}
                                     </p>
                                 )}
                             </div>
@@ -1069,7 +1087,7 @@ export default function ExerciseSession({
                                     </p>
                                 </div>
 
-                                {(word.definition || word.bangla_meaning) && (
+                                {word.definition && (
                                     <div className="mx-4 mt-4 mb-4">
                                         <div className="border-l-4 border-[#E5201C] dark:border-red-600 pl-3 py-1">
                                             <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">
@@ -1077,11 +1095,17 @@ export default function ExerciseSession({
                                             </p>
                                             <p className="text-sm text-gray-900 dark:text-gray-200 leading-snug">
                                                 {word.definition}
-                                                {word.bangla_meaning && (
-                                                    <span className="text-gray-500 dark:text-gray-400 font-medium ml-1">
-                                                        ({word.bangla_meaning})
-                                                    </span>
-                                                )}
+
+                                                {userSettings?.show_bangla &&
+                                                    word.bangla_meaning && (
+                                                        <span className="text-gray-500 dark:text-gray-400 font-medium ml-1">
+                                                            (
+                                                            {
+                                                                word.bangla_meaning
+                                                            }
+                                                            )
+                                                        </span>
+                                                    )}
                                             </p>
                                         </div>
                                     </div>

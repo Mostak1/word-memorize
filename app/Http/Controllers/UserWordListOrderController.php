@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\WordList;
+use App\Models\WordListCategory;
 use App\Models\WordListOrder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -10,23 +10,23 @@ use Inertia\Inertia;
 class UserWordListOrderController extends Controller
 {
   /**
-   * Store a new purchase order for a locked word list.
+   * Store a new purchase order for a locked word list category.
    */
-  public function store(Request $request, WordList $wordList)
+  public function store(Request $request, WordListCategory $category)
   {
     $user = $request->user();
 
-    // Block if already has an approved or pending order
+    // Block if already has an approved or pending order for this category
     $existing = WordListOrder::where('user_id', $user->id)
-      ->where('wordlist_id', $wordList->id)
+      ->where('word_list_category_id', $category->id)
       ->whereIn('status', ['pending', 'approved'])
       ->first();
 
     if ($existing) {
       return back()->withErrors([
         'order' => $existing->status === 'approved'
-          ? 'You already have access to this word list.'
-          : 'You already have a pending order for this word list.',
+          ? 'You already have access to this category.'
+          : 'You already have a pending order for this category.',
       ]);
     }
 
@@ -41,7 +41,7 @@ class UserWordListOrderController extends Controller
 
     // If a rejected order exists, update it instead of creating a duplicate
     $rejected = WordListOrder::where('user_id', $user->id)
-      ->where('wordlist_id', $wordList->id)
+      ->where('word_list_category_id', $category->id)
       ->where('status', 'rejected')
       ->latest()
       ->first();
@@ -54,13 +54,13 @@ class UserWordListOrderController extends Controller
         'profession' => $validated['profession'] ?? null,
         'transaction_id' => $validated['transaction_id'],
         'note' => $validated['note'] ?? null,
-        'admin_note' => null, // clear the previous rejection reason
+        'admin_note' => null,
         'status' => 'pending',
       ]);
     } else {
       WordListOrder::create([
         'user_id' => $user->id,
-        'wordlist_id' => $wordList->id,
+        'word_list_category_id' => $category->id,
         'name' => $validated['name'],
         'phone_number' => $validated['phone_number'],
         'address' => $validated['address'],
@@ -79,7 +79,7 @@ class UserWordListOrderController extends Controller
    */
   public function index(Request $request)
   {
-    $orders = WordListOrder::with('wordlist:id,title')
+    $orders = WordListOrder::with('category:id,name,thumbnail')
       ->where('user_id', $request->user()->id)
       ->latest()
       ->get();

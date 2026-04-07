@@ -30,7 +30,6 @@ function StreakBanner({ streak }) {
         auto_save_available,
     } = streak;
 
-    // ── Visual config per state ───────────────────────────────────────────────
     const config = active_today
         ? {
               bg: "bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800",
@@ -72,7 +71,6 @@ function StreakBanner({ streak }) {
                         "You missed too many days. Start a new streak today!",
                 }
               : {
-                    // No streak yet (brand new user)
                     bg: "bg-white border-gray-200 dark:bg-slate-900 dark:border-slate-700",
                     flame: "text-gray-300",
                     label: null,
@@ -82,9 +80,7 @@ function StreakBanner({ streak }) {
 
     return (
         <div className={`rounded-2xl border p-4 mb-3 ${config.bg}`}>
-            {/* Top row */}
             <div className="flex items-center justify-between mb-2">
-                {/* Flame + current streak */}
                 <div className="flex items-center gap-2">
                     {is_frozen ? (
                         <Snowflake className="h-8 w-8 text-blue-400" />
@@ -104,7 +100,6 @@ function StreakBanner({ streak }) {
                     </div>
                 </div>
 
-                {/* Right side: status badge + best + safe days */}
                 <div className="flex items-center gap-3">
                     <div className="text-center">
                         <p className="text-sm font-bold text-gray-700 dark:text-gray-200">
@@ -129,7 +124,6 @@ function StreakBanner({ streak }) {
                 </div>
             </div>
 
-            {/* Status badge */}
             {config.label && (
                 <span
                     className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full mb-2 ${config.label.cls}`}
@@ -138,12 +132,10 @@ function StreakBanner({ streak }) {
                 </span>
             )}
 
-            {/* Message */}
             <p className="text-xs text-gray-500 dark:text-gray-400">
                 {config.message}
             </p>
 
-            {/* Frozen CTA */}
             {is_frozen && (
                 <div className="mt-3 flex gap-2">
                     <Link
@@ -161,16 +153,12 @@ function StreakBanner({ streak }) {
                 </div>
             )}
 
-            {/* Auto-save availability hint (only shown when not frozen and not active) */}
-            {!is_frozen &&
-                !active_today &&
-                !is_broken &&
-                auto_save_available && (
-                    <p className="text-xs text-blue-400 dark:text-blue-300 mt-1.5">
-                        🛡️ Auto-save available — if you miss a day this week
-                        your streak will be saved.
-                    </p>
-                )}
+            {!active_today && !is_broken && auto_save_available && (
+                <p className="text-xs text-blue-400 dark:text-blue-300 mt-1.5">
+                    🛡️ Auto-save available — if you miss a day this week your
+                    streak will be saved.
+                </p>
+            )}
         </div>
     );
 }
@@ -269,25 +257,9 @@ export default function Dashboard({
                                 </div>
                             </div>
                         </Link>
-
-                        {/* <Link
-                            href={route("my.orders")}
-                            className=" bg-white dark:bg-slate-900 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm hover:shadow-md transition-shadow min-h-[160px]"
-                        >
-                            <div className="w-16 h-16 rounded-full bg-indigo-100 dark:bg-indigo-950/30 flex items-center justify-center">
-                                <ShoppingBag className="h-8 w-8 text-indigo-500" />
-                            </div>
-                            <div className="text-center">
-                                <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
-                                    My Orders
-                                </p>
-                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                    View your order history
-                                </p>
-                            </div>
-                        </Link> */}
                     </div>
 
+                    {/* ── Bottom bar: Rate / Settings ── */}
                     <div className="grid grid-cols-3 gap-3 mb-4">
                         <div className="bg-white dark:bg-slate-900 rounded-2xl py-5 px-3 flex flex-col items-center justify-center gap-2 shadow-sm cursor-pointer hover:shadow-md transition-shadow">
                             <Star className="h-6 w-6 text-amber-400" />
@@ -295,18 +267,16 @@ export default function Dashboard({
                                 Rate 5 Stars
                             </span>
                         </div>
-                        {/* <div className="bg-white dark:bg-slate-900 rounded-2xl py-5 px-3 flex flex-col items-center justify-center gap-2 shadow-sm cursor-pointer hover:shadow-md transition-shadow">
-                            <Share2 className="h-6 w-6 text-blue-400" />
-                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400 text-center">
-                                Share
-                            </span>
-                        </div> */}
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl py-5 px-3 flex flex-col items-center justify-center gap-2 shadow-sm cursor-pointer hover:shadow-md transition-shadow">
-                            <Settings className="h-6 w-6 text-gray-400" />
-                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400 text-center">
-                                Settings
-                            </span>
-                        </div>
+
+                        {/* Settings — now a real link */}
+                        <Link href={route("settings.show")} className="block">
+                            <div className="bg-white dark:bg-slate-900 rounded-2xl py-5 px-3 flex flex-col items-center justify-center gap-2 shadow-sm hover:shadow-md transition-shadow h-full">
+                                <Settings className="h-6 w-6 text-gray-400" />
+                                <span className="text-xs font-medium text-gray-600 dark:text-gray-400 text-center">
+                                    Settings
+                                </span>
+                            </div>
+                        </Link>
                     </div>
 
                     <Link href={route("my.words.index")}>

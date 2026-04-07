@@ -1,10 +1,10 @@
 <?php
 
-use App\Http\Controllers\Admin\WordListOrderController;
 use App\Http\Controllers\ErrorReportController;
 use App\Http\Controllers\PublicLinkTreeController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\TTSController;
+use App\Http\Controllers\UserSettingController;
 use App\Http\Controllers\UserWordController;
 use App\Http\Controllers\UserWordListOrderController;
 use App\Http\Controllers\WordListCategoryController;
@@ -145,13 +145,16 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    Route::get('/settings', [UserSettingController::class, 'show'])->name('settings.show');
+    Route::patch('/settings', [UserSettingController::class, 'update'])->name('settings.update');
+
     // My Orders (user's order history)
     Route::get('/my/orders', [UserWordListOrderController::class, 'index'])
         ->name('my.orders');
 
-    // Place an order for a locked word list
-    Route::post('/wordlist/{wordList}/order', [UserWordListOrderController::class, 'store'])
-        ->name('wordlist.order.store');
+    // Place an order for a locked word list CATEGORY
+    Route::post('/wordlist-categories/{category}/order', [UserWordListOrderController::class, 'store'])
+        ->name('wordlistcategory.order.store');
 
     // My Words
     Route::get('/my/words', [UserWordController::class, 'index'])->name('my.words.index');
@@ -188,16 +191,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/error-reports', [ErrorReportController::class, 'store'])->name('error-reports.store');
 
     // ── XP Shop ───────────────────────────────────────────────────────────────
-    // Inertia page — renders the shop UI
     Route::get('/shop', function () {
         return Inertia::render('XpShop');
     })->name('xp-shop');
 
-    // JSON API — used by AppLayout (XP balance pill) and the shop page itself
     Route::get('/api/xp-shop/status', [XpShopController::class, 'getStatus'])
         ->name('api.xp-shop.status');
 
-    // JSON API — purchase a streak freeze
     Route::post('/api/xp-shop/buy-freeze', [XpShopController::class, 'buyStreakFreeze'])
         ->name('api.xp-shop.buy-freeze');
 });

@@ -20,10 +20,12 @@ class WordListCategory extends Model
         'status',
         'created_by',
         'price',
+        'is_locked',
     ];
 
     protected $casts = [
         'show_example_sentences' => 'boolean',
+        'is_locked' => 'boolean',
     ];
 
     protected $appends = ['thumbnail_url_full']; // ✅ accessor
@@ -69,6 +71,14 @@ class WordListCategory extends Model
     public function scopePersonalFor($query, $userId)
     {
         return $query->where('created_by', $userId);
+    }
+
+    public function userHasAccess($userId): bool
+    {
+        return $this->orders()
+            ->where('user_id', $userId)
+            ->where('status', 'approved')
+            ->exists();
     }
 
     // ── Accessors ─────────────────────────────────────────────────────────────

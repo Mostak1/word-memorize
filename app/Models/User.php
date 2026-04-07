@@ -95,6 +95,11 @@ class User extends Authenticatable
         return $this->hasMany(ReviewWord::class);
     }
 
+    public function quizAttempts()
+    {
+        return $this->hasMany(QuizAttempt::class);
+    }
+
     public function streak()
     {
         return $this->hasOne(UserStreak::class);
@@ -108,5 +113,10 @@ class User extends Authenticatable
     public function streakFreezePurchases()
     {
         return $this->hasMany(StreakFreezePurchase::class);
+    }
+
+    public function settings()
+    {
+        return $this->hasOne(UserSetting::class);
     }
 }

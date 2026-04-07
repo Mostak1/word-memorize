@@ -44,20 +44,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/Components/ui/alert-dialog";
-import {
-    DropdownMenu,
-    DropdownMenuCheckboxItem,
-    DropdownMenuContent,
-    DropdownMenuTrigger,
-} from "@/Components/ui/dropdown-menu";
-import {
-    ArrowUpDown,
-    ArrowUp,
-    ArrowDown,
-    Loader2,
-    X,
-    Trash2,
-} from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown, Loader2, Trash2 } from "lucide-react";
 
 // ── Status helpers ─────────────────────────────────────────────────────────────
 const STATUS_LABELS = {
@@ -122,7 +109,6 @@ function EditDialog({ order, statuses, open, onClose }) {
         admin_note: "",
     });
 
-    // Reset form whenever the order changes (when dialog opens)
     useEffect(() => {
         if (order) {
             reset({
@@ -152,6 +138,42 @@ function EditDialog({ order, statuses, open, onClose }) {
                     <DialogTitle>Update Order #{order.id}</DialogTitle>
                 </DialogHeader>
 
+                {/* Order summary */}
+                <div className="rounded-lg border bg-muted/40 px-4 py-3 text-sm space-y-1">
+                    <div className="flex gap-2">
+                        <span className="text-muted-foreground w-20 shrink-0">
+                            User
+                        </span>
+                        <span className="font-medium">
+                            {order.user?.name ?? "—"}
+                        </span>
+                    </div>
+                    <div className="flex gap-2">
+                        <span className="text-muted-foreground w-20 shrink-0">
+                            Category
+                        </span>
+                        <span className="font-medium">
+                            {order.category?.name ?? "—"}
+                        </span>
+                    </div>
+                    <div className="flex gap-2">
+                        <span className="text-muted-foreground w-20 shrink-0">
+                            Txn ID
+                        </span>
+                        <span className="font-mono">
+                            {order.transaction_id ?? "—"}
+                        </span>
+                    </div>
+                    {order.note && (
+                        <div className="flex gap-2">
+                            <span className="text-muted-foreground w-20 shrink-0">
+                                User Note
+                            </span>
+                            <span className="text-xs">{order.note}</span>
+                        </div>
+                    )}
+                </div>
+
                 <div className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium mb-1.5">
@@ -178,7 +200,7 @@ function EditDialog({ order, statuses, open, onClose }) {
                         <label className="block text-sm font-medium mb-1.5">
                             Admin Note{" "}
                             <span className="font-normal text-muted-foreground">
-                                (optional)
+                                (optional — shown to user on rejection)
                             </span>
                         </label>
                         <Textarea
@@ -186,7 +208,7 @@ function EditDialog({ order, statuses, open, onClose }) {
                             onChange={(e) =>
                                 setData("admin_note", e.target.value)
                             }
-                            placeholder="Internal notes…"
+                            placeholder="e.g. Transaction ID not found, please resubmit…"
                             rows={3}
                             maxLength={2000}
                             className="resize-none"
@@ -258,32 +280,44 @@ export default function Index({ orders, filters, statuses }) {
             {
                 accessorKey: "user.name",
                 header: "User",
-                cell: ({ row }) => row.original.user?.name ?? "Unknown",
-                size: 130,
+                cell: ({ row }) => (
+                    <div>
+                        <p className="font-medium">
+                            {row.original.user?.name ?? "Unknown"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                            {row.original.phone_number ?? ""}
+                        </p>
+                    </div>
+                ),
+                size: 150,
             },
             {
-                accessorKey: "phone_number",
-                header: "Phone",
-                cell: ({ getValue }) => getValue() ?? "—",
+                accessorKey: "category.name",
+                header: "Category",
+                cell: ({ row }) => (
+                    <p className="font-medium text-sm">
+                        {row.original.category?.name ?? "—"}
+                    </p>
+                ),
             },
             {
                 accessorKey: "address",
                 header: "Address",
                 cell: ({ getValue }) => (
                     <p className="text-xs line-clamp-2 max-w-[180px]">
-                        {getValue()}
+                        {getValue() ?? "—"}
                     </p>
                 ),
             },
             {
-                accessorKey: "wordlist.title",
-                header: "WordList",
-                cell: ({ row }) => row.original.wordlist?.title ?? "—",
-            },
-            {
                 accessorKey: "transaction_id",
                 header: "Transaction ID",
-                cell: ({ getValue }) => getValue() ?? "—",
+                cell: ({ getValue }) => (
+                    <span className="font-mono text-xs">
+                        {getValue() ?? "—"}
+                    </span>
+                ),
             },
             {
                 accessorKey: "status",
@@ -293,7 +327,6 @@ export default function Index({ orders, filters, statuses }) {
                 cell: ({ getValue }) => <StatusBadge status={getValue()} />,
                 size: 120,
             },
-
             {
                 accessorKey: "note",
                 header: "User Note",
@@ -310,8 +343,14 @@ export default function Index({ orders, filters, statuses }) {
             },
             {
                 accessorKey: "created_at",
-                header: "Created",
-                cell: ({ getValue }) => formatDate(getValue()),
+                header: ({ column }) => (
+                    <SortHeader column={column}>Created</SortHeader>
+                ),
+                cell: ({ getValue }) => (
+                    <span className="text-xs text-muted-foreground">
+                        {formatDate(getValue())}
+                    </span>
+                ),
                 size: 130,
             },
             {
@@ -360,13 +399,13 @@ export default function Index({ orders, filters, statuses }) {
             <Head title="WordList Orders" />
 
             <div className="space-y-5">
-                <h1 className="text-3xl font-bold">WordList Orders</h1>
+                <h1 className="text-3xl font-bold">WordList Category Orders</h1>
 
                 <div className="flex flex-col sm:flex-row gap-3">
                     <Input
                         value={globalFilter}
                         onChange={(e) => setGlobalFilter(e.target.value)}
-                        placeholder="Search orders…"
+                        placeholder="Search by user, category, transaction ID…"
                         className="flex-1"
                     />
                     <Select
@@ -449,6 +488,35 @@ export default function Index({ orders, filters, statuses }) {
                                 </TableBody>
                             </Table>
                         </div>
+
+                        {/* Pagination controls */}
+                        {table.getPageCount() > 1 && (
+                            <div className="flex items-center justify-between px-4 py-3 border-t">
+                                <p className="text-sm text-muted-foreground">
+                                    Page{" "}
+                                    {table.getState().pagination.pageIndex + 1}{" "}
+                                    of {table.getPageCount()}
+                                </p>
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => table.previousPage()}
+                                        disabled={!table.getCanPreviousPage()}
+                                    >
+                                        Previous
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => table.nextPage()}
+                                        disabled={!table.getCanNextPage()}
+                                    >
+                                        Next
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>
@@ -471,12 +539,15 @@ export default function Index({ orders, filters, statuses }) {
                         </AlertDialogTitle>
                     </AlertDialogHeader>
                     <p className="text-sm text-muted-foreground px-1">
-                        This will permanently remove the order for{" "}
+                        This will permanently remove the order from{" "}
                         <span className="font-semibold">
                             {deleteOrder?.user?.name}
                         </span>{" "}
-                        ({deleteOrder?.wordlist?.title}). This action cannot be
-                        undone.
+                        for category{" "}
+                        <span className="font-semibold">
+                            {deleteOrder?.category?.name}
+                        </span>
+                        . This action cannot be undone.
                     </p>
                     <div className="flex justify-end gap-2 mt-4">
                         <AlertDialogCancel onClick={() => setDeleteOrder(null)}>

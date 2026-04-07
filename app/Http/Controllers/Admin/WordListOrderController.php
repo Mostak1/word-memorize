@@ -13,15 +13,15 @@ class WordListOrderController extends Controller
    */
   public function index(Request $request)
   {
-    $query = WordListOrder::with(['user', 'wordlist'])->orderByDesc('id');
+    $query = WordListOrder::with(['user', 'category'])->orderByDesc('id');
 
     // Global search
     if ($search = $request->input('search')) {
       $query->where(function ($q) use ($search) {
-        $q->where('transaction_id', 'like', "%{$search}%") // ✅ FIXED
-          ->orWhere('note', 'like', "%{$search}%") // ✅ allow search in user note
+        $q->where('transaction_id', 'like', "%{$search}%")
+          ->orWhere('note', 'like', "%{$search}%")
           ->orWhereHas('user', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
-          ->orWhereHas('wordlist', fn($q2) => $q2->where('title', 'like', "%{$search}%"));
+          ->orWhereHas('category', fn($q2) => $q2->where('name', 'like', "%{$search}%"));
       });
     }
 
@@ -44,22 +44,6 @@ class WordListOrderController extends Controller
   /**
    * Update order status and admin note.
    */
-  /**
-   * Delete an order.
-   */
-  public function destroy(WordListOrder $order)
-  {
-    $order->delete();
-
-    return back()->with('flash', [
-      'type' => 'success',
-      'message' => 'Order deleted successfully.',
-    ]);
-  }
-
-  /**
-   * Update order status and admin note.
-   */
   public function update(Request $request, WordListOrder $order)
   {
     $data = $request->validate([
@@ -72,6 +56,19 @@ class WordListOrderController extends Controller
     return back()->with('flash', [
       'type' => 'success',
       'message' => 'Order updated successfully.',
+    ]);
+  }
+
+  /**
+   * Delete an order.
+   */
+  public function destroy(WordListOrder $order)
+  {
+    $order->delete();
+
+    return back()->with('flash', [
+      'type' => 'success',
+      'message' => 'Order deleted successfully.',
     ]);
   }
 }

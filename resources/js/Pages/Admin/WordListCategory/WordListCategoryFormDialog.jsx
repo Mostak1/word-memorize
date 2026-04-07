@@ -26,12 +26,13 @@ export default function WordListCategoryFormDialog({
         name: "",
         description: "",
         status: true,
+        is_locked: false,
+        price: "",
     });
 
-    // Separate file state (can't put File objects in plain state easily)
-    const [thumbnailFile, setThumbnailFile] = useState(null); // new File to upload
-    const [previewUrl, setPreviewUrl] = useState(null); // blob preview URL
-    const [removeThumbnail, setRemoveThumbnail] = useState(false); // flag to delete existing
+    const [thumbnailFile, setThumbnailFile] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState(null);
+    const [removeThumbnail, setRemoveThumbnail] = useState(false);
 
     const [errors, setErrors] = useState({});
     const [processing, setProcessing] = useState(false);
@@ -43,20 +44,27 @@ export default function WordListCategoryFormDialog({
                 name: category?.name || "",
                 description: category?.description || "",
                 status: category?.status ?? true,
+                is_locked: category?.is_locked ?? false,
+                price: category?.price ?? "",
             });
             setThumbnailFile(null);
             setPreviewUrl(category?.thumbnail_url_full || null);
             setRemoveThumbnail(false);
             setErrors({});
         } else {
-            // cleanup blob URL to avoid memory leak
             if (previewUrl && previewUrl.startsWith("blob:")) {
                 URL.revokeObjectURL(previewUrl);
             }
             setThumbnailFile(null);
             setPreviewUrl(null);
             setRemoveThumbnail(false);
-            setData({ name: "", description: "", status: true });
+            setData({
+                name: "",
+                description: "",
+                status: true,
+                is_locked: false,
+                price: "",
+            });
             setErrors({});
         }
     }, [open, category]);
@@ -66,15 +74,14 @@ export default function WordListCategoryFormDialog({
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Revoke previous blob preview
         if (previewUrl && previewUrl.startsWith("blob:")) {
             URL.revokeObjectURL(previewUrl);
         }
 
         setThumbnailFile(file);
         setPreviewUrl(URL.createObjectURL(file));
-        setRemoveThumbnail(false); // uploading a new one cancels any remove intent
-        e.target.value = ""; // allow re-selecting same file
+        setRemoveThumbnail(false);
+        e.target.value = "";
     };
 
     const handleRemoveThumbnail = () => {
@@ -83,7 +90,6 @@ export default function WordListCategoryFormDialog({
         }
         setThumbnailFile(null);
         setPreviewUrl(null);
-        // Only set remove flag when editing and there was a saved thumbnail
         if (isEditing && category?.thumbnail) {
             setRemoveThumbnail(true);
         }
@@ -95,11 +101,14 @@ export default function WordListCategoryFormDialog({
         setProcessing(true);
         setErrors({});
 
-        // Build FormData so the file is included in the request
         const formData = new FormData();
         formData.append("name", data.name);
         formData.append("description", data.description ?? "");
         formData.append("status", data.status ? "1" : "0");
+        formData.append("is_locked", data.is_locked ? "1" : "0");
+        if (data.price !== "" && data.price !== null) {
+            formData.append("price", data.price);
+        }
 
         if (thumbnailFile) {
             formData.append("thumbnail", thumbnailFile);
@@ -110,7 +119,6 @@ export default function WordListCategoryFormDialog({
         }
 
         if (isEditing) {
-            // Laravel needs _method spoofing for PATCH with multipart
             formData.append("_method", "PATCH");
         }
 
@@ -140,7 +148,6 @@ export default function WordListCategoryFormDialog({
         );
     };
 
-    // ── Whether we currently have any thumbnail showing ──────────────────────
     const hasThumbnail = !!previewUrl;
 
     return (
@@ -201,14 +208,12 @@ export default function WordListCategoryFormDialog({
                         <Label>Thumbnail</Label>
 
                         {hasThumbnail ? (
-                            /* Preview + remove button */
                             <div className="relative w-full h-36 rounded-lg overflow-hidden border bg-muted group">
                                 <img
                                     src={previewUrl}
                                     alt="Thumbnail preview"
                                     className="w-full h-full object-cover"
                                 />
-                                {/* Overlay buttons */}
                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                                     <Button
                                         type="button"
@@ -233,7 +238,6 @@ export default function WordListCategoryFormDialog({
                                 </div>
                             </div>
                         ) : (
-                            /* Upload dropzone */
                             <button
                                 type="button"
                                 onClick={() => fileInputRef.current?.click()}
@@ -249,7 +253,6 @@ export default function WordListCategoryFormDialog({
                             </button>
                         )}
 
-                        {/* Hidden file input */}
                         <input
                             ref={fileInputRef}
                             type="file"
@@ -262,6 +265,62 @@ export default function WordListCategoryFormDialog({
                             <p className="text-sm text-red-600">
                                 {errors.thumbnail}
                             </p>
+                        )}
+                    </div>
+
+                    {/* Lock toggle + conditional price */}
+                    <div className="space-y-3 rounded-xl border border-border p-4 bg-muted/30">
+                        <div className="flex items-center gap-3">
+                            <Switch
+                                id="is_locked"
+                                checked={data.is_locked}
+                                onCheckedChange={(checked) =>
+                                    setData({ ...data, is_locked: checked })
+                                }
+                            />
+                            <div>
+                                <Label
+                                    htmlFor="is_locked"
+                                    className="cursor-pointer"
+                                >
+                                    Locked (paid access)
+                                </Label>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                    Users must submit a purchase order to access
+                                    word lists in this category.
+                                </p>
+                            </div>
+                        </div>
+
+                        {data.is_locked && (
+                            <div className="space-y-1.5 pt-1">
+                                <Label htmlFor="price">
+                                    Price (৳){" "}
+                                    <span className="text-xs font-normal text-muted-foreground">
+                                        (shown to users)
+                                    </span>
+                                </Label>
+                                <Input
+                                    id="price"
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    value={data.price}
+                                    onChange={(e) =>
+                                        setData({
+                                            ...data,
+                                            price: e.target.value,
+                                        })
+                                    }
+                                    placeholder="e.g. 299"
+                                    className="max-w-[160px]"
+                                />
+                                {errors.price && (
+                                    <p className="text-sm text-red-600">
+                                        {errors.price}
+                                    </p>
+                                )}
+                            </div>
                         )}
                     </div>
 

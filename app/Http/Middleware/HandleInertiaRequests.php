@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\UserSetting;
 use App\Services\XpService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -30,29 +31,38 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user() ? [
-                    'id' => $request->user()->id,
-                    'name' => $request->user()->name,
-                    'email' => $request->user()->email,
-                    'role' => $request->user()->role,
-                    'image' => $request->user()->image,
-                    'headline' => $request->user()->headline,
-                    'approve_status' => $request->user()->approve_status,
-                    'wallet' => $request->user()->wallet,
-                    'email_verified_at' => $request->user()->email_verified_at,
-                    'created_at' => $request->user()->created_at,
-                    'updated_at' => $request->user()->updated_at,
+                'user' => $user ? [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                    'image' => $user->image,
+                    'headline' => $user->headline,
+                    'approve_status' => $user->approve_status,
+                    'wallet' => $user->wallet,
+                    'email_verified_at' => $user->email_verified_at,
+                    'created_at' => $user->created_at,
+                    'updated_at' => $user->updated_at,
                     // ── Profile fields (were missing — caused empty inputs) ──
-                    'phone_number' => $request->user()->phone_number,
-                    'location' => $request->user()->location,
-                    'gender' => $request->user()->gender,
-                    'profession' => $request->user()->profession,
-                    'xp' => app(XpService::class)->getSummary($request->user()),
+                    'phone_number' => $user->phone_number,
+                    'location' => $user->location,
+                    'gender' => $user->gender,
+                    'profession' => $user->profession,
+                    'xp' => app(XpService::class)->getSummary($user),
                 ] : null,
             ],
+            'userSettings' => function () use ($user) {
+                if (!$user)
+                    return ['show_bangla' => true];
+                $settings = UserSetting::forUser($user);   // This creates row automatically if not exists
+                return [
+                    'show_bangla' => (bool) $settings->show_bangla,
+                ];
+            },
             // ✅ Flash messages for Sonner toasts
             'flash' => [
                 'toast' => fn() => $request->session()->get('flash.toast'),

@@ -4,13 +4,14 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\LinkTreeController;
 use App\Http\Controllers\Admin\LinkTreeLinkController;
 use App\Http\Controllers\Admin\MasteredWordController;
+use App\Http\Controllers\Admin\QuizController;
+use App\Http\Controllers\Admin\QuizQuestionController;   // ← was missing
 use App\Http\Controllers\Admin\ReviewWordController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WordListCategoryController;
 use App\Http\Controllers\Admin\WordListController;
 use App\Http\Controllers\Admin\WordController;
 use App\Http\Controllers\Admin\WordImageController;
-use App\Http\Controllers\Admin\SubcategoryController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\ErrorReportController;
@@ -42,6 +43,7 @@ Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin', 'as' => 'a
         Route::post('/{user}/reset-password', [UserController::class, 'resetPassword'])->name('reset-password');
     });
 
+    // ── Word List Categories ───────────────────────────────────────────────────
     Route::prefix('word-list-categories')->name('word-list-categories.')->group(function () {
         Route::post('/', [WordListCategoryController::class, 'store'])->name('store');
         Route::patch('/{category}', [WordListCategoryController::class, 'update'])->name('update');
@@ -56,13 +58,11 @@ Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin', 'as' => 'a
         Route::patch('/{wordList}', [WordListController::class, 'update'])->name('update');
         Route::delete('/{wordList}', [WordListController::class, 'destroy'])->name('destroy');
 
-        // Words (modal-based) — admin.word-lists.words.*
         Route::prefix('{wordList}/words')->name('words.')->group(function () {
             Route::post('/', [WordController::class, 'store'])->name('store');
             Route::patch('/{word}', [WordController::class, 'update'])->name('update');
             Route::delete('/{word}', [WordController::class, 'destroy'])->name('destroy');
 
-            // Word Images — admin.word-lists.words.images.*
             Route::prefix('{word}/images')->name('images.')->group(function () {
                 Route::patch('/{wordImage}', [WordImageController::class, 'update'])->name('update');
                 Route::delete('/{wordImage}', [WordImageController::class, 'destroy'])->name('destroy');
@@ -89,10 +89,33 @@ Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin', 'as' => 'a
         Route::delete('/{errorReport}', [ErrorReportController::class, 'destroy'])->name('destroy');
     });
 
+    // ── Word List Orders ───────────────────────────────────────────────────────
     Route::prefix('wordlist-orders')->name('wordlist-orders.')->group(function () {
         Route::get('/', [WordListOrderController::class, 'index'])->name('index');
         Route::patch('/{order}', [WordListOrderController::class, 'update'])->name('update');
         Route::delete('/{order}', [WordListOrderController::class, 'destroy'])->name('destroy');
+    });
+
+    // ── Quiz Management ────────────────────────────────────────────────────────
+    Route::prefix('quizzes')->name('quizzes.')->group(function () {
+
+        Route::get('/', [QuizController::class, 'index'])->name('index');
+        Route::post('/', [QuizController::class, 'store'])->name('store');
+        Route::get('/{quiz}', [QuizController::class, 'show'])->name('show');
+        Route::patch('/{quiz}', [QuizController::class, 'update'])->name('update');
+        Route::delete('/{quiz}', [QuizController::class, 'destroy'])->name('destroy');
+
+        // Fetch words for a word list — used by QuizFormModal on wordlist select
+        // GET admin/quizzes/{wordList}/words → admin.quizzes.wordlist-words
+        Route::get('/wordlist/{wordList}/words', [QuizController::class, 'wordListWords'])
+            ->name('wordlist-words');
+
+        // Quiz Questions
+        Route::prefix('{quiz}/questions')->name('questions.')->group(function () {
+            Route::post('/', [QuizQuestionController::class, 'store'])->name('store');
+            Route::patch('/{question}', [QuizQuestionController::class, 'update'])->name('update');
+            Route::delete('/{question}', [QuizQuestionController::class, 'destroy'])->name('destroy');
+        });
     });
 
     // ── Settings ───────────────────────────────────────────────────────────────
@@ -107,23 +130,16 @@ Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin', 'as' => 'a
         Route::get('/users', [DashboardController::class, 'userReports'])->name('users');
     });
 
+    // ── Link Tree ──────────────────────────────────────────────────────────────
     Route::prefix('link-tree')->name('link-tree.')->group(function () {
-
         Route::get('/', [LinkTreeController::class, 'index'])->name('index');
-
-        // Profile info
         Route::patch('/profile', [LinkTreeController::class, 'updateProfile'])->name('profile.update');
-
-        // Social links
         Route::patch('/social-links', [LinkTreeController::class, 'updateSocialLinks'])->name('social-links.update');
-
-        // Profile images
         Route::post('/profile/image', [LinkTreeController::class, 'uploadProfileImage'])->name('profile.image.upload');
         Route::delete('/profile/image', [LinkTreeController::class, 'deleteProfileImage'])->name('profile.image.delete');
         Route::post('/profile/cover', [LinkTreeController::class, 'uploadCoverImage'])->name('profile.cover.upload');
         Route::delete('/profile/cover', [LinkTreeController::class, 'deleteCoverImage'])->name('profile.cover.delete');
 
-        // Links CRUD + reorder + thumbnails
         Route::prefix('links')->name('links.')->group(function () {
             Route::post('/', [LinkTreeLinkController::class, 'store'])->name('store');
             Route::patch('/{link}', [LinkTreeLinkController::class, 'update'])->name('update');

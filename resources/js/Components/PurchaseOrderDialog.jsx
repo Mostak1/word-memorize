@@ -21,24 +21,25 @@ import {
 export default function PurchaseOrderDialog({
     open,
     onClose,
-    wordList,
+    category, // ← now a category object instead of wordList
     bkashNumber = "01825236112",
 }) {
     const { auth } = usePage().props;
     const user = auth?.user ?? null;
     const [copied, setCopied] = useState(false);
 
-    // If opened via "Try Again", the wordList object carries _rejectedOrder
-    const rejectedOrder = wordList?._rejectedOrder ?? null;
+    // If opened via "Try Again", the category object carries _rejectedOrder
+    const rejectedOrder = category?._rejectedOrder ?? null;
 
     const { data, setData, post, processing, errors, reset, wasSuccessful } =
         useForm({
+            word_list_category_id: category?.id ?? null,
             name: rejectedOrder?.name ?? user?.name ?? "",
             phone_number:
                 rejectedOrder?.phone_number ?? user?.phone_number ?? "",
             address: rejectedOrder?.address ?? "",
             profession: rejectedOrder?.profession ?? user?.profession ?? "",
-            transaction_id: "", // always blank — user must supply a new Txn ID
+            transaction_id: "",
             note: "",
         });
 
@@ -50,11 +51,8 @@ export default function PurchaseOrderDialog({
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route("wordlist.order.store", wordList.id), {
+        post(route("wordlistcategory.order.store", category.id), {
             preserveScroll: true,
-            onSuccess: () => {
-                // dialog stays open to show success state
-            },
         });
     };
 
@@ -76,11 +74,16 @@ export default function PurchaseOrderDialog({
                             </span>
                         </div>
                         <DialogTitle className="text-white text-xl font-bold leading-snug">
-                            {wordList?.title}
+                            {category?.name}
                         </DialogTitle>
+                        {category?.price > 0 && (
+                            <p className="text-white/90 text-base font-bold mt-0.5">
+                                ৳{category.price}
+                            </p>
+                        )}
                         <DialogDescription className="text-white/70 text-sm mt-1">
                             Complete your bKash payment and fill in the form
-                            below to get access.
+                            below to unlock all word lists in this category.
                         </DialogDescription>
                     </DialogHeader>
                 </div>
@@ -146,43 +149,37 @@ export default function PurchaseOrderDialog({
                                         Send Payment via bKash
                                     </span>
                                 </div>
-
-                                <p className="text-xs text-pink-700 dark:text-pink-400 mb-3 leading-relaxed">
-                                    Send{" "}
-                                    <strong>৳{wordList?.price ?? "—"}</strong>{" "}
-                                    to the bKash number below, then enter your
-                                    Transaction ID in the form.
-                                </p>
-
-                                <div className="flex items-center gap-2">
-                                    <div className="flex-1 bg-white dark:bg-slate-900 border border-pink-200 dark:border-pink-700 rounded-lg px-3 py-2">
-                                        <p className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">
-                                            bKash Number
-                                        </p>
-                                        <p className="text-base font-bold text-gray-900 dark:text-gray-100 tracking-wider">
-                                            {bkashNumber}
-                                        </p>
-                                    </div>
+                                <div className="flex items-center justify-between bg-white dark:bg-slate-900 rounded-lg px-3.5 py-2.5 border border-pink-200 dark:border-pink-800">
+                                    <span className="text-sm font-mono font-bold text-gray-800 dark:text-gray-100 tracking-wider">
+                                        {bkashNumber}
+                                    </span>
                                     <button
                                         type="button"
                                         onClick={copyBkash}
-                                        className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border transition-all ${
-                                            copied
-                                                ? "bg-green-100 border-green-300 text-green-700"
-                                                : "bg-white dark:bg-slate-900 border-pink-200 dark:border-pink-700 text-pink-700 dark:text-pink-400 hover:bg-pink-50 dark:hover:bg-pink-900/20"
-                                        }`}
+                                        className="flex items-center gap-1 text-xs font-semibold text-pink-600 dark:text-pink-400 hover:text-pink-700 dark:hover:text-pink-300 transition"
                                     >
                                         {copied ? (
-                                            <Check className="h-3.5 w-3.5" />
+                                            <>
+                                                <Check className="h-3.5 w-3.5" />
+                                                Copied
+                                            </>
                                         ) : (
-                                            <Copy className="h-3.5 w-3.5" />
+                                            <>
+                                                <Copy className="h-3.5 w-3.5" />
+                                                Copy
+                                            </>
                                         )}
-                                        {copied ? "Copied" : "Copy"}
                                     </button>
                                 </div>
+                                {category?.price > 0 && (
+                                    <p className="text-xs text-pink-600 dark:text-pink-400 mt-2 font-medium">
+                                        Send exactly ৳{category.price} and save
+                                        the Transaction ID.
+                                    </p>
+                                )}
                             </div>
 
-                            {/* Form */}
+                            {/* Order form */}
                             <form onSubmit={handleSubmit} className="space-y-4">
                                 {/* Name */}
                                 <div>
@@ -215,7 +212,7 @@ export default function PurchaseOrderDialog({
                                         </span>
                                     </label>
                                     <input
-                                        type="tel"
+                                        type="text"
                                         value={data.phone_number}
                                         onChange={(e) =>
                                             setData(
@@ -309,7 +306,7 @@ export default function PurchaseOrderDialog({
                                     )}
                                 </div>
 
-                                {/* User Note (optional) */}
+                                {/* Note */}
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                                         Note{" "}

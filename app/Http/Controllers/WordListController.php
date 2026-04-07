@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BookmarkedWord;
 use App\Models\ReviewWord;
 use App\Models\WordList;
+use App\Models\WordListOrder;
 use App\Models\Word;
 use App\Models\WordProgress;
 use App\Services\SrsService;
@@ -28,6 +29,26 @@ class WordListController extends Controller
             ->toArray();
     }
 
+    /**
+     * Check if a word list's category is locked and the user lacks access.
+     */
+    private function categoryIsLockedForUser(WordList $wordList): bool
+    {
+        $category = $wordList->category;
+        if (!$category || !$category->is_locked) {
+            return false;
+        }
+
+        if (!auth()->check()) {
+            return true;
+        }
+
+        return !WordListOrder::where('user_id', auth()->id())
+            ->where('word_list_category_id', $wordList->word_list_category_id)
+            ->where('status', 'approved')
+            ->exists();
+    }
+
     public function show(Request $request, $id)
     {
         $wordList = WordList::with('category')
@@ -35,8 +56,8 @@ class WordListController extends Controller
             ->withCount('words')
             ->findOrFail($id);
 
-        if ($wordList->is_locked) {
-            abort(403, 'This word list is locked.');
+        if ($this->categoryIsLockedForUser($wordList)) {
+            abort(403, 'This word list category is locked.');
         }
 
         $words = $wordList->words()
@@ -52,25 +73,19 @@ class WordListController extends Controller
 
     public function start(SrsService $srsService, $id)
     {
-        $wordList = WordList::where('id', $id)
+        $wordList = WordList::with('category')
+            ->where('id', $id)
             ->where('status', true)
-            ->withCount('words')    // ← so totalWordsInList is always available
+            ->withCount('words')
             ->firstOrFail();
 
-        if ($wordList->is_locked) {
-            // Allow access if the authenticated user has an approved order
-            $hasApprovedOrder = auth()->check() && $wordList->userHasAccess(auth()->id());
-
-            if (!$hasApprovedOrder) {
-                abort(403, 'This word list is locked.');
-            }
+        if ($this->categoryIsLockedForUser($wordList)) {
+            abort(403, 'This word list category is locked.');
         }
 
         if (auth()->check()) {
-            // Hybrid SRS: build the capped 20-word Active Queue
             $words = $srsService->buildSessionQueue(auth()->user(), (int) $id);
         } else {
-            // Guests: first 20 words in order, no SRS metadata
             $words = Word::with([
                 'images',
                 'wordList.category:id,show_example_sentences'
@@ -83,7 +98,6 @@ class WordListController extends Controller
                     $w->srs_box = 1;
                     $w->srs_label = 'New';
                     $w->srs_color = 'bg-gray-100 text-gray-600';
-                    // ✅ Add this line so guests match the same shape as auth users
                     $w->show_example_sentences =
                         $w->wordList?->category?->show_example_sentences ?? true;
                     return $w;
@@ -94,7 +108,7 @@ class WordListController extends Controller
             'wordList' => $wordList,
             'words' => $words->values(),
             'subcategory' => null,
-            'totalWordsInList' => $wordList->words_count, // full list size for progress display
+            'totalWordsInList' => $wordList->words_count,
             'bookmarkedWordIds' => $this->bookmarkedIds($words->pluck('id')->toArray()),
             'streak' => auth()->check() ? $this->streakService->getSummary(auth()->user()) : null,
         ]);
@@ -102,10 +116,15 @@ class WordListController extends Controller
 
     public function startSubcategory($wordListId, $subcategoryId)
     {
-        $wordList = WordList::where('id', $wordListId)
+        $wordList = WordList::with('category')
+            ->where('id', $wordListId)
             ->where('status', true)
             ->withCount('words')
             ->firstOrFail();
+
+        if ($this->categoryIsLockedForUser($wordList)) {
+            abort(403, 'This word list category is locked.');
+        }
 
         $words = Word::with([
             'images',
@@ -162,12 +181,8 @@ class WordListController extends Controller
             $currentIndex = array_search($word->id, $masteredIds);
 
             if ($currentIndex !== false) {
-                $prevWordId = $currentIndex > 0
-                    ? $masteredIds[$currentIndex - 1]
-                    : null;
-                $nextWordId = $currentIndex < count($masteredIds) - 1
-                    ? $masteredIds[$currentIndex + 1]
-                    : null;
+                $prevWordId = $currentIndex > 0 ? $masteredIds[$currentIndex - 1] : null;
+                $nextWordId = $currentIndex < count($masteredIds) - 1 ? $masteredIds[$currentIndex + 1] : null;
             }
         }
 
@@ -186,7 +201,6 @@ class WordListController extends Controller
     {
         $userId = auth()->id();
 
-        // Get all wordlists that have at least one mastered word for this user
         $wordlists = WordList::whereHas('words.progress', function ($q) use ($userId) {
             $q->where('user_id', $userId)
                 ->where('box', '>=', WordProgress::MASTERED_BOX);
@@ -217,13 +231,13 @@ class WordListController extends Controller
     public function masteredWordsByList($wordlistId)
     {
         $userId = auth()->id();
-
-        $wordlist = WordList::where('id', $wordlistId)
+        $wordlist = WordList::with('category')
+            ->where('id', $wordlistId)
             ->where('status', true)
             ->firstOrFail();
 
-        if ($wordlist->is_locked) {
-            abort(403, 'This word list is locked.');
+        if ($this->categoryIsLockedForUser($wordlist)) {
+            abort(403, 'This word list category is locked.');
         }
 
         $words = Word::where('wordlist_id', $wordlistId)

@@ -14,7 +14,6 @@ class WordList extends Model
     protected $fillable = [
         'word_list_category_id',
         'title',
-        'price',
         'difficulty',
         'status',
         'is_locked',
@@ -38,21 +37,34 @@ class WordList extends Model
         return $this->hasMany(Word::class, 'wordlist_id');
     }
 
+    public function quizzes()
+    {
+        return $this->hasMany(Quiz::class, 'wordlist_id');
+    }
+
     // NEW: Owner relationship
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function orders()
-    {
-        return $this->hasMany(WordListOrder::class, 'wordlist_id');
-    }
+    // public function orders()
+    // {
+    //     return $this->hasMany(WordListOrder::class, 'wordlist_id');
+    // }
 
     // check if a user has access
-    public function userHasAccess($userId)
+    // public function userHasAccess($userId)
+    // {
+    //     return $this->orders()->where('user_id', $userId)->where('status', 'approved')->exists();
+    // }
+
+    public function userHasAccess($userId): bool
     {
-        return $this->orders()->where('user_id', $userId)->where('status', 'approved')->exists();
+        return WordListOrder::where('user_id', $userId)
+            ->where('word_list_category_id', $this->word_list_category_id)
+            ->where('status', 'approved')
+            ->exists();
     }
 
     /**

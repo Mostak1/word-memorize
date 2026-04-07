@@ -35,7 +35,6 @@ class WordListCategoryController extends Controller
         if (auth()->check()) {
             $user = auth()->user();
 
-            // Show categories created by logged-in user OR by admin@gmail.com
             $query->where(function ($q) use ($user) {
                 $q->where('created_by', $user->id)
                     ->orWhereHas('creator', function ($subQuery) {
@@ -43,7 +42,6 @@ class WordListCategoryController extends Controller
                     });
             });
         } else {
-            // For guests: only show categories created by admin@gmail.com
             $query->whereHas('creator', function ($subQuery) {
                 $subQuery->where('email', 'admin@gmail.com');
             });
@@ -69,26 +67,27 @@ class WordListCategoryController extends Controller
 
         $masteredCounts = $this->getMasteredCounts($ids);
 
-        // Fetch the latest order per wordlist for the current user
-        $userOrders = [];
+        // Fetch the single order for this category for the current user
+        $categoryOrder = null;
         if (auth()->check()) {
-            $orders = WordListOrder::where('user_id', auth()->id())
-                ->whereIn('wordlist_id', $ids)
+            $order = WordListOrder::where('user_id', auth()->id())
+                ->where('word_list_category_id', $category->id)
                 ->latest()
-                ->get(['wordlist_id', 'status', 'admin_note', 'address', 'name', 'phone_number', 'profession'])
-                ->keyBy('wordlist_id');
+                ->first(['status', 'admin_note', 'address', 'name', 'phone_number', 'profession']);
 
-            $userOrders = $orders->map(fn($o) => [
-                'status' => $o->status,
-                'admin_note' => $o->admin_note,
-                'address' => $o->address,
-                'name' => $o->name,
-                'phone_number' => $o->phone_number,
-                'profession' => $o->profession,
-            ])->toArray();
+            if ($order) {
+                $categoryOrder = [
+                    'status' => $order->status,
+                    'admin_note' => $order->admin_note,
+                    'address' => $order->address,
+                    'name' => $order->name,
+                    'phone_number' => $order->phone_number,
+                    'profession' => $order->profession,
+                ];
+            }
         }
 
-        // Quiz eligibility: wordlists where at least 20 words have box >= 2 (learning stage)
+        // Quiz eligibility: wordlists where at least 20 words have box >= 2
         $quizEligibleIds = [];
         if (auth()->check() && !empty($ids)) {
             $learnedCounts = WordProgress::where('user_id', auth()->id())
@@ -112,7 +111,7 @@ class WordListCategoryController extends Controller
             'category' => $category,
             'currentCategory' => $category->name,
             'masteredCounts' => $masteredCounts,
-            'userOrders' => $userOrders,
+            'categoryOrder' => $categoryOrder,   // single order for the whole category
             'quizEligibleIds' => $quizEligibleIds,
             'bkashNumber' => env('BKASH_NUMBER', '01825236112'),
         ]);

@@ -11,7 +11,7 @@ class WordListOrder extends Model
 
   protected $fillable = [
     'user_id',
-    'wordlist_id',
+    'word_list_category_id',
     'name',
     'phone_number',
     'address',
@@ -27,9 +27,9 @@ class WordListOrder extends Model
     return $this->belongsTo(User::class);
   }
 
-  public function wordlist()
+  public function category()
   {
-    return $this->belongsTo(WordList::class);
+    return $this->belongsTo(WordListCategory::class, 'word_list_category_id');
   }
 
   public function isApproved(): bool

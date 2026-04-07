@@ -47,27 +47,27 @@ class GREWordListSeeder extends Seeder
     private const STORAGE_DIR = 'words';
 
     /**
-     * Category name used throughout seeding / unseeding.
+     * Category names for the two GRE buckets.
      */
-    private const CATEGORY_NAME = 'GRE Word List';
+    private const GRE_332_CATEGORY_NAME = 'GRE 332';
+    private const GRE_EXTENDED_CATEGORY_NAME = 'GRE Extended';
+
+    /**
+     * How many words per WordList inside each category.
+     */
+    private const GRE_332_CHUNK_SIZE = 20;
+    private const GRE_EXTENDED_CHUNK_SIZE = 60;
+
+    /**
+     * CSV list-column values that belong to the GRE 332 bucket.
+     * Everything else goes to GRE Extended.
+     */
+    private const GRE_332_LIST_VALUES = ['333'];
 
     /**
      * Admin email to use as creator.
      */
     private const ADMIN_EMAIL = 'admin@gmail.com';
-
-    /**
-     * The CSV's "list" column values map to these WordList titles.
-     *
-     * e.g. a row with list = "333"  → WordList title "GRE 333"
-     *                      "800"  → WordList title "GRE 800"
-     *                      "3000" → WordList title "GRE 3000"
-     */
-    private const LIST_LABEL_MAP = [
-        '333' => 'GRE 333',
-        '800' => 'GRE 800',
-        '3000' => 'GRE 3000',
-    ];
 
     /**
      * Columns updated when a word already exists (upsert).
@@ -105,7 +105,11 @@ class GREWordListSeeder extends Seeder
         $this->log('info', count($rows) . ' data row(s) found in the CSV (excluding header).');
 
         $sublists = $this->splitIntoSublists($rows);
-        $this->log('info', count($sublists) . ' sublist(s) detected: ' . implode(', ', array_keys($sublists)));
+        $this->log(
+            'info',
+            'Rows bucketed — GRE 332: ' . count($sublists['gre332']) .
+            ', GRE Extended: ' . count($sublists['extended']) . '.'
+        );
 
         // Build a case-insensitive index of available images once,
         // so we don't hit the filesystem for every single word.
@@ -136,26 +140,29 @@ class GREWordListSeeder extends Seeder
 
     public function unseed(): void
     {
-        $category = WordListCategory::where('name', self::CATEGORY_NAME)->first();
+        $categoryNames = [self::GRE_332_CATEGORY_NAME, self::GRE_EXTENDED_CATEGORY_NAME];
 
-        if (!$category) {
-            $this->log('warn', '"' . self::CATEGORY_NAME . '" category not found — nothing to remove.');
+        $categories = WordListCategory::whereIn('name', $categoryNames)->get();
+
+        if ($categories->isEmpty()) {
+            $this->log('warn', 'No GRE categories found — nothing to remove.');
             return;
         }
 
-        DB::transaction(function () use ($category) {
-            $wordLists = WordList::where('word_list_category_id', $category->id)->get();
+        DB::transaction(function () use ($categories) {
+            foreach ($categories as $category) {
+                $wordLists = WordList::where('word_list_category_id', $category->id)->get();
 
-            foreach ($wordLists as $wordList) {
-                // Use the Word model so the deleting boot hook fires (image cleanup etc.)
-                Word::where('wordlist_id', $wordList->id)->each(fn($w) => $w->delete());
-                $wordList->delete();
+                foreach ($wordLists as $wordList) {
+                    // Use the Word model so the deleting boot hook fires (image cleanup etc.)
+                    Word::where('wordlist_id', $wordList->id)->each(fn($w) => $w->delete());
+                    $wordList->delete();
+                }
+
+                $category->delete();
+                $this->log('info', 'Unseeded "' . $category->name . '" — category, word lists, and words removed.');
             }
-
-            $category->delete();
         });
-
-        $this->log('info', 'Unseeded "' . self::CATEGORY_NAME . '" — category, word lists, and words removed.');
     }
 
     // ── Image index ────────────────────────────────────────────────────────
@@ -252,45 +259,41 @@ class GREWordListSeeder extends Seeder
      *
      * Rows with a missing/empty word (col 0) are silently dropped.
      */
+    /**
+     * Split all rows into two buckets:
+     *   'gre332'   — rows whose list column matches GRE_332_LIST_VALUES
+     *   'extended' — everything else
+     *
+     * Rows with a missing/empty word (col 0) are silently dropped.
+     *
+     * @return array{gre332: array, extended: array}
+     */
     private function splitIntoSublists(array $rows): array
     {
-        $sublists = [];
+        $buckets = ['gre332' => [], 'extended' => []];
 
         foreach ($rows as $row) {
             $word = $this->clean($row[0] ?? null);
-            $listRaw = $this->clean($row[4] ?? null);
 
             if ($word === null || $word === '') {
                 continue;
             }
 
-            $sublistName = self::LIST_LABEL_MAP[$listRaw] ?? ('GRE ' . ($listRaw ?? 'Other'));
+            $listRaw = $this->clean($row[4] ?? null);
 
-            $sublists[$sublistName][] = $row;
+            if (in_array($listRaw, self::GRE_332_LIST_VALUES, true)) {
+                $buckets['gre332'][] = $row;
+            } else {
+                $buckets['extended'][] = $row;
+            }
         }
 
-        // Sort by key so GRE 333 → GRE 800 → GRE 3000 (natural order)
-        uksort($sublists, 'strnatcmp');
-
-        return $sublists;
+        return $buckets;
     }
 
     private function seedSublists(array $sublists, int $creatorId, array $imageIndex): array
     {
         return DB::transaction(function () use ($sublists, $creatorId, $imageIndex): array {
-
-            $category = WordListCategory::firstOrCreate(
-                ['name' => self::CATEGORY_NAME],
-                [
-                    'description' => 'High-frequency words commonly tested on the GRE exam.',
-                    'status' => true,
-                    'created_by' => $creatorId,
-                    'show_example_sentences' => true,
-                    'price' => $this->price,
-                ]
-            );
-
-            $this->log('info', "WordListCategory: " . $category->name . " (ID: {$category->id})");
 
             $totalInserted = 0;
             $totalUpdated = 0;
@@ -299,9 +302,26 @@ class GREWordListSeeder extends Seeder
             $totalImagesSkip = 0;
             $allNoImageWords = [];
 
-            $sublistIndex = 0;
-            foreach ($sublists as $sublistName => $rows) {
-                $this->log('info', "\n  ── {$sublistName} (" . count($rows) . " rows) ──");
+            // ── GRE 332 category (20 words per WordList) ──────────────────────
+            $gre332Category = WordListCategory::firstOrCreate(
+                ['name' => self::GRE_332_CATEGORY_NAME],
+                [
+                    'description' => '332 high-frequency words essential for the GRE exam.',
+                    'status' => true,
+                    'created_by' => $creatorId,
+                    'show_example_sentences' => true,
+                    'price' => $this->price,
+                ]
+            );
+
+            $this->log('info', "WordListCategory: {$gre332Category->name} (ID: {$gre332Category->id})");
+
+            $gre332Chunks = array_chunk($sublists['gre332'], self::GRE_332_CHUNK_SIZE);
+            foreach ($gre332Chunks as $chunkIndex => $chunk) {
+                $listNumber = $chunkIndex + 1;
+                $title = self::GRE_332_CATEGORY_NAME . ' — Sub-List ' . $listNumber;
+
+                $this->log('info', "\n  ── {$title} (" . count($chunk) . " rows) ──");
 
                 [
                     'inserted' => $ins,
@@ -310,9 +330,45 @@ class GREWordListSeeder extends Seeder
                     'images_added' => $imgAdded,
                     'images_skipped' => $imgSkip,
                     'no_image_words' => $noImgWords,
-                ] = $this->seedWordList($category->id, $sublistName, $rows, $sublistIndex, $creatorId, $imageIndex);
+                ] = $this->seedWordList($gre332Category->id, $title, $chunk, $chunkIndex, $creatorId, $imageIndex);
 
-                $sublistIndex++;
+                $totalInserted += $ins;
+                $totalUpdated += $upd;
+                $totalSkipped += $skp;
+                $totalImagesAdded += $imgAdded;
+                $totalImagesSkip += $imgSkip;
+                $allNoImageWords = array_merge($allNoImageWords, $noImgWords);
+            }
+
+            // ── GRE Extended category (60 words per WordList) ─────────────────
+            $extendedCategory = WordListCategory::firstOrCreate(
+                ['name' => self::GRE_EXTENDED_CATEGORY_NAME],
+                [
+                    'description' => 'Extended GRE vocabulary beyond the core 332 words.',
+                    'status' => true,
+                    'created_by' => $creatorId,
+                    'show_example_sentences' => true,
+                    'price' => $this->price,
+                ]
+            );
+
+            $this->log('info', "\nWordListCategory: {$extendedCategory->name} (ID: {$extendedCategory->id})");
+
+            $extendedChunks = array_chunk($sublists['extended'], self::GRE_EXTENDED_CHUNK_SIZE);
+            foreach ($extendedChunks as $chunkIndex => $chunk) {
+                $listNumber = $chunkIndex + 1;
+                $title = self::GRE_EXTENDED_CATEGORY_NAME . ' — Sub-List ' . $listNumber;
+
+                $this->log('info', "\n  ── {$title} (" . count($chunk) . " rows) ──");
+
+                [
+                    'inserted' => $ins,
+                    'updated' => $upd,
+                    'skipped' => $skp,
+                    'images_added' => $imgAdded,
+                    'images_skipped' => $imgSkip,
+                    'no_image_words' => $noImgWords,
+                ] = $this->seedWordList($extendedCategory->id, $title, $chunk, $chunkIndex, $creatorId, $imageIndex);
 
                 $totalInserted += $ins;
                 $totalUpdated += $upd;

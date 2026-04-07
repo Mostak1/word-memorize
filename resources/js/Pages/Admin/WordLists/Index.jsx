@@ -156,62 +156,65 @@ export default function Index({ categories }) {
         <Accordion type="multiple" className="w-full">
             {list.map((category) => (
                 <AccordionItem key={category.id} value={`cat-${category.id}`}>
-                    <AccordionTrigger className="flex items-center justify-between w-full px-4 py-3 group hover:bg-muted/50 rounded-lg transition-colors [&>svg]:ml-3 [&>svg]:shrink-0 data-[state=open]:[&>svg]:rotate-180">
-                        {/* Left side: thumbnail + name + count + creator badge */}
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                            {/* Thumbnail */}
-                            {category.thumbnail_url_full ? (
-                                <img
-                                    src={category.thumbnail_url_full}
-                                    alt={category.name}
-                                    className="h-9 w-9 rounded-md object-cover shrink-0 border border-border shadow-sm"
-                                />
-                            ) : (
-                                <div className="h-9 w-9 rounded-md shrink-0 bg-muted border border-border flex items-center justify-center text-muted-foreground text-sm font-semibold select-none">
-                                    {category.name.charAt(0).toUpperCase()}
-                                </div>
-                            )}
+                    {/* Wrap trigger + controls in a flex row to avoid nesting buttons */}
+                    <div className="flex items-center hover:bg-muted/50 rounded-lg transition-colors">
+                        <AccordionTrigger className="flex items-center min-w-0 px-4 py-3 [&>svg]:ml-3 [&>svg]:shrink-0 data-[state=open]:[&>svg]:rotate-180 hover:no-underline">
+                            {/* Left side: thumbnail + name + count + creator badge */}
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                                {/* Thumbnail */}
+                                {category.thumbnail_url_full ? (
+                                    <img
+                                        src={category.thumbnail_url_full}
+                                        alt={category.name}
+                                        className="h-9 w-9 rounded-md object-cover shrink-0 border border-border shadow-sm"
+                                    />
+                                ) : (
+                                    <div className="h-9 w-9 rounded-md shrink-0 bg-muted border border-border flex items-center justify-center text-muted-foreground text-sm font-semibold select-none">
+                                        {category.name.charAt(0).toUpperCase()}
+                                    </div>
+                                )}
 
-                            <span className="font-medium text-lg truncate">
-                                {category.name}
-                            </span>
-                            <Badge variant="outline" className="shrink-0">
-                                {category.word_lists_count} lists
-                            </Badge>
+                                <span className="font-medium text-lg truncate">
+                                    {category.name}
+                                </span>
+                                <Badge variant="outline" className="shrink-0">
+                                    {category.word_lists_count} lists
+                                </Badge>
 
-                            {/* Creator badge */}
-                            {category.creator ? (
-                                <Badge
-                                    variant="outline"
-                                    className={`shrink-0 gap-1 text-xs font-normal border ${
-                                        category.creator.role === "admin"
-                                            ? "border-blue-300 text-blue-700 bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:bg-blue-950/40"
-                                            : "border-violet-300 text-violet-700 bg-violet-50 dark:border-violet-700 dark:text-violet-300 dark:bg-violet-950/40"
-                                    }`}
-                                    title={`Created by ${category.creator.email}`}
-                                >
-                                    {category.creator.role === "admin" ? (
+                                {/* Creator badge */}
+                                {category.creator ? (
+                                    <Badge
+                                        variant="outline"
+                                        className={`shrink-0 gap-1 text-xs font-normal border ${
+                                            category.creator.role === "admin"
+                                                ? "border-blue-300 text-blue-700 bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:bg-blue-950/40"
+                                                : "border-violet-300 text-violet-700 bg-violet-50 dark:border-violet-700 dark:text-violet-300 dark:bg-violet-950/40"
+                                        }`}
+                                        title={`Created by ${category.creator.email}`}
+                                    >
+                                        {category.creator.role === "admin" ? (
+                                            <ShieldCheck className="h-3 w-3" />
+                                        ) : (
+                                            <User className="h-3 w-3" />
+                                        )}
+                                        {category.creator.name}
+                                    </Badge>
+                                ) : (
+                                    <Badge
+                                        variant="outline"
+                                        className="shrink-0 gap-1 text-xs font-normal border border-blue-300 text-blue-700 bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:bg-blue-950/40"
+                                        title="Created by the system / admin"
+                                    >
                                         <ShieldCheck className="h-3 w-3" />
-                                    ) : (
-                                        <User className="h-3 w-3" />
-                                    )}
-                                    {category.creator.name}
-                                </Badge>
-                            ) : (
-                                <Badge
-                                    variant="outline"
-                                    className="shrink-0 gap-1 text-xs font-normal border border-blue-300 text-blue-700 bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:bg-blue-950/40"
-                                    title="Created by the system / admin"
-                                >
-                                    <ShieldCheck className="h-3 w-3" />
-                                    System
-                                </Badge>
-                            )}
-                        </div>
+                                        System
+                                    </Badge>
+                                )}
+                            </div>
+                        </AccordionTrigger>
 
-                        {/* Right side: controls */}
+                        {/* Right side: controls — moved outside AccordionTrigger to fix nested <button> warning */}
                         <div
-                            className="flex items-center gap-1.5 shrink-0"
+                            className="flex items-center gap-1.5 shrink-0 pr-4 ml-auto"
                             onClick={(e) => e.stopPropagation()}
                         >
                             <Switch
@@ -251,7 +254,8 @@ export default function Index({ categories }) {
                                 <Plus className="h-4 w-4" />
                             </Button>
                         </div>
-                    </AccordionTrigger>
+                    </div>
+                    {/* end flex row wrapper */}
 
                     <AccordionContent className="px-6 pb-6">
                         <div className="space-y-6 pt-4">

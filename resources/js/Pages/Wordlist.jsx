@@ -12,9 +12,18 @@ import {
     ShoppingCart,
     Clock,
     XCircle,
-    CheckCircle,
     GraduationCap,
+    AlertCircle,
 } from "lucide-react";
+
+import {
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbPage,
+    BreadcrumbSeparator,
+} from "@/Components/ui/breadcrumb";
 
 function Pagination({ links, meta }) {
     if (!meta || meta.last_page <= 1) return null;
@@ -116,7 +125,6 @@ function MasteredProgress({ mastered, total }) {
 
     return (
         <div className="mt-3 pt-3 border-t border-gray-100">
-            {/* Bar */}
             <div className="h-1.5 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden mb-2">
                 <div
                     className={`h-full rounded-full transition-all ${allDone ? "bg-green-500" : "bg-[#E5201C]"}`}
@@ -124,7 +132,6 @@ function MasteredProgress({ mastered, total }) {
                 />
             </div>
 
-            {/* Labels */}
             <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 dark:text-green-400">
                     <Trophy className="h-3 w-3" />
@@ -144,43 +151,108 @@ function MasteredProgress({ mastered, total }) {
     );
 }
 
-/** Badge showing order status on locked card */
-function OrderStatusBadge({ status }) {
-    if (!status) return null;
-    if (status === "pending")
-        return (
-            <div className="flex items-center gap-1 bg-amber-100 dark:bg-amber-900/30 px-2.5 py-0.5 rounded-full">
-                <Clock className="h-3 w-3 text-amber-600 dark:text-amber-400" />
-                <span className="text-xs font-bold text-amber-700 dark:text-amber-400">
-                    Pending Review
-                </span>
+/** Banner shown at the top when the whole category is locked */
+function CategoryLockBanner({ category, categoryOrder, user, onPurchase }) {
+    const orderStatus = categoryOrder?.status ?? null;
+
+    if (!category?.is_locked) return null;
+    if (orderStatus === "approved") return null;
+
+    return (
+        <div className="mb-4 rounded-2xl overflow-hidden shadow-sm border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30">
+            <div className="px-5 py-4">
+                <div className="flex items-start gap-3">
+                    <div className="mt-0.5 flex-shrink-0">
+                        <Lock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-amber-800 dark:text-amber-300 mb-0.5">
+                            This category is locked
+                        </p>
+
+                        {orderStatus === "pending" ? (
+                            <div className="flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-400">
+                                <Clock className="h-3.5 w-3.5 shrink-0" />
+                                Your order is under review. We'll notify you
+                                once approved.
+                            </div>
+                        ) : orderStatus === "rejected" ? (
+                            <div>
+                                <div className="flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400 mb-2">
+                                    <XCircle className="h-3.5 w-3.5 shrink-0" />
+                                    Your order was rejected.
+                                    {categoryOrder?.admin_note && (
+                                        <span className="ml-1">
+                                            Reason: {categoryOrder.admin_note}
+                                        </span>
+                                    )}
+                                </div>
+                                {user && (
+                                    <button
+                                        onClick={() =>
+                                            onPurchase({
+                                                ...category,
+                                                _rejectedOrder: categoryOrder,
+                                            })
+                                        }
+                                        className="flex items-center gap-1.5 text-xs font-semibold text-[#E5201C] hover:underline"
+                                    >
+                                        <ShoppingCart className="h-3.5 w-3.5" />
+                                        Try Again
+                                    </button>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-between mt-1 flex-wrap gap-2">
+                                <p className="text-xs text-amber-700 dark:text-amber-400">
+                                    {category.price > 0
+                                        ? `Purchase access for ৳${category.price} to unlock all word lists.`
+                                        : "Purchase access to unlock all word lists."}
+                                </p>
+                                {user ? (
+                                    <button
+                                        onClick={() => onPurchase(category)}
+                                        className="flex items-center gap-1.5 bg-[#E5201C] hover:bg-red-700 text-white text-xs font-semibold px-3 py-1.5 rounded-xl transition shrink-0"
+                                    >
+                                        <ShoppingCart className="h-3.5 w-3.5" />
+                                        Purchase Access
+                                        {category.price > 0 && (
+                                            <span className="ml-0.5">
+                                                · ৳{category.price}
+                                            </span>
+                                        )}
+                                    </button>
+                                ) : (
+                                    <Link
+                                        href={route("login")}
+                                        className="text-xs font-semibold text-[#E5201C] hover:underline"
+                                    >
+                                        Login to Purchase
+                                    </Link>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
-        );
-    if (status === "rejected")
-        return (
-            <div className="flex items-center gap-1 bg-red-100 dark:bg-red-900/30 px-2.5 py-0.5 rounded-full">
-                <XCircle className="h-3 w-3 text-red-600 dark:text-red-400" />
-                <span className="text-xs font-bold text-red-700 dark:text-red-400">
-                    Rejected
-                </span>
-            </div>
-        );
-    return null;
+        </div>
+    );
 }
 
 export default function Wordlist({
     wordLists,
     currentDifficulty,
     currentCategory,
+    category,
     masteredCounts,
-    userOrders = {},
+    categoryOrder = null,
     quizEligibleIds = [],
     bkashNumber = "01825236112",
 }) {
     const { auth } = usePage().props;
     const user = auth?.user ?? null;
 
-    const [purchaseTarget, setPurchaseTarget] = useState(null); // wordList object
+    const [purchaseTarget, setPurchaseTarget] = useState(null);
 
     const getDifficultyBadge = (difficulty) => {
         const d = difficulty?.toLowerCase();
@@ -207,20 +279,44 @@ export default function Wordlist({
     const paginationLinks = wordLists?.links ?? [];
     const paginationMeta = wordLists?.meta ?? null;
 
+    // Category is effectively locked when it has is_locked=true and no approved order
+    const categoryIsLocked =
+        category?.is_locked && categoryOrder?.status !== "approved";
+
     return (
         <AppLayout>
             <Head title="Exercises" />
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
                 <main className="max-w-2xl mx-auto px-4 py-5 pb-20">
                     {(currentCategory || currentDifficulty) && (
-                        <div className="mb-4 flex items-center gap-2">
-                            <span className="text-sm text-gray-500 dark:text-gray-400">
-                                Showing:
-                            </span>
-                            <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 bg-white dark:bg-slate-900 px-3 py-1 rounded-full border border-gray-200 dark:border-slate-700 shadow-sm">
-                                {currentCategory || currentDifficulty}
-                            </span>
-                        </div>
+                        <Breadcrumb className="mb-4">
+                            <BreadcrumbList>
+                                <BreadcrumbItem>
+                                    <BreadcrumbLink
+                                        asChild
+                                        className="hover:text-[#e70013] hover:underline transition-colors duration-200"
+                                    >
+                                        <Link href={route("home")}>Home</Link>
+                                    </BreadcrumbLink>
+                                </BreadcrumbItem>
+                                <BreadcrumbSeparator />
+                                <BreadcrumbItem>
+                                    <BreadcrumbPage className="font-semibold">
+                                        {currentCategory || currentDifficulty}
+                                    </BreadcrumbPage>
+                                </BreadcrumbItem>
+                            </BreadcrumbList>
+                        </Breadcrumb>
+                    )}
+
+                    {/* Category lock banner — shown once for the whole page */}
+                    {category && (
+                        <CategoryLockBanner
+                            category={category}
+                            categoryOrder={categoryOrder}
+                            user={user}
+                            onPurchase={setPurchaseTarget}
+                        />
                     )}
 
                     {items.length > 0 ? (
@@ -233,23 +329,13 @@ export default function Wordlist({
                                     const mastered =
                                         masteredCounts?.[wordList.id] ?? null;
                                     const total = wordList.words_count ?? 0;
-                                    // userOrders values are now objects: { status, admin_note, address, ... }
-                                    const orderData =
-                                        userOrders?.[wordList.id] ?? null;
-                                    const orderStatus =
-                                        orderData?.status ?? null;
-
-                                    // An approved order overrides the lock
-                                    const effectivelyLocked =
-                                        wordList.is_locked &&
-                                        orderStatus !== "approved";
 
                                     return (
                                         <div key={wordList.id}>
-                                            {effectivelyLocked ? (
-                                                /* ── LOCKED card ── */
+                                            {categoryIsLocked ? (
+                                                /* ── LOCKED card (category locked) ── */
                                                 <div
-                                                    className="bg-white dark:bg-slate-900 rounded-2xl px-5 py-4 shadow-sm"
+                                                    className="bg-white dark:bg-slate-900 rounded-2xl px-5 py-4 shadow-sm opacity-60"
                                                     style={{
                                                         animationDelay: `${index * 0.07}s`,
                                                         animation:
@@ -258,35 +344,15 @@ export default function Wordlist({
                                                     }}
                                                 >
                                                     <div className="flex items-start justify-between gap-3 mb-3">
-                                                        <h2 className="text-base font-bold text-gray-700 dark:text-gray-300 leading-snug flex-1">
+                                                        <h2 className="text-base font-bold text-gray-500 dark:text-gray-400 leading-snug flex-1">
                                                             {wordList.title}
                                                         </h2>
-                                                        <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-                                                            {/* Price badge */}
-                                                            {wordList.price >
-                                                                0 && (
-                                                                <div className="flex items-center gap-1 bg-amber-100 dark:bg-amber-900/30 px-2.5 py-0.5 rounded-full">
-                                                                    <Lock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                                                                    <span className="text-xs font-bold text-amber-700 dark:text-amber-400">
-                                                                        ৳
-                                                                        {
-                                                                            wordList.price
-                                                                        }
-                                                                    </span>
-                                                                </div>
-                                                            )}
-                                                            {/* Order status */}
-                                                            <OrderStatusBadge
-                                                                status={
-                                                                    orderStatus
-                                                                }
-                                                            />
-                                                        </div>
+                                                        <Lock className="h-4 w-4 text-gray-300 dark:text-gray-600 shrink-0 mt-1" />
                                                     </div>
 
-                                                    <div className="flex items-center gap-2 mb-3">
+                                                    <div className="flex items-center gap-2">
                                                         <span
-                                                            className={`text-xs font-medium px-2.5 py-0.5 rounded-full border ${color} opacity-60`}
+                                                            className={`text-xs font-medium px-2.5 py-0.5 rounded-full border ${color} opacity-50`}
                                                         >
                                                             {star}{" "}
                                                             {
@@ -297,78 +363,6 @@ export default function Wordlist({
                                                             <span className="text-xs font-medium px-2.5 py-0.5 rounded-full border border-gray-200 bg-gray-50 dark:bg-slate-800 dark:border-slate-700 text-gray-400">
                                                                 {total} words
                                                             </span>
-                                                        )}
-                                                    </div>
-
-                                                    {/* Action area */}
-                                                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
-                                                        {orderStatus ===
-                                                        "pending" ? (
-                                                            <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-                                                                Your order is
-                                                                under review.
-                                                                We'll notify you
-                                                                once approved.
-                                                            </p>
-                                                        ) : orderStatus ===
-                                                          "rejected" ? (
-                                                            <div className="flex items-center justify-between w-full">
-                                                                <p className="text-xs text-red-600 dark:text-red-400 font-medium">
-                                                                    Your order
-                                                                    was
-                                                                    rejected.
-                                                                </p>
-                                                                {user && (
-                                                                    <button
-                                                                        onClick={() =>
-                                                                            setPurchaseTarget(
-                                                                                {
-                                                                                    ...wordList,
-                                                                                    _rejectedOrder:
-                                                                                        orderData,
-                                                                                },
-                                                                            )
-                                                                        }
-                                                                        className="text-[#E5201C] text-sm font-semibold flex items-center gap-1.5 hover:underline"
-                                                                    >
-                                                                        <ShoppingCart className="h-3.5 w-3.5" />
-                                                                        Try
-                                                                        Again
-                                                                    </button>
-                                                                )}
-                                                            </div>
-                                                        ) : user ? (
-                                                            <div className="w-full flex justify-end">
-                                                                <button
-                                                                    onClick={() =>
-                                                                        setPurchaseTarget(
-                                                                            wordList,
-                                                                        )
-                                                                    }
-                                                                    className="flex items-center gap-1.5 bg-[#E5201C] hover:bg-red-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition"
-                                                                >
-                                                                    <ShoppingCart className="h-3.5 w-3.5" />
-                                                                    Purchase
-                                                                    Access
-                                                                </button>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="w-full flex items-center justify-between">
-                                                                <span className="text-gray-400 text-sm font-semibold flex items-center gap-1.5">
-                                                                    <Lock className="h-3.5 w-3.5" />
-                                                                    Content
-                                                                    Locked
-                                                                </span>
-                                                                <Link
-                                                                    href={route(
-                                                                        "login",
-                                                                    )}
-                                                                    className="text-[#E5201C] text-sm font-semibold hover:underline"
-                                                                >
-                                                                    Login to
-                                                                    Purchase
-                                                                </Link>
-                                                            </div>
                                                         )}
                                                     </div>
                                                 </div>
@@ -394,25 +388,7 @@ export default function Wordlist({
                                                             <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 leading-snug flex-1">
                                                                 {wordList.title}
                                                             </h2>
-                                                            <div className="flex items-center gap-2 shrink-0">
-                                                                {wordList.price >
-                                                                0 ? (
-                                                                    <div className="flex items-center gap-1 bg-amber-100 px-2.5 py-0.5 rounded-full">
-                                                                        <Lock className="h-3.5 w-3.5 text-amber-600" />
-                                                                        <span className="text-xs font-bold text-amber-700">
-                                                                            ৳
-                                                                            {
-                                                                                wordList.price
-                                                                            }
-                                                                        </span>
-                                                                    </div>
-                                                                ) : (
-                                                                    <span className="bg-green-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">
-                                                                        FREE
-                                                                    </span>
-                                                                )}
-                                                                <ChevronRight className="h-4 w-4 text-gray-300" />
-                                                            </div>
+                                                            <ChevronRight className="h-4 w-4 text-gray-300 shrink-0 mt-1" />
                                                         </div>
 
                                                         <div className="flex items-center gap-2 mb-3">
@@ -432,7 +408,6 @@ export default function Wordlist({
                                                             )}
                                                         </div>
 
-                                                        {/* Mastered progress — only when logged in and data available */}
                                                         {mastered !== null && (
                                                             <MasteredProgress
                                                                 mastered={
@@ -442,7 +417,6 @@ export default function Wordlist({
                                                             />
                                                         )}
 
-                                                        {/* Action row: Start Exercise + optional Take a Quiz */}
                                                         <div className="flex items-center justify-between mt-3">
                                                             <div>
                                                                 {quizEligibleIds.includes(
@@ -518,12 +492,12 @@ export default function Wordlist({
                 `}</style>
             </div>
 
-            {/* Purchase Dialog */}
+            {/* Purchase Dialog — targets the category */}
             {purchaseTarget && (
                 <PurchaseOrderDialog
                     open={!!purchaseTarget}
                     onClose={() => setPurchaseTarget(null)}
-                    wordList={purchaseTarget}
+                    category={purchaseTarget}
                     bkashNumber={bkashNumber}
                 />
             )}

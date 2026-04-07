@@ -1,4 +1,4 @@
-import { Head, Link, router } from "@inertiajs/react";
+import { Head, Link, router, usePage } from "@inertiajs/react";
 import AppLayout from "@/Layouts/AppLayout";
 import {
     AlertDialog,
@@ -33,6 +33,7 @@ export default function WordDetail({
     prevWordId = null,
     nextWordId = null,
 }) {
+    const { userSettings } = usePage().props;
     const [wordStatus, setWordStatus] = useState(null);
     const [bookmarked, setBookmarked] = useState(initialBookmarked);
     const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -196,18 +197,10 @@ export default function WordDetail({
 
     const formatIPA = (ipa) => {
         if (!ipa) return "";
-
-        let formatted = ipa.trim();
-
-        if (!formatted.startsWith("/")) {
-            formatted = "/" + formatted;
-        }
-
-        if (!formatted.endsWith("/")) {
-            formatted = formatted + "/";
-        }
-
-        return formatted;
+        let f = ipa.trim();
+        if (!f.startsWith("/")) f = "/" + f;
+        if (!f.endsWith("/")) f = f + "/";
+        return f;
     };
 
     const images = word.images?.length > 0 ? word.images : [];
@@ -273,7 +266,7 @@ export default function WordDetail({
                         </div>
 
                         {/* Pronunciation */}
-                        {(word.pronunciation ||
+                        {/* {(word.pronunciation ||
                             word.ipa ||
                             word.bangla_pronunciation) && (
                             <div className="px-5 pb-4 text-center">
@@ -287,7 +280,36 @@ export default function WordDetail({
                                         .join(" ")}
                                 </p>
                             </div>
-                        )}
+                        )} */}
+
+                        {/* Pronunciation */}
+                        <div className="px-5 pb-4 text-center">
+                            {word.pronunciation && (
+                                <p className="text-sm text-gray-500 dark:text-gray-400 font-mono mt-1">
+                                    <span className="text-blue-600 dark:text-blue-400">
+                                        {word.pronunciation}{" "}
+                                    </span>
+                                    <span className="text-black">|</span>{" "}
+                                    <span className="text-teal-600 dark:text-teal-400">
+                                        {formatIPA(word.ipa)}{" "}
+                                    </span>
+                                    {userSettings?.show_bangla}
+                                    {/* Show Bangla only if user setting allows it */}
+                                    {userSettings?.show_bangla &&
+                                        word.bangla_pronunciation && (
+                                            <>
+                                                {" "}
+                                                <span className="text-black">
+                                                    |
+                                                </span>{" "}
+                                                <span className="text-orange-600 dark:text-orange-400">
+                                                    {word.bangla_pronunciation}
+                                                </span>
+                                            </>
+                                        )}
+                                </p>
+                            )}
+                        </div>
 
                         {/* Images */}
                         {images.length > 0 && (
@@ -345,7 +367,7 @@ export default function WordDetail({
                         <div className="h-px bg-gray-100 dark:bg-slate-700 mx-4" />
 
                         {/* Definition two-column */}
-                        {(word.definition || word.bangla_meaning) && (
+                        {word.definition && (
                             <div className="grid grid-cols-2 gap-0 mx-4 my-4">
                                 {word.definition && (
                                     <div className="border-l-4 border-[#E5201C] pl-3 pr-2 py-1">
@@ -357,16 +379,17 @@ export default function WordDetail({
                                         </p>
                                     </div>
                                 )}
-                                {word.bangla_meaning && (
-                                    <div className="border-l-4 border-blue-400 pl-3 pr-2 py-1">
-                                        <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
-                                            Bangla Definition
-                                        </p>
-                                        <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug font-medium">
-                                            {word.bangla_meaning}
-                                        </p>
-                                    </div>
-                                )}
+                                {userSettings?.show_bangla &&
+                                    word.bangla_meaning && (
+                                        <div className="border-l-4 border-blue-400 pl-3 pr-2 py-1">
+                                            <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
+                                                Bangla Definition
+                                            </p>
+                                            <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug font-medium">
+                                                {word.bangla_meaning}
+                                            </p>
+                                        </div>
+                                    )}
                             </div>
                         )}
 

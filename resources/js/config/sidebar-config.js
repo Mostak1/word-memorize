@@ -8,7 +8,8 @@ import {
     Trophy,
     Flag,
     Link2,
-    ClipboardList 
+    ClipboardList,
+    HelpCircle,
 } from "lucide-react";
 
 /**
@@ -52,6 +53,11 @@ export const sidebarConfig = {
                     route: "admin.word-lists.index",
                     icon: BookOpen,
                 },
+                // {
+                //     name: "Quizzes",
+                //     route: "admin.quizzes.index",
+                //     icon: HelpCircle,
+                // },
                 {
                     name: "Review Words",
                     route: "admin.review-words.index",
