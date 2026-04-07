@@ -1,4 +1,4 @@
-import { Player } from "@lottiefiles/react-lottie-player";
+import Lottie from "lottie-react";
 import doneAnimation from "../../../public/lottie/Done.json";
 import { Head, Link } from "@inertiajs/react";
 import AppLayout from "@/Layouts/AppLayout";
@@ -490,7 +490,7 @@ export default function Quiz({
                 {/* Fullscreen Lottie overlay */}
                 {showAnimation && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-                        <Player
+                        {/* <Player
                             autoplay
                             keepLastFrame={false}
                             src={doneAnimation}
@@ -499,6 +499,13 @@ export default function Quiz({
                                 if (event === "complete")
                                     setShowAnimation(false);
                             }}
+                        /> */}
+                        <Lottie
+                            animationData={doneAnimation}
+                            loop={false}
+                            autoplay
+                            style={{ height: "100%", width: "100%" }}
+                            onComplete={() => setShowAnimation(false)}
                         />
                     </div>
                 )}

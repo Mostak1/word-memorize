@@ -1,7 +1,8 @@
 import { Head, Link, router } from "@inertiajs/react";
-import { Player } from "@lottiefiles/react-lottie-player";
+import Lottie from "lottie-react";
 import AppLayout from "@/Layouts/AppLayout";
 import approvedAnimation from "../../../public/lottie/Approved.json";
+import fireStreakAnimation from "../../../public/lottie/FireStreakOrange.json";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -83,8 +84,23 @@ export default function ExerciseSession({
     const [streak, setStreak] = useState(initialStreak);
     const [streakChange, setStreakChange] = useState(null);
     const [showStreakEffect, setShowStreakEffect] = useState(false);
+
     const previousStreak = useRef(initialStreak?.current_streak ?? 0);
 
+    const [fireAnim, setFireAnim] = useState(null);
+    const [approvedAnim, setApprovedAnim] = useState(null);
+
+    useEffect(() => {
+        fetch(fireStreakAnimation)
+            .then((res) => res.json())
+            .then(setFireAnim);
+
+        fetch(approvedAnimation)
+            .then((res) => res.json())
+            .then(setApprovedAnim);
+    }, []);
+
+    // const [streakValue, setStreakValue] = useState(1);
     // ── Queue state ───────────────────────────────────────────────────────────
     // The Active Queue: queue[0] is always the current word.
     // "I Know"       → remove from front (word leaves session).
@@ -156,15 +172,12 @@ export default function ExerciseSession({
     useEffect(() => {
         if (!isDone || !auth?.user) return;
 
-        // Fire-and-forget completion signal with XP tracking
         const csrfToken = decodeURIComponent(
             document.cookie
                 .split("; ")
                 .find((row) => row.startsWith("XSRF-TOKEN="))
                 ?.split("=")[1] ?? "",
         );
-
-        let timeout;
 
         fetch(route("word.session-complete"), {
             method: "POST",
@@ -180,51 +193,98 @@ export default function ExerciseSession({
                 if (data.xp_awarded) {
                     setSessionXpAwarded(data.xp_awarded);
                 }
+
                 if (data.streak) {
                     const newStreak = data.streak.current_streak ?? 0;
                     const prevStreak = previousStreak.current;
 
                     if (newStreak > prevStreak) {
                         setStreakChange("up");
+                        // Show Fire Streak Animation with the NEW streak count
                         setShowStreakEffect(true);
-                        timeout = setTimeout(
-                            () => setShowStreakEffect(false),
-                            2800,
-                        );
+                        // Auto hide after animation
+                        setTimeout(() => setShowStreakEffect(false), 2800);
                     } else if (newStreak < prevStreak) {
                         setStreakChange("down");
-                        setShowStreakEffect(true);
-                        timeout = setTimeout(
-                            () => setShowStreakEffect(false),
-                            2800,
-                        );
                     }
 
                     previousStreak.current = newStreak;
                     setStreak(data.streak);
                 }
             })
-            .catch(() => {}); // silent fail - we don't want to break the UI
-
-        return () => clearTimeout(timeout);
+            .catch(() => {});
     }, [isDone, auth?.user]);
 
-    // Reset scroll position smoothly when a new word appears
+    // Snap scroll to top when a new word appears — timed to coincide with the
+    // card exit animation so the position reset is invisible to the user.
     useEffect(() => {
         if (!word?.id) return;
-
-        // Small delay so the new card has rendered
+        // Fire at ~180ms so the page resets while the old card is fading out,
+        // before the new card enters view (exit anim duration = 200ms).
         const timer = setTimeout(() => {
-            window.scrollTo({
-                top: 0,
-                behavior: "smooth",
-            });
-        }, 50);
-
+            window.scrollTo({ top: 0, behavior: "instant" });
+        }, 180);
         return () => clearTimeout(timer);
     }, [word?.id]);
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+    const StreakPop = ({ streakCount, onComplete }) => {
+        useEffect(() => {
+            const timer = setTimeout(() => {
+                onComplete?.();
+            }, 2400); // Slightly longer for better Lottie + number feel
+            return () => clearTimeout(timer);
+        }, [onComplete]);
+
+        return (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none bg-black/40">
+                <div className="relative flex flex-col items-center">
+                    {/* Fire Streak Lottie */}
+                    {/* <Player
+                        autoplay
+                        loop={false}
+                        keepLastFrame={false}
+                        src={fireStreakAnimation}
+                        style={{ width: 340, height: 340 }}
+                    /> */}
+
+                    {/* {fireStreakAnimation && (
+                        <Lottie
+                            animationData={fireStreakAnimation}
+                            loop={false}
+                            style={{ width: 340, height: 340 }}
+                        />
+                    )} */}
+
+                    {fireAnim && (
+                        <Lottie
+                            animationData={fireAnim}
+                            loop={false}
+                            style={{ width: 340, height: 340 }}
+                        />
+                    )}
+
+                    {/* Dynamic Number */}
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+                        <div
+                            className="text-[92px] font-black text-white tracking-[-6px] drop-shadow-[0_0_50px_#FF9500] animate-[streakPop_0.75s_cubic-bezier(0.34,1.56,0.64,1)_forwards]"
+                            style={{
+                                textShadow:
+                                    "0 20px 50px rgba(255, 149, 0, 0.95)",
+                            }}
+                        >
+                            +{streakCount}
+                        </div>
+                    </div>
+
+                    {/* STREAK Text */}
+                    <div className="absolute bottom-16 text-orange-600 font-bold text-2xl tracking-[4px] animate-pulse">
+                        STREAK
+                    </div>
+                </div>
+            </div>
+        );
+    };
 
     const speakWord = useCallback((text) => {
         if ("speechSynthesis" in window) {
@@ -234,53 +294,6 @@ export default function ExerciseSession({
             window.speechSynthesis.speak(u);
         }
     }, []);
-
-    // const speakWord = async (text) => {
-    //     // Fallback to browser TTS if Puter not ready
-    //     if (!ready || !puter) {
-    //         window.speechSynthesis.cancel();
-    //         const u = new SpeechSynthesisUtterance(text);
-    //         u.lang = "en-US";
-    //         u.rate = 0.8;
-    //         window.speechSynthesis.speak(u);
-    //         return;
-    //     }
-
-    //     try {
-    //         // Stop previous audio if playing
-    //         if (ttsRef.current) {
-    //             ttsRef.current.pause();
-    //         }
-
-    //         const audio = await puter.ai.txt2speech(text, "en-US");
-    //         ttsRef.current = audio;
-    //         audio.play();
-    //     } catch (err) {
-    //         console.warn("Puter TTS failed, falling back:", err);
-    //         window.speechSynthesis.cancel();
-    //         const u = new SpeechSynthesisUtterance(text);
-    //         u.lang = "en-US";
-    //         u.rate = 0.8;
-    //         window.speechSynthesis.speak(u);
-    //     }
-    // };
-
-    const handleAiExplain = async () => {
-        if (!ready || !puter || aiLoading) return;
-        setAiLoading(true);
-        try {
-            const response = await puter.ai.chat(
-                `Explain the English word "${word.word}" in simple terms.
-             Give: 1) a one-line meaning, 2) one memory tip, 3) one real-life usage example.
-             Be concise. Format as plain text, no markdown.`,
-            );
-            setAiExplanation(response?.message?.content ?? response);
-        } catch (err) {
-            setAiExplanation("Could not load explanation. Try again.");
-        } finally {
-            setAiLoading(false);
-        }
-    };
 
     const highlightWord = (sentence, targetWord) => {
         if (!sentence || !targetWord) return sentence;
@@ -357,21 +370,13 @@ export default function ExerciseSession({
         // Force close meaning card immediately
         setShowMeaning(false);
 
-        // Prevent layout shift scroll by saving current scroll position
-        const currentScroll = window.scrollY;
-
         setExiting(true);
 
         setTimeout(() => {
             setExiting(false);
             setCardKey((k) => k + 1);
             callback();
-
-            // Restore scroll position after queue update (prevents jump to top)
-            setTimeout(() => {
-                window.scrollTo(0, currentScroll);
-            }, 10);
-        }, 200); // slightly increased timeout
+        }, 200);
     };
 
     // ── Core actions ──────────────────────────────────────────────────────────
@@ -569,48 +574,32 @@ export default function ExerciseSession({
         return (
             <AppLayout>
                 <Head title="Session Complete" />
-                {showStreakEffect && streakChange && (
-                    <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center bg-black/20 px-4 py-6">
-                        <div className="bg-white dark:bg-slate-950 rounded-3xl shadow-2xl border border-white/40 dark:border-slate-700 p-5 max-w-md w-full text-center">
-                            <Player
-                                autoplay
-                                loop={false}
-                                keepLastFrame
-                                src={
-                                    streakChange === "up"
-                                        ? "https://assets9.lottiefiles.com/packages/lf20_jbrw3hcz.json"
-                                        : "https://assets9.lottiefiles.com/packages/lf20_jbrw3hcz.json"
-                                }
-                                style={{
-                                    height: 180,
-                                    width: 180,
-                                    margin: "0 auto",
-                                }}
-                            />
-                            <p className="text-lg font-extrabold text-gray-900 dark:text-gray-100 mt-3">
-                                {streakChange === "up"
-                                    ? "Streak Continued!"
-                                    : "Streak Reset"}
-                            </p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                {streakChange === "up"
-                                    ? "You kept your streak alive today."
-                                    : "You restarted your streak by completing this session."}
-                            </p>
-                        </div>
-                    </div>
+                {/* StreakPop overlay — only for streak increase */}
+                {showStreakEffect && streakChange === "up" && (
+                    <StreakPop
+                        streakCount={streak?.current_streak ?? 1}
+                        onComplete={() => setShowStreakEffect(false)}
+                    />
                 )}
+
                 <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 flex flex-col items-center justify-center px-4 py-10">
                     <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-md dark:shadow-xl dark:shadow-slate-950 w-full max-w-md p-8 text-center">
                         {/* Lottie celebration animation */}
                         <div className="flex justify-center -mt-2 -mb-2">
-                            <Player
-                                autoplay
-                                loop={false}
-                                keepLastFrame
-                                src={approvedAnimation}
-                                style={{ height: 160, width: 160 }}
-                            />
+                            {/* {approvedAnimation && (
+                                <Lottie
+                                    animationData={approvedAnimation}
+                                    loop={false}
+                                    style={{ height: 160, width: 160 }}
+                                />
+                            )} */}
+                            {approvedAnim && (
+                                <Lottie
+                                    animationData={approvedAnim}
+                                    loop={false}
+                                    style={{ height: 160, width: 160 }}
+                                />
+                            )}
                         </div>
                         <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 mb-1">
                             Session Complete!
@@ -1098,25 +1087,6 @@ export default function ExerciseSession({
                                     </div>
                                 )}
 
-                                {/* {ready && (
-                                    <div className="mx-4 mb-3">
-                                        <button
-                                            onClick={handleAiExplain}
-                                            disabled={aiLoading}
-                                            className="w-full py-2 rounded-xl text-sm font-medium bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 transition disabled:opacity-50"
-                                        >
-                                            {aiLoading
-                                                ? "Thinking…"
-                                                : "✨ Explain with AI"}
-                                        </button>
-                                        {aiExplanation && (
-                                            <p className="mt-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-slate-800 rounded-xl p-3 leading-relaxed">
-                                                {aiExplanation}
-                                            </p>
-                                        )}
-                                    </div>
-                                )} */}
-
                                 {/* {collocationList.length > 0 && (
                                     <div className="px-4 pb-4">
                                         <div className="h-px bg-gray-100 mb-3" />
@@ -1351,6 +1321,22 @@ export default function ExerciseSession({
 
             {/* Card animations + confetti keyframes */}
             <style>{`
+                @keyframes streakPop {
+                    0% {
+                        opacity: 0;
+                        transform: scale(0.2) translateY(60px);
+                    }
+                    40% {
+                        transform: scale(1.25) translateY(-15px);
+                    }
+                    70% {
+                        transform: scale(0.95) translateY(5px);
+                    }
+                    100% {
+                        opacity: 1;
+                        transform: scale(1) translateY(0);
+                    }
+                }
                 @keyframes cardEnterRight {
                     from { opacity: 0; transform: translateX(60px)  scale(0.96); }
                     to   { opacity: 1; transform: translateX(0)      scale(1);    }

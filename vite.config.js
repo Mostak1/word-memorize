@@ -55,7 +55,7 @@ export default defineConfig({
 
       workbox: {
         navigateFallback: '/',           // Crucial for Inertia SPA routing
-        navigateFallbackAllowlist: [/^\/$/], // Optional: only fallback root for Inertia
+        navigateFallbackAllowlist: [/^\/.*/], // Optional: only fallback root for Inertia
 
         runtimeCaching: [
           {

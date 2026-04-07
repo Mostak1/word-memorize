@@ -1,0 +1,597 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use App\Models\Word;
+use App\Models\WordImage;
+use App\Models\WordList;
+use App\Models\WordListCategory;
+use App\Models\User;
+
+class GREWordListSeeder extends Seeder
+{
+    /**
+     * Path to the CSV file (relative to Laravel project root).
+     */
+    protected string $filePath = 'database/data/GRE_Words.csv';
+    protected $price = 499;
+
+    /**
+     * Path to the word images folder (relative to Laravel project root).
+     *
+     * Place images here named exactly as the word, e.g.:
+     *   database/data/gre_word_images/abase.jpg
+     *
+     * Matching is case-insensitive.
+     */
+    protected string $imagesPath = 'database/data/gre_word_images';
+
+    /**
+     * Supported image extensions (checked in this order).
+     */
+    private const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+
+    /**
+     * Storage disk for word images (maps to storage/app/public).
+     */
+    private const STORAGE_DISK = 'public';
+
+    /**
+     * Directory inside the public disk where images are stored.
+     * Results in: storage/app/public/words/filename.jpg
+     * Public URL:  /storage/words/filename.jpg
+     */
+    private const STORAGE_DIR = 'words';
+
+    /**
+     * Category name used throughout seeding / unseeding.
+     */
+    private const CATEGORY_NAME = 'GRE Word List';
+
+    /**
+     * Admin email to use as creator.
+     */
+    private const ADMIN_EMAIL = 'admin@gmail.com';
+
+    /**
+     * The CSV's "list" column values map to these WordList titles.
+     *
+     * e.g. a row with list = "333"  → WordList title "GRE 333"
+     *                      "800"  → WordList title "GRE 800"
+     *                      "3000" → WordList title "GRE 3000"
+     */
+    private const LIST_LABEL_MAP = [
+        '333' => 'GRE 333',
+        '800' => 'GRE 800',
+        '3000' => 'GRE 3000',
+    ];
+
+    /**
+     * Columns updated when a word already exists (upsert).
+     */
+    private const UPSERT_UPDATE_COLUMNS = [
+        'parts_of_speech_variations',
+        'ipa',
+        'pronunciation',
+        'bangla_pronunciation',
+        'definition',
+        'bangla_meaning',
+        'collocations',
+        'example_sentences',
+        'synonym',
+        'antonym',
+        'image_related_sentence',
+        'ai_prompt',
+        'updated_at',
+    ];
+
+    // ── Public entry-points ────────────────────────────────────────────────
+
+    public function run(): void
+    {
+        $fullPath = base_path($this->filePath);
+
+        if (!file_exists($fullPath)) {
+            $this->log('error', "CSV file not found at: {$this->filePath}\nPlease place the CSV at database/data/");
+            return;
+        }
+
+        $this->log('info', 'Loading CSV file...');
+
+        $rows = $this->parseCsv($fullPath);
+        $this->log('info', count($rows) . ' data row(s) found in the CSV (excluding header).');
+
+        $sublists = $this->splitIntoSublists($rows);
+        $this->log('info', count($sublists) . ' sublist(s) detected: ' . implode(', ', array_keys($sublists)));
+
+        // Build a case-insensitive index of available images once,
+        // so we don't hit the filesystem for every single word.
+        $imageIndex = $this->buildImageIndex();
+        $this->log('info', count($imageIndex) . ' image(s) found in database/data/gre_word_images/.');
+
+        $creatorId = $this->getCreatorId();
+
+        [
+            'inserted' => $inserted,
+            'updated' => $updated,
+            'skipped' => $skipped,
+            'images_added' => $imagesAdded,
+            'images_skipped' => $imagesSkipped,
+            'no_image_words' => $noImageWords,
+        ] = $this->seedSublists($sublists, $creatorId, $imageIndex);
+
+        $this->log(
+            'info',
+            "\nDone — words inserted: {$inserted}, updated: {$updated}, skipped: {$skipped}." .
+            "\n       images added: {$imagesAdded}, already existed / no file: {$imagesSkipped}."
+        );
+
+        $this->log('info', 'words_without_images: ' . json_encode(array_values(array_unique($noImageWords))));
+    }
+
+    // ── Unseed ─────────────────────────────────────────────────────────────
+
+    public function unseed(): void
+    {
+        $category = WordListCategory::where('name', self::CATEGORY_NAME)->first();
+
+        if (!$category) {
+            $this->log('warn', '"' . self::CATEGORY_NAME . '" category not found — nothing to remove.');
+            return;
+        }
+
+        DB::transaction(function () use ($category) {
+            $wordLists = WordList::where('word_list_category_id', $category->id)->get();
+
+            foreach ($wordLists as $wordList) {
+                // Use the Word model so the deleting boot hook fires (image cleanup etc.)
+                Word::where('wordlist_id', $wordList->id)->each(fn($w) => $w->delete());
+                $wordList->delete();
+            }
+
+            $category->delete();
+        });
+
+        $this->log('info', 'Unseeded "' . self::CATEGORY_NAME . '" — category, word lists, and words removed.');
+    }
+
+    // ── Image index ────────────────────────────────────────────────────────
+
+    /**
+     * Scan the images folder and build a lookup map:
+     *   lowercase-word => absolute-file-path
+     *
+     * @return array<string, string>  e.g. ['abase' => '/full/path/abase.jpg']
+     */
+    private function buildImageIndex(): array
+    {
+        $dir = base_path($this->imagesPath);
+
+        if (!is_dir($dir)) {
+            $this->log('warn', "Images folder not found: database/data/gre_word_images/ — skipping image seeding.");
+            return [];
+        }
+
+        $index = [];
+
+        foreach (scandir($dir) as $file) {
+            if ($file === '.' || $file === '..') {
+                continue;
+            }
+
+            $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+
+            if (!in_array($ext, self::IMAGE_EXTENSIONS, true)) {
+                continue;
+            }
+
+            $key = strtolower(pathinfo($file, PATHINFO_FILENAME));
+
+            if (!isset($index[$key])) {
+                $index[$key] = $dir . DIRECTORY_SEPARATOR . $file;
+            }
+        }
+
+        return $index;
+    }
+
+    /**
+     * Given a word string, return the source image path or null.
+     */
+    private function findImageForWord(string $word, array $imageIndex): ?string
+    {
+        return $imageIndex[strtolower($word)] ?? null;
+    }
+
+    // ── Helper: Get Creator ID ─────────────────────────────────────────────
+
+    private function getCreatorId(): int
+    {
+        $user = User::where('email', self::ADMIN_EMAIL)->first();
+
+        if ($user) {
+            $this->log('info', "Using creator: {$user->email} (ID: {$user->id})");
+            return $user->id;
+        }
+
+        $this->log('warn', "User with email " . self::ADMIN_EMAIL . " not found. Falling back to user ID 1.");
+        return 1;
+    }
+
+    // ── Private helpers ────────────────────────────────────────────────────
+
+    private function parseCsv(string $path): array
+    {
+        $handle = fopen($path, 'r');
+
+        if ($handle === false) {
+            $this->log('error', "Cannot open CSV file: {$path}");
+            return [];
+        }
+
+        fgetcsv($handle); // Skip header row
+
+        $rows = [];
+        while (($row = fgetcsv($handle)) !== false) {
+            $rows[] = $row;
+        }
+
+        fclose($handle);
+
+        return $rows;
+    }
+
+    /**
+     * Group rows by their "list" column (col 4).
+     *
+     * The raw value (e.g. "333", "800", "3000") is mapped to a human-readable
+     * title via LIST_LABEL_MAP. Unknown values fall back to "GRE Other".
+     *
+     * Rows with a missing/empty word (col 0) are silently dropped.
+     */
+    private function splitIntoSublists(array $rows): array
+    {
+        $sublists = [];
+
+        foreach ($rows as $row) {
+            $word = $this->clean($row[0] ?? null);
+            $listRaw = $this->clean($row[4] ?? null);
+
+            if ($word === null || $word === '') {
+                continue;
+            }
+
+            $sublistName = self::LIST_LABEL_MAP[$listRaw] ?? ('GRE ' . ($listRaw ?? 'Other'));
+
+            $sublists[$sublistName][] = $row;
+        }
+
+        // Sort by key so GRE 333 → GRE 800 → GRE 3000 (natural order)
+        uksort($sublists, 'strnatcmp');
+
+        return $sublists;
+    }
+
+    private function seedSublists(array $sublists, int $creatorId, array $imageIndex): array
+    {
+        return DB::transaction(function () use ($sublists, $creatorId, $imageIndex): array {
+
+            $category = WordListCategory::firstOrCreate(
+                ['name' => self::CATEGORY_NAME],
+                [
+                    'description' => 'High-frequency words commonly tested on the GRE exam.',
+                    'status' => true,
+                    'created_by' => $creatorId,
+                    'show_example_sentences' => true,
+                    'price' => $this->price,
+                ]
+            );
+
+            $this->log('info', "WordListCategory: " . $category->name . " (ID: {$category->id})");
+
+            $totalInserted = 0;
+            $totalUpdated = 0;
+            $totalSkipped = 0;
+            $totalImagesAdded = 0;
+            $totalImagesSkip = 0;
+            $allNoImageWords = [];
+
+            $sublistIndex = 0;
+            foreach ($sublists as $sublistName => $rows) {
+                $this->log('info', "\n  ── {$sublistName} (" . count($rows) . " rows) ──");
+
+                [
+                    'inserted' => $ins,
+                    'updated' => $upd,
+                    'skipped' => $skp,
+                    'images_added' => $imgAdded,
+                    'images_skipped' => $imgSkip,
+                    'no_image_words' => $noImgWords,
+                ] = $this->seedWordList($category->id, $sublistName, $rows, $sublistIndex, $creatorId, $imageIndex);
+
+                $sublistIndex++;
+
+                $totalInserted += $ins;
+                $totalUpdated += $upd;
+                $totalSkipped += $skp;
+                $totalImagesAdded += $imgAdded;
+                $totalImagesSkip += $imgSkip;
+                $allNoImageWords = array_merge($allNoImageWords, $noImgWords);
+            }
+
+            return [
+                'inserted' => $totalInserted,
+                'updated' => $totalUpdated,
+                'skipped' => $totalSkipped,
+                'images_added' => $totalImagesAdded,
+                'images_skipped' => $totalImagesSkip,
+                'no_image_words' => $allNoImageWords,
+            ];
+        });
+    }
+
+    private function seedWordList(
+        int $categoryId,
+        string $title,
+        array $rows,
+        int $index,
+        int $creatorId,
+        array $imageIndex
+    ): array {
+        // First sublist (GRE 333) is free; the rest are locked
+        $isLocked = $index >= 1;
+
+        $wordList = WordList::firstOrCreate(
+            [
+                'word_list_category_id' => $categoryId,
+                'title' => $title,
+            ],
+            [
+                'difficulty' => 'advanced',
+                'status' => true,
+                'is_locked' => $isLocked,
+                'created_by' => $creatorId,
+                'is_public' => true,
+            ]
+        );
+
+        $this->log('info', "    WordList: {$title} (ID: {$wordList->id})");
+
+        // Pre-fetch existing words
+        $existingKeys = DB::table('words')
+            ->where('wordlist_id', $wordList->id)
+            ->select('word', 'wordlist_id')
+            ->get()
+            ->mapWithKeys(fn($r) => [$r->word . '|' . $r->wordlist_id => true])
+            ->toArray();
+
+        $inserted = 0;
+        $updated = 0;
+        $skipped = 0;
+        $batchSize = 100;
+        $batch = [];
+        $now = now()->toDateTimeString();
+
+        $flush = function () use (&$batch, &$inserted, &$updated, &$existingKeys, $wordList): void {
+            if (empty($batch)) {
+                return;
+            }
+
+            DB::table('words')->upsert(
+                $batch,
+                ['word', 'wordlist_id'],
+                self::UPSERT_UPDATE_COLUMNS
+            );
+
+            foreach ($batch as $row) {
+                $key = $row['word'] . '|' . $row['wordlist_id'];
+                if (isset($existingKeys[$key])) {
+                    $updated++;
+                } else {
+                    $inserted++;
+                    $existingKeys[$key] = true;
+                }
+            }
+
+            $batch = [];
+        };
+
+        foreach ($rows as $row) {
+            // CSV column mapping:
+            // 0  word
+            // 1  sentence          → example_sentences
+            // 2  phrase            → image_related_sentence
+            // 3  definition
+            // 4  list              (used for grouping, not stored per-word)
+            // 5  type              → parts_of_speech_variations
+            // 6  ipa
+            // 7  pronunciation
+            // 8  bangla_pronunciation
+            // 9  synonyms          → synonym
+            // 10 antonyms          → antonym
+            // 11 bangla_meaning
+            // 12 collocations
+
+            $word = $this->clean($row[0] ?? null);
+
+            if ($word === null || $word === '') {
+                $skipped++;
+                continue;
+            }
+
+            $batch[] = [
+                'wordlist_id' => $wordList->id,
+                'word' => $word,
+                'parts_of_speech_variations' => $this->clean($row[5] ?? null) ?? '',
+                'ipa' => $this->clean($row[6] ?? null),
+                'pronunciation' => $this->clean($row[7] ?? null),
+                'bangla_pronunciation' => $this->clean($row[8] ?? null),
+                'definition' => $this->clean($row[3] ?? null) ?? '',
+                'bangla_meaning' => $this->clean($row[11] ?? null),
+                'collocations' => $this->clean($row[12] ?? null),
+                'example_sentences' => $this->clean($row[1] ?? null) ?? '',
+                'synonym' => $this->clean($row[9] ?? null),
+                'antonym' => $this->clean($row[10] ?? null),
+                'image_related_sentence' => $this->clean($row[2] ?? null),
+                'ai_prompt' => null,
+                'hyphenation' => null,
+                'image_url' => null,
+                'created_by' => $creatorId,
+                'is_public' => true,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+
+            if (count($batch) >= $batchSize) {
+                $flush();
+            }
+        }
+
+        $flush();
+
+        // ── Image seeding ──────────────────────────────────────────────────
+        ['added' => $imagesAdded, 'skipped' => $imagesSkipped, 'no_image_words' => $noImageWords] =
+            $this->seedImagesForWordList($wordList->id, $rows, $imageIndex);
+
+        $this->log(
+            'info',
+            "    Done — words inserted: {$inserted}, updated: {$updated}, skipped: {$skipped}." .
+            " Images added: {$imagesAdded}, skipped: {$imagesSkipped}."
+        );
+
+        return [
+            'inserted' => $inserted,
+            'updated' => $updated,
+            'skipped' => $skipped,
+            'images_added' => $imagesAdded,
+            'images_skipped' => $imagesSkipped,
+            'no_image_words' => $noImageWords,
+        ];
+    }
+
+    /**
+     * For every word in this word list that has a matching image file,
+     * copy the file to the public storage disk and create a WordImage record.
+     *
+     * Skips words that already have at least one WordImage row (idempotent).
+     */
+    private function seedImagesForWordList(int $wordListId, array $rows, array $imageIndex): array
+    {
+        if (empty($imageIndex)) {
+            return ['added' => 0, 'skipped' => 0, 'no_image_words' => []];
+        }
+
+        $wordMap = DB::table('words')
+            ->where('wordlist_id', $wordListId)
+            ->pluck('id', 'word')
+            ->toArray();
+
+        $alreadyHasImage = WordImage::whereIn('word_id', array_values($wordMap))
+            ->pluck('word_id')
+            ->flip()
+            ->toArray();
+
+        $added = 0;
+        $skipped = 0;
+        $noImageWords = [];
+
+        foreach ($rows as $row) {
+            $wordStr = $this->clean($row[0] ?? null);
+
+            if ($wordStr === null || $wordStr === '') {
+                continue;
+            }
+
+            $wordId = $wordMap[$wordStr] ?? null;
+
+            if ($wordId === null) {
+                $skipped++;
+                continue;
+            }
+
+            if (isset($alreadyHasImage[$wordId])) {
+                $skipped++;
+                continue;
+            }
+
+            $sourcePath = $this->findImageForWord($wordStr, $imageIndex);
+
+            if ($sourcePath === null) {
+                $noImageWords[] = $wordStr;
+                $skipped++;
+                continue;
+            }
+
+            $storedPath = $this->copyImageToStorage($sourcePath, $wordStr);
+
+            if ($storedPath === null) {
+                $skipped++;
+                continue;
+            }
+
+            WordImage::create([
+                'word_id' => $wordId,
+                'image_url' => '/' . ltrim($storedPath, '/'),
+                'caption' => null,
+                'sort_order' => 0,
+            ]);
+
+            $alreadyHasImage[$wordId] = true;
+            $added++;
+        }
+
+        return ['added' => $added, 'skipped' => $skipped, 'no_image_words' => $noImageWords];
+    }
+
+    /**
+     * Copy a source image into storage/app/public/words/ and return the
+     * storage-relative path (e.g. "words/abase.jpg"), or null on failure.
+     */
+    private function copyImageToStorage(string $sourcePath, string $word): ?string
+    {
+        $ext = strtolower(pathinfo($sourcePath, PATHINFO_EXTENSION));
+        $destFilename = strtolower($word) . '.' . $ext;
+        $destPath = self::STORAGE_DIR . '/' . $destFilename;
+
+        if (Storage::disk(self::STORAGE_DISK)->exists($destPath)) {
+            return $destPath;
+        }
+
+        $contents = @file_get_contents($sourcePath);
+
+        if ($contents === false) {
+            $this->log('warn', "    Could not read image file: {$sourcePath}");
+            return null;
+        }
+
+        Storage::disk(self::STORAGE_DISK)->put($destPath, $contents);
+
+        return $destPath;
+    }
+
+    private function clean(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $value = trim((string) $value);
+        return $value === '' ? null : $value;
+    }
+
+    private function log(string $level, string $message): void
+    {
+        if ($this->command) {
+            match ($level) {
+                'error' => $this->command->error($message),
+                'warn' => $this->command->warn($message),
+                default => $this->command->info($message),
+            };
+        } else {
+            logger()->info('[GREWordListSeeder] ' . $message);
+        }
+    }
+}

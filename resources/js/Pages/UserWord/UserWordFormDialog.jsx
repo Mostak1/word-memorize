@@ -114,6 +114,9 @@ function Field({ label, optional = true, error, children }) {
         <div className="space-y-1.5 [&_input::placeholder]:text-gray-300 [&_textarea::placeholder]:text-gray-300">
             <Label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
                 {label}
+                {!optional && (
+                    <span className="ml-0.5 text-red-400 font-bold">*</span>
+                )}
                 {optional && (
                     <span className="ml-1 normal-case font-normal text-gray-400 tracking-normal">
                         (optional)
@@ -135,11 +138,11 @@ const EMPTY_FORM = {
     new_wordlist_title: "",
     word: "",
     pronunciation: "",
-    ipa: "",
-    bangla_pronunciation: "",
+    // ipa: "",
+    // bangla_pronunciation: "",
     parts_of_speech_variations: "",
     definition: "",
-    bangla_meaning: "",
+    // bangla_meaning: "",
     collocations: "", // JSON string — serialized from the array below
     example_sentences: "",
     synonym: "",
@@ -162,8 +165,17 @@ export default function UserWordFormDialog({
     // Collocations are managed as a local array, serialized to JSON on submit
     const [collocations, setCollocations] = useState([emptyCollocation()]);
 
-    const { data, setData, post, put, processing, errors, clearErrors, reset } =
-        useForm({ ...EMPTY_FORM });
+    const {
+        data,
+        setData,
+        post,
+        put,
+        processing,
+        errors,
+        setError,
+        clearErrors,
+        reset,
+    } = useForm({ ...EMPTY_FORM });
 
     // Re-populate form whenever the dialog opens or the target word changes
     useEffect(() => {
@@ -177,12 +189,12 @@ export default function UserWordFormDialog({
                     new_wordlist_title: "",
                     word: word.word ?? "",
                     pronunciation: word.pronunciation ?? "",
-                    ipa: word.ipa ?? "",
-                    bangla_pronunciation: word.bangla_pronunciation ?? "",
+                    // ipa: word.ipa ?? "",
+                    // bangla_pronunciation: word.bangla_pronunciation ?? "",
                     parts_of_speech_variations:
                         word.parts_of_speech_variations ?? "",
                     definition: word.definition ?? "",
-                    bangla_meaning: word.bangla_meaning ?? "",
+                    // bangla_meaning: word.bangla_meaning ?? "",
                     example_sentences: word.example_sentences ?? "",
                     synonym: word.synonym ?? "",
                     antonym: word.antonym ?? "",
@@ -232,6 +244,40 @@ export default function UserWordFormDialog({
 
     function handleSubmit(e) {
         e?.preventDefault();
+
+        // ── Client-side validation for required fields ──────────────────────
+        const clientErrors = {};
+        if (!data.word.trim()) clientErrors.word = "Word is required.";
+        if (!data.definition.trim())
+            clientErrors.definition = "English definition is required.";
+        if (!data.parts_of_speech_variations.trim())
+            clientErrors.parts_of_speech_variations =
+                "Part of speech is required.";
+        if (!data.pronunciation.trim())
+            clientErrors.pronunciation = "Pronunciation is required.";
+        if (!showNewList && !data.wordlist_id)
+            clientErrors.wordlist_id = "Please select or create a word list.";
+        if (showNewList && !data.new_wordlist_title.trim())
+            clientErrors.new_wordlist_title = "List name is required.";
+
+        if (Object.keys(clientErrors).length > 0) {
+            // Surface errors via Inertia's setError and jump to the first
+            // affected tab so the user sees the problem immediately.
+            Object.entries(clientErrors).forEach(([key, msg]) =>
+                setError(key, msg),
+            );
+            const basicRequired = [
+                "word",
+                "definition",
+                "parts_of_speech_variations",
+                "pronunciation",
+                "wordlist_id",
+                "new_wordlist_title",
+            ];
+            if (basicRequired.some((f) => clientErrors[f])) setTab("basic");
+            return;
+        }
+
         const opts = {
             preserveScroll: true,
             onSuccess: () => {
@@ -253,8 +299,8 @@ export default function UserWordFormDialog({
         "new_wordlist_title",
         "word",
         "pronunciation",
-        "ipa",
-        "bangla_pronunciation",
+        // "ipa",
+        // "bangla_pronunciation",
         "parts_of_speech_variations",
     ];
     const meaningFields = ["definition", "bangla_meaning"];
@@ -315,18 +361,18 @@ export default function UserWordFormDialog({
                     className="flex flex-col flex-1 min-h-0"
                 >
                     {/* Tab bar */}
-                    <TabsList className="mx-5 mt-3 mb-1 h-9 rounded-xl bg-gray-100 shrink-0 grid grid-cols-4 p-1">
+                    <TabsList className="mx-5 mt-3 mb-1 h-9 rounded-xl bg-gray-100 shrink-0 grid grid-cols-3 p-1">
                         {[
                             {
                                 value: "basic",
                                 label: "Basic",
                                 fields: basicFields,
                             },
-                            {
-                                value: "meanings",
-                                label: "Meanings",
-                                fields: meaningFields,
-                            },
+                            // {
+                            //     value: "meanings",
+                            //     label: "Meanings",
+                            //     fields: meaningFields,
+                            // },
                             {
                                 value: "usage",
                                 label: "Usage",
@@ -462,6 +508,7 @@ export default function UserWordFormDialog({
                             <div className="grid grid-cols-2 gap-3">
                                 <Field
                                     label="Part of speech"
+                                    optional={false}
                                     error={errors.parts_of_speech_variations}
                                 >
                                     <Input
@@ -478,6 +525,7 @@ export default function UserWordFormDialog({
                                 </Field>
                                 <Field
                                     label="Pronunciation"
+                                    optional={false}
                                     error={errors.pronunciation}
                                 >
                                     <Input
@@ -494,43 +542,6 @@ export default function UserWordFormDialog({
                                 </Field>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-3">
-                                <Field label="IPA" error={errors.ipa}>
-                                    <Input
-                                        value={data.ipa}
-                                        onChange={(e) =>
-                                            setData("ipa", e.target.value)
-                                        }
-                                        placeholder="/ɪˈfem.ər.əl/"
-                                        className="rounded-lg border-gray-200 h-9 font-mono text-sm"
-                                    />
-                                </Field>
-                            </div>
-
-                            <Field
-                                label="Bangla Pronunciation"
-                                error={errors.bangla_pronunciation}
-                            >
-                                <Input
-                                    value={data.bangla_pronunciation}
-                                    onChange={(e) =>
-                                        setData(
-                                            "bangla_pronunciation",
-                                            e.target.value,
-                                        )
-                                    }
-                                    placeholder="ইফেমেরাল…"
-                                    className="rounded-lg border-gray-200 h-9 text-sm"
-                                    dir="auto"
-                                />
-                            </Field>
-                        </TabsContent>
-
-                        {/* ─── MEANINGS TAB ─── */}
-                        <TabsContent
-                            value="meanings"
-                            className="mt-3 space-y-4 outline-none"
-                        >
                             <Field
                                 label="English Definition"
                                 optional={false}
@@ -546,6 +557,45 @@ export default function UserWordFormDialog({
                                     rows={5}
                                 />
                             </Field>
+
+                            {/* <div className="grid grid-cols-2 gap-3">
+                                <Field label="IPA" error={errors.ipa}>
+                                    <Input
+                                        value={data.ipa}
+                                        onChange={(e) =>
+                                            setData("ipa", e.target.value)
+                                        }
+                                        placeholder="/ɪˈfem.ər.əl/"
+                                        className="rounded-lg border-gray-200 h-9 font-mono text-sm"
+                                    />
+                                </Field>
+                            </div> */}
+
+                            {/* <Field
+                                label="Bangla Pronunciation"
+                                error={errors.bangla_pronunciation}
+                            >
+                                <Input
+                                    value={data.bangla_pronunciation}
+                                    onChange={(e) =>
+                                        setData(
+                                            "bangla_pronunciation",
+                                            e.target.value,
+                                        )
+                                    }
+                                    placeholder="ইফেমেরাল…"
+                                    className="rounded-lg border-gray-200 h-9 text-sm"
+                                    dir="auto"
+                                />
+                            </Field> */}
+                        </TabsContent>
+
+                        {/* ─── MEANINGS TAB ─── */}
+                        {/* <TabsContent
+                            value="meanings"
+                            className="mt-3 space-y-4 outline-none"
+                        >
+                            
                             <Field
                                 label="Bangla Meaning"
                                 error={errors.bangla_meaning}
@@ -564,7 +614,7 @@ export default function UserWordFormDialog({
                                     dir="auto"
                                 />
                             </Field>
-                        </TabsContent>
+                        </TabsContent> */}
 
                         {/* ─── USAGE TAB ─── */}
                         <TabsContent

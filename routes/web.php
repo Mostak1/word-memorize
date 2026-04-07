@@ -63,6 +63,7 @@ Route::get('/run-seeder', function () {
     $seeders = [
         'AcademicWordListSeeder',
         'OxfordWordsSeeder',
+        'GREWordListSeeder',
     ];
 
     foreach ($seeders as $class) {
@@ -104,6 +105,7 @@ Route::get('/run-unseeder', function () {
         $seeders = [
             \Database\Seeders\AcademicWordListSeeder::class,
             \Database\Seeders\OxfordWordsSeeder::class,
+            \Database\Seeders\GREWordListSeeder::class,
         ];
         foreach ($seeders as $seederClass) {
             app($seederClass)->unseed();
