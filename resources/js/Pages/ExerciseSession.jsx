@@ -79,6 +79,7 @@ export default function ExerciseSession({
     backUrl = null,
     bookmarkedWordIds = [],
     streak: initialStreak = null,
+    xp_enabled = true,
 }) {
     const { auth, userSettings } = usePage().props;
     const [streak, setStreak] = useState(initialStreak);
@@ -186,11 +187,11 @@ export default function ExerciseSession({
                 "X-XSRF-TOKEN": csrfToken,
                 Accept: "application/json",
             },
-            body: JSON.stringify({}),
+            body: JSON.stringify({ wordlist_id: wordList?.id }),
         })
             .then((response) => response.json())
             .then((data) => {
-                if (data.xp_awarded) {
+                if (data.xp_awarded && xp_enabled) {
                     setSessionXpAwarded(data.xp_awarded);
                 }
 
@@ -649,6 +650,18 @@ export default function ExerciseSession({
                                 <p className="text-sm font-medium text-yellow-700 dark:text-yellow-300">
                                     Experience Points Earned
                                 </p>
+                            </div>
+                        )}
+
+                        {/* No-XP notice for non-admin word lists */}
+                        {!xp_enabled && (
+                            <div className="bg-gray-50 dark:bg-slate-800/50 rounded-2xl py-4 px-4 mb-8 text-center border border-gray-200 dark:border-slate-700">
+                                <div className="flex items-center justify-center gap-2">
+                                    <Zap className="h-4 w-4 text-gray-400" />
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                                        XP is not awarded for custom word lists
+                                    </p>
+                                </div>
                             </div>
                         )}
 

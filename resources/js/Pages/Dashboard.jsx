@@ -249,7 +249,7 @@ export default function Dashboard({
                                 </div>
                                 <div className="text-center">
                                     <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
-                                        Quiz
+                                        Testing Your Learning
                                     </p>
                                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                                         Practice now
@@ -261,12 +261,12 @@ export default function Dashboard({
 
                     {/* ── Bottom bar: Rate / Settings ── */}
                     <div className="grid grid-cols-3 gap-3 mb-4">
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl py-5 px-3 flex flex-col items-center justify-center gap-2 shadow-sm cursor-pointer hover:shadow-md transition-shadow">
+                        {/* <div className="bg-white dark:bg-slate-900 rounded-2xl py-5 px-3 flex flex-col items-center justify-center gap-2 shadow-sm cursor-pointer hover:shadow-md transition-shadow">
                             <Star className="h-6 w-6 text-amber-400" />
                             <span className="text-xs font-medium text-gray-600 dark:text-gray-400 text-center">
                                 Rate 5 Stars
                             </span>
-                        </div>
+                        </div> */}
 
                         {/* Settings — now a real link */}
                         <Link href={route("settings.show")} className="block">

@@ -49,6 +49,15 @@ class WordListController extends Controller
             ->exists();
     }
 
+    /**
+     * Returns true only when the word list's category was created by the
+     * admin account (admin@gmail.com). Non-admin word lists do not award XP.
+     */
+    private function isAdminWordList(WordList $wordList): bool
+    {
+        return $wordList->category?->creator?->email === 'admin@gmail.com';
+    }
+
     public function show(Request $request, $id)
     {
         $wordList = WordList::with('category')
@@ -73,7 +82,7 @@ class WordListController extends Controller
 
     public function start(SrsService $srsService, $id)
     {
-        $wordList = WordList::with('category')
+        $wordList = WordList::with('category.creator')
             ->where('id', $id)
             ->where('status', true)
             ->withCount('words')
@@ -111,12 +120,13 @@ class WordListController extends Controller
             'totalWordsInList' => $wordList->words_count,
             'bookmarkedWordIds' => $this->bookmarkedIds($words->pluck('id')->toArray()),
             'streak' => auth()->check() ? $this->streakService->getSummary(auth()->user()) : null,
+            'xp_enabled' => $this->isAdminWordList($wordList),
         ]);
     }
 
     public function startSubcategory($wordListId, $subcategoryId)
     {
-        $wordList = WordList::with('category')
+        $wordList = WordList::with('category.creator')
             ->where('id', $wordListId)
             ->where('status', true)
             ->withCount('words')
@@ -139,6 +149,7 @@ class WordListController extends Controller
             'totalWordsInList' => $wordList->words_count,
             'bookmarkedWordIds' => $this->bookmarkedIds($words->pluck('id')->toArray()),
             'streak' => auth()->check() ? $this->streakService->getSummary(auth()->user()) : null,
+            'xp_enabled' => $this->isAdminWordList($wordList),
         ]);
     }
 

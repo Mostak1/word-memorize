@@ -39,7 +39,7 @@ class SrsService
    *
    * Note: Mastery is now tracked entirely in word_progress.box (no separate mastered_words table).
    */
-  public function recordCorrect(User $user, Word $word): WordProgress
+  public function recordCorrect(User $user, Word $word, bool $awardXp = true): WordProgress
   {
     $progress = $this->getOrCreate($user, $word);
     $oldBox = $progress->box;
@@ -66,8 +66,8 @@ class SrsService
         ->where('word_id', $word->id)
         ->delete();
 
-      // Award XP for mastering the word (only on first mastery)
-      if ($oldBox < WordProgress::MASTERED_BOX) {
+      // Award XP for mastering the word (only on first mastery, only for admin lists)
+      if ($oldBox < WordProgress::MASTERED_BOX && $awardXp) {
         $this->xpService->awardMasteryXp($user, $word->id);
       }
     }

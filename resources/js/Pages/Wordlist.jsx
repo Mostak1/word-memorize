@@ -384,6 +384,21 @@ export default function Wordlist({
                                 </BreadcrumbItem>
                                 <BreadcrumbSeparator />
                                 <BreadcrumbItem>
+                                    <BreadcrumbLink
+                                        asChild
+                                        className="hover:text-[#e70013] hover:underline transition-colors duration-200"
+                                    >
+                                        <Link
+                                            href={route(
+                                                "wordlistcategory.index",
+                                            )}
+                                        >
+                                            Wordlist Categories
+                                        </Link>
+                                    </BreadcrumbLink>
+                                </BreadcrumbItem>
+                                <BreadcrumbSeparator />
+                                <BreadcrumbItem>
                                     <BreadcrumbPage className="font-semibold">
                                         {currentCategory || currentDifficulty}
                                     </BreadcrumbPage>

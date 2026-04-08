@@ -34,7 +34,7 @@ class ReviewWordController extends Controller
     {
         $user = $request->user();
 
-        $this->srsService->recordCorrect($user, $word);
+        $this->srsService->recordCorrect($user, $word, $this->wordListAwardsXp($word));
         // $this->streakService->recordActivity($user);
         if ($request->input('from') !== 'session') {
             $this->streakService->recordActivity($user);
@@ -72,6 +72,27 @@ class ReviewWordController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
+        // Only award XP / advance the streak when the session came from an
+        // admin-created word list. User-created lists are excluded.
+        $wordlistId = $request->input('wordlist_id');
+        $xpEnabled = false;
+
+        if ($wordlistId) {
+            $category = \App\Models\WordList::with('category.creator')
+                ->select('id', 'word_list_category_id')
+                ->find((int) $wordlistId)
+                    ?->category;
+
+            $xpEnabled = $category?->creator?->email === 'admin@gmail.com';
+        }
+
+        if (!$xpEnabled) {
+            return response()->json([
+                'xp_awarded' => 0,
+                'streak' => $this->streakService->getSummary($user),
+            ]);
+        }
+
         $this->streakService->recordActivity($user);
 
         // Award XP for completing the session
@@ -82,6 +103,17 @@ class ReviewWordController extends Controller
             'xp_awarded' => $xpAwarded,
             'streak' => $this->streakService->getSummary($user),
         ]);
+    }
+
+    /**
+     * Returns true only when the word's category was created by the admin
+     * account (admin@gmail.com). Non-admin / user-created word lists do not
+     * award XP or count toward streaks.
+     */
+    private function wordListAwardsXp(Word $word): bool
+    {
+        $word->loadMissing('wordList.category.creator');
+        return $word->wordList?->category?->creator?->email === 'admin@gmail.com';
     }
 
     private function bookmarkedIds(array $wordIds): array
