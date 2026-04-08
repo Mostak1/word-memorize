@@ -405,6 +405,7 @@ export default function Quiz({
     noUsableSentences = false,
     matchPassThreshold = 3,
     wordListTitle = null,
+    wordlistId = null,
 }) {
     const [current, setCurrent] = useState(0);
     const [selected, setSelected] = useState(null);
@@ -457,8 +458,31 @@ export default function Quiz({
         }
     };
 
-    const handleNext = () => {
+    const handleNext = async () => {
         if (current + 1 >= total) {
+            // POST result to server — saves QuizAttempt when wordlistId is set
+            try {
+                const body = wordlistId
+                    ? {
+                          wordlist_id: wordlistId,
+                          correct_count: score,
+                          total_questions: total,
+                      }
+                    : {};
+                await fetch(route("quiz.finish"), {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN":
+                            document
+                                .querySelector('meta[name="csrf-token"]')
+                                ?.getAttribute("content") ?? "",
+                    },
+                    body: JSON.stringify(body),
+                });
+            } catch (e) {
+                console.error(e);
+            }
             setDone(true);
         } else {
             setCurrent((c) => c + 1);

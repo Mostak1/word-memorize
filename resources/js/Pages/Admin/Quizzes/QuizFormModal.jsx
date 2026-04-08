@@ -19,7 +19,13 @@ import {
 } from "@/Components/ui/select";
 import { BookOpen, Loader2, AlertCircle } from "lucide-react";
 
-export default function QuizFormModal({ open, onClose, quiz, wordLists = [] }) {
+export default function QuizFormModal({
+    open,
+    onClose,
+    quiz,
+    wordLists = [],
+    preselectedWordlistId = null, // ← pre-select a word list (e.g. when opened from WordList/Show)
+}) {
     const [selectedWordList, setSelectedWordList] = useState(null);
     const [loadingWords, setLoadingWords] = useState(false);
     const [wordPreview, setWordPreview] = useState(null);
@@ -33,25 +39,34 @@ export default function QuizFormModal({ open, onClose, quiz, wordLists = [] }) {
 
     useEffect(() => {
         if (open) {
+            const initialWordlistId = quiz?.wordlist_id
+                ? String(quiz.wordlist_id)
+                : preselectedWordlistId
+                  ? String(preselectedWordlistId)
+                  : "";
+
             setData({
-                wordlist_id: quiz?.wordlist_id ? String(quiz.wordlist_id) : "",
+                wordlist_id: initialWordlistId,
                 title: quiz?.title || "",
                 pass_mark: quiz?.pass_mark || 70,
                 is_active: quiz?.is_active ?? true,
             });
-            setSelectedWordList(null);
-            setWordPreview(null);
+
+            // Hydrate word-list preview for preselected list
+            if (initialWordlistId && !quiz) {
+                const wl = wordLists.find(
+                    (w) => String(w.id) === initialWordlistId,
+                );
+                setSelectedWordList(wl || null);
+                if (wl) fetchWordPreview(initialWordlistId);
+            } else {
+                setSelectedWordList(null);
+                setWordPreview(null);
+            }
         }
     }, [open]);
 
-    // When a wordlist is picked, fetch its word count for the preview banner
-    const handleWordListChange = async (value) => {
-        setData("wordlist_id", value);
-        const wl = wordLists.find((w) => String(w.id) === value);
-        setSelectedWordList(wl || null);
-        setWordPreview(null);
-
-        if (!value) return;
+    const fetchWordPreview = async (value) => {
         setLoadingWords(true);
         try {
             const res = await fetch(
@@ -66,6 +81,16 @@ export default function QuizFormModal({ open, onClose, quiz, wordLists = [] }) {
         }
     };
 
+    // When a wordlist is picked, fetch its word count for the preview banner
+    const handleWordListChange = async (value) => {
+        setData("wordlist_id", value);
+        const wl = wordLists.find((w) => String(w.id) === value);
+        setSelectedWordList(wl || null);
+        setWordPreview(null);
+        if (!value) return;
+        fetchWordPreview(value);
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
         if (quiz) {
@@ -77,6 +102,14 @@ export default function QuizFormModal({ open, onClose, quiz, wordLists = [] }) {
                 onSuccess: () => {
                     reset();
                     onClose();
+
+                    // if (isFromWordList && page.props.quiz?.id) {
+                    //     // Redirect to the newly created quiz's show page
+                    //     window.location.href = route(
+                    //         "admin.quizzes.show",
+                    //         page.props.quiz.id,
+                    //     );
+                    // }
                 },
             });
         }
@@ -102,6 +135,10 @@ export default function QuizFormModal({ open, onClose, quiz, wordLists = [] }) {
                             <Select
                                 value={data.wordlist_id}
                                 onValueChange={handleWordListChange}
+                                disabled={
+                                    !!preselectedWordlistId &&
+                                    wordLists.length === 1
+                                }
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select a word list…" />

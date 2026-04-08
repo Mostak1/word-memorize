@@ -1005,8 +1005,7 @@ export default function ExerciseSession({
                                     <div className="mx-4 mb-4 border-l-4 border-green-400 dark:border-green-600 pl-3 py-1">
                                         <p className="text-base text-gray-800 dark:text-gray-200 leading-snug">
                                             {highlightWord(
-                                                word.image_related_sentence ||
-                                                    word.example_sentences,
+                                                word.example_sentences,
                                                 word.word,
                                             )}
                                         </p>

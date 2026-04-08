@@ -12,6 +12,7 @@ import {
 } from "@/Components/ui/tooltip";
 import WordFormDialog from "@/Pages/Admin/Words/WordFormDialog";
 import WordListFormDialog from "@/Pages/Admin/WordLists/WordListFormDialog";
+import QuizFormModal from "@/Pages/Admin/Quizzes/QuizFormModal";
 import {
     Table,
     TableBody,
@@ -37,11 +38,6 @@ import {
     AlertDialogTitle,
 } from "@/Components/ui/alert-dialog";
 import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
-} from "@/Components/ui/collapsible";
-import {
     ArrowLeft,
     Plus,
     MoreVertical,
@@ -52,8 +48,9 @@ import {
     ArrowUpDown,
     ChevronLeft,
     ChevronRight,
-    Layers,
     ChevronDown,
+    ListChecks,
+    ExternalLink,
 } from "lucide-react";
 import { useState, useCallback, useRef } from "react";
 import { toast } from "sonner";
@@ -74,15 +71,14 @@ const difficultyColors = {
 
 const columnHelper = createColumnHelper();
 
-export default function Show({ wordList, words, filters }) {
+export default function Show({ wordList, words, filters, quiz = null }) {
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [editingWord, setEditingWord] = useState(null);
-    const [editingList, setEditingList] = useState(null); // ← was editingGroup
+    const [editingList, setEditingList] = useState(null);
     const [deletingWord, setDeletingWord] = useState(null);
     const [search, setSearch] = useState(filters?.search ?? "");
     const [perPage, setPerPage] = useState(filters?.per_page ?? 10);
-    const [subDialogOpen, setSubDialogOpen] = useState(false);
-    const [subPanelOpen, setSubPanelOpen] = useState(false);
+    const [quizModalOpen, setQuizModalOpen] = useState(false);
     const debounceRef = useRef(null);
 
     // Debounced server-side search
@@ -343,7 +339,7 @@ export default function Show({ wordList, words, filters }) {
                 </div>
 
                 {/* Header */}
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between gap-4">
                     <div className="space-y-2">
                         <h1 className="text-3xl font-bold tracking-tight">
                             {wordList.title}
@@ -360,7 +356,40 @@ export default function Show({ wordList, words, filters }) {
                             <Badge variant="outline">${wordList.price}</Badge>
                         </div>
                     </div>
-                    <div className="flex gap-2">
+
+                    <div className="flex items-center gap-2 flex-wrap justify-end">
+                        {/* ── Quiz button ───────────────────────────── */}
+                        {quiz ? (
+                            /* Quiz exists → navigate to the quiz management page */
+                            <Button
+                                variant="outline"
+                                onClick={() =>
+                                    router.visit(
+                                        route("admin.quizzes.show", quiz.id),
+                                    )
+                                }
+                            >
+                                <ListChecks className="mr-2 h-4 w-4 text-primary" />
+                                Manage Quiz
+                                <Badge
+                                    variant="secondary"
+                                    className="ml-2 px-1.5 py-0 text-[10px]"
+                                >
+                                    {quiz.questions_count} Q
+                                </Badge>
+                                <ExternalLink className="ml-1.5 h-3 w-3 text-muted-foreground" />
+                            </Button>
+                        ) : (
+                            /* No quiz → open create modal */
+                            <Button
+                                variant="outline"
+                                onClick={() => setQuizModalOpen(true)}
+                            >
+                                <ListChecks className="mr-2 h-4 w-4" />
+                                Add Quiz
+                            </Button>
+                        )}
+
                         <Button
                             variant="outline"
                             onClick={() => setEditingList(wordList)}
@@ -584,6 +613,14 @@ export default function Show({ wordList, words, filters }) {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* Create Quiz modal (shown when no quiz exists yet) */}
+            <QuizFormModal
+                open={quizModalOpen}
+                onClose={() => setQuizModalOpen(false)}
+                wordLists={[wordList]}
+                preselectedWordlistId={wordList.id}
+            />
         </AdminLayout>
     );
 }

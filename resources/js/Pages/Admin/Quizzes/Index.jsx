@@ -89,7 +89,7 @@ export default function Index({ quizzes, wordLists = [] }) {
                                                     {quiz.id}
                                                 </TableCell>
                                                 <TableCell>
-                                                    {quiz.wordList?.title ||
+                                                    {quiz.word_list?.title ||
                                                         "—"}
                                                 </TableCell>
                                                 <TableCell>

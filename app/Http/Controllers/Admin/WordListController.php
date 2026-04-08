@@ -11,30 +11,10 @@ use Log;
 
 class WordListController extends Controller
 {
-    // public function index(Request $request)
-    // {
-    //     $query = WordList::with('category')
-    //         ->withCount('words')
-    //         ->latest();
-
-    //     if ($request->filled('category')) {
-    //         $query->where('word_list_category_id', $request->category);
-    //     }
-
-    //     $wordLists = $query->paginate(10)->withQueryString();
-    //     $categories = WordListCategory::orderBy('name')->get(['id', 'name']);
-
-    //     return Inertia::render('Admin/WordLists/Index', [
-    //         'wordLists' => $wordLists,
-    //         'categories' => $categories,
-    //         'filters' => $request->only('category'),
-    //     ]);
-    // }
-
     public function index()
     {
         $categories = WordListCategory::with([
-            'creator:id,name,email,role',   // ← updated from is_admin to role
+            'creator:id,name,email,role',
             'wordLists' => function ($query) {
                 $query->withCount('words')
                     ->orderBy('id', 'asc');
@@ -62,7 +42,6 @@ class WordListController extends Controller
             'is_public' => 'boolean',
         ]);
 
-        // Cast empty string from the "No category" select option to null
         $validated['word_list_category_id'] = $validated['word_list_category_id'] ?: null;
         $validated['created_by'] = auth()->id();
 
@@ -95,9 +74,16 @@ class WordListController extends Controller
             ->paginate($perPage)
             ->withQueryString();
 
+        // Load the first (most recent) quiz for this word list, with question count
+        $quiz = $wordList->quizzes()
+            ->withCount('questions')
+            ->latest()
+            ->first();
+
         return Inertia::render('Admin/WordLists/Show', [
             'wordList' => $wordList->load('category'),
             'words' => $words,
+            'quiz' => $quiz,           // null if none exists
             'filters' => [
                 'search' => $search,
                 'sort' => $sortCol,

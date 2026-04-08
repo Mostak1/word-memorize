@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\QuizAttempt;
 use App\Models\WordList;
 use App\Models\WordListCategory;
 use App\Models\WordListOrder;
@@ -106,13 +107,39 @@ class WordListCategoryController extends Controller
             }
         }
 
+        // Wordlists that have at least one active DB quiz
+        $hasQuizIds = [];
+        if (!empty($ids)) {
+            $hasQuizIds = \App\Models\Quiz::where('is_active', true)
+                ->whereIn('wordlist_id', $ids)
+                ->pluck('wordlist_id')
+                ->unique()
+                ->values()
+                ->toArray();
+        }
+
+        // Quiz-unlocked: wordlists where is_locked=true but the user has a passing attempt
+        $quizUnlockedIds = [];
+        if (auth()->check() && !empty($ids)) {
+            $quizUnlockedIds = QuizAttempt::where('user_id', auth()->id())
+                ->where('passed', true)
+                ->join('quizzes', 'quiz_attempts.quiz_id', '=', 'quizzes.id')
+                ->whereIn('quizzes.wordlist_id', $ids)
+                ->pluck('quizzes.wordlist_id')
+                ->unique()
+                ->values()
+                ->toArray();
+        }
+
         return Inertia::render('Wordlist', [
             'wordLists' => $wordLists,
             'category' => $category,
             'currentCategory' => $category->name,
             'masteredCounts' => $masteredCounts,
-            'categoryOrder' => $categoryOrder,   // single order for the whole category
+            'categoryOrder' => $categoryOrder,
             'quizEligibleIds' => $quizEligibleIds,
+            'hasQuizIds' => $hasQuizIds,
+            'quizUnlockedIds' => $quizUnlockedIds,
             'bkashNumber' => env('BKASH_NUMBER', '01825236112'),
         ]);
     }

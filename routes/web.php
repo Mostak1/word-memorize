@@ -123,9 +123,7 @@ Route::get('/links', [PublicLinkTreeController::class, 'show'])->name('link-tree
 Route::get('/l/{link}', [PublicLinkTreeController::class, 'redirect'])->name('link-tree.redirect');
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
-Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
 // ── Public wordlist routes ─────────────────────────────────────────────────────
 Route::get('/wordListCategories', [WordListCategoryController::class, 'index'])->name('wordlistcategory.index');
@@ -168,9 +166,12 @@ Route::middleware('auth')->group(function () {
     Route::post('words/session-complete', [ReviewWordController::class, 'sessionComplete'])->name('word.session-complete');
 
     // Quiz
+    Route::post('/quiz/wordlist/finish', [QuizController::class, 'finishWordlistQuiz'])->name('quiz.wordlist.finish');
+
     Route::get('/quiz', [QuizController::class, 'index'])->name('quiz.index');
     Route::get('/quiz/wordlist/{wordlist}', [QuizController::class, 'indexByWordlist'])->name('quiz.wordlist');
     Route::post('/quiz/finish', [QuizController::class, 'finish'])->name('quiz.finish');
+
 
     // Mastered / review lists
     Route::get('/my/mastered', [WordListController::class, 'masteredWords'])->name('words.mastered');

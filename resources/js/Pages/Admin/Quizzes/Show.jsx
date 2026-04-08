@@ -3,8 +3,9 @@ import { Head, router } from "@inertiajs/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { Button } from "@/Components/ui/button";
 import { Badge } from "@/Components/ui/badge";
+import QuizFormModal from "./QuizFormModal";
 import QuizQuestionFormModal from "./QuizQuestionFormModal";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Plus,
     Edit,
@@ -15,7 +16,25 @@ import {
     GitMerge,
     CheckSquare,
     Pencil,
+    GripVertical,
 } from "lucide-react";
+
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+} from "@dnd-kit/core";
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 // ── Type display config ───────────────────────────────────────────────────────
 const TYPE_CONFIG = {
@@ -39,11 +58,11 @@ const TYPE_CONFIG = {
         icon: ToggleLeft,
         color: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
     },
-    fill_blank: {
-        label: "Fill Blank",
-        icon: Pencil,
-        color: "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300",
-    },
+    // fill_blank: {
+    //     label: "Fill Blank",
+    //     icon: Pencil,
+    //     color: "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300",
+    // },
 };
 
 function StatCard({ label, value }) {
@@ -59,7 +78,49 @@ function StatCard({ label, value }) {
     );
 }
 
-function QuestionCard({ question, index, onEdit, onDelete }) {
+function SortableQuestionCard({ question, index, onEdit, onDelete }) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id: question.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.4 : 1,
+    };
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            {...attributes}
+            className="relative"
+        >
+            {/* Drag handle */}
+            <div
+                {...listeners}
+                className="absolute left-3 top-5 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground z-10"
+            >
+                <GripVertical className="h-5 w-5" />
+            </div>
+
+            <QuestionCard
+                question={question}
+                index={index}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                className="pl-11"
+            />
+        </div>
+    );
+}
+
+function QuestionCard({ question, index, onEdit, onDelete, className = "" }) {
     const cfg = TYPE_CONFIG[question.type] || {
         label: question.type,
         color: "bg-gray-100 text-gray-600",
@@ -67,10 +128,12 @@ function QuestionCard({ question, index, onEdit, onDelete }) {
     const Icon = cfg.icon;
 
     return (
-        <div className="border rounded-xl p-4 bg-card hover:shadow-sm transition-shadow">
+        <div
+            className={`border rounded-xl p-3 bg-card hover:shadow-sm transition-shadow ${className}`}
+        >
             <div className="flex justify-between items-start gap-4">
-                <div className="flex-1 min-w-0 space-y-2">
-                    {/* Header row */}
+                <div className="flex-1 min-w-0 space-y-1.5">
+                    {/* Header */}
                     <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-semibold text-muted-foreground shrink-0">
                             #{index + 1}
@@ -91,17 +154,17 @@ function QuestionCard({ question, index, onEdit, onDelete }) {
                         )}
                     </div>
 
-                    {/* Question text */}
-                    <p className="font-medium leading-snug">
+                    {/* Question text (compact) */}
+                    <p className="font-medium leading-tight text-sm line-clamp-2">
                         {question.question}
                     </p>
 
-                    {/* MCQ options */}
+                    {/* MCQ options – compact */}
                     {(question.type === "mcq_single" ||
                         question.type === "mcq_multiple") &&
                         question.options?.length > 0 && (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                                {question.options.map((opt, i) => {
+                            <div className="grid grid-cols-2 gap-1 text-xs">
+                                {question.options.slice(0, 4).map((opt, i) => {
                                     const isCorrect =
                                         question.type === "mcq_single"
                                             ? opt === question.correct_answer
@@ -114,11 +177,7 @@ function QuestionCard({ question, index, onEdit, onDelete }) {
                                     return (
                                         <div
                                             key={i}
-                                            className={`text-xs px-2.5 py-1.5 rounded-md border ${
-                                                isCorrect
-                                                    ? "border-green-500 bg-green-50 text-green-700 font-medium dark:bg-green-900/30 dark:text-green-300"
-                                                    : "border-border text-muted-foreground"
-                                            }`}
+                                            className={`px-2 py-1 rounded border text-foreground/90 ${isCorrect ? "border-green-500 bg-green-50 dark:bg-green-900/30" : "border-border"}`}
                                         >
                                             {isCorrect ? "✓ " : ""}
                                             {opt}
@@ -128,27 +187,38 @@ function QuestionCard({ question, index, onEdit, onDelete }) {
                             </div>
                         )}
 
-                    {/* Matching pairs */}
+                    {/* Matching – compact */}
                     {question.type === "matching" &&
                         question.matching_pairs?.length > 0 && (
-                            <div className="space-y-1">
-                                {question.matching_pairs.map((pair, i) => (
-                                    <div
-                                        key={i}
-                                        className="flex items-center gap-2 text-xs text-muted-foreground"
-                                    >
-                                        <span className="font-medium text-foreground">
-                                            {pair.left}
-                                        </span>
-                                        <span>↔</span>
-                                        <span>{pair.right}</span>
-                                    </div>
-                                ))}
+                            <div className="text-xs text-muted-foreground space-y-px">
+                                {question.matching_pairs
+                                    .slice(0, 3)
+                                    .map((pair, i) => (
+                                        <div
+                                            key={i}
+                                            className="flex items-center gap-2"
+                                        >
+                                            <span className="font-medium">
+                                                {pair.left}
+                                            </span>
+                                            <span className="text-amber-500">
+                                                ↔
+                                            </span>
+                                            <span>{pair.right}</span>
+                                        </div>
+                                    ))}
+                                {question.matching_pairs.length > 3 && (
+                                    <p className="text-[10px] text-muted-foreground">
+                                        +{question.matching_pairs.length - 3}{" "}
+                                        more
+                                    </p>
+                                )}
                             </div>
                         )}
 
-                    {/* True/False */}
-                    {question.type === "true_false" && (
+                    {/* TF / Fill */}
+                    {(question.type === "true_false" ||
+                        question.type === "fill_blank") && (
                         <p className="text-xs text-muted-foreground">
                             Correct:{" "}
                             <span className="font-semibold text-green-600">
@@ -157,41 +227,31 @@ function QuestionCard({ question, index, onEdit, onDelete }) {
                         </p>
                     )}
 
-                    {/* Fill blank */}
-                    {question.type === "fill_blank" && (
-                        <p className="text-xs text-muted-foreground">
-                            Answer:{" "}
-                            <span className="font-semibold text-foreground">
-                                {question.correct_answer}
-                            </span>
-                        </p>
-                    )}
-
-                    {/* Explanation */}
+                    {/* Explanation (smaller) */}
                     {question.explanation && (
-                        <p className="text-xs text-muted-foreground border-l-2 border-border pl-2.5 italic">
+                        <p className="text-xs text-muted-foreground border-l-2 border-border pl-2 italic line-clamp-1">
                             {question.explanation}
                         </p>
                     )}
                 </div>
 
-                {/* Action buttons */}
+                {/* Actions */}
                 <div className="flex gap-1 shrink-0">
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
+                        className="h-7 w-7"
                         onClick={() => onEdit(question)}
                     >
-                        <Edit className="h-4 w-4" />
+                        <Edit className="h-3.5 w-3.5" />
                     </Button>
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+                        className="h-7 w-7 text-red-500 hover:text-red-600"
                         onClick={() => onDelete(question)}
                     >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                 </div>
             </div>
@@ -202,18 +262,72 @@ function QuestionCard({ question, index, onEdit, onDelete }) {
 export default function Show({ quiz, words = [] }) {
     const [questionModalOpen, setQuestionModalOpen] = useState(false);
     const [editingQuestion, setEditingQuestion] = useState(null);
+    const [quizEditModalOpen, setQuizEditModalOpen] = useState(false);
 
-    const openAdd = () => {
+    const [questionsList, setQuestionsList] = useState(quiz.questions || []);
+
+    useEffect(() => {
+        setQuestionsList(quiz.questions || []);
+    }, [quiz.questions]);
+
+    // Drag & drop sensors
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        }),
+    );
+
+    const handleDragEnd = (event) => {
+        const { active, over } = event;
+        if (!over || active.id === over.id) return;
+
+        setQuestionsList((items) => {
+            const oldIndex = items.findIndex((i) => i.id === active.id);
+            const newIndex = items.findIndex((i) => i.id === over.id);
+            const newItems = arrayMove(items, oldIndex, newIndex);
+
+            // Re-assign sequential sort_order
+            const reordered = newItems.map((item, idx) => ({
+                ...item,
+                sort_order: idx,
+            }));
+
+            // Persist to server
+            router.patch(
+                route("admin.quizzes.questions.reorder", quiz.id),
+                {
+                    order: reordered.map((q) => ({
+                        id: q.id,
+                        sort_order: q.sort_order,
+                    })),
+                },
+                { preserveScroll: true },
+            );
+
+            return reordered;
+        });
+    };
+
+    const openAddQuestion = () => {
         setEditingQuestion(null);
         setQuestionModalOpen(true);
     };
-    const openEdit = (q) => {
+    const openEditQuestion = (q) => {
         setEditingQuestion(q);
         setQuestionModalOpen(true);
     };
-    const handleClose = () => {
+    const handleQuestionModalClose = () => {
         setQuestionModalOpen(false);
         setEditingQuestion(null);
+    };
+
+    const openEditQuiz = () => {
+        setQuizEditModalOpen(true);
+    };
+
+    const handleQuizModalClose = () => {
+        setQuizEditModalOpen(false);
     };
 
     const deleteQuestion = (q) => {
@@ -272,9 +386,17 @@ export default function Show({ quiz, words = [] }) {
                             </div>
                         </div>
                     </div>
-                    <Button onClick={openAdd}>
-                        <Plus className="h-4 w-4 mr-2" /> Add Question
-                    </Button>
+                    {/* Action Buttons */}
+                    <div className="flex gap-3">
+                        <Button variant="outline" onClick={openEditQuiz}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit Quiz
+                        </Button>
+                        <Button onClick={openAddQuestion}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Question
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Stats */}
@@ -294,30 +416,22 @@ export default function Show({ quiz, words = [] }) {
                     </div>
                 )}
 
-                {/* Questions */}
+                {/* Questions – now draggable */}
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-3">
                         <CardTitle>
-                            Questions ({quiz.questions.length})
+                            Questions ({questionsList.length})
                         </CardTitle>
-                        {quiz.questions.length > 0 && (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={openAdd}
-                            >
-                                <Plus className="h-3.5 w-3.5 mr-1" /> Add
-                            </Button>
-                        )}
                     </CardHeader>
                     <CardContent>
-                        {quiz.questions.length === 0 ? (
+                        {questionsList.length === 0 ? (
+                            /* empty state unchanged */
                             <div className="py-14 text-center text-muted-foreground space-y-2">
                                 <ListChecks className="h-10 w-10 mx-auto opacity-25" />
                                 <p className="text-sm">
                                     No questions yet.{" "}
                                     <button
-                                        onClick={openAdd}
+                                        onClick={openAddQuestion}
                                         className="text-primary underline underline-offset-2"
                                     >
                                         Add the first question
@@ -325,25 +439,45 @@ export default function Show({ quiz, words = [] }) {
                                 </p>
                             </div>
                         ) : (
-                            <div className="space-y-3">
-                                {quiz.questions.map((q, index) => (
-                                    <QuestionCard
-                                        key={q.id}
-                                        question={q}
-                                        index={index}
-                                        onEdit={openEdit}
-                                        onDelete={deleteQuestion}
-                                    />
-                                ))}
-                            </div>
+                            <DndContext
+                                sensors={sensors}
+                                collisionDetection={closestCenter}
+                                onDragEnd={handleDragEnd}
+                            >
+                                <SortableContext
+                                    items={questionsList.map((q) => q.id)}
+                                    strategy={verticalListSortingStrategy}
+                                >
+                                    <div className="space-y-3">
+                                        {questionsList.map((q, index) => (
+                                            <SortableQuestionCard
+                                                key={q.id}
+                                                question={q}
+                                                index={index}
+                                                onEdit={openEditQuestion}
+                                                onDelete={deleteQuestion}
+                                            />
+                                        ))}
+                                    </div>
+                                </SortableContext>
+                            </DndContext>
                         )}
                     </CardContent>
                 </Card>
             </div>
 
+            {/* Quiz Edit Modal */}
+            <QuizFormModal
+                open={quizEditModalOpen}
+                onClose={handleQuizModalClose}
+                quiz={quiz} // Passing the current quiz for editing
+                wordLists={[]} // Not needed in edit mode
+            />
+
+            {/* Question Form Modal */}
             <QuizQuestionFormModal
                 open={questionModalOpen}
-                onClose={handleClose}
+                onClose={handleQuestionModalClose}
                 quizId={quiz.id}
                 question={editingQuestion}
                 words={words}

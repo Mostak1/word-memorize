@@ -10,97 +10,106 @@ use Inertia\Inertia;
 
 class QuizController extends Controller
 {
-  public function index()
-  {
-    $quizzes = Quiz::with(['wordList:id,title', 'creator:id,name'])
-      ->withCount('questions')
-      ->latest()
-      ->paginate(15);
+	public function index()
+	{
+		$quizzes = Quiz::with(['wordList:id,title', 'creator:id,name'])
+			->withCount('questions')
+			->latest()
+			->paginate(15);
 
-    $wordLists = WordList::select('id', 'title')
-      ->orderBy('title')
-      ->get();
+		$wordLists = WordList::select('id', 'title')
+			->orderBy('title')
+			->get();
 
-    return Inertia::render('Admin/Quizzes/Index', [
-      'quizzes' => $quizzes,
-      'wordLists' => $wordLists,
-    ]);
-  }
+		return Inertia::render('Admin/Quizzes/Index', [
+			'quizzes' => $quizzes,
+			'wordLists' => $wordLists,
+		]);
+	}
 
-  public function store(Request $request)
-  {
-    $data = $request->validate([
-      'wordlist_id' => 'required|exists:wordlists,id',
-      'title' => 'nullable|string|max:255',
-      'pass_mark' => 'required|integer|min:1|max:100',
-      'is_active' => 'boolean',
-    ]);
+	public function store(Request $request)
+	{
+		$validated = $request->validate([
+			'wordlist_id' => 'required|exists:wordlists,id',
+			'title' => 'nullable|string|max:255',
+			'pass_mark' => 'required|integer|min:1|max:100',
+			'is_active' => 'boolean',
+		]);
 
-    Quiz::create(array_merge($data, [
-      'created_by' => auth()->id(),
-    ]));
+		$quiz = Quiz::create([
+			'wordlist_id' => $validated['wordlist_id'],
+			'title' => $validated['title'] ?? null,
+			'pass_mark' => $validated['pass_mark'],
+			'is_active' => $validated['is_active'] ?? true,
+			'created_by' => auth()->id(),
+		]);
 
-    return redirect()->route('admin.quizzes.index')
-      ->with('success', 'Quiz created successfully.');
-  }
+		return redirect()->route('admin.quizzes.show', $quiz->id)
+			->with('success', 'Quiz created successfully. Now add questions to it.');
 
-  public function show(Quiz $quiz)
-  {
-    $quiz->load([
-      'wordList:id,title',
-      'questions' => function ($q) {
-        $q->with('word:id,word,definition')->orderBy('sort_order');
-      },
-      'creator:id,name',
-    ]);
+		// return redirect()->route('admin.quizzes.index')
+		//   ->with('success', 'Quiz created successfully.');
+	}
 
-    // Pass the wordlist's words so admin can link questions to words
-    $words = $quiz->wordList
-      ? $quiz->wordList->words()->select('id', 'word', 'definition')->orderBy('word')->get()
-      : collect();
+	public function show(Quiz $quiz)
+	{
 
-    return Inertia::render('Admin/Quizzes/Show', [
-      'quiz' => $quiz,
-      'words' => $words,
-    ]);
-  }
+		$quiz->load([
+			'wordList',
+			'questions' => function ($q) {
+				$q->with('word')->orderBy('sort_order');
+			}
+		]);
 
-  public function update(Request $request, Quiz $quiz)
-  {
-    $data = $request->validate([
-      'title' => 'nullable|string|max:255',
-      'pass_mark' => 'required|integer|min:1|max:100',
-      'is_active' => 'boolean',
-    ]);
+		$words = $quiz->wordList
+			? $quiz->wordList->words()
+				->select('id', 'word', 'definition')
+				->orderBy('word')
+				->get()
+			: collect();
 
-    $quiz->update($data);
+		return Inertia::render('Admin/Quizzes/Show', [
+			'quiz' => $quiz,
+			'words' => $words,
+		]);
+	}
 
-    return back()->with('success', 'Quiz updated successfully.');
-  }
+	public function update(Request $request, Quiz $quiz)
+	{
+		$data = $request->validate([
+			'title' => 'nullable|string|max:255',
+			'pass_mark' => 'required|integer|min:1|max:100',
+			'is_active' => 'boolean',
+		]);
 
-  public function destroy(Quiz $quiz)
-  {
-    $quiz->delete();
+		$quiz->update($data);
 
-    return redirect()->route('admin.quizzes.index')
-      ->with('success', 'Quiz deleted successfully.');
-  }
+		return back()->with('success', 'Quiz updated successfully.');
+	}
 
-  /**
-   * Return word count + words for a given word list.
-   * Called by QuizFormModal via fetch() when a word list is selected.
-   * Route: GET admin/quizzes/{wordList}/words  → admin.quizzes.wordlist-words
-   */
-  public function wordListWords(WordList $wordList)
-  {
-    $words = $wordList->words()
-      ->select('id', 'word', 'definition')
-      ->orderBy('word')
-      ->get();
+	public function destroy(Quiz $quiz)
+	{
+		$quiz->delete();
 
-    return response()->json([
-      'count' => $words->count(),
-      'words' => $words,
-    ]);
-  }
+		return redirect()->route('admin.quizzes.index')
+			->with('success', 'Quiz deleted successfully.');
+	}
+
+	/**
+	 * Return word count + words for a given word list.
+	 * Called by QuizFormModal via fetch() when a word list is selected.
+	 * Route: GET admin/quizzes/{wordList}/words  → admin.quizzes.wordlist-words
+	 */
+	public function wordListWords(WordList $wordList)
+	{
+		$words = $wordList->words()
+			->select('id', 'word', 'definition')
+			->orderBy('word')
+			->get();
+
+		return response()->json([
+			'count' => $words->count(),
+			'words' => $words,
+		]);
+	}
 }

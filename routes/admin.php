@@ -5,7 +5,7 @@ use App\Http\Controllers\Admin\LinkTreeController;
 use App\Http\Controllers\Admin\LinkTreeLinkController;
 use App\Http\Controllers\Admin\MasteredWordController;
 use App\Http\Controllers\Admin\QuizController;
-use App\Http\Controllers\Admin\QuizQuestionController;   // ← was missing
+use App\Http\Controllers\Admin\QuizQuestionController;
 use App\Http\Controllers\Admin\ReviewWordController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WordListCategoryController;
@@ -106,13 +106,14 @@ Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin', 'as' => 'a
         Route::delete('/{quiz}', [QuizController::class, 'destroy'])->name('destroy');
 
         // Fetch words for a word list — used by QuizFormModal on wordlist select
-        // GET admin/quizzes/{wordList}/words → admin.quizzes.wordlist-words
         Route::get('/wordlist/{wordList}/words', [QuizController::class, 'wordListWords'])
             ->name('wordlist-words');
 
         // Quiz Questions
         Route::prefix('{quiz}/questions')->name('questions.')->group(function () {
             Route::post('/', [QuizQuestionController::class, 'store'])->name('store');
+            Route::patch('/reorder', [QuizQuestionController::class, 'reorder'])->name('reorder');
+
             Route::patch('/{question}', [QuizQuestionController::class, 'update'])->name('update');
             Route::delete('/{question}', [QuizQuestionController::class, 'destroy'])->name('destroy');
         });

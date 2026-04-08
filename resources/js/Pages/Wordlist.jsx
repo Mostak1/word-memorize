@@ -239,6 +239,87 @@ function CategoryLockBanner({ category, categoryOrder, user, onPurchase }) {
     );
 }
 
+/** Card shown when a word list requires passing a quiz first */
+function QuizLockedCard({
+    wordList,
+    color,
+    star,
+    // quizEligibleIds,
+    hasQuizIds,
+    user,
+    index,
+}) {
+    // const hasQuiz = quizEligibleIds.includes(wordList.id);
+    const hasQuiz = hasQuizIds.includes(wordList.id);
+    const total = wordList.words_count ?? 0;
+
+    return (
+        <div
+            className="bg-white dark:bg-slate-900 rounded-2xl px-5 py-4 shadow-sm border border-indigo-100 dark:border-indigo-900/40"
+            style={{
+                animationDelay: `${index * 0.07}s`,
+                animation: "fadeInUp 0.4s ease-out forwards",
+                opacity: 0,
+            }}
+        >
+            {/* Title row */}
+            <div className="flex items-start justify-between gap-3 mb-3">
+                <h2 className="text-base font-bold text-gray-700 dark:text-gray-300 leading-snug flex-1">
+                    {wordList.title}
+                </h2>
+                <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+                    <GraduationCap className="h-4 w-4 text-indigo-400 dark:text-indigo-500" />
+                    <Lock className="h-4 w-4 text-indigo-400 dark:text-indigo-500" />
+                </div>
+            </div>
+
+            {/* Badges */}
+            <div className="flex items-center gap-2 mb-3">
+                <span
+                    className={`text-xs font-medium px-2.5 py-0.5 rounded-full border ${color} opacity-70`}
+                >
+                    {star} {wordList.difficulty}
+                </span>
+                {total > 0 && (
+                    <span className="text-xs font-medium px-2.5 py-0.5 rounded-full border border-gray-200 bg-gray-50 dark:bg-slate-800 dark:border-slate-700 text-gray-400">
+                        {total} words
+                    </span>
+                )}
+            </div>
+
+            {/* Lock notice + CTA */}
+            <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-slate-800">
+                <p className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">
+                    Pass the previous quiz to unlock
+                </p>
+
+                {hasQuiz ? (
+                    user ? (
+                        <a
+                            href={route("quiz.wordlist", wordList.id)}
+                            className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-1.5 rounded-xl transition"
+                        >
+                            <GraduationCap className="h-3.5 w-3.5" />
+                            Take Quiz
+                        </a>
+                    ) : (
+                        <Link
+                            href={route("login")}
+                            className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                        >
+                            Login to take quiz
+                        </Link>
+                    )
+                ) : (
+                    <span className="text-xs text-gray-400 dark:text-gray-500 italic">
+                        Quiz coming soon
+                    </span>
+                )}
+            </div>
+        </div>
+    );
+}
+
 export default function Wordlist({
     wordLists,
     currentDifficulty,
@@ -247,6 +328,8 @@ export default function Wordlist({
     masteredCounts,
     categoryOrder = null,
     quizEligibleIds = [],
+    hasQuizIds = [],
+    quizUnlockedIds = [], // ← word list IDs where the user has already passed the quiz
     bkashNumber = "01825236112",
 }) {
     const { auth } = usePage().props;
@@ -330,10 +413,10 @@ export default function Wordlist({
                                         masteredCounts?.[wordList.id] ?? null;
                                     const total = wordList.words_count ?? 0;
 
-                                    return (
-                                        <div key={wordList.id}>
-                                            {categoryIsLocked ? (
-                                                /* ── LOCKED card (category locked) ── */
+                                    // Locked by category purchase gate
+                                    if (categoryIsLocked) {
+                                        return (
+                                            <div key={wordList.id}>
                                                 <div
                                                     className="bg-white dark:bg-slate-900 rounded-2xl px-5 py-4 shadow-sm opacity-60"
                                                     style={{
@@ -366,94 +449,113 @@ export default function Wordlist({
                                                         )}
                                                     </div>
                                                 </div>
-                                            ) : (
-                                                /* ── UNLOCKED card — clickable ── */
-                                                <Link
-                                                    href={route(
-                                                        "wordlist.start",
-                                                        wordList.id,
-                                                    )}
-                                                    className="block"
-                                                >
-                                                    <div
-                                                        className="bg-white dark:bg-slate-900 rounded-2xl px-5 py-4 shadow-sm hover:shadow-md transition-all"
-                                                        style={{
-                                                            animationDelay: `${index * 0.07}s`,
-                                                            animation:
-                                                                "fadeInUp 0.4s ease-out forwards",
-                                                            opacity: 0,
-                                                        }}
-                                                    >
-                                                        <div className="flex items-start justify-between gap-3 mb-3">
-                                                            <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 leading-snug flex-1">
-                                                                {wordList.title}
-                                                            </h2>
-                                                            <ChevronRight className="h-4 w-4 text-gray-300 shrink-0 mt-1" />
-                                                        </div>
+                                            </div>
+                                        );
+                                    }
 
-                                                        <div className="flex items-center gap-2 mb-3">
-                                                            <span
-                                                                className={`text-xs font-medium px-2.5 py-0.5 rounded-full border ${color}`}
-                                                            >
-                                                                {star}{" "}
-                                                                {
-                                                                    wordList.difficulty
-                                                                }
+                                    // Locked by quiz gate — is_locked=true and user hasn't passed yet
+                                    if (
+                                        wordList.is_locked &&
+                                        !quizUnlockedIds.includes(wordList.id)
+                                    ) {
+                                        return (
+                                            <div key={wordList.id}>
+                                                <QuizLockedCard
+                                                    wordList={wordList}
+                                                    color={color}
+                                                    star={star}
+                                                    hasQuizIds={hasQuizIds}
+                                                    // quizEligibleIds={
+                                                    //     quizEligibleIds
+                                                    // }
+                                                    user={user}
+                                                    index={index}
+                                                />
+                                            </div>
+                                        );
+                                    }
+
+                                    // ── UNLOCKED card — clickable ──
+                                    return (
+                                        <div key={wordList.id}>
+                                            <Link
+                                                href={route(
+                                                    "wordlist.start",
+                                                    wordList.id,
+                                                )}
+                                                className="block"
+                                            >
+                                                <div
+                                                    className="bg-white dark:bg-slate-900 rounded-2xl px-5 py-4 shadow-sm hover:shadow-md transition-all"
+                                                    style={{
+                                                        animationDelay: `${index * 0.07}s`,
+                                                        animation:
+                                                            "fadeInUp 0.4s ease-out forwards",
+                                                        opacity: 0,
+                                                    }}
+                                                >
+                                                    <div className="flex items-start justify-between gap-3 mb-3">
+                                                        <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 leading-snug flex-1">
+                                                            {wordList.title}
+                                                        </h2>
+                                                        <ChevronRight className="h-4 w-4 text-gray-300 shrink-0 mt-1" />
+                                                    </div>
+
+                                                    <div className="flex items-center gap-2 mb-3">
+                                                        <span
+                                                            className={`text-xs font-medium px-2.5 py-0.5 rounded-full border ${color}`}
+                                                        >
+                                                            {star}{" "}
+                                                            {
+                                                                wordList.difficulty
+                                                            }
+                                                        </span>
+                                                        {total > 0 && (
+                                                            <span className="text-xs font-medium px-2.5 py-0.5 rounded-full border border-blue-200 bg-blue-50 text-blue-700">
+                                                                {total} words
                                                             </span>
-                                                            {total > 0 && (
-                                                                <span className="text-xs font-medium px-2.5 py-0.5 rounded-full border border-blue-200 bg-blue-50 text-blue-700">
-                                                                    {total}{" "}
-                                                                    words
-                                                                </span>
+                                                        )}
+                                                    </div>
+
+                                                    {mastered !== null && (
+                                                        <MasteredProgress
+                                                            mastered={mastered}
+                                                            total={total}
+                                                        />
+                                                    )}
+
+                                                    <div className="flex items-center justify-between mt-3">
+                                                        <div>
+                                                            {user && (
+                                                                <a
+                                                                    href={route(
+                                                                        "quiz.wordlist",
+                                                                        wordList.id,
+                                                                    )}
+                                                                    className="flex items-center gap-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                                                                    onClick={(
+                                                                        e,
+                                                                    ) =>
+                                                                        e.stopPropagation()
+                                                                    }
+                                                                >
+                                                                    <GraduationCap className="h-3.5 w-3.5" />
+                                                                    Take a Quiz
+                                                                </a>
                                                             )}
                                                         </div>
-
-                                                        {mastered !== null && (
-                                                            <MasteredProgress
-                                                                mastered={
-                                                                    mastered
-                                                                }
-                                                                total={total}
-                                                            />
-                                                        )}
-
-                                                        <div className="flex items-center justify-between mt-3">
-                                                            <div>
-                                                                {quizEligibleIds.includes(
-                                                                    wordList.id,
-                                                                ) && (
-                                                                    <a
-                                                                        href={route(
-                                                                            "quiz.wordlist",
-                                                                            wordList.id,
-                                                                        )}
-                                                                        className="flex items-center gap-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
-                                                                        onClick={(
-                                                                            e,
-                                                                        ) =>
-                                                                            e.stopPropagation()
-                                                                        }
-                                                                    >
-                                                                        <GraduationCap className="h-3.5 w-3.5" />
-                                                                        Take a
-                                                                        Quiz
-                                                                    </a>
-                                                                )}
-                                                            </div>
-                                                            <span className="text-[#E5201C] text-sm font-semibold flex items-center gap-1">
-                                                                {mastered !==
-                                                                    null &&
-                                                                mastered >=
-                                                                    total &&
-                                                                total > 0
-                                                                    ? "Completed"
-                                                                    : "Start Exercise"}
-                                                                <Play className="h-3.5 w-3.5 fill-[#E5201C]" />
-                                                            </span>
-                                                        </div>
+                                                        <span className="text-[#E5201C] text-sm font-semibold flex items-center gap-1">
+                                                            {mastered !==
+                                                                null &&
+                                                            mastered >= total &&
+                                                            total > 0
+                                                                ? "Completed"
+                                                                : "Start Exercise"}
+                                                            <Play className="h-3.5 w-3.5 fill-[#E5201C]" />
+                                                        </span>
                                                     </div>
-                                                </Link>
-                                            )}
+                                                </div>
+                                            </Link>
                                         </div>
                                     );
                                 })}

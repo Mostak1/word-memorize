@@ -12,6 +12,7 @@ import { Label } from "@/Components/ui/label";
 import { Textarea } from "@/Components/ui/textarea";
 import { Checkbox } from "@/Components/ui/checkbox";
 import { router } from "@inertiajs/react";
+import { toast } from "sonner";
 import {
     Select,
     SelectContent,
@@ -193,6 +194,7 @@ export default function QuizQuestionFormModal({
     const isEditing = !!question;
 
     const [submitting, setSubmitting] = useState(false);
+    const [formErrors, setFormErrors] = useState({});
 
     // Question type
     const [type, setType] = useState("mcq_single");
@@ -201,7 +203,7 @@ export default function QuizQuestionFormModal({
     const [questionText, setQuestionText] = useState("");
     const [explanation, setExplanation] = useState("");
     const [wordId, setWordId] = useState("");
-    const [sortOrder, setSortOrder] = useState(0);
+    // const [sortOrder, setSortOrder] = useState(0);
 
     // MCQ state
     const [options, setOptions] = useState(["", "", "", ""]);
@@ -217,13 +219,14 @@ export default function QuizQuestionFormModal({
     // Populate when editing an existing question
     useEffect(() => {
         if (!open) return;
+        setFormErrors({});
 
         const t = question?.type || "mcq_single";
         setType(t);
         setQuestionText(question?.question || "");
         setExplanation(question?.explanation || "");
         setWordId(question?.word_id ? String(question.word_id) : "");
-        setSortOrder(question?.sort_order || 0);
+        // setSortOrder(question?.sort_order || 0);
 
         if (t === "mcq_single" || t === "mcq_multiple" || t === "true_false") {
             setOptions(
@@ -278,7 +281,7 @@ export default function QuizQuestionFormModal({
             word_id: wordId || null,
             question: questionText,
             explanation: explanation || null,
-            sort_order: sortOrder,
+            // sort_order: sortOrder,
         };
 
         switch (type) {
@@ -325,21 +328,38 @@ export default function QuizQuestionFormModal({
     const handleSubmit = (e) => {
         e.preventDefault();
         setSubmitting(true);
+
         const payload = buildPayload();
 
         const url = isEditing
             ? route("admin.quizzes.questions.update", [quizId, question.id])
             : route("admin.quizzes.questions.store", quizId);
 
-        const method = isEditing ? router.patch : router.post;
-
-        method(url, payload, {
+        const options = {
             onSuccess: () => {
                 setSubmitting(false);
+                setFormErrors({});
                 onClose();
             },
-            onError: () => setSubmitting(false),
-        });
+            onError: (errors) => {
+                setSubmitting(false);
+                setFormErrors(errors);
+                // Show the first validation error as a toast
+                const firstError = Object.values(errors)[0];
+                if (firstError) {
+                    toast.error(
+                        Array.isArray(firstError) ? firstError[0] : firstError,
+                    );
+                }
+            },
+            preserveScroll: true,
+        };
+
+        if (isEditing) {
+            router.patch(url, payload, options);
+        } else {
+            router.post(url, payload, options);
+        }
     };
 
     return (
@@ -427,6 +447,11 @@ export default function QuizQuestionFormModal({
                             rows={3}
                             required
                         />
+                        {formErrors.question && (
+                            <p className="text-xs text-red-500">
+                                {formErrors.question}
+                            </p>
+                        )}
                     </div>
 
                     {/* ── MCQ Single ──────────────────────────────────── */}
@@ -443,6 +468,11 @@ export default function QuizQuestionFormModal({
                                 onCorrectChange={setCorrectAnswer}
                                 multiple={false}
                             />
+                            {formErrors.correct_answer && (
+                                <p className="text-xs text-red-500">
+                                    {formErrors.correct_answer}
+                                </p>
+                            )}
                         </div>
                     )}
 
@@ -460,6 +490,11 @@ export default function QuizQuestionFormModal({
                                 onCorrectChange={setCorrectAnswer}
                                 multiple={true}
                             />
+                            {formErrors.correct_answer && (
+                                <p className="text-xs text-red-500">
+                                    {formErrors.correct_answer}
+                                </p>
+                            )}
                         </div>
                     )}
 
@@ -474,6 +509,11 @@ export default function QuizQuestionFormModal({
                                 pairs={matchingPairs}
                                 onChange={setMatchingPairs}
                             />
+                            {formErrors.matching_pairs && (
+                                <p className="text-xs text-red-500">
+                                    {formErrors.matching_pairs}
+                                </p>
+                            )}
                         </div>
                     )}
 
@@ -549,7 +589,7 @@ export default function QuizQuestionFormModal({
                     </div>
 
                     {/* ── Sort Order ──────────────────────────────────── */}
-                    <div className="space-y-1.5">
+                    {/* <div className="space-y-1.5">
                         <Label>Sort Order</Label>
                         <Input
                             type="number"
@@ -560,7 +600,7 @@ export default function QuizQuestionFormModal({
                             }
                             className="w-24"
                         />
-                    </div>
+                    </div> */}
 
                     {/* ── Actions ─────────────────────────────────────── */}
                     <div className="flex gap-2 justify-end pt-1">
