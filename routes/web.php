@@ -19,6 +19,9 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+Route::get('/vocabland', function () {
+    return view('landing/vocabland');
+})->name('vocabland');
 Route::get('/tts', [TTSController::class, 'generate'])->name('tts');
 Route::get('/', function () {
     if (auth()->check()) {
