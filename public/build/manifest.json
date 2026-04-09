@@ -363,7 +363,9 @@
     "file": "assets/index-B6V09V37.js",
     "name": "index",
     "imports": [
-      "resources/js/app.jsx"
+      "resources/js/app.jsx",
+      "_index-BOPMADvN.js",
+      "_index-Bk3oR3So.js"
     ]
   },
   "_index-BQugf5Yz.js": {
@@ -440,6 +442,7 @@
     "file": "assets/index-D2pSMq9W.js",
     "name": "index",
     "imports": [
+      "resources/js/app.jsx"
       "resources/js/app.jsx"
     ]
   },
@@ -952,6 +955,8 @@
     "imports": [
       "resources/js/app.jsx",
       "resources/css/app.css"
+      "resources/js/app.jsx",
+      "resources/css/app.css"
     ]
   },
   "resources/js/Pages/Admin/LinkTree/ImageUploadCard.jsx": {
@@ -1230,6 +1235,8 @@
     "src": "resources/js/Pages/Admin/LinkTree/linkTreeConstants.jsx",
     "isDynamicEntry": true,
     "imports": [
+      "resources/js/app.jsx",
+      "resources/css/app.css"
       "resources/js/app.jsx",
       "resources/css/app.css"
     ]
@@ -2601,6 +2608,8 @@
     "imports": [
       "resources/js/app.jsx",
       "resources/css/app.css"
+      "resources/js/app.jsx",
+      "resources/css/app.css"
     ]
   },
   "resources/js/Pages/ReviewWords.jsx": {
@@ -3046,6 +3055,9 @@
     "imports": [
       "resources/css/app.css"
     ],
+    "imports": [
+      "resources/css/app.css"
+    ],
     "dynamicImports": [
       "node_modules/workbox-window/build/workbox-window.prod.es5.mjs",
       "resources/js/Pages/Admin/Dashboard.jsx",
@@ -3071,6 +3083,7 @@
       "resources/js/Pages/Admin/ReviewWords/Index.jsx",
       "resources/js/Pages/Admin/Settings/Index.jsx",
       "resources/js/Pages/Admin/Users/Index.jsx",
+      "resources/css/app.css",
       "resources/css/app.css",
       "resources/js/Pages/Admin/Users/UserEditDialog.jsx",
       "resources/js/Pages/Admin/Users/UserInfoTooltip.jsx",

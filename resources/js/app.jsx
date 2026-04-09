@@ -6,7 +6,6 @@ import { resolvePageComponent } from "laravel-vite-plugin/inertia-helpers";
 import { createRoot } from "react-dom/client";
 import { Toaster, toast } from "sonner";
 import { ThemeProvider, useTheme } from "@/Components/ThemeProvider";
-import PageLoadingState from "@/Components/PageLoadingState";
 import { registerSW } from "virtual:pwa-register";
 
 const appName = import.meta.env.VITE_APP_NAME || "Laravel";
@@ -74,6 +73,5 @@ createInertiaApp({
     },
     progress: {
         color: "#e70013",
-        showSpinner: true,
     },
 });

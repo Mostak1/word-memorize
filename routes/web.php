@@ -31,6 +31,12 @@ use Inertia\Inertia;
 // });
 
 
+Route::get('/vocabland', function () {
+    return view('landing/vocabland');
+})->name('vocabland');
+Route::get('/practice', function () {
+    return view('landing/practice');
+})->name('vocabland.practice');
 Route::get('/tts', [TTSController::class, 'generate'])->name('tts');
 Route::get('/', function () {
     if (auth()->check()) {
