@@ -8,24 +8,19 @@ use Illuminate\Http\Request;
 
 class WordListOrderController extends Controller
 {
-  /**
-   * Display a paginated list of WordList orders for admin.
-   */
   public function index(Request $request)
   {
-    $query = WordListOrder::with(['user', 'category'])->orderByDesc('id');
+    $query = WordListOrder::with(['user', 'categories'])->orderByDesc('id');
 
-    // Global search
     if ($search = $request->input('search')) {
       $query->where(function ($q) use ($search) {
         $q->where('transaction_id', 'like', "%{$search}%")
           ->orWhere('note', 'like', "%{$search}%")
           ->orWhereHas('user', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
-          ->orWhereHas('category', fn($q2) => $q2->where('name', 'like', "%{$search}%"));
+          ->orWhereHas('categories', fn($q2) => $q2->where('name', 'like', "%{$search}%"));
       });
     }
 
-    // Status filter
     if ($status = $request->input('status')) {
       if ($status !== 'all') {
         $query->where('status', $status);
@@ -42,7 +37,7 @@ class WordListOrderController extends Controller
   }
 
   /**
-   * Update order status and admin note.
+   * Update order status — observer handles access grant/revoke automatically.
    */
   public function update(Request $request, WordListOrder $order)
   {
@@ -52,6 +47,7 @@ class WordListOrderController extends Controller
     ]);
 
     $order->update($data);
+    // Observer fires here → grantAccess() or revokeAccess() called automatically
 
     return back()->with('flash', [
       'type' => 'success',
@@ -60,7 +56,7 @@ class WordListOrderController extends Controller
   }
 
   /**
-   * Delete an order.
+   * Delete order — observer fires revokeAccess() before deletion.
    */
   public function destroy(WordListOrder $order)
   {

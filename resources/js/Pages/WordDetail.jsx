@@ -351,13 +351,27 @@ export default function WordDetail({
                         )}
 
                         {/* Example / Image-related sentence */}
-                        {(word.image_related_sentence ||
+                        {/* {(word.image_related_sentence ||
                             word.example_sentences) && (
                             <div className="mx-4 mb-4 border-l-4 border-green-400 pl-3 py-1">
                                 <p className="text-base text-gray-800 dark:text-gray-200 leading-snug">
                                     {highlightWord(
                                         word.image_related_sentence ||
                                             word.example_sentences,
+                                        word.word,
+                                    )}
+                                </p>
+                            </div>
+                        )} */}
+
+                        {word.example_sentences && (
+                            <div className="mx-4 mb-4 border-l-4 border-green-400 dark:border-green-600 pl-3 py-1">
+                                <p className="text-base text-gray-800 dark:text-gray-200 leading-snug">
+                                    {highlightWord(
+                                        word.example_sentences
+                                            ?.split(".")
+                                            .map((s) => s.trim())
+                                            .filter(Boolean)[0] + ".",
                                         word.word,
                                     )}
                                 </p>

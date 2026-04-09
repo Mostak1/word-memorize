@@ -151,8 +151,11 @@ Route::middleware('auth')->group(function () {
         ->name('my.orders');
 
     // Place an order for a locked word list CATEGORY
-    Route::post('/wordlist-categories/{category}/order', [UserWordListOrderController::class, 'store'])
-        ->name('wordlistcategory.order.store');
+    // Route::post('/wordlist-categories/{category}/order', [UserWordListOrderController::class, 'store'])
+    //     ->name('wordlistcategory.order.store');
+
+    Route::post('/orders', [UserWordListOrderController::class, 'store'])
+        ->name('order.store');
 
     // My Words
     Route::get('/my/words', [UserWordController::class, 'index'])->name('my.words.index');
@@ -170,7 +173,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/quiz', [QuizController::class, 'index'])->name('quiz.index');
     Route::get('/quiz/wordlist/{wordlist}', [QuizController::class, 'indexByWordlist'])->name('quiz.wordlist');
-    Route::post('/quiz/finish', [QuizController::class, 'finish'])->name('quiz.finish');
+    // Route::post('/quiz/finish', [QuizController::class, 'finish'])->name('quiz.finish');
+    Route::post('/quiz/finish', [QuizController::class, 'finish'])->name('mastery-test.finish');
 
 
     // Mastered / review lists
@@ -192,9 +196,17 @@ Route::middleware('auth')->group(function () {
     Route::post('/error-reports', [ErrorReportController::class, 'store'])->name('error-reports.store');
 
     // ── XP Shop ───────────────────────────────────────────────────────────────
-    Route::get('/shop', function () {
-        return Inertia::render('XpShop');
-    })->name('xp-shop');
+    // Route::get('/shop', function () {
+    //     return Inertia::render('XpShop');
+    // })->name('xp-shop');
+
+    // Route::get('/api/xp-shop/status', [XpShopController::class, 'getStatus'])
+    //     ->name('api.xp-shop.status');
+
+    // Route::post('/api/xp-shop/buy-freeze', [XpShopController::class, 'buyStreakFreeze'])
+    //     ->name('api.xp-shop.buy-freeze');
+
+    Route::get('/shop', [XpShopController::class, 'index'])->name('xp-shop');
 
     Route::get('/api/xp-shop/status', [XpShopController::class, 'getStatus'])
         ->name('api.xp-shop.status');

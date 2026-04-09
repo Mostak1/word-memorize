@@ -44,7 +44,16 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/Components/ui/alert-dialog";
-import { ArrowUpDown, ArrowUp, ArrowDown, Loader2, Trash2 } from "lucide-react";
+import {
+    ArrowUpDown,
+    ArrowUp,
+    ArrowDown,
+    Loader2,
+    Trash2,
+    ChevronDown,
+    ChevronRight,
+    Package,
+} from "lucide-react";
 
 // ── Status helpers ─────────────────────────────────────────────────────────────
 const STATUS_LABELS = {
@@ -66,6 +75,24 @@ function StatusBadge({ status }) {
         >
             {STATUS_LABELS[status] ?? status}
         </span>
+    );
+}
+
+// ── Category badges list ───────────────────────────────────────────────────────
+function CategoryBadges({ categories }) {
+    if (!categories?.length)
+        return <span className="text-muted-foreground">—</span>;
+    return (
+        <div className="flex flex-wrap gap-1.5">
+            {categories.map((cat) => (
+                <span
+                    key={cat.id}
+                    className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800"
+                >
+                    {cat.name}
+                </span>
+            ))}
+        </div>
     );
 }
 
@@ -120,12 +147,9 @@ function EditDialog({ order, statuses, open, onClose }) {
 
     const handleSubmit = () => {
         if (!order) return;
-
         patch(route("admin.wordlist-orders.update", order.id), {
             preserveScroll: true,
-            onSuccess: () => {
-                onClose();
-            },
+            onSuccess: () => onClose(),
         });
     };
 
@@ -139,7 +163,7 @@ function EditDialog({ order, statuses, open, onClose }) {
                 </DialogHeader>
 
                 {/* Order summary */}
-                <div className="rounded-lg border bg-muted/40 px-4 py-3 text-sm space-y-1">
+                <div className="rounded-lg border bg-muted/40 px-4 py-3 text-sm space-y-2">
                     <div className="flex gap-2">
                         <span className="text-muted-foreground w-20 shrink-0">
                             User
@@ -148,14 +172,30 @@ function EditDialog({ order, statuses, open, onClose }) {
                             {order.user?.name ?? "—"}
                         </span>
                     </div>
+
+                    {/* Categories — accordion-style in dialog */}
                     <div className="flex gap-2">
-                        <span className="text-muted-foreground w-20 shrink-0">
-                            Category
+                        <span className="text-muted-foreground w-20 shrink-0 pt-0.5">
+                            Categories
                         </span>
-                        <span className="font-medium">
-                            {order.category?.name ?? "—"}
-                        </span>
+                        <div className="flex-1">
+                            {order.categories?.length ? (
+                                <div className="flex flex-wrap gap-1.5">
+                                    {order.categories.map((cat) => (
+                                        <span
+                                            key={cat.id}
+                                            className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200"
+                                        >
+                                            {cat.name}
+                                        </span>
+                                    ))}
+                                </div>
+                            ) : (
+                                <span className="text-muted-foreground">—</span>
+                            )}
+                        </div>
                     </div>
+
                     <div className="flex gap-2">
                         <span className="text-muted-foreground w-20 shrink-0">
                             Txn ID
@@ -246,6 +286,42 @@ function EditDialog({ order, statuses, open, onClose }) {
     );
 }
 
+// ── Expanded categories row ────────────────────────────────────────────────────
+function ExpandedCategoriesRow({ order, colSpan }) {
+    const categories = order.categories ?? [];
+
+    return (
+        <TableRow className="bg-muted/30 hover:bg-muted/30">
+            <TableCell colSpan={colSpan} className="py-3 px-6">
+                <div className="flex items-start gap-3">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground shrink-0 mt-0.5">
+                        <Package className="h-3.5 w-3.5" />
+                        Order Items
+                    </div>
+                    <div className="flex-1">
+                        {categories.length === 0 ? (
+                            <span className="text-xs text-muted-foreground italic">
+                                No categories attached
+                            </span>
+                        ) : (
+                            <div className="flex flex-wrap gap-2">
+                                {categories.map((cat) => (
+                                    <span
+                                        key={cat.id}
+                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800"
+                                    >
+                                        {cat.name}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </TableCell>
+        </TableRow>
+    );
+}
+
 // ── Main Page ──────────────────────────────────────────────────────────────────
 export default function Index({ orders, filters, statuses }) {
     const [globalFilter, setGlobalFilter] = useState(filters.search ?? "");
@@ -253,6 +329,15 @@ export default function Index({ orders, filters, statuses }) {
     const [sorting, setSorting] = useState([{ id: "id", desc: true }]);
     const [editOrder, setEditOrder] = useState(null);
     const [deleteOrder, setDeleteOrder] = useState(null);
+    const [expandedRows, setExpandedRows] = useState(new Set());
+
+    const toggleRow = (id) => {
+        setExpandedRows((prev) => {
+            const next = new Set(prev);
+            next.has(id) ? next.delete(id) : next.add(id);
+            return next;
+        });
+    };
 
     const data = useMemo(() => {
         if (statusFilter === "all") return orders.data;
@@ -293,13 +378,32 @@ export default function Index({ orders, filters, statuses }) {
                 size: 150,
             },
             {
-                accessorKey: "category.name",
-                header: "Category",
-                cell: ({ row }) => (
-                    <p className="font-medium text-sm">
-                        {row.original.category?.name ?? "—"}
-                    </p>
-                ),
+                // Categories accordion toggle — replaces old single "category" column
+                id: "categories",
+                header: "Categories",
+                cell: ({ row }) => {
+                    const cats = row.original.categories ?? [];
+                    const isExpanded = expandedRows.has(row.original.id);
+                    return (
+                        <button
+                            onClick={() => toggleRow(row.original.id)}
+                            className="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
+                        >
+                            {isExpanded ? (
+                                <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+                            ) : (
+                                <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+                            )}
+                            <span>
+                                {cats.length === 0
+                                    ? "No items"
+                                    : cats.length === 1
+                                      ? cats[0].name
+                                      : `${cats.length} categories`}
+                            </span>
+                        </button>
+                    );
+                },
             },
             {
                 accessorKey: "address",
@@ -333,7 +437,6 @@ export default function Index({ orders, filters, statuses }) {
                 cell: ({ getValue }) => {
                     const note = getValue();
                     if (!note) return "—";
-
                     return (
                         <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 max-w-[200px]">
                             {note}
@@ -378,7 +481,7 @@ export default function Index({ orders, filters, statuses }) {
                 ),
             },
         ],
-        [],
+        [expandedRows],
     );
 
     const table = useReactTable({
@@ -467,29 +570,42 @@ export default function Index({ orders, filters, statuses }) {
                                         </TableRow>
                                     ) : (
                                         table.getRowModel().rows.map((row) => (
-                                            <TableRow key={row.id}>
-                                                {row
-                                                    .getVisibleCells()
-                                                    .map((cell) => (
-                                                        <TableCell
-                                                            key={cell.id}
-                                                        >
-                                                            {flexRender(
-                                                                cell.column
-                                                                    .columnDef
-                                                                    .cell,
-                                                                cell.getContext(),
-                                                            )}
-                                                        </TableCell>
-                                                    ))}
-                                            </TableRow>
+                                            <>
+                                                <TableRow key={row.id}>
+                                                    {row
+                                                        .getVisibleCells()
+                                                        .map((cell) => (
+                                                            <TableCell
+                                                                key={cell.id}
+                                                            >
+                                                                {flexRender(
+                                                                    cell.column
+                                                                        .columnDef
+                                                                        .cell,
+                                                                    cell.getContext(),
+                                                                )}
+                                                            </TableCell>
+                                                        ))}
+                                                </TableRow>
+
+                                                {/* Expanded categories row */}
+                                                {expandedRows.has(
+                                                    row.original.id,
+                                                ) && (
+                                                    <ExpandedCategoriesRow
+                                                        key={`expanded-${row.original.id}`}
+                                                        order={row.original}
+                                                        colSpan={columns.length}
+                                                    />
+                                                )}
+                                            </>
                                         ))
                                     )}
                                 </TableBody>
                             </Table>
                         </div>
 
-                        {/* Pagination controls */}
+                        {/* Pagination */}
                         {table.getPageCount() > 1 && (
                             <div className="flex items-center justify-between px-4 py-3 border-t">
                                 <p className="text-sm text-muted-foreground">
@@ -538,17 +654,32 @@ export default function Index({ orders, filters, statuses }) {
                             Delete Order #{deleteOrder?.id}?
                         </AlertDialogTitle>
                     </AlertDialogHeader>
-                    <p className="text-sm text-muted-foreground px-1">
-                        This will permanently remove the order from{" "}
-                        <span className="font-semibold">
-                            {deleteOrder?.user?.name}
-                        </span>{" "}
-                        for category{" "}
-                        <span className="font-semibold">
-                            {deleteOrder?.category?.name}
-                        </span>
-                        . This action cannot be undone.
-                    </p>
+                    <div className="text-sm text-muted-foreground px-1 space-y-2">
+                        <p>
+                            This will permanently remove the order from{" "}
+                            <span className="font-semibold">
+                                {deleteOrder?.user?.name}
+                            </span>
+                            . This action cannot be undone.
+                        </p>
+                        {deleteOrder?.categories?.length > 0 && (
+                            <div>
+                                <p className="mb-1 font-medium text-foreground">
+                                    Categories in this order:
+                                </p>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {deleteOrder.categories.map((cat) => (
+                                        <span
+                                            key={cat.id}
+                                            className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200"
+                                        >
+                                            {cat.name}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                     <div className="flex justify-end gap-2 mt-4">
                         <AlertDialogCancel onClick={() => setDeleteOrder(null)}>
                             Cancel

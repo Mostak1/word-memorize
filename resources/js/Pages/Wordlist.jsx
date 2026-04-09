@@ -152,11 +152,18 @@ function MasteredProgress({ mastered, total }) {
 }
 
 /** Banner shown at the top when the whole category is locked */
-function CategoryLockBanner({ category, categoryOrder, user, onPurchase }) {
+function CategoryLockBanner({
+    category,
+    categoryOrder,
+    userHasAccess,
+    user,
+    onPurchase,
+}) {
     const orderStatus = categoryOrder?.status ?? null;
 
     if (!category?.is_locked) return null;
-    if (orderStatus === "approved") return null;
+    // if (orderStatus === "approved") return null;
+    if (userHasAccess) return null;
 
     return (
         <div className="mb-4 rounded-2xl overflow-hidden shadow-sm border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30">
@@ -327,6 +334,7 @@ export default function Wordlist({
     category,
     masteredCounts,
     categoryOrder = null,
+    userHasAccess = false,
     quizEligibleIds = [],
     hasQuizIds = [],
     quizUnlockedIds = [], // ← word list IDs where the user has already passed the quiz
@@ -363,8 +371,9 @@ export default function Wordlist({
     const paginationMeta = wordLists?.meta ?? null;
 
     // Category is effectively locked when it has is_locked=true and no approved order
-    const categoryIsLocked =
-        category?.is_locked && categoryOrder?.status !== "approved";
+    // const categoryIsLocked =
+    //     category?.is_locked && categoryOrder?.status !== "approved";
+    const categoryIsLocked = category?.is_locked && !userHasAccess;
 
     return (
         <AppLayout>
@@ -412,6 +421,7 @@ export default function Wordlist({
                         <CategoryLockBanner
                             category={category}
                             categoryOrder={categoryOrder}
+                            userHasAccess={userHasAccess}
                             user={user}
                             onPurchase={setPurchaseTarget}
                         />

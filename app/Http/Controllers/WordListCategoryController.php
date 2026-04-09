@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\QuizAttempt;
+use App\Models\UserWordListAccess;
 use App\Models\WordList;
 use App\Models\WordListCategory;
 use App\Models\WordListOrder;
@@ -70,11 +71,17 @@ class WordListCategoryController extends Controller
 
         // Fetch the single order for this category for the current user
         $categoryOrder = null;
+        $userHasAccess = false;
         if (auth()->check()) {
-            $order = WordListOrder::where('user_id', auth()->id())
+            $userHasAccess = UserWordListAccess::where('user_id', auth()->id())
                 ->where('word_list_category_id', $category->id)
+                ->exists();
+
+            // Still fetch the latest order for pending/rejected banner info
+            $order = WordListOrder::where('user_id', auth()->id())
+                ->whereHas('items', fn($q) => $q->where('word_list_category_id', $category->id))
                 ->latest()
-                ->first(['status', 'admin_note', 'address', 'name', 'phone_number', 'profession']);
+                ->first(['id', 'status', 'admin_note', 'name', 'phone_number', 'address', 'profession']);
 
             if ($order) {
                 $categoryOrder = [
@@ -137,6 +144,7 @@ class WordListCategoryController extends Controller
             'currentCategory' => $category->name,
             'masteredCounts' => $masteredCounts,
             'categoryOrder' => $categoryOrder,
+            'userHasAccess' => $userHasAccess,
             'quizEligibleIds' => $quizEligibleIds,
             'hasQuizIds' => $hasQuizIds,
             'quizUnlockedIds' => $quizUnlockedIds,

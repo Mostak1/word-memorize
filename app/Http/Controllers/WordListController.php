@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BookmarkedWord;
 use App\Models\ReviewWord;
+use App\Models\UserWordListAccess;
 use App\Models\WordList;
 use App\Models\WordListOrder;
 use App\Models\Word;
@@ -35,17 +36,19 @@ class WordListController extends Controller
     private function categoryIsLockedForUser(WordList $wordList): bool
     {
         $category = $wordList->category;
+
+        // Not locked — everyone can access
         if (!$category || !$category->is_locked) {
             return false;
         }
 
+        // Locked but guest — no access
         if (!auth()->check()) {
             return true;
         }
 
-        return !WordListOrder::where('user_id', auth()->id())
+        return !UserWordListAccess::where('user_id', auth()->id())
             ->where('word_list_category_id', $wordList->word_list_category_id)
-            ->where('status', 'approved')
             ->exists();
     }
 

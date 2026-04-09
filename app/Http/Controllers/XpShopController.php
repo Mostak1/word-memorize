@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\WordListCategory;
 use App\Services\XpService;
 use App\Services\StreakService;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class XpShopController extends Controller
 {
@@ -12,6 +14,26 @@ class XpShopController extends Controller
     private XpService $xpService,
     private StreakService $streakService,
   ) {
+  }
+
+  /**
+   * Render the combined Shop / XP Shop page.
+   * Passes all locked (purchasable) word list categories so the
+   * Shop tab can render them as a browseable grid.
+   */
+  public function index()
+  {
+    $wordListCategories = WordListCategory::where('is_locked', true)
+      ->where('status', true)
+      ->withCount('wordLists')
+      ->orderBy('name')
+      ->get();
+
+    // dd($wordListCategories);
+
+    return Inertia::render('XpShop', [
+      'wordListCategories' => $wordListCategories,
+    ]);
   }
 
   /**
@@ -47,7 +69,6 @@ class XpShopController extends Controller
     $cost = $this->xpService->getNextFreezeCost($user);
     $userXp = $this->xpService->getOrCreate($user);
 
-    // Check if user can afford
     if (!$userXp->canAffordFreeze($cost)) {
       return response()->json([
         'error' => 'Insufficient XP',
@@ -56,9 +77,7 @@ class XpShopController extends Controller
       ], 400);
     }
 
-    // Buy the freeze
     if ($this->xpService->buyStreakFreeze($user)) {
-      // Award the freeze to the user
       $this->streakService->awardFreeze($user, 1);
 
       return response()->json([

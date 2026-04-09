@@ -141,7 +141,7 @@ export default function AppLayout({ children }) {
                                         <Link
                                             href={route("xp-shop")}
                                             className="flex items-center gap-1.5 text-white text-sm font-semibold px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors ml-2"
-                                            title="XP Shop"
+                                            title="Shop"
                                         >
                                             <Zap className="h-4 w-4 text-yellow-300" />
                                             <span>
@@ -281,7 +281,7 @@ export default function AppLayout({ children }) {
                                         {/* Left side */}
                                         <div className="flex items-center gap-2">
                                             <ShoppingBag className="h-4 w-4" />
-                                            <span>XP Shop</span>
+                                            <span>Shop</span>
                                         </div>
 
                                         {/* Right side */}

@@ -9,6 +9,7 @@ use App\Models\WordList;
 use App\Models\WordProgress;
 use App\Services\StreakService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
@@ -36,7 +37,7 @@ class QuizController extends Controller
             ->toArray();
 
         if (empty($masteredWordIds)) {
-            return Inertia::render('Quiz', [
+            return Inertia::render('MasteryTest', [
                 'questions' => [],
                 'noMasteredWords' => true,
                 'noUsableSentences' => false,
@@ -61,7 +62,7 @@ class QuizController extends Controller
             + $antonymWords->count() + $translationWords->count() + $matchPairWords->count();
 
         if ($totalEligible < 1) {
-            return Inertia::render('Quiz', [
+            return Inertia::render('MasteryTest', [
                 'questions' => [],
                 'noMasteredWords' => false,
                 'noUsableSentences' => true,
@@ -138,14 +139,14 @@ class QuizController extends Controller
         $questions = $questions->shuffle()->values();
 
         if ($questions->count() < 1) {
-            return Inertia::render('Quiz', [
+            return Inertia::render('MasteryTest', [
                 'questions' => [],
                 'noMasteredWords' => false,
                 'noUsableSentences' => true,
             ]);
         }
 
-        return Inertia::render('Quiz', [
+        return Inertia::render('MasteryTest', [
             'questions' => $questions,
             'noMasteredWords' => false,
             'noUsableSentences' => false,
@@ -157,7 +158,7 @@ class QuizController extends Controller
      * GET /quiz/wordlist/{wordlist}
      *
      * If the wordlist has an active DB quiz → serve it in WordlistQuiz page.
-     * Otherwise fall back to the auto-generated quiz from learned words.
+     * Otherwise fall back to the auto-generated MasteryTest from wordlist words.
      */
     public function indexByWordlist(WordList $wordlist)
     {
@@ -217,36 +218,39 @@ class QuizController extends Controller
             ]);
         }
 
-        // ── Auto-generated quiz from wordlist words (no progress gate) ────────
+        // ── Auto-generated test from wordlist words (no progress gate) ────────
         $words = Word::where('wordlist_id', $wordlist->id)->get();
 
         if ($words->isEmpty()) {
-            return Inertia::render('Quiz', [
+            return Inertia::render('MasteryTest', [
                 'questions' => [],
                 'noMasteredWords' => false,
                 'noUsableSentences' => true,
                 'wordListTitle' => $wordlist->title,
+                'categoryId' => $wordlist->word_list_category_id,
             ]);
         }
 
         $questions = $this->buildWordlistAutoQuestions($words);
 
         if ($questions->count() < 1) {
-            return Inertia::render('Quiz', [
+            return Inertia::render('MasteryTest', [
                 'questions' => [],
                 'noMasteredWords' => false,
                 'noUsableSentences' => true,
                 'wordListTitle' => $wordlist->title,
+                'categoryId' => $wordlist->word_list_category_id,
             ]);
         }
 
-        return Inertia::render('Quiz', [
+        return Inertia::render('MasteryTest', [
             'questions' => $questions,
             'noMasteredWords' => false,
             'noUsableSentences' => false,
             'matchPassThreshold' => self::MATCH_PASS_THRESHOLD,
             'wordListTitle' => $wordlist->title,
             'wordlistId' => $wordlist->id,
+            'categoryId' => $wordlist->word_list_category_id,
         ]);
     }
 
@@ -299,8 +303,8 @@ class QuizController extends Controller
     }
 
     /**
-     * POST /quiz/finish — records streak activity (auto-generated quiz).
-     * When called from a wordlist auto-quiz, also creates a QuizAttempt.
+     * POST /quiz/finish — records streak activity (mastery test).
+     * When called from a wordlist auto-test, also creates a QuizAttempt.
      */
     public function finish(Request $request)
     {
@@ -377,11 +381,8 @@ class QuizController extends Controller
     /**
      * Build auto-generated quiz questions from a wordlist's own words.
      * No progress gate — any word in the list is eligible.
-     *
-     * Question types produced (same as the mastered-words quiz):
-     *   match_pairs · fill_blank · synonym · antonym · translation_en_bn
      */
-    private function buildWordlistAutoQuestions(\Illuminate\Support\Collection $words): \Illuminate\Support\Collection
+    private function buildWordlistAutoQuestions(Collection $words): Collection
     {
         $fillBlankWords = $words->filter(fn($w) => !empty($w->example_sentences) && stripos($w->example_sentences, $w->word) !== false)->values();
         $synonymWords = $words->filter(fn($w) => !empty(trim($w->synonym ?? '')))->values();
@@ -392,9 +393,8 @@ class QuizController extends Controller
         $questions = collect();
         $usedIds = [];
 
-        // ── Match-pairs (uses definition or bangla_meaning as the right side) ──
         if ($matchPairWords->count() >= 4) {
-            $pairWords = $matchPairWords->shuffle()->take(4);
+            $pairWords = $matchPairWords->shuffle()->take(2);
             foreach ($pairWords as $w) {
                 $usedIds[] = $w->id;
             }
@@ -406,25 +406,20 @@ class QuizController extends Controller
         }
 
         $pool = [];
-        $allWordIds = $words->pluck('id')->toArray();
 
-        // ── Fill-in-the-blank ─────────────────────────────────────────────────
-        foreach ($fillBlankWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(4) as $word) {
+        foreach ($fillBlankWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(5) as $word) {
             $blank = '___________';
             $pattern = '/' . preg_quote($word->word, '/') . '/i';
             $sentence = $this->pickSentenceWithBlank($word->example_sentences, $pattern, $blank);
             if (!$sentence)
                 continue;
-
-            // Distractors come from other words in the same wordlist
             $wrongOptions = $this->buildWordlistWrongOptions($word, $words);
             $options = array_merge([$word->word], $wrongOptions);
             shuffle($options);
             $pool[] = ['type' => 'fill_blank', 'word' => $word->word, 'sentence' => $sentence, 'options' => $options, 'correct' => $word->word];
         }
 
-        // ── Synonym ───────────────────────────────────────────────────────────
-        foreach ($synonymWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(3) as $word) {
+        foreach ($synonymWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(4) as $word) {
             $list = $this->splitWordList($word->synonym);
             if (empty($list))
                 continue;
@@ -435,8 +430,7 @@ class QuizController extends Controller
             $pool[] = ['type' => 'synonym', 'word' => $word->word, 'options' => $options, 'correct' => $correct];
         }
 
-        // ── Antonym ───────────────────────────────────────────────────────────
-        foreach ($antonymWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(3) as $word) {
+        foreach ($antonymWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(4) as $word) {
             $list = $this->splitWordList($word->antonym);
             if (empty($list))
                 continue;
@@ -447,7 +441,6 @@ class QuizController extends Controller
             $pool[] = ['type' => 'antonym', 'word' => $word->word, 'options' => $options, 'correct' => $correct];
         }
 
-        // ── Translation (EN → BN) ─────────────────────────────────────────────
         foreach ($translationWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(4) as $word) {
             $distractors = $translationWords
                 ->filter(fn($w2) => $w2->id !== $word->id && !empty(trim($w2->bangla_meaning ?? '')))
@@ -468,16 +461,10 @@ class QuizController extends Controller
         return $questions->shuffle()->values();
     }
 
-    /**
-     * Build 3 wrong-option distractors for fill-in-the-blank questions
-     * using other words from the *same wordlist* as the candidate pool.
-     * Falls back to the global word table only if the wordlist is small.
-     */
-    private function buildWordlistWrongOptions(Word $word, \Illuminate\Support\Collection $wordlistWords): array
+    private function buildWordlistWrongOptions(Word $word, Collection $wordlistWords): array
     {
         $correctWord = strtolower($word->word);
 
-        // Primary pool: other words in the same wordlist
         $candidates = $wordlistWords
             ->filter(fn($w) => strtolower($w->word) !== $correctWord)
             ->shuffle()
@@ -485,121 +472,59 @@ class QuizController extends Controller
             ->toArray();
 
         $wrong = [];
-        foreach ($candidates as $candidate) {
-            if (strtolower($candidate) !== $correctWord && !in_array($candidate, $wrong)) {
-                $wrong[] = $candidate;
-                if (count($wrong) === 3)
-                    break;
-            }
+        foreach ($candidates as $c) {
+            if (count($wrong) >= 3)
+                break;
+            $wrong[] = $c;
         }
 
-        // Fallback fillers if the wordlist is too small
-        $fillers = ['explore', 'create', 'balance', 'develop', 'achieve', 'promote', 'assess', 'resolve', 'sustain', 'define'];
-        $fi = 0;
-        while (count($wrong) < 3) {
-            $filler = $fillers[$fi++ % count($fillers)];
-            if (!in_array($filler, $wrong) && strtolower($filler) !== $correctWord) {
-                $wrong[] = $filler;
-            }
+        // Fallback: pull from DB if wordlist is too small
+        if (count($wrong) < 3) {
+            $extra = Word::where('id', '!=', $word->id)
+                ->whereNotIn('word', array_merge([$word->word], $wrong))
+                ->inRandomOrder()
+                ->limit(3 - count($wrong))
+                ->pluck('word')
+                ->toArray();
+            $wrong = array_merge($wrong, $extra);
         }
 
-        return $wrong;
-    }
-
-
-
-    private function splitWordList(string $raw): array
-    {
-        return array_values(array_filter(
-            array_map('trim', preg_split('/[,;\/]/', $raw))
-        ));
-    }
-
-    private function pickSentenceWithBlank(string $text, string $pattern, string $blank): ?string
-    {
-        $sentences = preg_split('/(?<=[.!?])\s+/', trim($text), -1, PREG_SPLIT_NO_EMPTY);
-        $usable = array_values(array_filter($sentences, fn($s) => preg_match($pattern, $s) === 1));
-
-        if (empty($usable))
-            return null;
-
-        $sentence = $usable[array_rand($usable)];
-        return preg_replace($pattern, $blank, $sentence, 1);
+        return array_slice($wrong, 0, 3);
     }
 
     private function buildWrongOptions(Word $word, array $masteredWordIds): array
     {
-        $correctWord = strtolower($word->word);
-        $correctPos = strtolower(trim($word->parts_of_speech_variations ?? ''));
-        $firstLetter = strtolower($word->word[0] ?? '');
-
-        $tier1 = Word::where('id', '!=', $word->id)
-            ->whereRaw('LOWER(TRIM(parts_of_speech_variations)) = ?', [$correctPos])
-            ->whereRaw('LOWER(SUBSTR(word, 1, 1)) = ?', [$firstLetter])
-            ->inRandomOrder()->limit(10)->pluck('word')->toArray();
-
-        $tier2 = Word::where('id', '!=', $word->id)
-            ->whereRaw('LOWER(TRIM(parts_of_speech_variations)) = ?', [$correctPos])
-            ->whereNotIn('word', array_merge([$word->word], $tier1))
-            ->inRandomOrder()->limit(10)->pluck('word')->toArray();
-
-        $tier3 = Word::whereIn('id', $masteredWordIds)
+        return Word::whereIn('id', $masteredWordIds)
             ->where('id', '!=', $word->id)
-            ->whereNotIn('word', array_merge([$word->word], $tier1, $tier2))
-            ->inRandomOrder()->limit(10)->pluck('word')->toArray();
-
-        $wrong = [];
-        foreach (array_merge($tier1, $tier2, $tier3) as $candidate) {
-            if (strtolower($candidate) !== $correctWord && !in_array($candidate, $wrong)) {
-                $wrong[] = $candidate;
-            }
-            if (count($wrong) === 3)
-                break;
-        }
-
-        $fillers = ['explore', 'create', 'balance', 'develop', 'achieve', 'promote', 'assess', 'resolve', 'sustain', 'define'];
-        $fi = 0;
-        while (count($wrong) < 3) {
-            $filler = $fillers[$fi++ % count($fillers)];
-            if (!in_array($filler, $wrong) && strtolower($filler) !== $correctWord) {
-                $wrong[] = $filler;
-            }
-        }
-
-        return $wrong;
+            ->inRandomOrder()
+            ->limit(3)
+            ->pluck('word')
+            ->toArray();
     }
 
-    private function buildWordDistractors(
-        string $correct,
-        string $sourceWord,
-        \Illuminate\Support\Collection $allWords,
-        int $count
-    ): array {
-        $correctLower = strtolower($correct);
-        $sourceLower = strtolower($sourceWord);
+    private function buildWordDistractors(string $correct, string $targetWord, Collection $pool, int $count): array
+    {
+        return $pool
+            ->filter(fn($w) => strtolower($w->word) !== strtolower($targetWord) && strtolower($w->word) !== strtolower($correct))
+            ->shuffle()
+            ->take($count)
+            ->pluck('word')
+            ->toArray();
+    }
 
-        $candidates = $allWords
-            ->filter(fn($w) => strtolower($w->word) !== $correctLower && strtolower($w->word) !== $sourceLower)
-            ->shuffle()->pluck('word')->take($count * 3)->toArray();
+    private function splitWordList(string $raw): array
+    {
+        return array_values(array_filter(array_map('trim', preg_split('/[,;\/]+/', $raw))));
+    }
 
-        $wrong = [];
-        foreach ($candidates as $c) {
-            if (strtolower($c) !== $correctLower && !in_array($c, $wrong)) {
-                $wrong[] = $c;
-                if (count($wrong) === $count)
-                    break;
+    private function pickSentenceWithBlank(string $sentences, string $pattern, string $blank): ?string
+    {
+        $parts = preg_split('/(?<=[.!?])\s+/', trim($sentences));
+        foreach (($parts ?: []) as $part) {
+            if (preg_match($pattern, $part)) {
+                return preg_replace($pattern, $blank, $part, 1);
             }
         }
-
-        $fillers = ['notable', 'common', 'simple', 'rapid', 'stable', 'precise', 'vivid', 'scarce', 'rigid', 'dense'];
-        $fi = 0;
-        while (count($wrong) < $count) {
-            $filler = $fillers[$fi++ % count($fillers)];
-            if (!in_array($filler, $wrong) && strtolower($filler) !== $correctLower) {
-                $wrong[] = $filler;
-            }
-        }
-
-        return $wrong;
+        return null;
     }
 }

@@ -2,35 +2,29 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\UserWordListAccess;
 use App\Models\WordListCategory;
 use App\Models\WordListOrder;
+use App\Models\WordListOrderItem;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class UserWordListOrderController extends Controller
 {
   /**
-   * Store a new purchase order for a locked word list category.
+   * Store a new order — supports single or combo categories.
+   *
+   * POST /wordlist-categories/order
+   * Body: { category_ids: [1, 2], name, phone_number, address, ... }
    */
-  public function store(Request $request, WordListCategory $category)
+  public function store(Request $request)
   {
     $user = $request->user();
 
-    // Block if already has an approved or pending order for this category
-    $existing = WordListOrder::where('user_id', $user->id)
-      ->where('word_list_category_id', $category->id)
-      ->whereIn('status', ['pending', 'approved'])
-      ->first();
-
-    if ($existing) {
-      return back()->withErrors([
-        'order' => $existing->status === 'approved'
-          ? 'You already have access to this category.'
-          : 'You already have a pending order for this category.',
-      ]);
-    }
-
-    $validated = $request->validate([
+    $request->validate([
+      'category_ids' => ['required', 'array', 'min:1'],
+      'category_ids.*' => ['integer', 'exists:word_list_categories,id'],
       'name' => ['required', 'string', 'max:255'],
       'phone_number' => ['required', 'string', 'max:20'],
       'address' => ['required', 'string', 'max:500'],
@@ -39,39 +33,71 @@ class UserWordListOrderController extends Controller
       'note' => ['nullable', 'string', 'max:1000'],
     ]);
 
-    // If a rejected order exists, update it instead of creating a duplicate
-    $rejected = WordListOrder::where('user_id', $user->id)
-      ->where('word_list_category_id', $category->id)
-      ->where('status', 'rejected')
-      ->latest()
-      ->first();
+    $categoryIds = collect($request->category_ids)->unique()->values();
 
-    if ($rejected) {
-      $rejected->update([
-        'name' => $validated['name'],
-        'phone_number' => $validated['phone_number'],
-        'address' => $validated['address'],
-        'profession' => $validated['profession'] ?? null,
-        'transaction_id' => $validated['transaction_id'],
-        'note' => $validated['note'] ?? null,
-        'admin_note' => null,
-        'status' => 'pending',
-      ]);
-    } else {
-      WordListOrder::create([
-        'user_id' => $user->id,
-        'word_list_category_id' => $category->id,
-        'name' => $validated['name'],
-        'phone_number' => $validated['phone_number'],
-        'address' => $validated['address'],
-        'profession' => $validated['profession'] ?? null,
-        'transaction_id' => $validated['transaction_id'],
-        'note' => $validated['note'] ?? null,
-        'status' => 'pending',
+    // Validate each requested category is actually locked
+    $categories = WordListCategory::whereIn('id', $categoryIds)->get();
+    $unlocked = $categories->where('is_locked', false)->pluck('name');
+    if ($unlocked->isNotEmpty()) {
+      throw ValidationException::withMessages([
+        'category_ids' => "These categories are not locked: {$unlocked->join(', ')}",
       ]);
     }
 
-    return back()->with('success', 'Order submitted successfully! We will review and grant access soon.');
+    // Block categories where user already has access or a pending order
+    $alreadyAccess = UserWordListAccess::where('user_id', $user->id)
+      ->whereIn('word_list_category_id', $categoryIds)
+      ->pluck('word_list_category_id');
+
+    if ($alreadyAccess->isNotEmpty()) {
+      $names = $categories->whereIn('id', $alreadyAccess)->pluck('name');
+      throw ValidationException::withMessages([
+        'category_ids' => "You already have access to: {$names->join(', ')}",
+      ]);
+    }
+
+    // Check for pending orders on any of the requested categories
+    // (via order items join)
+    $pendingCategoryIds = WordListOrderItem::whereIn('word_list_category_id', $categoryIds)
+      ->whereHas(
+        'order',
+        fn($q) => $q
+          ->where('user_id', $user->id)
+          ->where('status', 'pending')
+      )
+      ->pluck('word_list_category_id');
+
+    if ($pendingCategoryIds->isNotEmpty()) {
+      $names = $categories->whereIn('id', $pendingCategoryIds)->pluck('name');
+      throw ValidationException::withMessages([
+        'category_ids' => "You already have a pending order for: {$names->join(', ')}",
+      ]);
+    }
+
+    // Create the order
+    $order = WordListOrder::create([
+      'user_id' => $user->id,
+      'name' => $request->name,
+      'phone_number' => $request->phone_number,
+      'address' => $request->address,
+      'profession' => $request->profession,
+      'payment_method' => 'bkash',
+      'transaction_id' => $request->transaction_id,
+      'note' => $request->note,
+      'status' => 'pending',
+    ]);
+
+    // Attach items
+    $items = $categoryIds->map(fn($id) => [
+      'word_list_order_id' => $order->id,
+      'word_list_category_id' => $id,
+      'created_at' => now(),
+      'updated_at' => now(),
+    ])->all();
+
+    WordListOrderItem::insert($items);
+
+    return back()->with('success', 'Order submitted! We will review and grant access soon.');
   }
 
   /**
@@ -79,7 +105,7 @@ class UserWordListOrderController extends Controller
    */
   public function index(Request $request)
   {
-    $orders = WordListOrder::with('category:id,name,thumbnail')
+    $orders = WordListOrder::with('categories:id,name,thumbnail')
       ->where('user_id', $request->user()->id)
       ->latest()
       ->get();
