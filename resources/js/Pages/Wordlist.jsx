@@ -251,13 +251,11 @@ function QuizLockedCard({
     wordList,
     color,
     star,
-    // quizEligibleIds,
-    hasQuizIds,
+    previousWordlistId, // ID of the wordlist whose quiz must be passed
+    isTakeable, // true only when previousWordlistId is itself accessible
     user,
     index,
 }) {
-    // const hasQuiz = quizEligibleIds.includes(wordList.id);
-    const hasQuiz = hasQuizIds.includes(wordList.id);
     const total = wordList.words_count ?? 0;
 
     return (
@@ -300,10 +298,10 @@ function QuizLockedCard({
                     Pass the previous quiz to unlock
                 </p>
 
-                {hasQuiz ? (
+                {isTakeable ? (
                     user ? (
                         <a
-                            href={route("quiz.wordlist", wordList.id)}
+                            href={route("quiz.wordlist", previousWordlistId)}
                             className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-1.5 rounded-xl transition"
                         >
                             <GraduationCap className="h-3.5 w-3.5" />
@@ -319,7 +317,7 @@ function QuizLockedCard({
                     )
                 ) : (
                     <span className="text-xs text-gray-400 dark:text-gray-500 italic">
-                        Quiz coming soon
+                        Unlock previous first
                     </span>
                 )}
             </div>
@@ -337,7 +335,9 @@ export default function Wordlist({
     userHasAccess = false,
     quizEligibleIds = [],
     hasQuizIds = [],
-    quizUnlockedIds = [], // ← word list IDs where the user has already passed the quiz
+    quizUnlockedIds = [],
+    previousWordlistIdMap = {},
+    quizTakeableIds = [], // locked wordlists whose previous wordlist is accessible
     bkashNumber = "01825236112",
 }) {
     const { auth } = usePage().props;
@@ -489,10 +489,14 @@ export default function Wordlist({
                                                     wordList={wordList}
                                                     color={color}
                                                     star={star}
-                                                    hasQuizIds={hasQuizIds}
-                                                    // quizEligibleIds={
-                                                    //     quizEligibleIds
-                                                    // }
+                                                    previousWordlistId={
+                                                        previousWordlistIdMap[
+                                                            wordList.id
+                                                        ] ?? null
+                                                    }
+                                                    isTakeable={quizTakeableIds.includes(
+                                                        wordList.id,
+                                                    )}
                                                     user={user}
                                                     index={index}
                                                 />
@@ -503,84 +507,101 @@ export default function Wordlist({
                                     // ── UNLOCKED card — clickable ──
                                     return (
                                         <div key={wordList.id}>
-                                            <Link
-                                                href={route(
-                                                    "wordlist.start",
-                                                    wordList.id,
-                                                )}
-                                                className="block"
+                                            <div
+                                                role="button"
+                                                tabIndex={0}
+                                                onClick={() =>
+                                                    router.visit(
+                                                        route(
+                                                            "wordlist.start",
+                                                            wordList.id,
+                                                        ),
+                                                    )
+                                                }
+                                                onKeyDown={(e) => {
+                                                    if (
+                                                        e.key === "Enter" ||
+                                                        e.key === " "
+                                                    )
+                                                        router.visit(
+                                                            route(
+                                                                "wordlist.start",
+                                                                wordList.id,
+                                                            ),
+                                                        );
+                                                }}
+                                                className="bg-white dark:bg-slate-900 rounded-2xl px-5 py-4 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                                                style={{
+                                                    animationDelay: `${index * 0.07}s`,
+                                                    animation:
+                                                        "fadeInUp 0.4s ease-out forwards",
+                                                    opacity: 0,
+                                                }}
                                             >
-                                                <div
-                                                    className="bg-white dark:bg-slate-900 rounded-2xl px-5 py-4 shadow-sm hover:shadow-md transition-all"
-                                                    style={{
-                                                        animationDelay: `${index * 0.07}s`,
-                                                        animation:
-                                                            "fadeInUp 0.4s ease-out forwards",
-                                                        opacity: 0,
-                                                    }}
-                                                >
-                                                    <div className="flex items-start justify-between gap-3 mb-3">
-                                                        <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 leading-snug flex-1">
-                                                            {wordList.title}
-                                                        </h2>
-                                                        <ChevronRight className="h-4 w-4 text-gray-300 shrink-0 mt-1" />
-                                                    </div>
-
-                                                    <div className="flex items-center gap-2 mb-3">
-                                                        <span
-                                                            className={`text-xs font-medium px-2.5 py-0.5 rounded-full border ${color}`}
-                                                        >
-                                                            {star}{" "}
-                                                            {
-                                                                wordList.difficulty
-                                                            }
-                                                        </span>
-                                                        {total > 0 && (
-                                                            <span className="text-xs font-medium px-2.5 py-0.5 rounded-full border border-blue-200 bg-blue-50 text-blue-700">
-                                                                {total} words
-                                                            </span>
-                                                        )}
-                                                    </div>
-
-                                                    {mastered !== null && (
-                                                        <MasteredProgress
-                                                            mastered={mastered}
-                                                            total={total}
-                                                        />
-                                                    )}
-
-                                                    <div className="flex items-center justify-between mt-3">
-                                                        <div>
-                                                            {user && (
-                                                                <a
-                                                                    href={route(
-                                                                        "quiz.wordlist",
-                                                                        wordList.id,
-                                                                    )}
-                                                                    className="flex items-center gap-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
-                                                                    onClick={(
-                                                                        e,
-                                                                    ) =>
-                                                                        e.stopPropagation()
-                                                                    }
-                                                                >
-                                                                    <GraduationCap className="h-3.5 w-3.5" />
-                                                                    Take a Quiz
-                                                                </a>
-                                                            )}
-                                                        </div>
-                                                        <span className="text-[#E5201C] text-sm font-semibold flex items-center gap-1">
-                                                            {mastered !==
-                                                                null &&
-                                                            mastered >= total &&
-                                                            total > 0
-                                                                ? "Completed"
-                                                                : "Start Exercise"}
-                                                            <Play className="h-3.5 w-3.5 fill-[#E5201C]" />
-                                                        </span>
-                                                    </div>
+                                                <div className="flex items-start justify-between gap-3 mb-3">
+                                                    <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 leading-snug flex-1">
+                                                        {wordList.title}
+                                                    </h2>
+                                                    <ChevronRight className="h-4 w-4 text-gray-300 shrink-0 mt-1" />
                                                 </div>
-                                            </Link>
+
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <span
+                                                        className={`text-xs font-medium px-2.5 py-0.5 rounded-full border ${color}`}
+                                                    >
+                                                        {star}{" "}
+                                                        {wordList.difficulty}
+                                                    </span>
+                                                    {total > 0 && (
+                                                        <span className="text-xs font-medium px-2.5 py-0.5 rounded-full border border-blue-200 bg-blue-50 text-blue-700">
+                                                            {total} words
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                {mastered !== null && (
+                                                    <MasteredProgress
+                                                        mastered={mastered}
+                                                        total={total}
+                                                    />
+                                                )}
+
+                                                <div className="flex items-center justify-between mt-3">
+                                                    <div>
+                                                        {user &&
+                                                        quizEligibleIds.includes(
+                                                            wordList.id,
+                                                        ) ? (
+                                                            <Link
+                                                                href={route(
+                                                                    "quiz.wordlist",
+                                                                    wordList.id,
+                                                                )}
+                                                                className="flex items-center gap-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                                                                onClick={(e) =>
+                                                                    e.stopPropagation()
+                                                                }
+                                                            >
+                                                                <GraduationCap className="h-3.5 w-3.5" />
+                                                                Take a Quiz
+                                                            </Link>
+                                                        ) : user ? (
+                                                            <span className="text-xs text-gray-400 dark:text-gray-500">
+                                                                Learn 20 words
+                                                                to unlock quiz
+                                                            </span>
+                                                        ) : null}
+                                                    </div>
+                                                    <span className="text-[#E5201C] text-sm font-semibold flex items-center gap-1">
+                                                        {mastered !== null &&
+                                                        mastered >= total &&
+                                                        total > 0
+                                                            ? "Completed"
+                                                            : "Start Exercise"}
+                                                        <Play className="h-3.5 w-3.5 fill-[#E5201C]" />
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
                                     );
                                 })}

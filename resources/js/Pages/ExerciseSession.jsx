@@ -88,18 +88,9 @@ export default function ExerciseSession({
 
     const previousStreak = useRef(initialStreak?.current_streak ?? 0);
 
-    const [fireAnim, setFireAnim] = useState(null);
-    const [approvedAnim, setApprovedAnim] = useState(null);
-
-    useEffect(() => {
-        fetch(fireStreakAnimation)
-            .then((res) => res.json())
-            .then(setFireAnim);
-
-        fetch(approvedAnimation)
-            .then((res) => res.json())
-            .then(setApprovedAnim);
-    }, []);
+    // Lottie JSON is already a JS object via Vite's JSON import — use directly.
+    const fireAnim = fireStreakAnimation;
+    const approvedAnim = approvedAnimation;
 
     // const [streakValue, setStreakValue] = useState(1);
     // ── Queue state ───────────────────────────────────────────────────────────
@@ -135,8 +126,10 @@ export default function ExerciseSession({
     const [exiting, setExiting] = useState(false);
 
     // ── Gamification state ────────────────────────────────────────────────────
-    const [showConfetti, setShowConfetti] = useState(false);
-    const [masteryFlash, setMasteryFlash] = useState(false);
+    // masteryEventKey increments on every mastery so each event gets its own
+    // keyed overlay instance with independent timers — rapid presses each
+    // play their full animation without cancelling the previous one.
+    const [masteryEventKey, setMasteryEventKey] = useState(0);
     const [levelUpPulse, setLevelUpPulse] = useState(false);
 
     // Current word is always the front of the queue
@@ -173,12 +166,12 @@ export default function ExerciseSession({
     useEffect(() => {
         if (!isDone || !auth?.user) return;
 
-        const csrfToken = decodeURIComponent(
-            document.cookie
-                .split("; ")
-                .find((row) => row.startsWith("XSRF-TOKEN="))
-                ?.split("=")[1] ?? "",
-        );
+        const _xsrfRow = document.cookie
+            .split("; ")
+            .find((row) => row.startsWith("XSRF-TOKEN="));
+        const csrfToken = _xsrfRow
+            ? decodeURIComponent(_xsrfRow.substring("XSRF-TOKEN=".length))
+            : "";
 
         fetch(route("word.session-complete"), {
             method: "POST",
@@ -229,6 +222,65 @@ export default function ExerciseSession({
     }, [word?.id]);
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+    // ── MasteryOverlay ────────────────────────────────────────────────────────
+    // Self-contained overlay for a single mastery event.
+    // Receiving a new `key` prop from the parent causes React to fully unmount
+    // and remount this component, giving each rapid mastery its own fresh
+    // state and independent timers — no stale closures, no timer collisions.
+    const MasteryOverlay = () => {
+        const [flash, setFlash] = useState(true);
+        const [visible, setVisible] = useState(true);
+
+        useEffect(() => {
+            const t1 = setTimeout(() => setFlash(false), 900);
+            const t2 = setTimeout(() => setVisible(false), 2800);
+            return () => {
+                clearTimeout(t1);
+                clearTimeout(t2);
+            };
+        }, []);
+
+        if (!visible) return null;
+
+        return (
+            <>
+                {/* Green flash */}
+                {flash && (
+                    <div className="fixed inset-0 pointer-events-none z-40 bg-green-400/20" />
+                )}
+                {/* Confetti + badge */}
+                <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+                    {CONFETTI.map((p) => (
+                        <div
+                            key={p.id}
+                            style={{
+                                position: "absolute",
+                                left: p.left,
+                                top: "-12px",
+                                width: `${p.size}px`,
+                                height: `${p.size}px`,
+                                backgroundColor: p.color,
+                                borderRadius: p.borderRadius,
+                                animation: `confettiFall ${p.duration} ${p.delay} ease-in forwards`,
+                            }}
+                        />
+                    ))}
+                    <div className="absolute inset-x-0 top-24 flex justify-center pointer-events-none">
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl dark:shadow-2xl dark:shadow-slate-900 px-8 py-4 text-center animate-bounce-in border border-green-100 dark:border-green-900">
+                            <p className="text-3xl mb-1">🌟</p>
+                            <p className="text-lg font-extrabold text-green-600 dark:text-green-400">
+                                Mastered!
+                            </p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                                Word added to your Mastery Garden
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </>
+        );
+    };
+
     const StreakPop = ({ streakCount, onComplete }) => {
         useEffect(() => {
             const timer = setTimeout(() => {
@@ -268,10 +320,9 @@ export default function ExerciseSession({
                     {/* Dynamic Number */}
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
                         <div
-                            className="text-[92px] font-black text-white tracking-[-6px] drop-shadow-[0_0_50px_#FF9500] animate-[streakPop_0.75s_cubic-bezier(0.34,1.56,0.64,1)_forwards]"
+                            className="text-2xl font-black text-white tracking-[-6px] drop-shadow-[0_0_50px_#FF9500] animate-[streakPop_0.75s_cubic-bezier(0.34,1.56,0.64,1)_forwards]"
                             style={{
-                                textShadow:
-                                    "0 20px 50px rgba(255, 149, 0, 0.95)",
+                                textShadow: "0 20px 50px rgba(255, 0, 0, 0.95)",
                             }}
                         >
                             +{streakCount}
@@ -333,12 +384,12 @@ export default function ExerciseSession({
 
     // ── Fire-and-forget server call ───────────────────────────────────────────
     const pingServer = (routeName, wordId) => {
-        const csrfToken = decodeURIComponent(
-            document.cookie
-                .split("; ")
-                .find((row) => row.startsWith("XSRF-TOKEN="))
-                ?.split("=")[1] ?? "",
-        );
+        const _xsrfRow = document.cookie
+            .split("; ")
+            .find((row) => row.startsWith("XSRF-TOKEN="));
+        const csrfToken = _xsrfRow
+            ? decodeURIComponent(_xsrfRow.substring("XSRF-TOKEN=".length))
+            : "";
         fetch(route(routeName, wordId), {
             method: "POST",
             headers: {
@@ -408,10 +459,9 @@ export default function ExerciseSession({
         const willLevelUp = currentBox < MASTERED_BOX;
 
         if (willMaster) {
-            setShowConfetti(true);
-            setMasteryFlash(true);
-            setTimeout(() => setMasteryFlash(false), 900);
-            setTimeout(() => setShowConfetti(false), 2800);
+            // Increment key → React unmounts old overlay, mounts a fresh one
+            // with its own independent timer. Safe for rapid presses.
+            setMasteryEventKey((k) => k + 1);
         } else if (willLevelUp) {
             setLevelUpPulse(true);
             setTimeout(() => setLevelUpPulse(false), 500);
@@ -716,14 +766,18 @@ export default function ExerciseSession({
                             >
                                 New Session
                             </Link>
-                            {/* {promotedCount > 0 && (
+                            {auth?.user && (
                                 <Link
-                                    href={route("words.mastered")}
-                                    className="w-full py-3.5 bg-green-600 text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-green-700 transition"
+                                    href={route("words.bookmarked")}
+                                    className="w-full py-3.5 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-400 font-semibold rounded-2xl flex items-center justify-center gap-2 hover:shadow-md transition"
                                 >
-                                    View Mastered Words
+                                    <Bookmark
+                                        className="h-4 w-4 fill-yellow-400 text-yellow-400"
+                                        strokeWidth={1.8}
+                                    />
+                                    View Bookmarks
                                 </Link>
-                            )} */}
+                            )}
                             <Link
                                 href={backHref}
                                 className="w-full py-3.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 font-semibold rounded-2xl flex items-center justify-center gap-2 hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-slate-900 transition"
@@ -752,42 +806,8 @@ export default function ExerciseSession({
             <Head title={`Exercise — ${word?.word ?? ""}`} />
             <FlashMessages />
 
-            {/* ── Confetti burst on mastery ────────────────────────────────── */}
-            {showConfetti && (
-                <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-                    {CONFETTI.map((p) => (
-                        <div
-                            key={p.id}
-                            style={{
-                                position: "absolute",
-                                left: p.left,
-                                top: "-12px",
-                                width: `${p.size}px`,
-                                height: `${p.size}px`,
-                                backgroundColor: p.color,
-                                borderRadius: p.borderRadius,
-                                animation: `confettiFall ${p.duration} ${p.delay} ease-in forwards`,
-                            }}
-                        />
-                    ))}
-                    <div className="absolute inset-x-0 top-24 flex justify-center pointer-events-none">
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl dark:shadow-2xl dark:shadow-slate-900 px-8 py-4 text-center animate-bounce-in border border-green-100 dark:border-green-900">
-                            <p className="text-3xl mb-1">🌟</p>
-                            <p className="text-lg font-extrabold text-green-600 dark:text-green-400">
-                                Mastered!
-                            </p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                Word added to your Mastery Garden
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* ── Mastery green flash ──────────────────────────────────────── */}
-            {masteryFlash && (
-                <div className="fixed inset-0 pointer-events-none z-40 bg-green-400/20" />
-            )}
+            {/* ── Mastery overlay — keyed so each event is an independent instance ── */}
+            {masteryEventKey > 0 && <MasteryOverlay key={masteryEventKey} />}
 
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 pb-10 pt-1 mt-3">
                 {/* ── Session progress bar ─────────────────────────────────── */}
@@ -809,6 +829,19 @@ export default function ExerciseSession({
                         <span className="shrink-0 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-full px-2.5 py-0.5 shadow-sm dark:shadow-lg">
                             {queue.length} left
                         </span>
+                        {/* Bookmarks shortcut */}
+                        {auth?.user && (
+                            <Link
+                                href={route("words.bookmarked")}
+                                className="flex-none p-1.5 rounded-lg text-gray-400 dark:text-gray-600 hover:text-yellow-500 dark:hover:text-yellow-400 transition"
+                                aria-label="View bookmarked words"
+                            >
+                                <Bookmark
+                                    className="h-5 w-5"
+                                    strokeWidth={1.8}
+                                />
+                            </Link>
+                        )}
                     </div>
                 </div>
 

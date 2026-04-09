@@ -10,6 +10,7 @@ class UserDailyActivity extends Model
     'user_id',
     'activity_date',
     'completed',
+    'session_xp_earned',
   ];
 
   protected $casts = [

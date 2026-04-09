@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, usePage } from "@inertiajs/react";
 import {
     Dialog,
@@ -43,6 +43,10 @@ export default function PurchaseOrderDialog({
             transaction_id: "",
             note: "",
         });
+
+    useEffect(() => {
+        setData("category_ids", category?.id ? [category.id] : []);
+    }, [category?.id]);
 
     const copyBkash = () => {
         navigator.clipboard.writeText(bkashNumber);

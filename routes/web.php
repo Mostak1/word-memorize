@@ -5,6 +5,7 @@ use App\Http\Controllers\PublicLinkTreeController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\TTSController;
 use App\Http\Controllers\UserSettingController;
+use App\Http\Controllers\UserShopController;
 use App\Http\Controllers\UserWordController;
 use App\Http\Controllers\UserWordListOrderController;
 use App\Http\Controllers\WordListCategoryController;
@@ -14,10 +15,21 @@ use App\Http\Controllers\ReviewWordController;
 use App\Http\Controllers\BookmarkController;
 use App\Http\Controllers\WordProgressController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\XpShopController;
+use App\Models\Setting;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+
+
+// Route::get('/debug-receiver-email', function () {
+//     return response()->json([
+//         // 'config_settings' => config('settings'),
+//         'receiver_email' => config('settings.receiver_email'),
+//         // 'db_settings' => Setting::pluck('value', 'key')->toArray(),
+//         // 'cache_settings' => Cache::get('settings'),
+//     ]);
+// });
+
 
 Route::get('/tts', [TTSController::class, 'generate'])->name('tts');
 Route::get('/', function () {
@@ -186,7 +198,8 @@ Route::middleware('auth')->group(function () {
 
     // Bookmarks
     Route::post('/word/{word}/bookmark', [BookmarkController::class, 'toggle'])->name('word.bookmark');
-    Route::get('/my/bookmarks', [BookmarkController::class, 'index'])->name('words.bookmarked');
+    // Route::get('/my/bookmarks', [BookmarkController::class, 'index'])->name('words.bookmarked');
+    Route::get('/bookmarks', [BookmarkController::class, 'index'])->name('words.bookmarked');
 
     // Word Progress (demote mastered words back to review)
     Route::post('/word/{word}/demote-from-mastery', [WordProgressController::class, 'demoteFromMastery'])
@@ -195,24 +208,10 @@ Route::middleware('auth')->group(function () {
     // Error reports
     Route::post('/error-reports', [ErrorReportController::class, 'store'])->name('error-reports.store');
 
-    // ── XP Shop ───────────────────────────────────────────────────────────────
-    // Route::get('/shop', function () {
-    //     return Inertia::render('XpShop');
-    // })->name('xp-shop');
 
-    // Route::get('/api/xp-shop/status', [XpShopController::class, 'getStatus'])
-    //     ->name('api.xp-shop.status');
-
-    // Route::post('/api/xp-shop/buy-freeze', [XpShopController::class, 'buyStreakFreeze'])
-    //     ->name('api.xp-shop.buy-freeze');
-
-    Route::get('/shop', [XpShopController::class, 'index'])->name('xp-shop');
-
-    Route::get('/api/xp-shop/status', [XpShopController::class, 'getStatus'])
-        ->name('api.xp-shop.status');
-
-    Route::post('/api/xp-shop/buy-freeze', [XpShopController::class, 'buyStreakFreeze'])
-        ->name('api.xp-shop.buy-freeze');
+    Route::get('/shop', [UserShopController::class, 'index'])->name('shop');
+    Route::get('/api/xp-shop/status', [UserShopController::class, 'getStatus'])->name('api.xp-shop.status');
+    Route::post('/api/xp-shop/buy-freeze', [UserShopController::class, 'buyStreakFreeze'])->name('api.xp-shop.buy-freeze');
 });
 
 require __DIR__ . '/auth.php';

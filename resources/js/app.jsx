@@ -6,6 +6,7 @@ import { resolvePageComponent } from "laravel-vite-plugin/inertia-helpers";
 import { createRoot } from "react-dom/client";
 import { Toaster, toast } from "sonner";
 import { ThemeProvider, useTheme } from "@/Components/ThemeProvider";
+import PageLoadingState from "@/Components/PageLoadingState";
 import { registerSW } from "virtual:pwa-register";
 
 const appName = import.meta.env.VITE_APP_NAME || "Laravel";
@@ -58,12 +59,21 @@ createInertiaApp({
 
         root.render(
             <ThemeProvider defaultTheme="light" storageKey="admin-theme">
+                <PageLoadingState />
                 <App {...props} />
                 <ThemedToaster />
             </ThemeProvider>,
         );
+
+        // Hide splash screen on app mount
+        const splash = document.getElementById("app-splash");
+        if (splash) {
+            splash.classList.add("opacity-0", "pointer-events-none");
+            setTimeout(() => splash.remove(), 500);
+        }
     },
     progress: {
         color: "#e70013",
+        showSpinner: true,
     },
 });

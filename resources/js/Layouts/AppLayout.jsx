@@ -139,7 +139,7 @@ export default function AppLayout({ children }) {
                                     {/* XP balance pill — links to shop */}
                                     {xpData && (
                                         <Link
-                                            href={route("xp-shop")}
+                                            href={route("shop")}
                                             className="flex items-center gap-1.5 text-white text-sm font-semibold px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors ml-2"
                                             title="Shop"
                                         >
@@ -152,7 +152,7 @@ export default function AppLayout({ children }) {
 
                                     {/* Shop link */}
                                     <Link
-                                        href={route("xp-shop")}
+                                        href={route("shop")}
                                         className="flex items-center gap-1.5 text-white text-sm font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
                                     >
                                         <ShoppingBag className="h-4 w-4" />
@@ -274,7 +274,7 @@ export default function AppLayout({ children }) {
 
                                     {/* Shop link (mobile) */}
                                     <Link
-                                        href={route("xp-shop")}
+                                        href={route("shop")}
                                         onClick={() => setMobileOpen(false)}
                                         className="flex items-center justify-between text-white font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
                                     >
@@ -297,7 +297,7 @@ export default function AppLayout({ children }) {
                                     {/* XP balance (mobile) */}
                                     {/* {xpData && (
                                         <Link
-                                            href={route("xp-shop")}
+                                            href={route("shop")}
                                             onClick={() => setMobileOpen(false)}
                                             className="flex items-center gap-2 text-white font-semibold px-3 py-2 rounded-lg bg-white/10 mx-3 mt-1"
                                         >

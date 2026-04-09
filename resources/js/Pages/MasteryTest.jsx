@@ -470,14 +470,18 @@ export default function MasteryTest({
                           total_questions: total,
                       }
                     : {};
+                const _xsrfRow = document.cookie
+                    .split("; ")
+                    .find((r) => r.startsWith("XSRF-TOKEN="));
+                const csrfToken = _xsrfRow
+                    ? decodeURIComponent(_xsrfRow.split("=")[1])
+                    : "";
                 await fetch(route("mastery-test.finish"), {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        "X-CSRF-TOKEN":
-                            document
-                                .querySelector('meta[name="csrf-token"]')
-                                ?.getAttribute("content") ?? "",
+                        "X-XSRF-TOKEN": csrfToken,
+                        Accept: "application/json",
                     },
                     body: JSON.stringify(body),
                 });
@@ -610,11 +614,19 @@ export default function MasteryTest({
                                 <RotateCcw className="h-4 w-4" /> Try Again
                             </button>
                             <Link
-                                href={route("dashboard")}
+                                href={
+                                    categoryId
+                                        ? route("wordlistcategory.wordlists", {
+                                              category: categoryId,
+                                          })
+                                        : route("dashboard")
+                                }
                                 className="w-full py-3.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 font-semibold rounded-2xl flex items-center justify-center gap-2 hover:shadow-md dark:hover:shadow-md transition"
                             >
-                                <ChevronLeft className="h-4 w-4" /> Back to
-                                Dashboard
+                                <ChevronLeft className="h-4 w-4" />
+                                {categoryId
+                                    ? "Back to Wordlist"
+                                    : "Back to Dashboard"}
                             </Link>
                         </div>
                     </div>

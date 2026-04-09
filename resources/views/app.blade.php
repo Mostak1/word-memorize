@@ -23,9 +23,6 @@
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="icon" href="/icons/icon-192x192.png" type="image/png">
 
-    <!-- Puter.js -->
-    <script src="https://js.puter.com/v2/"></script>
-
     <!-- Scripts -->
     @routes
     @viteReactRefresh
@@ -34,6 +31,21 @@
 </head>
 
 <body class="font-sans antialiased">
+    <!-- Loading Splash Screen -->
+    <div id="app-splash"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-white dark:bg-slate-950 transition-opacity duration-500 opacity-100">
+        <div class="text-center">
+            <!-- Spinner -->
+            <div class="mb-6">
+                <div
+                    class="w-16 h-16 mx-auto border-4 border-slate-200 dark:border-slate-700 border-t-red-600 dark:border-t-red-500 rounded-full animate-spin">
+                </div>
+            </div>
+            <!-- App Name -->
+            <h1 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">VocabPix</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-2">Loading your vocabulary companion...</p>
+        </div>
+    </div>
     @inertia
 </body>
 

@@ -12,6 +12,7 @@ import {
     ShieldCheck,
     Snowflake,
     ShoppingBag,
+    Bookmark,
 } from "lucide-react";
 
 // ── Streak Banner ─────────────────────────────────────────────────────────────
@@ -258,6 +259,29 @@ export default function Dashboard({
                             </div>
                         </Link>
                     </div>
+
+                    {/* ── Bookmarked Words ── */}
+                    <Link
+                        href={route("words.bookmarked")}
+                        className="block mb-3"
+                    >
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="w-12 h-12 rounded-full bg-yellow-50 dark:bg-yellow-950/30 flex items-center justify-center shrink-0">
+                                <Bookmark
+                                    className="h-6 w-6 fill-yellow-400 text-yellow-400"
+                                    strokeWidth={1.8}
+                                />
+                            </div>
+                            <div>
+                                <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
+                                    Bookmarked Words
+                                </p>
+                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                                    Words saved for later review
+                                </p>
+                            </div>
+                        </div>
+                    </Link>
 
                     {/* ── Bottom bar: Rate / Settings ── */}
                     <div className="grid grid-cols-3 gap-3 mb-4">

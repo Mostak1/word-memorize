@@ -164,6 +164,36 @@ class QuizController extends Controller
     {
         $userId = Auth::id();
 
+        // ── Access guard ──────────────────────────────────────────────────────
+        // If this wordlist is locked the user must have passed the quiz for the
+        // immediately preceding wordlist (ordered by id) before they can take
+        // this one.  This prevents direct URL access to a locked quiz.
+        if ($wordlist->is_locked) {
+            if (!$userId) {
+                abort(403, 'You must be logged in to take this quiz.');
+            }
+
+            $prevWordlist = WordList::where('word_list_category_id', $wordlist->word_list_category_id)
+                ->where('status', true)
+                ->where('id', '<', $wordlist->id)
+                ->orderBy('id', 'desc')
+                ->first();
+
+            if (!$prevWordlist) {
+                abort(403, 'This quiz is not accessible.');
+            }
+
+            $hasPassedPrev = QuizAttempt::where('user_id', $userId)
+                ->where('passed', true)
+                ->join('quizzes', 'quiz_attempts.quiz_id', '=', 'quizzes.id')
+                ->where('quizzes.wordlist_id', $prevWordlist->id)
+                ->exists();
+
+            if (!$hasPassedPrev) {
+                abort(403, 'Pass the previous quiz first to unlock this wordlist.');
+            }
+        }
+
         // ── DB Quiz branch ────────────────────────────────────────────────────
         $dbQuiz = $wordlist->quizzes()
             ->where('is_active', true)
@@ -394,7 +424,7 @@ class QuizController extends Controller
         $usedIds = [];
 
         if ($matchPairWords->count() >= 4) {
-            $pairWords = $matchPairWords->shuffle()->take(2);
+            $pairWords = $matchPairWords->shuffle()->take(4);
             foreach ($pairWords as $w) {
                 $usedIds[] = $w->id;
             }
@@ -407,7 +437,7 @@ class QuizController extends Controller
 
         $pool = [];
 
-        foreach ($fillBlankWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(5) as $word) {
+        foreach ($fillBlankWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(7) as $word) {
             $blank = '___________';
             $pattern = '/' . preg_quote($word->word, '/') . '/i';
             $sentence = $this->pickSentenceWithBlank($word->example_sentences, $pattern, $blank);
@@ -419,7 +449,7 @@ class QuizController extends Controller
             $pool[] = ['type' => 'fill_blank', 'word' => $word->word, 'sentence' => $sentence, 'options' => $options, 'correct' => $word->word];
         }
 
-        foreach ($synonymWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(4) as $word) {
+        foreach ($synonymWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(6) as $word) {
             $list = $this->splitWordList($word->synonym);
             if (empty($list))
                 continue;
@@ -430,7 +460,7 @@ class QuizController extends Controller
             $pool[] = ['type' => 'synonym', 'word' => $word->word, 'options' => $options, 'correct' => $correct];
         }
 
-        foreach ($antonymWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(4) as $word) {
+        foreach ($antonymWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(6) as $word) {
             $list = $this->splitWordList($word->antonym);
             if (empty($list))
                 continue;
@@ -441,7 +471,7 @@ class QuizController extends Controller
             $pool[] = ['type' => 'antonym', 'word' => $word->word, 'options' => $options, 'correct' => $correct];
         }
 
-        foreach ($translationWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(4) as $word) {
+        foreach ($translationWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(6) as $word) {
             $distractors = $translationWords
                 ->filter(fn($w2) => $w2->id !== $word->id && !empty(trim($w2->bangla_meaning ?? '')))
                 ->shuffle()->take(3)->pluck('bangla_meaning')->toArray();

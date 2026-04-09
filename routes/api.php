@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\LinkTreeController;
-use App\Http\Controllers\XpShopController;
+use App\Http\Controllers\UserShopController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -18,6 +18,6 @@ Route::prefix('linktree')->name('api.linktree.')->group(function () {
 // ── XP Shop API ───────────────────────────────────────────────────────────────
 
 Route::middleware('auth:sanctum')->prefix('xp-shop')->name('api.xp-shop.')->group(function () {
-    Route::get('/status', [XpShopController::class, 'getStatus'])->name('status');
-    Route::post('/buy-streak-freeze', [XpShopController::class, 'buyStreakFreeze'])->name('buy-freeze');
+    Route::get('/status', [UserShopController::class, 'getStatus'])->name('status');
+    Route::post('/buy-streak-freeze', [UserShopController::class, 'buyStreakFreeze'])->name('buy-freeze');
 });
