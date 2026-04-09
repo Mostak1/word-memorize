@@ -14,14 +14,9 @@
     <meta name="msapplication-TileColor" content="#e70013" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="mask-icon" href="/masked-icon.svg" color="#e70013" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="{{ config('app.name', 'VocabPix') }}" />
-    <meta name="application-name" content="{{ config('app.name', 'VocabPix') }}" />
-    <meta name="msapplication-TileColor" content="#e70013" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="mask-icon" href="/masked-icon.svg" color="#e70013" />
+    @if (app()->environment('production'))
+        <link rel="manifest" href="/manifest.webmanifest" />
+    @endif
     <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
     <!-- Fonts -->
