@@ -27,7 +27,7 @@
     <link rel="icon" href="/icons/icon-192x192.png" type="image/png">
 
     <!-- Puter.js -->
-    <script src="https://js.puter.com/v2/"></script>
+    <!-- <script src="https://js.puter.com/v2/"></script> -->
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="icon" href="/icons/icon-192x192.png" type="image/png">
 

@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\WordListOrder;
 use Illuminate\Http\Request;
+use App\Mail\WordListOrderStatusMail;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class WordListOrderController extends Controller
 {
@@ -48,6 +51,31 @@ class WordListOrderController extends Controller
 
     $order->update($data);
     // Observer fires here → grantAccess() or revokeAccess() called automatically
+    // ── Notify the user about their order status change ───────────────────
+    $userEmail = $order->user?->email;
+    // $userEmail = 'cryfar556@gmail.com';
+
+    if ($userEmail && in_array($order->status, ['approved', 'rejected'])) {
+      try {
+        $order->load('categories'); // ensure categories are loaded for the view
+
+        $mailable = new WordListOrderStatusMail($order);
+
+        if (config('mail_queue.is_queue')) {
+          Mail::to($userEmail)->cc(config('settings.receiver_email'))->queue($mailable);
+        } else {
+          Mail::purge('smtp');
+          Mail::mailer('smtp')->to($userEmail)->cc(config('settings.receiver_email'))->send($mailable);
+        }
+      } catch (\Exception $e) {
+        Log::error('Failed to send order status email to user', [
+          'order_id' => $order->id,
+          'user_email' => $userEmail,
+          'status' => $order->status,
+          'error' => $e->getMessage(),
+        ]);
+      }
+    }
 
     return back()->with('flash', [
       'type' => 'success',

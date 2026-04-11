@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\NewWordListOrderMail;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use App\Models\UserWordListAccess;
 use App\Models\WordListCategory;
 use App\Models\WordListOrder;
@@ -96,6 +99,30 @@ class UserWordListOrderController extends Controller
     ])->all();
 
     WordListOrderItem::insert($items);
+
+    $receiverEmail = config('settings.receiver_email');
+
+    if ($receiverEmail) {
+      try {
+        $categoryNames = $categories->whereIn('id', $categoryIds->all())->pluck('name')->all();
+        $mailable = new NewWordListOrderMail($order, $categoryNames);
+
+        if (config('mail_queue.is_queue')) {
+          Mail::to($receiverEmail)->queue($mailable);
+        } else {
+          Mail::purge('smtp');
+          Mail::mailer('smtp')->to($receiverEmail)->send($mailable);
+        }
+      } catch (\Exception $e) {
+        Log::error('Failed to send new order notification email', [
+          'order_id' => $order->id,
+          'receiver_email' => $receiverEmail,
+          'error' => $e->getMessage(),
+        ]);
+      }
+    } else {
+      Log::info('No receiver email configured for new order notifications.');
+    }
 
     return back()->with('success', 'Order submitted! We will review and grant access soon.');
   }

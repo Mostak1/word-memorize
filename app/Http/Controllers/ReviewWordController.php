@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BookmarkedWord;
 use App\Models\ReviewWord;
 use App\Models\Word;
+use App\Models\WordProgress;
 use App\Services\SrsService;
 use App\Services\StreakService;
 use App\Services\XpService;
@@ -23,19 +24,12 @@ class ReviewWordController extends Controller
 
     /**
      * ✅ "I Know" — user knew this word.
-     *
-     * Delegates to SrsService::recordCorrect which:
-     *   - Moves word up one Leitner box (1→2→3→4).
-     *   - Inserts into mastered_words when box 4 is reached.
-     *   - Removes from review_words.
-     *   - Schedules next review according to the 3-Step algorithm.
      */
     public function know(Request $request, Word $word)
     {
         $user = $request->user();
 
         $this->srsService->recordCorrect($user, $word, $this->wordListAwardsXp($word));
-        // $this->streakService->recordActivity($user);
         if ($request->input('from') !== 'session') {
             $this->streakService->recordActivity($user);
         }
@@ -45,12 +39,6 @@ class ReviewWordController extends Controller
 
     /**
      * ❌ "I Don't Know" — user still needs to learn this word.
-     *
-     * Delegates to SrsService::recordIncorrect which:
-     *   - Resets word all the way back to Box 1 (hard Leitner reset).
-     *   - Removes from mastered_words (word has slipped).
-     *   - Adds to review_words for focused practice.
-     *   - Schedules next review for today.
      */
     public function learn(Request $request, Word $word)
     {
@@ -72,8 +60,6 @@ class ReviewWordController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        // Only award XP / advance the streak when the session came from an
-        // admin-created word list. User-created lists are excluded.
         $wordlistId = $request->input('wordlist_id');
         $xpEnabled = false;
 
@@ -94,8 +80,6 @@ class ReviewWordController extends Controller
         }
 
         $this->streakService->recordActivity($user);
-
-        // Award XP for completing the session
         $xpAwarded = $this->xpService->awardSessionXp($user);
 
         return response()->json([
@@ -106,24 +90,98 @@ class ReviewWordController extends Controller
     }
 
     /**
-     * Returns true only when the word's category was created by the admin
-     * account (admin@gmail.com). Non-admin / user-created word lists do not
-     * award XP or count toward streaks.
+     * 📋 Revise landing page — shows filter options with word counts.
+     *
+     * GET /my/revise
      */
-    private function wordListAwardsXp(Word $word): bool
+    public function revisePage()
     {
-        $word->loadMissing('wordList.category.creator');
-        return $word->wordList?->category?->creator?->email === 'admin@gmail.com';
+        $user = Auth::user();
+
+        return Inertia::render('Revise', [
+            'reviseCounts' => $this->getReviseCounts($user),
+        ]);
     }
 
-    private function bookmarkedIds(array $wordIds): array
+    /**
+     * 🔁 Start a filtered revise session.
+     *
+     * GET /my/revise/session?filter=all|learning|reviewing|more_practice
+     *
+     * Filters against word_progress (box < MASTERED_BOX):
+     *   all           — every word still in active rotation
+     *   learning      — box 2
+     *   reviewing     — box 3
+     *   more_practice — incorrect_count >= 2
+     */
+    public function reviseSession(Request $request)
     {
-        if (!auth()->check())
-            return [];
-        return BookmarkedWord::where('user_id', auth()->id())
-            ->whereIn('word_id', $wordIds)
-            ->pluck('word_id')
-            ->toArray();
+        $user = Auth::user();
+        $filter = $request->query('filter', 'all');
+
+        $query = WordProgress::where('user_id', $user->id)
+            ->where('box', '<', WordProgress::MASTERED_BOX);
+
+        switch ($filter) {
+            case 'learning':
+                $query->where('box', 2);
+                $sessionTitle = 'Learning Words';
+                break;
+
+            case 'reviewing':
+                $query->where('box', 3);
+                $sessionTitle = 'Reviewing Words';
+                break;
+
+            case 'more_practice':
+                $query->where('incorrect_count', '>=', 2);
+                $sessionTitle = 'More Practice Needed';
+                break;
+
+            default: // 'all'
+                $sessionTitle = 'Revise — All Words';
+                break;
+        }
+
+        $wordIds = $query->pluck('word_id')->toArray();
+
+        // Try SRS-ordered due words first
+        $words = $this->srsService->getDueWordsByIds($user, $wordIds);
+
+        // Fallback: if SRS returns nothing, load all matched words directly
+        // so the session still runs even when nothing is strictly "due today".
+        if ($words->isEmpty() && !empty($wordIds)) {
+            $words = Word::with([
+                'images',
+                'wordList.category:id,show_example_sentences',
+            ])
+                ->whereIn('id', $wordIds)
+                ->orderBy('id')
+                ->get()
+                ->map(function ($w) {
+                    $w->srs_box = 1;
+                    $w->srs_label = 'New';
+                    $w->srs_color = 'bg-gray-100 text-gray-600';
+                    $w->show_example_sentences =
+                        $w->wordList?->category?->show_example_sentences ?? true;
+                    return $w;
+                });
+        }
+
+        $wordList = (object) [
+            'id' => null,
+            'title' => $sessionTitle,
+            'difficulty' => 'Mixed',
+        ];
+
+        return Inertia::render('ExerciseSession', [
+            'wordList' => $wordList,
+            'words' => $words->values(),
+            'subcategory' => null,
+            'bookmarkedWordIds' => $this->bookmarkedIds($words->pluck('id')->toArray()),
+            'backUrl' => route('words.revise'),
+            'streak' => $this->streakService->getSummary($user),
+        ]);
     }
 
     /**
@@ -156,15 +214,45 @@ class ReviewWordController extends Controller
         ]);
     }
 
+    // ── Private helpers ───────────────────────────────────────────────────────
+
     /**
-     * Decide where to redirect after marking a word.
-     *
-     * - Called from ExerciseSession  →  from=session in POST body
-     *   → redirect()->back() so Inertia stays on the session page.
-     *
-     * - Called from WordDetail page  →  no from param
-     *   → redirect to the next word in the list, or back to the list when done.
+     * Word counts per revise filter (used by both the landing page
+     * and DashboardController).
      */
+    public function getReviseCounts($user): array
+    {
+        if (!$user) {
+            return ['all' => 0, 'learning' => 0, 'reviewing' => 0, 'more_practice' => 0];
+        }
+
+        $base = WordProgress::where('user_id', $user->id)
+            ->where('box', '<', WordProgress::MASTERED_BOX);
+
+        return [
+            'all' => (clone $base)->count(),
+            'learning' => (clone $base)->where('box', 2)->count(),
+            'reviewing' => (clone $base)->where('box', 3)->count(),
+            'more_practice' => (clone $base)->where('incorrect_count', '>=', 2)->count(),
+        ];
+    }
+
+    private function wordListAwardsXp(Word $word): bool
+    {
+        $word->loadMissing('wordList.category.creator');
+        return $word->wordList?->category?->creator?->email === 'admin@gmail.com';
+    }
+
+    private function bookmarkedIds(array $wordIds): array
+    {
+        if (!auth()->check())
+            return [];
+        return BookmarkedWord::where('user_id', auth()->id())
+            ->whereIn('word_id', $wordIds)
+            ->pluck('word_id')
+            ->toArray();
+    }
+
     private function handleRedirect(Request $request, Word $word)
     {
         if ($request->input('from') === 'session') {
@@ -174,10 +262,6 @@ class ReviewWordController extends Controller
         return $this->redirectToNextWord($word);
     }
 
-    /**
-     * Redirect to the next word in the same word list (ordered by id).
-     * If there is no next word, go back to the word list page.
-     */
     private function redirectToNextWord(Word $word)
     {
         $nextWord = Word::where('wordlist_id', $word->wordlist_id)

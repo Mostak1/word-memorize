@@ -1,6 +1,6 @@
 import AdminLayout from "@/Layouts/AdminLayout";
 import { Head, router, useForm } from "@inertiajs/react";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Fragment } from "react";
 import {
     useReactTable,
     getCoreRowModel,
@@ -138,12 +138,12 @@ function EditDialog({ order, statuses, open, onClose }) {
 
     useEffect(() => {
         if (order) {
-            reset({
+            setData({
                 status: order.status ?? "pending",
                 admin_note: order.admin_note ?? "",
             });
         }
-    }, [order, reset]);
+    }, [order, setData]);
 
     const handleSubmit = () => {
         if (!order) return;
@@ -157,7 +157,10 @@ function EditDialog({ order, statuses, open, onClose }) {
 
     return (
         <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-            <DialogContent className="max-w-lg w-[calc(100vw-2rem)]">
+            <DialogContent
+                className="max-w-lg w-[calc(100vw-2rem)]"
+                aria-describedby={undefined}
+            >
                 <DialogHeader>
                     <DialogTitle>Update Order #{order.id}</DialogTitle>
                 </DialogHeader>
@@ -570,7 +573,7 @@ export default function Index({ orders, filters, statuses }) {
                                         </TableRow>
                                     ) : (
                                         table.getRowModel().rows.map((row) => (
-                                            <>
+                                            <Fragment key={row.id}>
                                                 <TableRow key={row.id}>
                                                     {row
                                                         .getVisibleCells()
@@ -598,7 +601,7 @@ export default function Index({ orders, filters, statuses }) {
                                                         colSpan={columns.length}
                                                     />
                                                 )}
-                                            </>
+                                            </Fragment>
                                         ))
                                     )}
                                 </TableBody>

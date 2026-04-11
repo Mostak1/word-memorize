@@ -183,6 +183,8 @@ Route::middleware('auth')->group(function () {
     Route::put('/my/words/{word}', [UserWordController::class, 'update'])->name('my.words.update');
     Route::delete('/my/words/{word}', [UserWordController::class, 'destroy'])->name('my.words.destroy');
 
+
+
     // Word actions (exercise session triggers these)
     Route::post('/word/{word}/know', [ReviewWordController::class, 'know'])->name('word.know');
     Route::post('/word/{word}/learn', [ReviewWordController::class, 'learn'])->name('word.learn');
@@ -203,6 +205,11 @@ Route::middleware('auth')->group(function () {
         ->name('words.mastered.byList');
     Route::get('/my/review', [WordListController::class, 'reviewWords'])->name('words.review');
     Route::get('/my/review/practice', [ReviewWordController::class, 'practiceReview'])->name('words.review.practice');
+
+    Route::get('/my/revise', [ReviewWordController::class, 'revisePage'])->name('words.revise');
+
+    // Revise exercise session (started from the Revise page)
+    Route::get('/my/revise/session', [ReviewWordController::class, 'reviseSession'])->name('words.revise.session');
 
     // Bookmarks
     Route::post('/word/{word}/bookmark', [BookmarkController::class, 'toggle'])->name('word.bookmark');
