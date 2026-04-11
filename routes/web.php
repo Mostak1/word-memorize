@@ -29,7 +29,9 @@ use Inertia\Inertia;
 //         // 'cache_settings' => Cache::get('settings'),
 //     ]);
 // });
-
+Route::get('/vocab', function () {
+    return Inertia::render('Landing/Vocab');
+})->name('vocab');
 
 Route::get('/vocabland', function () {
     return view('landing/vocabland');
@@ -37,7 +39,7 @@ Route::get('/vocabland', function () {
 Route::get('/practice', function () {
     return view('landing/practice');
 })->name('vocabland.practice');
-Route::get('/tts', [TTSController::class, 'generate'])->name('tts');
+// Route::get('/tts', [TTSController::class, 'generate'])->name('tts');
 Route::get('/', function () {
     if (auth()->check()) {
         if (auth()->user()->isAdmin()) {
