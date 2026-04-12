@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\LinkTreeController;
 use App\Http\Controllers\UserShopController;
+use App\Http\Controllers\UserAchievementController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -21,3 +22,8 @@ Route::middleware('auth:sanctum')->prefix('xp-shop')->name('api.xp-shop.')->grou
     Route::get('/status', [UserShopController::class, 'getStatus'])->name('status');
     Route::post('/buy-streak-freeze', [UserShopController::class, 'buyStreakFreeze'])->name('buy-freeze');
 });
+
+// ── Achievements API ───────────────────────────────────────────────────────────
+
+// Achievements are handled via web session auth for SPA requests.
+// Route moved to routes/web.php to match existing session-authenticated API endpoints.

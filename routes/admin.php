@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\ErrorReportController;
 use App\Http\Controllers\Admin\WordListOrderController;
+use App\Http\Controllers\Admin\AchievementController;
 use Illuminate\Support\Facades\Route;
 
 Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin', 'as' => 'admin.'], function () {
@@ -129,6 +130,14 @@ Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin', 'as' => 'a
     Route::prefix('reports')->name('reports.')->group(function () {
         Route::get('/overview', [DashboardController::class, 'reports'])->name('overview');
         Route::get('/users', [DashboardController::class, 'userReports'])->name('users');
+    });
+
+    // ── Achievements ────────────────────────────────────────────────────────
+    Route::prefix('achievements')->name('achievements.')->group(function () {
+        Route::get('/', [AchievementController::class, 'index'])->name('index');
+        Route::post('/', [AchievementController::class, 'store'])->name('store');
+        Route::patch('/{achievement}', [AchievementController::class, 'update'])->name('update');
+        Route::delete('/{achievement}', [AchievementController::class, 'destroy'])->name('destroy');
     });
 
     // ── Link Tree ──────────────────────────────────────────────────────────────

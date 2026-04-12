@@ -11,6 +11,10 @@ use Carbon\Carbon;
 
 class XpService
 {
+  public function __construct(private AchievementService $achievementService)
+  {
+  }
+
   // ── XP Constants ──────────────────────────────────────────────────────────
 
   /** XP earned per completed exercise session */
@@ -25,9 +29,10 @@ class XpService
   /** XP earned when user completes a word list (all words mastered) */
   const XP_PER_WORDLIST_COMPLETION = 50;
 
-  /** Streak freeze costs: 1st purchase = 1000, 2nd+ = 2000 */
+  /** Streak freeze costs: 1st purchase = 1000, 2nd = 2000, 3rd = 4000 */
   const FIRST_FREEZE_COST = 1000;
-  const SUBSEQUENT_FREEZE_COST = 2000;
+  const SECOND_FREEZE_COST = 2000;
+  const THIRD_FREEZE_COST = 4000;
 
   /** Streak milestone rewards (day => xp) */
   const STREAK_MILESTONES = [
@@ -97,6 +102,11 @@ class XpService
     // Update daily activity tracking
     $activity->increment('session_xp_earned', $xpToAward);
 
+    // Check for morning achievement if XP earned before 9 AM
+    if ($xpToAward > 0 && Carbon::now()->hour < 9) {
+      $this->achievementService->checkAndAwardAchievements($user);
+    }
+
     return $xpToAward;
   }
 
@@ -114,6 +124,9 @@ class XpService
 
     $userXp = $this->getOrCreate($user);
     $userXp->addXp(self::XP_PER_WORD_MASTERED);
+
+    // Check for achievements
+    $this->achievementService->checkAndAwardAchievements($user);
 
     return true;
   }
@@ -142,6 +155,10 @@ class XpService
     if ($masteredCount === $listWordCount) {
       $userXp = $this->getOrCreate($user);
       $userXp->addXp(self::XP_PER_WORDLIST_COMPLETION);
+
+      // Check for achievements
+      $this->achievementService->checkAndAwardAchievements($user);
+
       return true;
     }
 
@@ -165,6 +182,9 @@ class XpService
     $userXp = $this->getOrCreate($user);
     $userXp->addXp($xpReward);
 
+    // Check for achievements
+    $this->achievementService->checkAndAwardAchievements($user);
+
     return true;
   }
 
@@ -174,22 +194,33 @@ class XpService
    * Calculate the cost to purchase the next streak freeze.
    *
    * 1st freeze: 1000 XP
-   * 2nd+ freezes: 2000 XP each
+   * 2nd freeze: 2000 XP
+   * 3rd freeze: 4000 XP
+   * Maximum 3 purchases per user
    */
   public function getNextFreezeCost(User $user): int
   {
     // Count how many freezes this user has already purchased
     $purchaseCount = StreakFreezePurchase::where('user_id', $user->id)->count();
 
-    return $purchaseCount === 0
-      ? self::FIRST_FREEZE_COST
-      : self::SUBSEQUENT_FREEZE_COST;
+    switch ($purchaseCount) {
+      case 0:
+        return self::FIRST_FREEZE_COST;
+      case 1:
+        return self::SECOND_FREEZE_COST;
+      case 2:
+        return self::THIRD_FREEZE_COST;
+      default:
+        // Beyond 3 purchases, return a high cost to indicate not available
+        return PHP_INT_MAX;
+    }
   }
 
   /**
    * Buy a streak freeze with XP.
    *
    * Checks:
+   *   - User has not exceeded 3 purchases
    *   - User has enough XP
    *   - XP is deducted
    *   - Purchase record is created
@@ -199,6 +230,12 @@ class XpService
    */
   public function buyStreakFreeze(User $user): bool
   {
+    // Check purchase limit (max 3 per user)
+    $purchaseCount = StreakFreezePurchase::where('user_id', $user->id)->count();
+    if ($purchaseCount >= 3) {
+      return false;
+    }
+
     $cost = $this->getNextFreezeCost($user);
     $userXp = $this->getOrCreate($user);
 

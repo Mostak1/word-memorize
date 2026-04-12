@@ -9,7 +9,7 @@ use Carbon\Carbon;
 
 class StreakService
 {
-  public function __construct(private XpService $xpService)
+  public function __construct(private XpService $xpService, private AchievementService $achievementService)
   {
   }
 
@@ -85,6 +85,9 @@ class StreakService
 
     // Award XP for milestone if applicable
     $this->xpService->awardStreakMilestoneXp($user, $newStreak);
+
+    // Check for new achievements
+    $this->achievementService->checkAndAwardAchievements($user);
 
     return $streak;
   }

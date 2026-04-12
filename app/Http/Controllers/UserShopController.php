@@ -83,6 +83,15 @@ class UserShopController extends Controller
       return response()->json(['error' => 'Unauthorized'], 401);
     }
 
+    // Check purchase limit (max 3 per user)
+    $purchaseCount = \App\Models\StreakFreezePurchase::where('user_id', $user->id)->count();
+    if ($purchaseCount >= 3) {
+      return response()->json([
+        'error' => 'Maximum streak freezes purchased',
+        'message' => 'You can only purchase up to 3 streak freezes.',
+      ], 400);
+    }
+
     $cost = $this->xpService->getNextFreezeCost($user);
     $userXp = $this->xpService->getOrCreate($user);
 

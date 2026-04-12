@@ -8,6 +8,7 @@ use App\Models\Word;
 use App\Models\WordList;
 use App\Models\WordProgress;
 use App\Services\StreakService;
+use App\Services\AchievementService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -21,7 +22,7 @@ class QuizController extends Controller
     // Min correct pairs to award a point on match_pairs (auto-generated quiz)
     private const MATCH_PASS_THRESHOLD = 3;
 
-    public function __construct(private StreakService $streakService)
+    public function __construct(private StreakService $streakService, private AchievementService $achievementService)
     {
     }
 
@@ -325,6 +326,9 @@ class QuizController extends Controller
         // Record streak activity on any quiz submission
         $this->streakService->recordActivity($request->user());
 
+        // Check for achievements (especially perfect scores)
+        $this->achievementService->checkAndAwardAchievements($request->user());
+
         return response()->json([
             'passed' => $passed,
             'score' => $score,
@@ -391,6 +395,9 @@ class QuizController extends Controller
         }
 
         $streak = $this->streakService->recordActivity($request->user());
+
+        // Check for achievements
+        $this->achievementService->checkAndAwardAchievements($request->user());
 
         return response()->json([
             'passed' => $passed,

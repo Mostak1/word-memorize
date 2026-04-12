@@ -64,8 +64,8 @@ export const sidebarConfig = {
                     icon: BookMarked,
                 },
                 {
-                    name: "Mastered Words",
-                    route: "admin.mastered-words.index",
+                    name: "Achievements",
+                    route: "admin.achievements.index",
                     icon: Trophy,
                 },
                 {

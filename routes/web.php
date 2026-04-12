@@ -4,6 +4,7 @@ use App\Http\Controllers\ErrorReportController;
 use App\Http\Controllers\PublicLinkTreeController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\TTSController;
+use App\Http\Controllers\UserAchievementController;
 use App\Http\Controllers\UserSettingController;
 use App\Http\Controllers\UserShopController;
 use App\Http\Controllers\UserWordController;
@@ -15,7 +16,6 @@ use App\Http\Controllers\ReviewWordController;
 use App\Http\Controllers\BookmarkController;
 use App\Http\Controllers\WordProgressController;
 use App\Http\Controllers\DashboardController;
-use App\Models\Setting;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -220,6 +220,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/shop', [UserShopController::class, 'index'])->name('shop');
     Route::get('/api/xp-shop/status', [UserShopController::class, 'getStatus'])->name('api.xp-shop.status');
     Route::post('/api/xp-shop/buy-freeze', [UserShopController::class, 'buyStreakFreeze'])->name('api.xp-shop.buy-freeze');
+
+    // Achievements API
+    Route::get('/api/achievements', [UserAchievementController::class, 'index'])->name('api.achievements.index');
+
+    // Achievements page
+    Route::get('/achievements', function () {
+        return Inertia::render('Achievements');
+    })->name('achievements');
 });
 
 require __DIR__ . '/auth.php';
