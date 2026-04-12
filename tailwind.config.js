@@ -15,7 +15,11 @@ export default {
     	extend: {
     		fontFamily: {
     			sans: [
-    				'Figtree',
+    				'Nunito',
+                    ...defaultTheme.fontFamily.sans
+                ],
+                hind: [
+                    'Hind Siliguri',
                     ...defaultTheme.fontFamily.sans
                 ]
     		},

@@ -1,242 +1,12 @@
-import { Link, Head } from "@inertiajs/react";
-import { useState, useEffect, useRef } from "react";
+import { Head, Link } from "@inertiajs/react";
+import { useState, useEffect } from "react";
 import dashboardImg from "/public/img/landing/dashboard.webp";
 import exerciseImg from "/public/img/landing/exercise.webp";
 import exerciseImg2 from "/public/img/landing/exercise2.webp";
 import wordlistImg from "/public/img/landing/wordlist.webp";
 import quizImg from "/public/img/landing/quiz.webp";
-import logo from "/public/img/logo.png";
+// import logo from "/public/img/logo.png";
 
-// ── Icons ──────────────────────────────────────────────────────────────────
-const Ico = {
-    menu: (
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            className="w-6 h-6"
-        >
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="18" x2="21" y2="18" />
-        </svg>
-    ),
-    x: (
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            className="w-6 h-6"
-        >
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-        </svg>
-    ),
-    arrow: (
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="w-5 h-5"
-        >
-            <line x1="5" y1="12" x2="19" y2="12" />
-            <polyline points="12 5 19 12 12 19" />
-        </svg>
-    ),
-    check: (
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="w-4 h-4"
-        >
-            <polyline points="20 6 9 17 4 12" />
-        </svg>
-    ),
-    img: (
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="w-7 h-7"
-        >
-            <rect x="3" y="3" width="18" height="18" rx="2" />
-            <circle cx="8.5" cy="8.5" r="1.5" />
-            <polyline points="21 15 16 10 5 21" />
-        </svg>
-    ),
-    brain: (
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="w-7 h-7"
-        >
-            <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.46 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.44-3.14Z" />
-            <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.46 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.44-3.14Z" />
-        </svg>
-    ),
-    zap: (
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="w-7 h-7"
-        >
-            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-        </svg>
-    ),
-    trophy: (
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="w-7 h-7"
-        >
-            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
-            <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
-            <path d="M4 22h16" />
-            <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
-            <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
-            <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
-        </svg>
-    ),
-    list: (
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="w-7 h-7"
-        >
-            <line x1="8" y1="6" x2="21" y2="6" />
-            <line x1="8" y1="12" x2="21" y2="12" />
-            <line x1="8" y1="18" x2="21" y2="18" />
-            <line x1="3" y1="6" x2="3.01" y2="6" />
-            <line x1="3" y1="12" x2="3.01" y2="12" />
-            <line x1="3" y1="18" x2="3.01" y2="18" />
-        </svg>
-    ),
-    book: (
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="w-7 h-7"
-        >
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-        </svg>
-    ),
-    star: (
-        <svg
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            className="w-4 h-4 text-yellow-400"
-        >
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-        </svg>
-    ),
-    lock: (
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="w-5 h-5"
-        >
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-        </svg>
-    ),
-    play: (
-        <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-            <polygon points="5 3 19 12 5 21 5 3" />
-        </svg>
-    ),
-    phone: (
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="w-5 h-5"
-        >
-            <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
-            <line x1="12" y1="18" x2="12.01" y2="18" />
-        </svg>
-    ),
-};
-
-// ── Animated counter ───────────────────────────────────────────────────────
-function Counter({ end, suffix = "", decimal = false }) {
-    const [n, setN] = useState(0);
-    const ref = useRef(null);
-    const started = useRef(false);
-    useEffect(() => {
-        const obs = new IntersectionObserver(
-            ([e]) => {
-                if (e.isIntersecting && !started.current) {
-                    started.current = true;
-                    const t0 = performance.now();
-                    const tick = (now) => {
-                        const p = Math.min((now - t0) / 1800, 1);
-                        const ease = 1 - Math.pow(1 - p, 3);
-                        setN(
-                            decimal
-                                ? +(ease * end).toFixed(1)
-                                : Math.floor(ease * end),
-                        );
-                        if (p < 1) requestAnimationFrame(tick);
-                    };
-                    requestAnimationFrame(tick);
-                }
-            },
-            { threshold: 0.5 },
-        );
-        if (ref.current) obs.observe(ref.current);
-        return () => obs.disconnect();
-    }, [end]);
-    return (
-        <span ref={ref}>
-            {decimal ? n.toFixed(1) : n.toLocaleString()}
-            {suffix}
-        </span>
-    );
-}
-
-// ── Phone frame component ──────────────────────────────────────────────────
 function Phone({ src, alt, style = {} }) {
     return (
         <div
@@ -253,7 +23,6 @@ function Phone({ src, alt, style = {} }) {
             }}
         >
             <div
-                className="phone-inner"
                 style={{
                     borderRadius: "26px",
                     overflow: "hidden",
@@ -271,1191 +40,1552 @@ function Phone({ src, alt, style = {} }) {
     );
 }
 
-// ── Wordlist card ──────────────────────────────────────────────────────────
-function WordlistCard({ title, words, level, price, locked, featured }) {
-    return (
-        <div
-            style={{
-                background: "#fff",
-                borderRadius: "16px",
-                border: featured ? "2px solid #e70013" : "1px solid #E5E7EB",
-                padding: "24px",
-                position: "relative",
-                transition: "all 0.25s",
-                cursor: locked ? "default" : "pointer",
-                boxShadow: featured ? "0 8px 32px rgba(231,0,19,0.15)" : "none",
-            }}
-        >
-            {featured && (
-                <div
-                    style={{
-                        position: "absolute",
-                        top: "-12px",
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        background: "#e70013",
-                        color: "#fff",
-                        padding: "4px 16px",
-                        borderRadius: "100px",
-                        fontSize: "0.75rem",
-                        fontWeight: 800,
-                        whiteSpace: "nowrap",
-                        letterSpacing: "0.05em",
-                    }}
-                >
-                    MOST POPULAR
-                </div>
-            )}
-            <div
-                style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                    marginBottom: "12px",
-                }}
-            >
-                <div>
-                    <div
-                        style={{
-                            fontFamily: "Syne, sans-serif",
-                            fontWeight: 800,
-                            fontSize: "1.05rem",
-                            color: "#0F0F0F",
-                        }}
-                    >
-                        {title}
-                    </div>
-                    <div
-                        style={{
-                            fontSize: "0.82rem",
-                            color: "#6B7280",
-                            marginTop: "4px",
-                            fontWeight: 600,
-                        }}
-                    >
-                        {words} words · {level}
-                    </div>
-                </div>
-                {locked ? (
-                    <div style={{ color: "#9CA3AF" }}>{Ico.lock}</div>
-                ) : (
-                    <div
-                        style={{
-                            background: "#FEE2E2",
-                            color: "#e70013",
-                            padding: "4px 10px",
-                            borderRadius: "8px",
-                            fontSize: "0.78rem",
-                            fontWeight: 800,
-                        }}
-                    >
-                        {price}
-                    </div>
-                )}
-            </div>
-            <div
-                style={{
-                    display: "flex",
-                    gap: "6px",
-                    flexWrap: "wrap",
-                    marginBottom: "16px",
-                }}
-            >
-                {[1, 2, 3, 4].map((i) => (
-                    <div
-                        key={i}
-                        style={{
-                            width: "100%",
-                            height: "4px",
-                            borderRadius: "2px",
-                            background: locked
-                                ? "#E5E7EB"
-                                : i === 1
-                                  ? "#e70013"
-                                  : i <= 2
-                                    ? "#FCA5A5"
-                                    : "#E5E7EB",
-                            flex: 1,
-                        }}
-                    />
-                ))}
-            </div>
-            {locked ? (
-                <div
-                    style={{
-                        textAlign: "center",
-                        fontSize: "0.85rem",
-                        color: "#9CA3AF",
-                        fontWeight: 600,
-                        padding: "8px 0",
-                    }}
-                >
-                    Complete previous list to unlock
-                </div>
-            ) : (
-                <button
-                    style={{
-                        width: "100%",
-                        padding: "10px",
-                        background: featured ? "#e70013" : "#0F0F0F",
-                        color: "#fff",
-                        border: "none",
-                        borderRadius: "10px",
-                        fontFamily: "Nunito, sans-serif",
-                        fontWeight: 800,
-                        fontSize: "0.9rem",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "8px",
-                    }}
-                >
-                    {Ico.play} Purchase & Start
-                </button>
-            )}
-        </div>
-    );
-}
-
-// ── Main ───────────────────────────────────────────────────────────────────
-export default function Welcome({ auth }) {
-    const [open, setOpen] = useState(false);
-    const [scrolled, setScrolled] = useState(false);
-    const [activeTab, setActiveTab] = useState(0);
+export default function VocabPixLanding() {
+    const [activeTab, setActiveTab] = useState("register");
+    const [activeChips, setActiveChips] = useState([]);
+    const [openFaqs, setOpenFaqs] = useState([]);
+    const [showSuccess, setShowSuccess] = useState(false);
+    const [mobileNavOpen, setMobileNavOpen] = useState(false);
+    const [lang, setLang] = useState("en");
+    const [form, setForm] = useState({
+        fn: "",
+        ln: "",
+        em: "",
+        pw: "",
+        dg: "",
+    });
 
     useEffect(() => {
-        const fn = () => setScrolled(window.scrollY > 40);
-        window.addEventListener("scroll", fn);
-        return () => window.removeEventListener("scroll", fn);
+        const obs = new IntersectionObserver(
+            (entries) =>
+                entries.forEach((e) => {
+                    if (e.isIntersecting) e.target.classList.add("vis");
+                }),
+            { threshold: 0.1 },
+        );
+        document.querySelectorAll(".sr").forEach((el) => obs.observe(el));
+        return () => obs.disconnect();
     }, []);
 
-    const features = [
+    const toggleChip = (chip) => {
+        setActiveChips((prev) =>
+            prev.includes(chip)
+                ? prev.filter((c) => c !== chip)
+                : [...prev, chip],
+        );
+    };
+
+    const toggleFaq = (index) => {
+        setOpenFaqs((prev) =>
+            prev.includes(index)
+                ? prev.filter((i) => i !== index)
+                : [...prev, index],
+        );
+    };
+
+    const switchToRegister = (e) => {
+        e.preventDefault();
+        setActiveTab("register");
+    };
+
+    const doRegister = () => {
+        if (!form.fn || !form.em || !form.pw) {
+            alert("Please fill in your name, email, and password.");
+            return;
+        }
+        if (!form.em.includes("@")) {
+            alert("Please enter a valid email address.");
+            return;
+        }
+        if (form.pw.length < 6) {
+            alert("Password must be at least 6 characters.");
+            return;
+        }
+        setShowSuccess(true);
+    };
+
+    const goalChips = [
+        "📝 GRE",
+        "🎓 IELTS",
+        "📖 BCS",
+        "💼 BBA",
+        "🏥 Medical",
+        "✏️ Other",
+    ];
+
+    const faqs = [
         {
-            icon: Ico.img,
-            color: "#e70013",
-            bg: "#FEE2E2",
-            title: "Image-Word Pairing",
-            desc: "Every word comes with a vivid contextual image and a real-life sentence, burning it into visual memory naturally.",
+            q: "Is VocabPix really free?",
+            a: "Yes — the app is completely free, forever. There is no subscription. All app features (images, audio, Bangla definitions, XP, quizzes, offline mode, custom collections) are included at no cost. You only pay a one-time fee to unlock individual wordlists like GRE, IELTS, or BCS — and once purchased, they're yours forever.",
         },
         {
-            icon: Ico.brain,
-            color: "#7C3AED",
-            bg: "#EDE9FE",
-            title: "Deep Word Intelligence",
-            desc: "Definitions, phonetics, Bangla meanings, synonyms, antonyms, and collocations — all in one clean card.",
+            q: "Why does VocabPix use images?",
+            a: 'Visual memory is one of the strongest memory systems in the brain. Pairing a word with a vivid image creates a "memory anchor." Studies show picture-word pairing improves long-term retention by 40–65% over text-only methods.',
         },
         {
-            icon: Ico.list,
-            color: "#0369A1",
-            bg: "#E0F2FE",
-            title: "Curated Word Lists",
-            desc: "From Academic Word List to IELTS, GRE, BCS — purchase only the lists you need. No subscription ever.",
+            q: "Does it work for BCS and local Bangladesh exams?",
+            a: "Yes. BCS and Medical vocabulary lists are in development. GRE Extended and Academic Word List already have significant overlap with BCS English sections.",
         },
         {
-            icon: Ico.trophy,
-            color: "#D97706",
-            bg: "#FEF3C7",
-            title: "Track Mastery",
-            desc: 'Mark words as "I Know" or "I Don\'t Know". Revisit weak words. Watch your mastered count grow every day.',
+            q: "How is this different from Quizlet or Anki?",
+            a: "Quizlet and Anki are general tools — you build your own content. VocabPix is purpose-built for South Asian English learners, with professionally curated lists, contextual images, Bangla support, collocations, and a gamification system all built in.",
         },
         {
-            icon: Ico.zap,
-            color: "#059669",
-            bg: "#D1FAE5",
-            title: "Instant Quiz Mode",
-            desc: 'Interactive exercises with "I Know" / "I Don\'t Know" feedback loop, perfectly tuned for active recall.',
-        },
-        {
-            icon: Ico.book,
-            color: "#e70013",
-            bg: "#FEE2E2",
-            title: "Bookmark & Review Later",
-            desc: "Save tricky words with a tap. Review your personal bookmark list anytime — even without internet.",
+            q: "Can I add my own words?",
+            a: '"Add New Word" lets you create personal word entries with definition, pronunciation, and part of speech. Pro unlocks unlimited custom collections with full image and audio support.',
         },
     ];
 
-    const wordlists = [
-        {
-            title: "Academic Word List — Sublist 1",
-            words: 60,
-            level: "Intermediate",
-            price: "Free",
-            locked: false,
-            featured: false,
+    const text = {
+        pageTitle:
+            lang === "en"
+                ? "VocabPix — Learn Vocabulary Scientifically"
+                : "VocabPix — বৈজ্ঞানিকভাবে শব্দভাণ্ডার শিখুন",
+        topbar:
+            lang === "en"
+                ? "🎓 GRE, IELTS, BCS, SAT, Medical & more — All in one place"
+                : "🎓 GRE, IELTS, BCS, SAT, Medical ও আরও — সব এক জায়গায়",
+        nav: {
+            login: lang === "en" ? "Login" : "লগইন",
+            wordLists: lang === "en" ? "Word Lists" : "ওয়ার্ড লিস্ট",
+            features: lang === "en" ? "Features" : "ফিচার",
+            bangla: lang === "en" ? "Bangla" : "বাংলা",
+            pricing: lang === "en" ? "Pricing" : "মূল্য",
+            faq: lang === "en" ? "FAQ" : "প্রশ্ন",
         },
-        {
-            title: "Academic Word List — Sublist 2",
-            words: 60,
-            level: "Intermediate",
-            price: "$1.99",
-            locked: false,
-            featured: true,
+        hero: {
+            title:
+                lang === "en"
+                    ? "Learn English Vocabulary"
+                    : "ইংরেজি শব্দভাণ্ডার শিখুন",
+            titleEm: lang === "en" ? "Fast & Smart" : "দ্রুত ও স্মার্ট",
+            subtitle:
+                lang === "en"
+                    ? "VocabPix uses visual memory techniques, spaced repetition, and Bangla-English bilingual support to help you master 10,000+ words for exams and everyday fluency."
+                    : "VocabPix ভিজ্যুয়াল মেমরি প্রযুক্তি, স্পেসড রিপিটিশন, এবং বাংলা-ইংরেজি দ্বিভাষিক সমর্থন ব্যবহার করে আপনাকে ১০০০০+ শব্দ দ্রুত ও স্থায়ীভাবে শিখতে সাহায্য করে।",
+            startLearning:
+                lang === "en" ? "Start Learning Free" : "ফ্রি শুরু করুন",
+            exploreApp: lang === "en" ? "Explore App" : "অ্যাপ দেখুন",
+            joined: lang === "en" ? "Joined by" : "যোগ করেছেন",
         },
-        {
-            title: "Academic Word List — Sublist 3",
-            words: 60,
-            level: "Intermediate",
-            price: "$1.99",
-            locked: false,
-            featured: false,
+        sections: {
+            wordLists: lang === "en" ? "Word Lists" : "ওয়ার্ড লিস্ট",
+            features: lang === "en" ? "Features" : "ফিচার",
+            bangla: lang === "en" ? "Bangla Support" : "বাংলা সাপোর্ট",
+            pricing: lang === "en" ? "Pricing" : "মূল্য",
+            faqTitle: lang === "en" ? "Common Questions" : "সাধারণ প্রশ্ন",
         },
-        {
-            title: "IELTS Essential Vocabulary",
-            words: 200,
-            level: "Advanced",
-            price: "$2.99",
-            locked: false,
-            featured: false,
-        },
-        {
-            title: "GRE High-Frequency Words",
-            words: 250,
-            level: "Advanced",
-            price: "$3.99",
-            locked: false,
-            featured: false,
-        },
-        {
-            title: "BCS English Vocabulary",
-            words: 300,
-            level: "Advanced",
-            price: "$2.99",
-            locked: false,
-            featured: false,
-        },
-    ];
-
-    const testimonials = [
-        {
-            name: "Ayesha R.",
-            role: "IELTS Candidate",
-            text: "The image-based learning is a game-changer. I hit band 8.0 vocabulary after just 3 weeks with VocabPix.",
-            avatar: "👩",
-        },
-        {
-            name: "Tanvir H.",
-            role: "University Student",
-            text: "No subscription — I just bought the Academic Word List and studied at my own pace. Brilliant model.",
-            avatar: "👨‍🎓",
-        },
-        {
-            name: "Sabrina M.",
-            role: "BCS Aspirant",
-            text: "Collocations and synonyms all in one place. VocabPix saved me hours of dictionary-hopping every day.",
-            avatar: "👩‍💼",
-        },
-    ];
+        pricingSubtitle:
+            lang === "en"
+                ? "The app is 100% free. Buy only the wordlists you need."
+                : "অ্যাপটি সম্পূর্ণ বিনামূল্যে। শুধু প্রয়োজনীয় ওয়ার্ড লিস্ট কিনুন।",
+        enrollTitle:
+            lang === "en"
+                ? "Start Today. Free forever."
+                : "আজই শুরু করুন। বিনামূল্যে।",
+        enrollSub:
+            lang === "en"
+                ? "Create your free account and access all word lists, quizzes, and your personal vocabulary journal instantly."
+                : "আপনার ফ্রি অ্যাকাউন্ট তৈরি করুন এবং সব ওয়ার্ড লিস্ট, কুইজ, এবং ব্যক্তিগত শব্দভাণ্ডার জার্নালে সঙ্গে সঙ্গে প্রবেশ করুন।",
+        register: lang === "en" ? "Register" : "রেজিস্টার",
+        freeText: lang === "en" ? "Free →" : "ফ্রি →",
+        freeToStart: lang === "en" ? "Free to Start" : "বিনামূল্যে শুরু করুন",
+    };
 
     return (
         <>
-            <Head title="VocabPix — Visual Vocabulary by Fluento">
-                <link rel="icon" href="/favicon.ico" sizes="any" />
+            <Head>
+                <title>{text.pageTitle}</title>
                 <link
-                    rel="icon"
-                    href="/icons/icon-192x192.png"
-                    type="image/png"
+                    href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Hind+Siliguri:wght@400;500;600;700&display=swap"
+                    rel="stylesheet"
                 />
             </Head>
 
             <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Nunito:wght@400;500;600;700;800&display=swap');
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        :root {
-          --red: #e70013;
-          --red-dark: #b50010;
-          --black: #000000;
-          --charcoal: #373737;
-          --cream: #f3eee4;
-          --ink: #0F0F0F;
-          --ink-light: #555;
-          --border: #E5E7EB;
-          --white: #fff;
-          --r: 16px;
-          --sec-pad: clamp(56px, 8vw, 100px);
-          --h-pad: clamp(16px, 5vw, 80px);
-        }
-        html { scroll-behavior: smooth; }
-        body { font-family: 'Nunito', sans-serif; color: var(--ink); background: #fff; overflow-x: hidden; }
-        a { text-decoration: none; }
-        img { max-width: 100%; }
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                html { scroll-behavior: smooth; }
+                :root {
+                    --red: #E8192C;
+                    --red2: #C0111F;
+                    --red3: #FF4D5E;
+                    --dark: #1C1B1F;
+                    --body: #3D3D3D;
+                    --muted: #7A7A8A;
+                    --bg: #F8F9FC;
+                    --white: #FFFFFF;
+                    --green: #1DB954;
+                    --yellow: #FFB800;
+                    --blue: #2563EB;
+                    --border: #E5E7EB;
+                }
+                body { font-family: 'Nunito', sans-serif; color: var(--body); background: var(--bg); overflow-x: hidden; }
+                .topbar { background: var(--red); color: #fff; text-align: center; padding: 9px 16px; font-size: 13px; font-weight: 700; letter-spacing: .02em; }
+                .topbar span { background: rgba(255,255,255,.25); padding: 2px 10px; border-radius: 20px; margin-left: 8px; font-size: 12px; }
+                nav { position: sticky; top: 0; z-index: 200; background: #fff; border-bottom: 1.5px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 48px; height: 64px; }
+                .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+                .nav-logo-mark { background: var(--red); color: #fff; width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; }
+                .nav-logo-text { font-weight: 900; font-size: 1.15rem; color: var(--dark); }
+                .nav-logo-text sup { font-size: .55rem; background: var(--red); color: #fff; padding: 1px 5px; border-radius: 4px; margin-left: 2px; vertical-align: super; }
+                .nav-links { display: flex; align-items: center; gap: 28px; }
+                .nav-links a { text-decoration: none; color: var(--muted); font-weight: 600; font-size: .9rem; transition: color .2s; }
+                .nav-links a:hover { color: var(--red); }
+                .nav-menu-button { display: none; align-items: center; justify-content: center; width: 42px; height: 42px; border: 2px solid var(--border); border-radius: 12px; background: #fff; color: var(--dark); cursor: pointer; font-size: 1rem; font-weight: 700; }
+                .nav-right { display: flex; align-items: center; gap: 12px; }
+                .nav-links .nav-right-mobile { display: none; flex-direction: column; gap: 12px; padding: 16px 20px; align-items: center; }
+                .nav-links .nav-right-mobile .lang-toggle-group { justify-content: center; }
+                .nav-links .nav-right-mobile .btn-ghost,
+                .nav-links .nav-right-mobile .btn-red { width: 100%; }
+                .lang-toggle-group { display: inline-flex; gap: 6px; }
+                .nav-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.35); opacity: 0; visibility: hidden; transition: opacity .2s ease, visibility .2s ease; z-index: 190; }
+                .nav-backdrop.open { opacity: 1; visibility: visible; }
+                .lang-toggle { padding: 7px 12px; border: 2px solid var(--border); border-radius: 10px; background: #fff; color: var(--dark); font-weight: 700; cursor: pointer; transition: all .2s; }
+                .lang-toggle:hover { border-color: var(--red); color: var(--red); }
+                .lang-toggle.active { border-color: var(--red); color: var(--red); background: rgba(232,25,44,.08); }
+                .btn-ghost { padding: 9px 20px; border: 2px solid var(--border); border-radius: 10px; font-weight: 700; font-size: .88rem; text-decoration: none; color: var(--dark); transition: all .2s; background: #fff; cursor: pointer; }
+                .btn-ghost:hover { border-color: var(--red); color: var(--red); }
+                .btn-red { padding: 9px 22px; background: var(--red); color: #fff; border-radius: 10px; font-weight: 800; font-size: .88rem; text-decoration: none; border: none; cursor: pointer; transition: all .2s; }
+                .btn-red:hover { background: var(--red2); transform: translateY(-1px); }
+                .hero { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 60px; max-width: 1140px; margin: 0 auto; padding: 80px 24px 60px; }
+                .hero-badge { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 20px; background: #FFF0F1; border: 1.5px solid #FFCDD1; color: var(--red); padding: 5px 14px; border-radius: 30px; font-size: .8rem; font-weight: 800; letter-spacing: .04em; }
+                .hero h1 { font-size: clamp(2.2rem, 4.5vw, 3.4rem); font-weight: 900; line-height: 1.1; color: var(--dark); margin-bottom: 18px; }
+                .hero h1 em { font-style: normal; color: var(--red); }
+                .hero-sub { color: var(--muted); font-size: 1.05rem; line-height: 1.75; margin-bottom: 28px; max-width: 480px; }
+                .hero-exam-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 32px; }
+                .exam-tag { background: #fff; border: 1.5px solid var(--border); border-radius: 8px; padding: 5px 12px; font-size: .78rem; font-weight: 700; color: var(--body); }
+                .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 32px; }
+                .btn-hero { padding: 14px 30px; border-radius: 12px; font-weight: 800; font-size: 1rem; text-decoration: none; cursor: pointer; border: none; transition: all .2s; }
+                .btn-hero-primary { background: var(--red); color: #fff; box-shadow: 0 6px 24px rgba(232,25,44,.28); }
+                .btn-hero-primary:hover { background: var(--red2); transform: translateY(-2px); }
+                .btn-hero-secondary { background: #fff; color: var(--dark); border: 2px solid var(--border); }
+                .btn-hero-secondary:hover { border-color: var(--red); color: var(--red); }
+                .hero-trust { display: flex; align-items: center; gap: 12px; font-size: .82rem; color: var(--muted); font-weight: 600; }
+                .trust-avatars { display: flex; }
+                .trust-avatar { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #fff; margin-right: -8px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #fff; }
+                .hero-visual { position: relative; display: flex; justify-content: center; }
+                .card-stack { position: relative; width: 320px; height: 420px; }
+                .word-card { position: absolute; background: #fff; border-radius: 20px; border: 1.5px solid var(--border); padding: 24px; box-shadow: 0 8px 40px rgba(0,0,0,.1); }
+                .wc-main { width: 300px; left: 10px; top: 20px; z-index: 3; animation: float 4s ease-in-out infinite; }
+                .wc-back1 { width: 290px; left: 25px; top: 8px; z-index: 2; transform: rotate(3deg); opacity: .7; background: #FFF8F8; }
+                .wc-back2 { width: 280px; left: 30px; top: 0; z-index: 1; transform: rotate(6deg); opacity: .45; background: #FFF3F3; }
+                @keyframes float { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-10px) } }
+                .wc-label { font-size: .7rem; color: var(--muted); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 10px; }
+                .wc-word { font-size: 2rem; font-weight: 900; color: var(--dark); }
+                .wc-pos { background: #F3F4F6; border-radius: 5px; padding: 2px 8px; font-size: .7rem; font-weight: 700; color: var(--muted); margin-left: 6px; }
+                .wc-phonetic { font-size: .82rem; color: var(--red); margin: 6px 0 14px; }
+                .wc-img { width: 100%; height: 130px; border-radius: 12px; background: linear-gradient(135deg, #FFF0F1, #FFE4E6); display: flex; align-items: center; justify-content: center; font-size: 3.5rem; margin-bottom: 14px; }
+                .wc-def { font-size: .82rem; color: var(--body); line-height: 1.6; background: #F9FAFB; border-radius: 10px; padding: 10px 12px; }
+                .wc-actions { display: flex; gap: 8px; margin-top: 14px; }
+                .wc-btn-no { flex: 1; padding: 9px; border-radius: 10px; border: 1.5px solid #FFCDD1; background: #FFF5F5; color: var(--red); font-weight: 700; font-size: .8rem; cursor: pointer; }
+                .wc-btn-yes { flex: 1; padding: 9px; border-radius: 10px; background: var(--green); color: #fff; font-weight: 700; font-size: .8rem; border: none; cursor: pointer; }
+                .float-badge { position: absolute; background: #fff; border-radius: 12px; padding: 10px 14px; border: 1.5px solid var(--border); box-shadow: 0 4px 20px rgba(0,0,0,.08); font-size: .78rem; font-weight: 700; white-space: nowrap; z-index: 10; }
+                .badge-streak { right: -20px; top: 30px; color: #FF6B00; }
+                .badge-mastered { left: -30px; bottom: 60px; color: var(--green); }
+                .badge-xp { right: -10px; bottom: 100px; color: var(--blue); }
+                .stats-row { background: var(--dark); padding: 36px 24px; display: flex; justify-content: center; gap: 0; flex-wrap: wrap; }
+                .stat-item { text-align: center; padding: 0 48px; border-right: 1px solid rgba(255,255,255,.1); }
+                .stat-item:last-child { border-right: none; }
+                .stat-n { font-size: 2.4rem; font-weight: 900; color: #fff; }
+                .stat-n span { color: var(--red); }
+                .stat-l { font-size: .8rem; color: rgba(255,255,255,.5); font-weight: 600; margin-top: 2px; }
+                .exams-section { max-width: 1140px; margin: 0 auto; padding: 80px 24px; }
+                .section-eyebrow { font-size: .75rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--red); margin-bottom: 10px; }
+                .section-title { font-size: clamp(1.8rem, 3.5vw, 2.6rem); font-weight: 900; color: var(--dark); line-height: 1.15; margin-bottom: 12px; }
+                .section-sub { color: var(--muted); font-size: 1rem; line-height: 1.7; max-width: 500px; margin-bottom: 48px; }
+                .exams-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; }
+                .exam-card { background: #fff; border: 1.5px solid var(--border); border-radius: 16px; padding: 24px 20px; text-align: center; transition: all .25s; cursor: pointer; text-decoration: none; display: block; }
+                .exam-card:hover { border-color: var(--red); transform: translateY(-3px); box-shadow: 0 10px 32px rgba(232,25,44,.1); }
+                .exam-icon { font-size: 2rem; margin-bottom: 12px; }
+                .exam-name { font-weight: 900; font-size: 1.05rem; color: var(--dark); margin-bottom: 4px; }
+                .exam-words { font-size: .78rem; color: var(--muted); font-weight: 600; }
+                .how-section { background: #fff; padding: 80px 24px; }
+                .how-inner { max-width: 1140px; margin: 0 auto; }
+                .how-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 32px; margin-top: 56px; position: relative; }
+                .how-step { background: var(--bg); border-radius: 20px; padding: 32px 24px; position: relative; border: 1.5px solid var(--border); }
+                .how-step-num { width: 44px; height: 44px; border-radius: 50%; background: var(--red); color: #fff; font-weight: 900; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+                .how-step-icon { font-size: 1.8rem; margin-bottom: 12px; }
+                .how-step h3 { font-weight: 900; font-size: 1.05rem; color: var(--dark); margin-bottom: 8px; }
+                .how-step p { font-size: .88rem; color: var(--muted); line-height: 1.7; }
+                .how-step-arrow { position: absolute; right: -20px; top: 50%; transform: translateY(-50%); color: var(--red); font-size: 1.4rem; font-weight: 900; z-index: 1; }
+                .feat-section { max-width: 1140px; margin: 0 auto; padding: 80px 24px; }
+                .feat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+                .feat-card { background: #fff; border: 1.5px solid var(--border); border-radius: 20px; padding: 32px; transition: all .25s; }
+                .feat-card:hover { border-color: var(--red); box-shadow: 0 8px 32px rgba(232,25,44,.08); }
+                .feat-card.big { grid-row: span 2; }
+                .feat-icon { width: 52px; height: 52px; border-radius: 14px; background: #FFF0F1; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 20px; }
+                .feat-card h3 { font-weight: 900; font-size: 1.1rem; color: var(--dark); margin-bottom: 10px; }
+                .feat-card p { font-size: .9rem; color: var(--muted); line-height: 1.7; }
+                .feat-pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+                .feat-pill { background: #F3F4F6; border-radius: 8px; padding: 4px 12px; font-size: .78rem; font-weight: 700; color: var(--body); }
+                .bangla-section { background: linear-gradient(135deg, #1C1B1F 0%, #2D1F2A 100%); padding: 80px 24px; color: #fff; }
+                .bangla-inner { max-width: 1140px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+                .bangla-section .section-eyebrow { color: #FF8A94; }
+                .bangla-section .section-title { color: #fff; }
+                .bangla-section .section-sub { color: rgba(255,255,255,.55); }
+                .bangla-card { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.15); border-radius: 20px; padding: 28px; font-family: 'Hind Siliguri', sans-serif; }
+                .bangla-word { font-size: 1.8rem; font-weight: 700; color: #fff; margin-bottom: 6px; }
+                .bangla-eng { font-size: 1rem; color: rgba(255,255,255,.6); margin-bottom: 16px; font-family: 'Nunito', sans-serif; }
+                .bangla-def-label { font-size: .72rem; font-weight: 600; color: #FF8A94; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+                .bangla-def { font-size: .95rem; color: rgba(255,255,255,.8); line-height: 1.7; background: rgba(255,255,255,.05); border-radius: 10px; padding: 12px; margin-bottom: 16px; }
+                .bangla-syn { display: flex; flex-wrap: wrap; gap: 6px; }
+                .bangla-syn span { background: rgba(255,255,255,.1); border-radius: 6px; padding: 3px 10px; font-size: .78rem; color: rgba(255,255,255,.7); font-family: 'Nunito', sans-serif; }
+                .bangla-perks { display: flex; flex-direction: column; gap: 14px; margin-top: 32px; }
+                .bangla-perk { display: flex; align-items: flex-start; gap: 14px; }
+                .perk-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--red); margin-top: 6px; flex-shrink: 0; }
+                .perk-text { font-size: .9rem; color: rgba(255,255,255,.7); line-height: 1.6; }
+                .perk-text strong { color: #fff; }
+                .testi-section { max-width: 1140px; margin: 0 auto; padding: 80px 24px; }
+                .testi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 56px; }
+                .testi-card { background: #fff; border: 1.5px solid var(--border); border-radius: 20px; padding: 28px; transition: all .25s; }
+                .testi-card:hover { transform: translateY(-3px); box-shadow: 0 12px 36px rgba(0,0,0,.08); }
+                .testi-stars { color: var(--yellow); font-size: 1rem; margin-bottom: 14px; }
+                .testi-quote { font-size: .9rem; color: var(--body); line-height: 1.75; margin-bottom: 20px; font-style: italic; }
+                .testi-person { display: flex; align-items: center; gap: 12px; }
+                .testi-av { width: 42px; height: 42px; border-radius: 50%; background: var(--red); color: #fff; font-weight: 900; font-size: .9rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+                .testi-name { font-weight: 800; font-size: .88rem; color: var(--dark); }
+                .testi-role { font-size: .76rem; color: var(--muted); }
+                .pricing-section { background: #fff; padding: 80px 24px; }
+                .pricing-inner { max-width: 900px; margin: 0 auto; }
+                .pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+                .price-card { border: 2px solid var(--border); border-radius: 20px; padding: 36px; background: #fff; position: relative; }
+                .price-card.featured { border-color: var(--red); }
+                .price-badge { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: var(--red); color: #fff; padding: 4px 18px; border-radius: 20px; font-size: .75rem; font-weight: 800; letter-spacing: .04em; white-space: nowrap; }
+                .price-plan { font-weight: 900; font-size: 1.1rem; color: var(--dark); margin-bottom: 8px; }
+                .price-amount { font-size: 2.8rem; font-weight: 900; color: var(--dark); margin-bottom: 4px; }
+                .price-amount sub { font-size: 1rem; font-weight: 600; vertical-align: super; }
+                .price-period { font-size: .82rem; color: var(--muted); margin-bottom: 24px; }
+                .price-features { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-bottom: 28px; }
+                .price-features li { font-size: .88rem; color: var(--body); display: flex; align-items: center; gap: 10px; }
+                .price-features li::before { content: "✓"; color: var(--green); font-weight: 900; font-size: 1rem; }
+                .price-features li.no::before { content: "✗"; color: #CBD5E1; }
+                .price-features li.no { color: var(--muted); }
+                .price-plan-tag { display: inline-block; background: #F0FDF4; color: #16A34A; border: 1.5px solid #BBF7D0; border-radius: 20px; font-size: .72rem; font-weight: 800; padding: 3px 12px; margin-bottom: 14px; letter-spacing: .04em; }
+                .price-amount-alt { font-size: 1.6rem; font-weight: 900; color: var(--dark); margin-bottom: 4px; }
+                .price-amount-alt strong { color: var(--red); }
+                .pricing-reassurance { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 28px; margin-top: 32px; padding-top: 28px; border-top: 1.5px solid var(--border); }
+                .pricing-reassurance span { font-size: .82rem; font-weight: 700; color: var(--muted); }
+                .enroll-section { background: linear-gradient(135deg, #E8192C 0%, #9B111E 100%); padding: 80px 24px; }
+                .enroll-inner { max-width: 700px; margin: 0 auto; }
+                .enroll-title { font-size: clamp(2rem, 4vw, 3rem); font-weight: 900; color: #fff; text-align: center; margin-bottom: 10px; line-height: 1.15; }
+                .enroll-sub { color: rgba(255,255,255,.75); text-align: center; font-size: 1rem; line-height: 1.7; margin-bottom: 40px; }
+                .enroll-form { background: #fff; border-radius: 24px; padding: 40px; }
+                .form-tabs { display: flex; gap: 0; margin-bottom: 28px; border-radius: 10px; overflow: hidden; border: 1.5px solid var(--border); }
+                .form-tab { flex: 1; padding: 10px; text-align: center; font-weight: 800; font-size: .85rem; cursor: pointer; border: none; background: #F9FAFB; color: var(--muted); transition: all .2s; font-family: 'Nunito', sans-serif; }
+                .form-tab.active { background: var(--red); color: #fff; }
+                .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+                .fg { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+                .fg label { font-size: .75rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+                .fg input, .fg select { border: 1.5px solid var(--border); border-radius: 10px; padding: 13px 14px; font-size: .95rem; font-family: 'Nunito', sans-serif; outline: none; transition: border-color .2s; color: var(--dark); background: #fff; -webkit-appearance: none; }
+                .fg input:focus, .fg select:focus { border-color: var(--red); }
+                .fg input::placeholder { color: #CBD5E1; }
+                .goal-chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+                .goal-chip { padding: 9px 6px; border-radius: 9px; border: 1.5px solid var(--border); background: #F9FAFB; color: var(--muted); font-size: .75rem; font-weight: 700; cursor: pointer; text-align: center; transition: all .2s; font-family: 'Nunito', sans-serif; }
+                .goal-chip.active, .goal-chip:hover { border-color: var(--red); background: #FFF0F1; color: var(--red); }
+                .form-submit { width: 100%; padding: 16px; border-radius: 12px; background: var(--red); color: #fff; border: none; font-family: 'Nunito', sans-serif; font-size: 1rem; font-weight: 900; cursor: pointer; margin-top: 8px; transition: all .2s; box-shadow: 0 4px 20px rgba(232,25,44,.3); }
+                .form-submit:hover { background: var(--red2); transform: translateY(-1px); }
+                .form-note { text-align: center; font-size: .75rem; color: var(--muted); margin-top: 12px; }
+                .success-msg { text-align: center; padding: 24px 0; }
+                .success-msg .s-icon { font-size: 3rem; margin-bottom: 12px; }
+                .success-msg h3 { font-size: 1.5rem; font-weight: 900; color: var(--dark); margin-bottom: 8px; }
+                .success-msg p { color: var(--muted); font-size: .9rem; margin-bottom: 20px; }
+                /* ── App Screenshots Section ── */
+                .screens-section { background: linear-gradient(180deg, #F8F9FC 0%, #fff 100%); padding: 90px 24px; }
+                .screens-inner { margin: 0 auto; }
+                .screens-header { text-align: center; margin-bottom: 40px; }
+                .screens-header .section-sub { margin: 0 auto; max-width: 520px; }
+                .screens-scroll-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-top: 30px; }
+                .screens-scroll-wrapper::-webkit-scrollbar { height: 4px; }
+                .screens-scroll-wrapper::-webkit-scrollbar-track { background: #F0F0F0; border-radius: 4px; }
+                .screens-scroll-wrapper::-webkit-scrollbar-thumb { background: var(--red); border-radius: 4px; }
+                .screens-track { display: flex; gap: 24px; align-items: center; justify-content: center; flex-wrap: nowrap; min-width: max-content; padding: 16px 4px 24px; }
+                .screen-item { display: flex; flex-direction: column; align-items: center; gap: 14px; flex-shrink: 0; }
+                .screen-item .phone-frame { transition: transform .35s ease, box-shadow .35s ease; cursor: pointer; }
+                .screen-item .phone-frame:hover { transform: translateY(-14px) scale(1.04); box-shadow: 0 48px 96px rgba(232,25,44,.22), 0 0 0 2px var(--red) !important; }
+                .screen-label { font-size: .76rem; font-weight: 800; color: var(--muted); letter-spacing: .05em; text-transform: uppercase; text-align: center; }
+                .screen-label span { display: inline-block; background: #FFF0F1; color: var(--red); border-radius: 6px; padding: 3px 10px; }
+                .screens-bottom-cta { text-align: center; margin-top: 60px; }
+                .screens-bottom-cta p { color: var(--muted); font-size: .95rem; margin-bottom: 20px; }
+                @media(max-width:900px) {
+                    .screens-section { padding: 60px 0 60px; }
+                    .screens-header { padding: 0 24px; }
+                    .screens-scroll-wrapper { padding: 0 20px 16px; }
+                    .screens-track { justify-content: flex-start; gap: 14px; padding: 16px 4px 20px; }
+                    .screens-bottom-cta { padding: 0 24px; margin-top: 40px; }
+                }
+                /* ── end App Screenshots ── */
+                .faq-section { max-width: 760px; margin: 0 auto; padding: 80px 24px; }
+                .faq-item { border-bottom: 1.5px solid var(--border); }
+                .faq-q { width: 100%; text-align: left; padding: 20px 0; font-weight: 800; font-size: .95rem; color: var(--dark); background: none; border: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-family: 'Nunito', sans-serif; }
+                .faq-icon { color: var(--red); font-size: 1.3rem; font-weight: 900; transition: transform .2s; }
+                .faq-icon.open { transform: rotate(45deg); }
+                .faq-a { display: none; padding: 0 0 20px; font-size: .9rem; color: var(--muted); line-height: 1.75; }
+                .faq-a.open { display: block; }
+                footer { background: var(--dark); color: rgba(255,255,255,.5); padding: 60px 24px 36px; }
+                .footer-inner { max-width: 1140px; margin: 0 auto; }
+                .footer-top { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 48px; }
+                .footer-brand p { font-size: .85rem; line-height: 1.7; margin: 14px 0 20px; }
+                .footer-heading { font-weight: 800; font-size: .85rem; text-transform: uppercase; letter-spacing: .08em; color: #fff; margin-bottom: 16px; }
+                .footer-links-col { display: flex; flex-direction: column; gap: 10px; }
+                .footer-links-col a { text-decoration: none; color: rgba(255,255,255,.5); font-size: .85rem; transition: color .2s; }
+                .footer-links-col a:hover { color: #fff; }
+                .footer-bottom { border-top: 1px solid rgba(255,255,255,.1); padding-top: 24px; display: flex; justify-content: space-between; align-items: center; font-size: .8rem; flex-wrap: wrap; gap: 12px; }
+                .footer-logo-text { font-weight: 900; font-size: 1.1rem; color: #fff; }
+                .sr { opacity: 0; transform: translateY(28px); transition: opacity .6s ease, transform .6s ease; }
+                .sr.vis { opacity: 1; transform: none; }
+                @media(max-width:900px) {
+                    nav { padding: 0 20px; }
+                    .nav-menu-button { display: inline-flex; }
+                    .nav-links { display: flex; position: fixed; top: 0; bottom: 0; left: 0; width: 280px; max-width: 80vw; background: #fff; flex-direction: column; gap: 0; padding-top: 84px; transform: translateX(-100%); border-right: 1px solid var(--border); box-shadow: 12px 0 36px rgba(0,0,0,.16); transition: transform .3s ease; z-index: 200; }
+                    .nav-links.open { transform: translateX(0); }
+                    .nav-links a { padding: 16px 20px; border-top: 1px solid #F3F4F6; }
+                    .nav-links .nav-right-mobile { display: flex; }
+                    .nav-right { display: none; }
+                    .hero { grid-template-columns: 1fr; gap: 40px; padding: 60px 20px 40px; }
+                    .hero-visual { display: none; }
+                    .feat-grid { grid-template-columns: 1fr; }
+                    .feat-card.big { grid-row: auto; }
+                    .bangla-inner { grid-template-columns: 1fr; }
+                    .pricing-grid { grid-template-columns: 1fr; }
+                    .footer-top { grid-template-columns: 1fr 1fr; }
+                    .form-row { grid-template-columns: 1fr; }
+                    .fg select { display: none; }
+                    .nav-logo-mark { display: none; }
+                    .mobile-hide { display: none; }
+                    .stat-item { padding: 20px 28px; border-right: none; border-bottom: 1px solid rgba(255,255,255,.1); }
+                }
+            `}</style>
 
-        /* ── NAV ── */
-        .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 200; display: flex; align-items: center; justify-content: space-between; padding: 0 var(--h-pad); height: 68px; transition: all 0.3s; }
-        .nav.scrolled { background: rgba(255,255,255,0.96); backdrop-filter: blur(16px); box-shadow: 0 2px 20px rgba(0,0,0,0.1); border-bottom: 1px solid var(--border); }
-        .nav-logo { display: flex; align-items: center; gap: 10px; }
-        .nav-logo-text { font-family: 'Syne', sans-serif; font-size: 1.35rem; font-weight: 800; color: var(--ink); }
-        .nav-logo-badge { background: var(--red); color: #fff; font-size: 0.6rem; font-weight: 800; padding: 3px 7px; border-radius: 4px; letter-spacing: 0.04em; }
-        .nav-links { display: flex; gap: 2rem; list-style: none; }
-        .nav-links a { font-weight: 700; color: var(--ink-light); font-size: 0.95rem; transition: color 0.2s; }
-        .nav-links a:hover { color: var(--red); }
-        .nav-actions { display: flex; gap: 10px; align-items: center; }
-        .btn-outline { padding: 9px 20px; border: 2px solid var(--border); border-radius: 100px; font-weight: 700; font-size: 0.88rem; color: var(--ink); background: transparent; cursor: pointer; font-family: 'Nunito', sans-serif; transition: all 0.2s; display: inline-flex; }
-        .btn-outline:hover { border-color: var(--red); color: var(--red); }
-        .btn-red { padding: 9px 20px; background: var(--red); border: 2px solid var(--red); border-radius: 100px; font-weight: 800; font-size: 0.88rem; color: #fff; cursor: pointer; font-family: 'Nunito', sans-serif; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
-        .btn-red:hover { background: var(--red-dark); border-color: var(--red-dark); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(231,0,19,0.35); }
-        .mob-btn { display: none; background: none; border: none; cursor: pointer; color: var(--ink); padding: 6px; }
-        .mob-menu { display: none; }
+            {/* Topbar */}
+            <div className="topbar">
+                {text.topbar}
+                <span>{text.freeToStart}</span>
+            </div>
 
-        /* ── HERO ── */
-        .hero {
-          padding: 100px var(--h-pad) 0;
-          background: linear-gradient(160deg, #fff 0%, var(--cream) 60%, #fff 100%);
-          overflow: hidden; position: relative; min-height: 100vh;
-          display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        .hero-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; width: 100%; max-width: 1100px; }
-        .hero-tag { display: inline-flex; align-items: center; gap: 8px; background: #FEE2E2; color: var(--red); border-radius: 100px; padding: 7px 16px; font-size: 0.82rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 1.5rem; border: 1px solid #FECACA; }
-        .hero-title { font-family: 'Syne', sans-serif; font-size: clamp(2.2rem, 4.5vw, 3.8rem); font-weight: 800; line-height: 1.07; color: var(--ink); }
-        .hero-title .red { color: var(--red); }
-        .hero-sub { margin-top: 1.25rem; font-size: clamp(0.95rem, 2vw, 1.1rem); color: var(--ink-light); line-height: 1.7; max-width: 460px; }
-        .hero-free-badge { display: inline-flex; align-items: center; gap: 10px; margin-top: 2rem; background: #fff; border: 2px solid var(--red); border-radius: 14px; padding: 14px 20px; }
-        .hero-free-label { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 800; color: var(--red); }
-        .hero-free-sub { font-size: 0.82rem; color: var(--ink-light); font-weight: 600; }
-        .hero-actions { display: flex; gap: 14px; margin-top: 2rem; flex-wrap: wrap; }
-        .btn-hero-red { display: inline-flex; align-items: center; gap: 10px; padding: 15px 30px; background: var(--red); color: #fff; border-radius: 100px; font-weight: 800; font-size: 1rem; border: 2px solid var(--red); transition: all 0.25s; box-shadow: 0 8px 24px rgba(231,0,19,0.3); font-family: 'Nunito', sans-serif; }
-        .btn-hero-red:hover { background: var(--red-dark); transform: translateY(-3px); box-shadow: 0 14px 36px rgba(231,0,19,0.4); }
-        .btn-hero-dark { display: inline-flex; align-items: center; gap: 10px; padding: 15px 30px; background: var(--black); color: #fff; border-radius: 100px; font-weight: 800; font-size: 1rem; border: 2px solid var(--black); transition: all 0.25s; font-family: 'Nunito', sans-serif; }
-        .btn-hero-dark:hover { background: var(--charcoal); transform: translateY(-3px); }
-        .hero-stats { display: flex; gap: 2rem; margin-top: 2.5rem;  margin-bottom: 2.5rem; padding-top: 2.5rem; border-top: 1px solid var(--border); flex-wrap: wrap; }
-        .hero-stat-n { font-family: 'Syne', sans-serif; font-size: 1.7rem; font-weight: 800; color: var(--red); }
-        .hero-stat-l { font-size: 0.82rem; font-weight: 700; color: var(--ink-light); }
-        .hero-phones { position: relative; display: flex; justify-content: center; align-items: flex-end; gap: 16px; padding-bottom: 0; }
-
-        /* ── RED STRIP ── */
-        .red-strip { background: var(--red); color: #fff; padding: clamp(40px, 6vw, 56px) var(--h-pad); display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; max-width: 100%; }
-        .strip-stat { text-align: center; }
-        .strip-stat-n { font-family: 'Syne', sans-serif; font-size: clamp(1.6rem, 3.5vw, 2.8rem); font-weight: 800; }
-        .strip-stat-l { font-size: 0.82rem; opacity: 0.8; margin-top: 4px; font-weight: 700; }
-
-        /* ── SECTION ── */
-        .sec { padding: var(--sec-pad) var(--h-pad); max-width: 1200px; margin: 0 auto; }
-        .sec-full { padding: var(--sec-pad) var(--h-pad); }
-        .sec-tag { display: inline-block; background: #FEE2E2; color: var(--red); padding: 5px 14px; border-radius: 100px; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 1rem; }
-        .sec-title { font-family: 'Syne', sans-serif; font-size: clamp(1.6rem, 3.2vw, 2.6rem); font-weight: 800; color: var(--ink); line-height: 1.15; }
-        .sec-sub { font-size: 1.05rem; color: var(--ink-light); line-height: 1.7; max-width: 540px; margin-top: 0.75rem; }
-
-        /* ── FEATURES GRID ── */
-        .feat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 20px; margin-top: 3rem; }
-        .feat-card { background: #fff; border: 1px solid var(--border); border-radius: 18px; padding: 28px; transition: all 0.3s; }
-        .feat-card:hover { transform: translateY(-6px); box-shadow: 0 20px 48px rgba(0,0,0,0.09); border-color: transparent; }
-        .feat-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem; flex-shrink: 0; }
-        .feat-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.05rem; color: var(--ink); margin-bottom: 0.6rem; }
-        .feat-desc { font-size: 0.9rem; color: var(--ink-light); line-height: 1.65; }
-
-        /* ── APP PREVIEW ── */
-        .preview-section { background: var(--cream); }
-        .preview-inner { max-width: 1200px; margin: 0 auto; padding: var(--sec-pad) var(--h-pad); }
-        .preview-tabs { display: flex; gap: 8px; margin-top: 2.5rem; flex-wrap: wrap; }
-        .preview-tab { padding: 9px 20px; border-radius: 100px; border: 2px solid var(--border); font-weight: 700; font-size: 0.88rem; cursor: pointer; background: #fff; color: var(--ink-light); transition: all 0.2s; font-family: 'Nunito', sans-serif; white-space: nowrap; }
-        .preview-tab.active { background: var(--red); border-color: var(--red); color: #fff; }
-        .preview-phones { display: flex; justify-content: center; gap: 24px; margin-top: 3rem; flex-wrap: wrap; align-items: flex-end; }
-
-        /* ── HOW IT WORKS ── */
-        .hiw-bg { background: var(--black); color: #fff; }
-        .hiw-inner { max-width: 1200px; margin: 0 auto; padding: var(--sec-pad) var(--h-pad); }
-        .hiw-bg .sec-tag { background: rgba(231,0,19,0.2); }
-        .hiw-bg .sec-title { color: #fff; }
-        .hiw-bg .sec-sub { color: rgba(255,255,255,0.6); }
-        .hiw-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 20px; margin-top: 3rem; }
-        .hiw-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; padding: 28px; transition: all 0.3s; }
-        .hiw-card:hover { background: rgba(231,0,19,0.12); border-color: rgba(231,0,19,0.4); transform: translateY(-5px); }
-        .hiw-num { font-family: 'Syne', sans-serif; font-size: 0.75rem; font-weight: 800; color: var(--red); letter-spacing: 0.1em; margin-bottom: 1rem; }
-        .hiw-emoji { font-size: 2.4rem; margin-bottom: 1rem; }
-        .hiw-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.05rem; color: #fff; margin-bottom: 0.6rem; }
-        .hiw-desc { font-size: 0.88rem; color: rgba(255,255,255,0.6); line-height: 1.65; }
-
-        /* ── PRICING ── */
-        .pricing-bg { background: #FAFAFA; }
-        .pricing-notice { max-width: 560px; margin: 1rem auto 0; text-align: center; background: #FEE2E2; border: 1px solid #FECACA; border-radius: 12px; padding: 14px 20px; font-size: 0.9rem; color: var(--red); font-weight: 700; }
-        .wl-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 20px; margin-top: 2.5rem; }
-
-        /* ── SCREENSHOTS SHOWCASE ── */
-        .showcase-bg { background: var(--charcoal); }
-        .showcase-inner { max-width: 1200px; margin: 0 auto; padding: var(--sec-pad) 12px; }
-        .showcase-bg .sec-tag { background: rgba(231,0,19,0.25); }
-        .showcase-bg .sec-title { color: #fff; }
-        .showcase-bg .sec-sub { color: rgba(255,255,255,0.6); }
-        .showcase-phones { display: flex; gap: 12px; margin-top: 3rem; overflow-x: auto; padding-bottom: 16px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; justify-content: center; }
-        .showcase-phones::-webkit-scrollbar { height: 4px; }
-        .showcase-phones::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); border-radius: 2px; }
-        .showcase-phones::-webkit-scrollbar-thumb { background: var(--red); border-radius: 2px; }
-
-        /* ── TESTIMONIALS ── */
-        .test-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(270px, 100%), 1fr)); gap: 20px; margin-top: 3rem; }
-        .test-card { background: #fff; border: 1px solid var(--border); border-radius: 18px; padding: 28px; transition: all 0.3s; }
-        .test-card:hover { transform: translateY(-5px); box-shadow: 0 18px 40px rgba(0,0,0,0.08); }
-        .test-stars { display: flex; gap: 3px; margin-bottom: 1rem; }
-        .test-quote { font-size: 0.95rem; color: var(--ink-light); line-height: 1.7; margin-bottom: 1.25rem; font-style: italic; }
-        .test-author { display: flex; align-items: center; gap: 12px; }
-        .test-avatar { width: 42px; height: 42px; background: linear-gradient(135deg, var(--red), #ff6b6b); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
-        .test-name { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.95rem; color: var(--ink); }
-        .test-role { font-size: 0.8rem; color: var(--ink-light); font-weight: 600; }
-
-        /* ── CTA ── */
-        .cta-bg { background: linear-gradient(135deg, var(--red) 0%, #b50010 100%); color: #fff; text-align: center; padding: var(--sec-pad) var(--h-pad); position: relative; overflow: hidden; }
-        .cta-bg::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 70% 50%, rgba(255,255,255,0.08) 0%, transparent 60%); pointer-events: none; }
-        .cta-title { font-family: 'Syne', sans-serif; font-size: clamp(1.6rem, 3.5vw, 2.8rem); font-weight: 800; position: relative; }
-        .cta-sub { font-size: 1.05rem; opacity: 0.9; margin: 1rem auto 0; max-width: 460px; position: relative; }
-        .cta-free { display: inline-flex; align-items: center; gap: 10px; margin-top: 1.5rem; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 12px; padding: 12px 20px; font-weight: 700; font-size: 0.9rem; position: relative; }
-        .cta-actions { display: flex; justify-content: center; gap: 14px; margin-top: 2.5rem; flex-wrap: wrap; position: relative; }
-        .btn-white { display: inline-flex; align-items: center; gap: 10px; padding: 15px 30px; background: #fff; color: var(--red); border-radius: 100px; font-weight: 800; font-size: 1rem; transition: all 0.25s; font-family: 'Nunito', sans-serif; border: 2px solid #fff; }
-        .btn-white:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,0.25); }
-        .btn-woutline { display: inline-flex; align-items: center; gap: 10px; padding: 15px 30px; background: transparent; color: #fff; border-radius: 100px; font-weight: 800; font-size: 1rem; border: 2px solid rgba(255,255,255,0.5); transition: all 0.25s; font-family: 'Nunito', sans-serif; }
-        .btn-woutline:hover { background: rgba(255,255,255,0.15); transform: translateY(-3px); }
-
-        /* ── FLUENTO BAR ── */
-        .fluento-bar { background: var(--black); padding: 20px var(--h-pad); display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; }
-        .fluento-bar-text { color: rgba(255,255,255,0.5); font-size: 0.85rem; font-weight: 600; }
-        .fluento-bar-link { color: #fff; font-weight: 800; font-size: 0.9rem; transition: color 0.2s; }
-        .fluento-bar-link:hover { color: var(--red); }
-
-        /* ── FOOTER ── */
-        .footer { background: var(--black); color: rgba(255,255,255,0.55); padding: clamp(40px, 6vw, 60px) var(--h-pad) 32px; }
-        .footer-top { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 3rem; padding-bottom: 48px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .footer-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
-        .footer-logo-text { font-family: 'Syne', sans-serif; font-size: 1.25rem; font-weight: 800; color: #fff; }
-        .footer-desc { font-size: 0.88rem; line-height: 1.7; max-width: 260px; }
-        .footer-col-h { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.9rem; color: #fff; margin-bottom: 1rem; }
-        .footer-links { list-style: none; display: flex; flex-direction: column; gap: 9px; }
-        .footer-links a { color: rgba(255,255,255,0.5); font-size: 0.88rem; font-weight: 600; transition: color 0.2s; }
-        .footer-links a:hover { color: var(--red); }
-        .footer-bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 24px; flex-wrap: wrap; gap: 10px; font-size: 0.82rem; }
-        .footer-fluento { color: rgba(255,255,255,0.5); }
-        .footer-fluento a { color: var(--red); font-weight: 700; }
-
-        /* ── RESPONSIVE: TABLET (≤1024px) ── */
-        @media (max-width: 1024px) {
-          .hero-inner { gap: 2.5rem; }
-          .footer-top { grid-template-columns: 1fr 1fr; gap: 2rem; }
-        }
-
-        /* ── RESPONSIVE: MOBILE NAV (≤900px) ── */
-        @media (max-width: 900px) {
-          .nav-links, .nav-actions { display: none; }
-          .mob-btn { display: flex; align-items: center; }
-          .mob-menu { display: flex; flex-direction: column; gap: 0; position: fixed; top: 68px; left: 0; right: 0; background: #fff; border-bottom: 1px solid var(--border); z-index: 199; box-shadow: 0 12px 32px rgba(0,0,0,0.1); }
-          .mob-menu a { padding: 16px var(--h-pad); font-weight: 700; color: var(--ink); border-bottom: 1px solid var(--border); font-size: 1rem; display: block; }
-          .mob-menu a:hover { color: var(--red); }
-          .mob-menu-actions { padding: 16px var(--h-pad); display: flex; flex-direction: column; gap: 10px; }
-          
-          /* hero collapses to single col */
-          .hero-inner { grid-template-columns: 1fr; text-align: center; }
-          .hero-sub { max-width: 100%; margin-left: auto; margin-right: auto; }
-          .hero-free-badge { justify-content: center; }
-          .hero-actions { justify-content: center; }
-          .hero-stats { justify-content: center; gap: 1.5rem; }
-          .hero-phones { margin-top: 3rem; }
-
-          /* red strip: 2x2 */
-          .red-strip { grid-template-columns: repeat(2, 1fr); }
-        }
-
-        /* ── RESPONSIVE: SMALL MOBILE (≤600px) ── */
-        @media (max-width: 600px) {
-          .hero { padding-top: 88px; min-height: auto; padding-bottom: 48px; }
-          .hero-title { font-size: clamp(2rem, 8vw, 2.5rem); }
-          .hero-phones { gap: 10px; }
-          .hero-phones .phone-frame { width: 140px !important; border-radius: 26px !important; padding: 8px !important; }
-          .hero-phones .phone-frame .phone-inner { border-radius: 20px !important; }
-          .hero-free-badge { padding: 12px 16px; gap: 8px; }
-          .hero-free-label { font-size: 0.9rem; }
-          .btn-hero-red, .btn-hero-dark { padding: 13px 22px; font-size: 0.95rem; }
-          .hero-stats { gap: 1rem; }
-          .hero-stat-n { font-size: 1.4rem; }
-
-          /* red strip: 2x2 compact */
-          .red-strip { grid-template-columns: repeat(2, 1fr); gap: 1rem; padding: 36px var(--h-pad); }
-
-          /* feat grid: single col on very small screens */
-          .feat-grid { grid-template-columns: 1fr; }
-
-          /* hiw: 2 col on small, fall to 1 if needed */
-          .hiw-grid { grid-template-columns: 1fr; }
-
-          /* wl: single col */
-          .wl-grid { grid-template-columns: 1fr; }
-
-          /* test: single col */
-          .test-grid { grid-template-columns: 1fr; }
-
-          /* footer: single col */
-          .footer-top { grid-template-columns: 1fr; gap: 2rem; }
-          .footer-desc { max-width: 100%; }
-
-          /* cta buttons: stack */
-          .cta-actions { flex-direction: column; align-items: center; }
-          .btn-white, .btn-woutline { width: 100%; max-width: 320px; justify-content: center; }
-
-          /* preview tabs scroll */
-          .preview-tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 8px; -webkit-overflow-scrolling: touch; }
-          .preview-tabs::-webkit-scrollbar { height: 0; }
-
-          /* app preview phone: shrink height on mobile */
-          .preview-phones { height: 360px !important; }
-          .preview-phones .phone-frame { width: 160px !important; }
-
-          /* showcase: proper horizontal scroll on mobile */
-          .showcase-inner { padding-left: 0 !important; padding-right: 0 !important; }
-          .showcase-inner > div:first-child { padding: 0 16px; }
-          .showcase-phones { justify-content: flex-start !important; padding-left: 16px; padding-right: 16px; scroll-padding-left: 16px; }
-        }
-
-        /* ── RESPONSIVE: EXTRA SMALL (≤400px) ── */
-        @media (max-width: 400px) {
-          .hero-phones .phone-frame { width: 120px !important; }
-          .hero-tag { font-size: 0.72rem; padding: 6px 12px; }
-          .strip-stat-n { font-size: 1.4rem; }
-        }
-
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
-        .fade-up { animation: fadeUp 0.65s ease both; }
-        .delay-1 { animation-delay: 0.1s; }
-        .delay-2 { animation-delay: 0.2s; }
-        .delay-3 { animation-delay: 0.3s; }
-        .delay-4 { animation-delay: 0.4s; }
-        @keyframes floatY { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
-      `}</style>
-
-            {/* ── NAV ── */}
-            <nav className={`nav${scrolled ? " scrolled" : ""}`}>
-                <a href={route("home")} className="nav-logo">
-                    {/* <div className="nav-logo-badge">FLUENTO</div> */}
-                    <img src={logo} className="h-10" alt="Logo" />
-                    <div className="nav-logo-text">VocabPix</div>
-                </a>
-                <ul className="nav-links">
-                    <li>
-                        <a href="#features">Features</a>
-                    </li>
-                    <li>
-                        <a href="#app-preview">App Preview</a>
-                    </li>
-                    <li>
-                        <a href="#wordlists">Word Lists</a>
-                    </li>
-                    <li>
-                        <a href="#testimonials">Reviews</a>
-                    </li>
-                </ul>
-                <div className="nav-actions">
-                    {auth?.user ? (
-                        <Link href={route("dashboard")} className="btn-red">
-                            Dashboard {Ico.arrow}
-                        </Link>
-                    ) : (
-                        <>
-                            <Link href={route("login")} className="btn-outline">
-                                Log In
-                            </Link>
-                            <Link href={route("register")} className="btn-red">
-                                Try Free {Ico.arrow}
-                            </Link>
-                        </>
-                    )}
-                </div>
-                <button className="mob-btn" onClick={() => setOpen(!open)}>
-                    {open ? Ico.x : Ico.menu}
+            {/* Nav */}
+            <nav>
+                <Link className="nav-logo" href="#">
+                    <div className="nav-logo-mark">V</div>
+                    <span className="nav-logo-text">
+                        VocabPix
+                        <sup>BETA</sup>
+                    </span>
+                </Link>
+                <button
+                    type="button"
+                    className="nav-menu-button"
+                    onClick={() => setMobileNavOpen((prev) => !prev)}
+                    aria-expanded={mobileNavOpen}
+                >
+                    ☰
                 </button>
-            </nav>
-            {open && (
-                <div className="mob-menu">
-                    <a href="#features" onClick={() => setOpen(false)}>
-                        Features
-                    </a>
-                    <a href="#app-preview" onClick={() => setOpen(false)}>
-                        App Preview
-                    </a>
-                    <a href="#wordlists" onClick={() => setOpen(false)}>
-                        Word Lists
-                    </a>
-                    <a href="#testimonials" onClick={() => setOpen(false)}>
-                        Reviews
-                    </a>
-                    <div className="mob-menu-actions">
-                        <Link
-                            href={route("login")}
-                            className="btn-outline"
-                            style={{ justifyContent: "center" }}
+                <div className={`nav-links${mobileNavOpen ? " open" : ""}`}>
+                    <Link href="#exams" onClick={() => setMobileNavOpen(false)}>
+                        {text.nav.wordLists}
+                    </Link>
+                    <Link
+                        href="#features"
+                        onClick={() => setMobileNavOpen(false)}
+                    >
+                        {text.nav.features}
+                    </Link>
+                    <Link
+                        href="#bangla"
+                        onClick={() => setMobileNavOpen(false)}
+                    >
+                        {text.nav.bangla}
+                    </Link>
+                    <Link
+                        href="#pricing"
+                        onClick={() => setMobileNavOpen(false)}
+                    >
+                        {text.nav.pricing}
+                    </Link>
+                    <Link href="#faq" onClick={() => setMobileNavOpen(false)}>
+                        {text.nav.faq}
+                    </Link>
+                    <div className="nav-right-mobile">
+                        <div className="lang-toggle-group">
+                            <button
+                                type="button"
+                                className={`lang-toggle ${lang === "en" ? "active" : ""}`}
+                                onClick={() => setLang("en")}
+                            >
+                                EN
+                            </button>
+                            <button
+                                type="button"
+                                className={`lang-toggle ${lang === "bn" ? "active" : ""}`}
+                                onClick={() => setLang("bn")}
+                            >
+                                BN
+                            </button>
+                        </div>
+                        <a
+                            href="https://vocabpix.fluento.org"
+                            className="btn-ghost"
+                            target="_blank"
+                            rel="noreferrer"
                         >
-                            Log In
-                        </Link>
+                            {text.nav.login}
+                        </a>
                         <Link
-                            href={route("register")}
+                            href="#enroll"
                             className="btn-red"
-                            style={{ justifyContent: "center" }}
+                            onClick={() => setMobileNavOpen(false)}
                         >
-                            Try Free
+                            <span style={{ color: "#fff" }}>
+                                {text.register} {text.freeText}
+                            </span>
                         </Link>
                     </div>
                 </div>
-            )}
+                <div
+                    className={`nav-backdrop${mobileNavOpen ? " open" : ""}`}
+                    onClick={() => setMobileNavOpen(false)}
+                ></div>
+                <div className="nav-right">
+                    <div className="lang-toggle-group">
+                        <button
+                            type="button"
+                            className={`lang-toggle ${lang === "en" ? "active" : ""}`}
+                            onClick={() => setLang("en")}
+                        >
+                            EN
+                        </button>
+                        <button
+                            type="button"
+                            className={`lang-toggle ${lang === "bn" ? "active" : ""}`}
+                            onClick={() => setLang("bn")}
+                        >
+                            BN
+                        </button>
+                    </div>
+                    <a
+                        href="https://vocabpix.fluento.org"
+                        className="btn-ghost"
+                        target="_blank"
+                        rel="noreferrer"
+                    >
+                        {text.nav.login}
+                    </a>
+                    <Link href="#enroll" className="btn-red">
+                        {text.register}{" "}
+                        <span className="mobile-hide">{text.freeText}</span>
+                    </Link>
+                </div>
+            </nav>
 
-            {/* ── HERO ── */}
-            <section className="hero">
-                <div className="hero-inner">
-                    <div>
-                        <div className="hero-tag fade-up">
-                            <span
-                                style={{
-                                    width: 8,
-                                    height: 8,
-                                    background: "var(--red)",
-                                    borderRadius: "50%",
-                                    display: "inline-block",
-                                }}
-                            />
-                            A Fluento Product — 100% Free to Use
+            {/* Hero */}
+            <section>
+                <div className="hero">
+                    <div className="hero-left">
+                        <div className="hero-badge">
+                            🔬 Scientific Vocabulary Learning
                         </div>
-                        <h1 className="hero-title fade-up delay-1">
-                            Master English
-                            <br />
-                            Vocabulary with
-                            <br />
-                            <span className="red">Vivid Images</span>
+                        <h1>
+                            {text.hero.title} <em>{text.hero.titleEm}</em> — in
+                            Bangla &amp; English
                         </h1>
-                        <p className="hero-sub fade-up delay-2">
-                            VocabPix teaches words the way your brain actually
-                            works — through striking images, real-life
-                            sentences, and smart recall. Download free. Purchase
-                            only the word lists you need.
-                        </p>
-                        <div className="hero-free-badge fade-up delay-2">
-                            <div style={{ fontSize: "2rem" }}>🎉</div>
-                            <div>
-                                <div className="hero-free-label">
-                                    Free Forever — No Subscription
-                                </div>
-                                <div className="hero-free-sub">
-                                    Purchase individual word lists · Keep them
-                                    for life
-                                </div>
-                            </div>
+                        <p className="hero-sub">{text.hero.subtitle}</p>
+                        <div className="hero-exam-tags">
+                            <span className="exam-tag">📝 GRE</span>
+                            <span className="exam-tag">🎓 IELTS</span>
+                            <span className="exam-tag">📖 BCS</span>
+                            <span className="exam-tag">💼 BBA</span>
+                            <span className="exam-tag">🏥 Medical</span>
+                            <span className="exam-tag">📐 SAT</span>
                         </div>
-                        <div className="hero-actions fade-up delay-3">
-                            <a
-                                // href="https://vocabpix.fluento.org"
-                                href={route("wordlistcategory.index")}
-                                className="btn-hero-red"
+                        <div className="hero-actions">
+                            <Link
+                                href="#enroll"
+                                className="btn-hero btn-hero-primary"
                             >
-                                {Ico.phone} Open App Free
-                            </a>
+                                🚀 {text.hero.startLearning}
+                            </Link>
                             <a
-                                href={route("wordlistcategory.index")}
-                                className="btn-hero-dark"
+                                href="https://vocabpix.fluento.org"
+                                className="btn-hero btn-hero-secondary"
+                                target="_blank"
+                                rel="noreferrer"
                             >
-                                Browse Word Lists {Ico.arrow}
+                                👀 {text.hero.exploreApp}
                             </a>
                         </div>
-                        <div className="hero-stats fade-up delay-4">
-                            <div>
-                                <div className="hero-stat-n">
-                                    <Counter end={10000} suffix="+" />
+                        <div className="hero-trust">
+                            <div className="trust-avatars">
+                                <div
+                                    className="trust-avatar"
+                                    style={{ background: "#E8192C" }}
+                                >
+                                    R
                                 </div>
-                                <div className="hero-stat-l">
-                                    Active Learners
+                                <div
+                                    className="trust-avatar"
+                                    style={{ background: "#2563EB" }}
+                                >
+                                    T
+                                </div>
+                                <div
+                                    className="trust-avatar"
+                                    style={{ background: "#1DB954" }}
+                                >
+                                    M
+                                </div>
+                                <div
+                                    className="trust-avatar"
+                                    style={{ background: "#FF6B00" }}
+                                >
+                                    S
                                 </div>
                             </div>
-                            <div>
-                                <div className="hero-stat-n">
-                                    <Counter end={5000} suffix="+" />
-                                </div>
-                                <div className="hero-stat-l">
-                                    Vocabulary Words
-                                </div>
-                            </div>
-                            <div>
-                                <div className="hero-stat-n">
-                                    <Counter end={4.8} suffix="★" decimal />
-                                </div>
-                                <div className="hero-stat-l">User Rating</div>
-                            </div>
+                            <span>
+                                {text.hero.joined} <strong>5,000+</strong>{" "}
+                                learners this month
+                            </span>
                         </div>
                     </div>
-                    <div className="hero-phones fade-up delay-2">
-                        <Phone
-                            // src={IMG.dashboardMobile}
-                            src={dashboardImg}
-                            alt="VocabPix Dashboard"
-                            style={{
-                                marginBottom: "40px",
-                                animation: "floatY 4s ease-in-out infinite",
-                            }}
-                        />
-                        <Phone
-                            // src={IMG.wordImage}
-                            src={exerciseImg}
-                            alt="VocabPix Word Card"
-                            style={{
-                                marginTop: "40px",
-                                animation:
-                                    "floatY 4s ease-in-out 0.8s infinite",
-                            }}
-                        />
+                    <div className="hero-visual">
+                        <div className="card-stack">
+                            <div className="word-card wc-back2"></div>
+                            <div className="word-card wc-back1"></div>
+                            <div className="word-card wc-main">
+                                <div className="wc-label">
+                                    GRE Extended — Sub-List 2
+                                </div>
+                                <div>
+                                    <span className="wc-word">acuity</span>
+                                    <span className="wc-pos">noun</span>
+                                </div>
+                                <div className="wc-phonetic">
+                                    uhk-YOO-uht-ee | অক·যউ·অট·ই
+                                </div>
+                                <div className="wc-img">🔬</div>
+                                <div className="wc-def">
+                                    Sharpness or keenness of thought, vision, or
+                                    hearing
+                                    <br />
+                                    <em
+                                        style={{
+                                            fontSize: ".75rem",
+                                            color: "#aaa",
+                                        }}
+                                    >
+                                        চিন্তা বা দৃষ্টিশক্তির তীক্ষ্ণতা
+                                    </em>
+                                </div>
+                                <div className="wc-actions">
+                                    <button className="wc-btn-no">
+                                        ✕ Don't Know
+                                    </button>
+                                    <button className="wc-btn-yes">
+                                        ✓ I Know!
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="float-badge badge-streak">
+                                🔥 14-Day Streak
+                            </div>
+                            <div className="float-badge badge-mastered">
+                                ✓ 340 Mastered
+                            </div>
+                            <div className="float-badge badge-xp">
+                                ⚡ 1,250 XP
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
 
-            {/* ── RED STRIP ── */}
-            <div className="red-strip">
-                {[
-                    { n: 10000, s: "+", l: "Words Learned Today" },
-                    { n: 5000, s: "+", l: "Visual Flashcards" },
-                    { n: 0, s: "$0", l: "App Cost — Free" },
-                    { n: 12, s: "+", l: "Word List Categories" },
-                ].map((s, i) => (
-                    <div key={i} className="strip-stat">
-                        <div className="strip-stat-n">
-                            {s.s === "$0" ? (
-                                "$0"
-                            ) : (
-                                <Counter end={s.n} suffix={s.s} />
-                            )}
-                        </div>
-                        <div className="strip-stat-l">{s.l}</div>
+            {/* Stats Row */}
+            <div className="stats-row">
+                <div className="stat-item">
+                    <div className="stat-n">
+                        10<span>K+</span>
                     </div>
-                ))}
+                    <div className="stat-l">Curated Words</div>
+                </div>
+                <div className="stat-item">
+                    <div className="stat-n">122</div>
+                    <div className="stat-l">Word Lists</div>
+                </div>
+                <div className="stat-item">
+                    <div className="stat-n">6</div>
+                    <div className="stat-l">Exam Categories</div>
+                </div>
+                <div className="stat-item">
+                    <div className="stat-n">
+                        95<span>%</span>
+                    </div>
+                    <div className="stat-l">Retention Rate</div>
+                </div>
+                <div className="stat-item">
+                    <div className="stat-n">
+                        5<span>K+</span>
+                    </div>
+                    <div className="stat-l">Active Learners</div>
+                </div>
             </div>
 
-            {/* ── FEATURES ── */}
-            <section className="sec" id="features">
-                <div
-                    style={{
-                        textAlign: "center",
-                        maxWidth: 600,
-                        margin: "0 auto",
-                    }}
-                >
-                    <span className="sec-tag">Features</span>
-                    <h2 className="sec-title">
-                        Everything You Need to Build a Powerful Vocabulary
-                    </h2>
-                    <p className="sec-sub" style={{ margin: "0.75rem auto 0" }}>
-                        Built on the science of visual memory and active recall
-                        — proven to retain words 5× longer than traditional
-                        study.
-                    </p>
+            {/* Exams Section */}
+            <section className="exams-section sr" id="exams">
+                <div className="section-eyebrow">
+                    📚 {text.sections.wordLists}
                 </div>
-                <div className="feat-grid">
-                    {features.map((f) => (
-                        <div key={f.title} className="feat-card">
-                            <div
-                                className="feat-icon"
-                                style={{ background: f.bg, color: f.color }}
-                            >
-                                {f.icon}
-                            </div>
-                            <div className="feat-title">{f.title}</div>
-                            <div className="feat-desc">{f.desc}</div>
-                        </div>
+                <h2 className="section-title">Curated for Your Exam Goal</h2>
+                <p className="section-sub">
+                    Whether it's GRE, IELTS, BCS, or everyday fluency — every
+                    word list is organized, level-tagged, and ready to learn.
+                </p>
+                <div className="exams-grid">
+                    {[
+                        {
+                            icon: "📘",
+                            name: "GRE 332",
+                            words: "17 Lists · 332 Words",
+                        },
+                        {
+                            icon: "🎓",
+                            name: "GRE Extended",
+                            words: "23 Lists · 1,380 Words",
+                        },
+                        {
+                            icon: "🌍",
+                            name: "Oxford 3000",
+                            words: "72 Lists · 3,000 Words",
+                        },
+                        {
+                            icon: "🏛️",
+                            name: "Academic Word List",
+                            words: "10 Lists · 570 Words",
+                        },
+                        {
+                            icon: "📝",
+                            name: "IELTS Essentials",
+                            words: "Coming Soon",
+                        },
+                        {
+                            icon: "🏥",
+                            name: "Medical Vocab",
+                            words: "Coming Soon",
+                        },
+                    ].map((exam) => (
+                        <a
+                            key={exam.name}
+                            className="exam-card"
+                            href="https://vocabpix.fluento.org"
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            <div className="exam-icon">{exam.icon}</div>
+                            <div className="exam-name">{exam.name}</div>
+                            <div className="exam-words">{exam.words}</div>
+                        </a>
                     ))}
                 </div>
             </section>
 
-            {/* ── APP PREVIEW ── */}
-            <section className="preview-section" id="app-preview">
-                <div className="preview-inner">
-                    <div
-                        style={{
-                            textAlign: "center",
-                            maxWidth: 600,
-                            margin: "0 auto",
-                        }}
-                    >
-                        <span className="sec-tag">App Preview</span>
-                        <h2 className="sec-title">
-                            A Beautiful App Built for Real Learning
-                        </h2>
-                        <p
-                            className="sec-sub"
-                            style={{ margin: "0.75rem auto 0" }}
-                        >
-                            Clean, fast, and distraction-free. Everything you
-                            need — nothing you don't.
-                        </p>
-                    </div>
-                    <div className="preview-tabs">
+            {/* How It Works */}
+            <div className="how-section">
+                <div className="how-inner sr">
+                    <div className="section-eyebrow">🗺️ How It Works</div>
+                    <h2 className="section-title">
+                        From Zero to Fluent in 4 Steps
+                    </h2>
+                    <p className="section-sub">
+                        No complicated setup. Open the app and start in under 60
+                        seconds.
+                    </p>
+                    <div className="how-steps">
                         {[
-                            "Dashboard",
-                            "Word Card",
-                            "Word Detail",
-                            "Word Lists",
-                        ].map((t, i) => (
-                            <button
-                                key={t}
-                                className={`preview-tab${activeTab === i ? " active" : ""}`}
-                                onClick={() => setActiveTab(i)}
-                            >
-                                {t}
-                            </button>
-                        ))}
-                    </div>
-                    {/* All phones stay mounted — only opacity changes to avoid flicker */}
-                    <div
-                        className="preview-phones"
-                        style={{ position: "relative", height: "480px" }}
-                    >
-                        {[
-                            { src: dashboardImg, alt: "Dashboard" },
-                            { src: exerciseImg, alt: "Word Card" },
-                            { src: exerciseImg2, alt: "Word Detail" },
-                            { src: wordlistImg, alt: "Word Lists" },
-                        ].map((s, i) => (
-                            <div
-                                key={i}
-                                style={{
-                                    position: "absolute",
-                                    top: 0,
-                                    left: "50%",
-                                    transform: "translateX(-50%)",
-                                    opacity: activeTab === i ? 1 : 0,
-                                    pointerEvents:
-                                        activeTab === i ? "auto" : "none",
-                                    transition: "opacity 250ms ease",
-                                    animation:
-                                        "floatY 4s ease-in-out 1s infinite",
-                                }}
-                            >
-                                <Phone
-                                    src={s.src}
-                                    alt={s.alt}
-                                    style={{ maxWidth: "min(220px, 65vw)" }}
-                                />
+                            {
+                                num: "1",
+                                icon: "📋",
+                                title: "Pick a List",
+                                desc: "Choose GRE, Oxford 3000, Academic, or your own list. Each split into 60-word sub-lists.",
+                                arrow: true,
+                            },
+                            {
+                                num: "2",
+                                icon: "🖼️",
+                                title: "Learn with Images",
+                                desc: "Each word card shows an image, pronunciation, Bangla definition, synonyms, antonyms & collocations.",
+                                arrow: true,
+                            },
+                            {
+                                num: "3",
+                                icon: "🧠",
+                                title: "Rate Your Memory",
+                                desc: 'Tap "I Know" or "I Don\'t Know." Hard words resurface automatically. Track your mastered count.',
+                                arrow: true,
+                            },
+                            {
+                                num: "4",
+                                icon: "🏆",
+                                title: "Earn XP & Streak",
+                                desc: "Daily sessions build your streak. Earn XP for sessions, mastered words, and completed lists.",
+                                arrow: false,
+                            },
+                        ].map((step) => (
+                            <div key={step.num} className="how-step">
+                                <div className="how-step-num">{step.num}</div>
+                                <div className="how-step-icon">{step.icon}</div>
+                                <h3>{step.title}</h3>
+                                <p>{step.desc}</p>
+                                {step.arrow && (
+                                    <div className="how-step-arrow">›</div>
+                                )}
                             </div>
                         ))}
                     </div>
                 </div>
-            </section>
+            </div>
 
-            {/* ── HOW IT WORKS ── */}
-            <section className="hiw-bg">
-                <div className="hiw-inner">
-                    <div
-                        style={{
-                            textAlign: "center",
-                            maxWidth: 560,
-                            margin: "0 auto",
-                        }}
-                    >
-                        <span className="sec-tag">How It Works</span>
-                        <h2 className="sec-title">
-                            Four Steps to a Bigger Vocabulary
-                        </h2>
-                        <p
-                            className="sec-sub"
-                            style={{ margin: "0.75rem auto 0" }}
-                        >
-                            Open the app free. Browse word lists. Purchase what
-                            you need. Learn at your own pace — forever.
+            {/* Features */}
+            <section className="feat-section sr" id="features">
+                <div className="section-eyebrow">
+                    ✨ {text.sections.features}
+                </div>
+                <h2 className="section-title">
+                    Everything You Need to Master Words
+                </h2>
+                <p className="section-sub">
+                    Not flashcards. Not a dictionary. A complete vocabulary
+                    system.
+                </p>
+                <div className="feat-grid">
+                    <div className="feat-card big">
+                        <div className="feat-icon">🖼️</div>
+                        <h3>Picture-Memory Learning</h3>
+                        <p>
+                            Every word is anchored to a vivid, contextual image.
+                            Visual memory increases retention by up to 65%
+                            compared to plain text — your brain never forgets an
+                            image it has truly seen.
+                        </p>
+                        <br />
+                        <p>
+                            Our image-word pairing engine ensures the picture
+                            matches the word's meaning, tone, and usage — not
+                            just a generic stock photo.
+                        </p>
+                        <div className="feat-pill-row">
+                            <span className="feat-pill">
+                                65% better retention
+                            </span>
+                            <span className="feat-pill">Contextual images</span>
+                            <span className="feat-pill">Visual anchors</span>
+                        </div>
+                    </div>
+                    <div className="feat-card">
+                        <div className="feat-icon">🔊</div>
+                        <h3>Audio + Phonetic Pronunciation</h3>
+                        <p>
+                            Hear every word spoken aloud. Get phonetic spelling
+                            in English and Bangla transliteration so you know
+                            exactly how to say it.
                         </p>
                     </div>
-                    <div className="hiw-grid">
-                        {[
-                            {
-                                n: "01",
-                                e: "📲",
-                                t: "Open the App",
-                                d: "Download VocabPix free. No sign-up wall, no trial period. Your first word list is on us.",
-                            },
-                            {
-                                n: "02",
-                                e: "📚",
-                                t: "Browse Word Lists",
-                                d: "Explore Academic Word List, IELTS, GRE, BCS and more. Each list is purchased once and yours forever.",
-                            },
-                            {
-                                n: "03",
-                                e: "🖼️",
-                                t: "Learn with Images",
-                                d: "Each word comes with a real photo, phonetics, Bangla pronunciation, definition, and collocations.",
-                            },
-                            {
-                                n: "04",
-                                e: "🧠",
-                                t: "Track & Master",
-                                d: 'Mark words as "I Know" or "I Don\'t Know". VocabPix brings back the tricky ones until they stick.',
-                            },
-                        ].map((s) => (
-                            <div key={s.n} className="hiw-card">
-                                <div className="hiw-num">STEP {s.n}</div>
-                                <div className="hiw-emoji">{s.e}</div>
-                                <div className="hiw-title">{s.t}</div>
-                                <div className="hiw-desc">{s.d}</div>
+                    <div className="feat-card">
+                        <div className="feat-icon">🔄</div>
+                        <h3>Synonyms, Antonyms &amp; Collocations</h3>
+                        <p>
+                            See how words connect — synonyms, antonyms, and real
+                            sentence collocations so you learn words in context,
+                            not in isolation.
+                        </p>
+                    </div>
+                    <div className="feat-card">
+                        <div className="feat-icon">⚡</div>
+                        <h3>XP &amp; Gamified Streaks</h3>
+                        <p>
+                            Earn XP for sessions, mastered words, and completed
+                            lists. Build daily streaks. Hit milestones. Stay
+                            hooked on learning.
+                        </p>
+                    </div>
+                    <div className="feat-card">
+                        <div className="feat-icon">📝</div>
+                        <h3>Custom Word Collections</h3>
+                        <p>
+                            Add any word you encounter — in class, reading, or
+                            exams. Build personal lists and practice them
+                            anytime.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            {/* Bangla Section */}
+            <div className="bangla-section">
+                <div className="bangla-inner sr" id="bangla">
+                    <div>
+                        <div className="section-eyebrow">
+                            🇧🇩 {text.sections.bangla}
+                        </div>
+                        <h2 className="section-title" style={{ color: "#fff" }}>
+                            শিখুন বাংলায়,
+                            <br />
+                            জিতুন ইংরেজিতে
+                        </h2>
+                        <p className="section-sub">
+                            The only vocabulary app built with Bengali learners
+                            in mind — definitions, pronunciation guides, and
+                            memory cues all available in Bangla.
+                        </p>
+                        <div className="bangla-perks">
+                            <div className="bangla-perk">
+                                <div className="perk-dot"></div>
+                                <div className="perk-text">
+                                    <strong>Bangla definitions</strong> —
+                                    understand word meaning in your native
+                                    language first, then internalize the
+                                    English.
+                                </div>
                             </div>
-                        ))}
+                            <div className="bangla-perk">
+                                <div className="perk-dot"></div>
+                                <div className="perk-text">
+                                    <strong>Bengali phonetic guide</strong> —
+                                    every word has a Bangla script pronunciation
+                                    (অক·যউ·অট·ই) so you say it correctly from
+                                    day one.
+                                </div>
+                            </div>
+                            <div className="bangla-perk">
+                                <div className="perk-dot"></div>
+                                <div className="perk-text">
+                                    <strong>Exam-focused lists</strong> — GRE,
+                                    IELTS, BCS, BBA, SAT and Medical words used
+                                    in Bangladesh's top competitive exams.
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </section>
-
-            {/* ── WORDLISTS / PRICING ── */}
-            <section className="pricing-bg sec-full" id="wordlists">
-                <div
-                    style={{
-                        maxWidth: 1200,
-                        margin: "0 auto",
-                        padding: "0 5vw",
-                    }}
-                >
-                    <div
-                        style={{
-                            textAlign: "center",
-                            maxWidth: 600,
-                            margin: "0 auto",
-                        }}
-                    >
-                        <span className="sec-tag">Word Lists</span>
-                        <h2 className="sec-title">
-                            Purchase Only What You Need
-                        </h2>
-                        <p
-                            className="sec-sub"
-                            style={{ margin: "0.75rem auto 0" }}
-                        >
-                            No subscriptions. No recurring fees. Buy a word list
-                            once and it's yours for life.
-                        </p>
-                    </div>
-                    <div className="pricing-notice">
-                        🎁 The app is completely free — you only pay for premium
-                        word lists
-                    </div>
-                    <div className="wl-grid">
-                        {wordlists.map((wl, i) => (
-                            <WordlistCard key={i} {...wl} />
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* ── SCREENSHOTS SHOWCASE ── */}
-            <section className="showcase-bg">
-                <div className="showcase-inner">
-                    <div
-                        style={{
-                            textAlign: "center",
-                            maxWidth: 600,
-                            margin: "0 auto",
-                        }}
-                    >
-                        <span className="sec-tag">Screenshots</span>
-                        <h2 className="sec-title" style={{ color: "#fff" }}>
-                            See Every Screen, Up Close
-                        </h2>
-                        <p className="sec-sub">
-                            From the dashboard to word cards — a clean, focused
-                            learning experience built for clarity.
-                        </p>
-                    </div>
-                    <div className="showcase-phones">
-                        {[
-                            { src: dashboardImg, alt: "Dashboard" },
-                            { src: exerciseImg, alt: "Word Card" },
-                            { src: exerciseImg2, alt: "Word Detail" },
-                            { src: wordlistImg, alt: "Word Lists" },
-                            { src: quizImg, alt: "Quiz" },
-                        ].map((s, i) => (
-                            <div
-                                key={i}
-                                style={{
-                                    flexShrink: 0,
-                                    scrollSnapAlign: "start",
-                                }}
-                            >
-                                <Phone
-                                    src={s.src}
-                                    alt={s.alt}
-                                    style={{ width: "180px" }}
-                                />
-                                <div
+                    <div>
+                        <div className="bangla-card">
+                            <div className="bangla-word">acuity</div>
+                            <div className="bangla-eng">
+                                noun · uhk-YOO-uht-ee ·{" "}
+                                <span
                                     style={{
-                                        textAlign: "center",
-                                        marginTop: "12px",
-                                        color: "rgba(255,255,255,0.6)",
-                                        fontWeight: 700,
-                                        fontSize: "0.85rem",
+                                        fontSize: ".82rem",
+                                        color: "#FF8A94",
                                     }}
                                 >
-                                    {s.alt}
-                                </div>
+                                    অক·যউ·অট·ই
+                                </span>
                             </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* ── TESTIMONIALS ── */}
-            <section className="sec" id="testimonials">
-                <div
-                    style={{
-                        textAlign: "center",
-                        maxWidth: 600,
-                        margin: "0 auto",
-                    }}
-                >
-                    <span className="sec-tag">Reviews</span>
-                    <h2 className="sec-title">Learners Love VocabPix</h2>
-                    <p className="sec-sub" style={{ margin: "0.75rem auto 0" }}>
-                        Thousands of students and exam aspirants trust VocabPix
-                        every day.
-                    </p>
-                </div>
-                <div className="test-grid">
-                    {testimonials.map((t) => (
-                        <div key={t.name} className="test-card">
-                            <div className="test-stars">
-                                {[1, 2, 3, 4, 5].map((i) => (
-                                    <span key={i}>{Ico.star}</span>
-                                ))}
+                            <div className="bangla-def-label">বাংলা সংজ্ঞা</div>
+                            <div className="bangla-def">
+                                চিন্তাশক্তি, দৃষ্টিশক্তি বা শ্রবণশক্তির
+                                তীক্ষ্ণতা বা প্রখরতা। কোনো বিষয়কে স্পষ্ট ও
+                                সূক্ষ্মভাবে বোঝার ক্ষমতা।
                             </div>
-                            <p className="test-quote">"{t.text}"</p>
-                            <div className="test-author">
-                                <div className="test-avatar">{t.avatar}</div>
-                                <div>
-                                    <div className="test-name">{t.name}</div>
-                                    <div className="test-role">{t.role}</div>
-                                </div>
+                            <div className="bangla-def-label">সমার্থক শব্দ</div>
+                            <div className="bangla-syn">
+                                <span>sharpness</span>
+                                <span>keenness</span>
+                                <span>perception</span>
+                                <span>astuteness</span>
                             </div>
                         </div>
-                    ))}
+                    </div>
                 </div>
-            </section>
-
-            {/* ── CTA ── */}
-            <section className="cta-bg">
-                <h2 className="cta-title">
-                    Start Learning Vocabulary
-                    <br />
-                    the Visual Way — Free
-                </h2>
-                <p className="cta-sub">
-                    Open VocabPix now. No sign-up required to browse. Purchase a
-                    word list when you're ready to go deep.
-                </p>
-                <div className="cta-free">
-                    <span>✅</span> The app is free · Buy word lists once · Keep
-                    them forever
-                </div>
-                <div className="cta-actions">
-                    <a
-                        // href="https://vocabpix.fluento.org"
-                        href={route("home")}
-                        className="btn-white"
-                    >
-                        Open App Free {Ico.arrow}
-                    </a>
-                    <a
-                        href={route("wordlistcategory.index")}
-                        className="btn-woutline"
-                    >
-                        Browse Word Lists
-                    </a>
-                </div>
-            </section>
-
-            {/* ── FLUENTO BAR ── */}
-            <div className="fluento-bar">
-                <div className="nav-logo-badge">FLUENTO</div>
-                <span className="fluento-bar-text">
-                    VocabPix is a product of
-                </span>
-                <a
-                    href="https://fluento.org"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="fluento-bar-link"
-                >
-                    fluento.org →
-                </a>
             </div>
 
-            {/* ── FOOTER ── */}
-            <footer className="footer">
-                <div className="footer-top">
-                    <div>
-                        <div className="footer-logo">
-                            <div className="nav-logo-badge">FLUENTO</div>
-                            <div className="footer-logo-text">VocabPix</div>
+            {/* Testimonials */}
+            <section className="testi-section sr" id="testimonials">
+                <div className="section-eyebrow">💬 Reviews</div>
+                <h2 className="section-title">Learners Love VocabPix</h2>
+                <p className="section-sub">
+                    Real feedback from real students — from Dhaka to diaspora.
+                </p>
+                <div className="testi-grid">
+                    <div className="testi-card">
+                        <div className="testi-stars">★★★★★</div>
+                        <div className="testi-quote">
+                            "I scored 162 on GRE Verbal after 6 weeks on
+                            VocabPix. The image anchoring is genuinely different
+                            — I could picture every word during the exam."
                         </div>
-                        <p className="footer-desc">
-                            Learn vocabulary through vivid images and smart
-                            recall. Free to use — purchase only the word lists
-                            you need, and own them forever.
-                        </p>
+                        <div className="testi-person">
+                            <div
+                                className="testi-av"
+                                style={{ background: "#E8192C" }}
+                            >
+                                RS
+                            </div>
+                            <div>
+                                <div className="testi-name">Rahul S.</div>
+                                <div className="testi-role">
+                                    GRE Prep · scored 162 Verbal
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <div className="footer-col-h">Product</div>
-                        <ul className="footer-links">
-                            <li>
-                                <a href="#features">Features</a>
-                            </li>
-                            <li>
-                                <a href="#wordlists">Word Lists</a>
-                            </li>
-                            <li>
-                                <a href="#app-preview">App Preview</a>
-                            </li>
-                            <li>
-                                <a href="https://vocabpix.fluento.org">
-                                    Open App
-                                </a>
-                            </li>
-                        </ul>
+                    <div className="testi-card">
+                        <div className="testi-stars">★★★★★</div>
+                        <div className="testi-quote">
+                            "বাংলায় সংজ্ঞা পাওয়াটা সত্যিই অসাধারণ। ইংরেজি শব্দ
+                            এখন মাথায় থাকে! 23-day streak চলছে।"
+                        </div>
+                        <div className="testi-person">
+                            <div
+                                className="testi-av"
+                                style={{ background: "#2563EB" }}
+                            >
+                                TF
+                            </div>
+                            <div>
+                                <div className="testi-name">Tasfia F.</div>
+                                <div className="testi-role">
+                                    University Student · Dhaka
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <div className="footer-col-h">Learn</div>
-                        <ul className="footer-links">
-                            <li>
-                                <a href="#">Academic Word List</a>
-                            </li>
-                            <li>
-                                <a href="#">IELTS Vocabulary</a>
-                            </li>
-                            <li>
-                                <a href="#">GRE Word List</a>
-                            </li>
-                            <li>
-                                <a href="#">BCS English</a>
-                            </li>
-                        </ul>
-                    </div>
-                    <div>
-                        <div className="footer-col-h">Company</div>
-                        <ul className="footer-links">
-                            <li>
-                                <a
-                                    href="https://fluento.org"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    Fluento
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#">About</a>
-                            </li>
-                            <li>
-                                <a href="#">Privacy Policy</a>
-                            </li>
-                            <li>
-                                <a href="#">Terms of Use</a>
-                            </li>
-                        </ul>
+                    <div className="testi-card">
+                        <div className="testi-stars">★★★★★</div>
+                        <div className="testi-quote">
+                            "As an English teacher I recommend this to every
+                            student. The collocation examples and synonym
+                            groupings are exactly how vocabulary should be
+                            taught."
+                        </div>
+                        <div className="testi-person">
+                            <div
+                                className="testi-av"
+                                style={{ background: "#1DB954" }}
+                            >
+                                MK
+                            </div>
+                            <div>
+                                <div className="testi-name">Mohammad K.</div>
+                                <div className="testi-role">
+                                    English Teacher · Chittagong
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div className="footer-bottom">
-                    <div>
-                        © {new Date().getFullYear()} VocabPix. All rights
-                        reserved.
-                    </div>
-                    <div className="footer-fluento">
-                        A product of{" "}
-                        <a
-                            href="https://fluento.org"
-                            target="_blank"
-                            rel="noopener noreferrer"
+            </section>
+
+            {/* Pricing */}
+            <div className="pricing-section sr" id="pricing">
+                <div className="pricing-inner">
+                    <div style={{ textAlign: "center", marginBottom: "48px" }}>
+                        <div
+                            className="section-eyebrow"
+                            style={{ textAlign: "center" }}
                         >
-                            Fluento
-                        </a>
+                            💳 {text.sections.pricing}
+                        </div>
+                        <h2
+                            className="section-title"
+                            style={{ textAlign: "center" }}
+                        >
+                            Simple, Honest Pricing
+                        </h2>
+                        <p
+                            className="section-sub"
+                            style={{ margin: "0 auto", textAlign: "center" }}
+                        >
+                            {text.pricingSubtitle}
+                        </p>
+                    </div>
+                    <div className="pricing-grid">
+                        {/* Free App */}
+                        <div className="price-card">
+                            <div className="price-plan-tag">🎉 Always Free</div>
+                            <div className="price-plan">The App</div>
+                            <div className="price-amount">
+                                <sub>৳</sub>0
+                            </div>
+                            <div className="price-period">
+                                Forever — no subscription ever
+                            </div>
+                            <ul className="price-features">
+                                <li>Image + audio for every word</li>
+                                <li>Bangla definitions &amp; phonetics</li>
+                                <li>XP &amp; streak tracking</li>
+                                <li>Quiz &amp; exercise modes</li>
+                                <li>Custom word collections</li>
+                                <li>Streak freeze protection</li>
+                                <li>Offline mode</li>
+                                <li>Ad-free experience</li>
+                            </ul>
+                            <a
+                                href="#enroll"
+                                className="btn-ghost"
+                                style={{
+                                    display: "block",
+                                    textAlign: "center",
+                                    padding: "13px",
+                                }}
+                            >
+                                Get Started Free →
+                            </a>
+                        </div>
+                        {/* Wordlist Packs */}
+                        <div className="price-card featured">
+                            <div className="price-badge">
+                                📚 One-Time Purchase
+                            </div>
+                            <div className="price-plan">Wordlist Packs</div>
+                            <div className="price-amount-alt">
+                                From <strong>৳49</strong>
+                            </div>
+                            <div className="price-period">
+                                Pay once · yours forever
+                            </div>
+                            <ul className="price-features">
+                                <li>
+                                    GRE 332 Core — <strong>৳499</strong>
+                                </li>
+                                <li>
+                                    GRE Extended — <strong>৳499</strong>
+                                </li>
+                                <li>
+                                    IELTS Academic — <strong>৳399</strong>
+                                </li>
+                                <li>
+                                    Oxford 3000 — <strong>৳209</strong>
+                                </li>
+                                <li>
+                                    BCS English — <strong>৳279</strong>
+                                </li>
+                                <li>
+                                    Medical Vocabulary — <strong>৳399</strong>
+                                </li>
+                                <li>
+                                    Academic Word List — <strong>৳299</strong>
+                                </li>
+                            </ul>
+                            <a
+                                href="#exams"
+                                className="btn-red"
+                                style={{
+                                    display: "block",
+                                    textAlign: "center",
+                                    padding: "13px",
+                                    borderRadius: "12px",
+                                    fontSize: ".95rem",
+                                }}
+                            >
+                                Browse All Wordlists →
+                            </a>
+                        </div>
+                    </div>
+                    {/* Reassurance strip */}
+                    <div className="pricing-reassurance">
+                        <span>✅ No subscription</span>
+                        <span>✅ No hidden fees</span>
+                        <span>✅ Keep your lists forever</span>
+                        <span>✅ Free trial words in every list</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Enroll / Register Section */}
+            <div className="enroll-section" id="enroll">
+                <div className="enroll-inner sr">
+                    <h2 className="enroll-title">{text.enrollTitle}</h2>
+                    <p className="enroll-sub">{text.enrollSub}</p>
+                    <div className="enroll-form">
+                        {!showSuccess ? (
+                            <div id="form-body">
+                                {/* Tabs */}
+                                <div className="form-tabs">
+                                    <button
+                                        className={`form-tab ${activeTab === "register" ? "active" : ""}`}
+                                        onClick={() => setActiveTab("register")}
+                                    >
+                                        Register
+                                    </button>
+                                    <button
+                                        className={`form-tab ${activeTab === "login" ? "active" : ""}`}
+                                        onClick={() => setActiveTab("login")}
+                                    >
+                                        Login
+                                    </button>
+                                </div>
+
+                                {/* Register Tab */}
+                                {activeTab === "register" && (
+                                    <div id="tab-register">
+                                        <div className="form-row">
+                                            <div className="fg">
+                                                <label>First Name</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Your name"
+                                                    value={form.fn}
+                                                    onChange={(e) =>
+                                                        setForm({
+                                                            ...form,
+                                                            fn: e.target.value,
+                                                        })
+                                                    }
+                                                />
+                                            </div>
+                                            <div className="fg">
+                                                <label>Last Name</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Last name"
+                                                    value={form.ln}
+                                                    onChange={(e) =>
+                                                        setForm({
+                                                            ...form,
+                                                            ln: e.target.value,
+                                                        })
+                                                    }
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="fg">
+                                            <label>Email Address</label>
+                                            <input
+                                                type="email"
+                                                placeholder="you@example.com"
+                                                value={form.em}
+                                                onChange={(e) =>
+                                                    setForm({
+                                                        ...form,
+                                                        em: e.target.value,
+                                                    })
+                                                }
+                                            />
+                                        </div>
+                                        <div className="fg">
+                                            <label>Password</label>
+                                            <input
+                                                type="password"
+                                                placeholder="Min. 6 characters"
+                                                value={form.pw}
+                                                onChange={(e) =>
+                                                    setForm({
+                                                        ...form,
+                                                        pw: e.target.value,
+                                                    })
+                                                }
+                                            />
+                                        </div>
+                                        <div className="fg">
+                                            <label>Your Learning Goal</label>
+                                            <div className="goal-chips">
+                                                {goalChips.map((chip) => (
+                                                    <button
+                                                        key={chip}
+                                                        className={`goal-chip ${activeChips.includes(chip) ? "active" : ""}`}
+                                                        onClick={() =>
+                                                            toggleChip(chip)
+                                                        }
+                                                    >
+                                                        {chip}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div className="fg">
+                                            <label>Daily Word Target</label>
+                                            <select
+                                                value={form.dg}
+                                                onChange={(e) =>
+                                                    setForm({
+                                                        ...form,
+                                                        dg: e.target.value,
+                                                    })
+                                                }
+                                            >
+                                                <option value="">
+                                                    Choose daily goal...
+                                                </option>
+                                                <option>
+                                                    20 words/day — Casual
+                                                </option>
+                                                <option>
+                                                    40 words/day — Steady
+                                                </option>
+                                                <option>
+                                                    60 words/day — Intensive
+                                                </option>
+                                                <option>
+                                                    80+ words/day — Expert
+                                                </option>
+                                            </select>
+                                        </div>
+                                        <button
+                                            className="form-submit"
+                                            onClick={doRegister}
+                                        >
+                                            🚀 Create Free Account
+                                        </button>
+                                    </div>
+                                )}
+
+                                {/* Login Tab */}
+                                {activeTab === "login" && (
+                                    <div id="tab-login">
+                                        <div className="fg">
+                                            <label>Email</label>
+                                            <input
+                                                type="email"
+                                                placeholder="you@example.com"
+                                            />
+                                        </div>
+                                        <div className="fg">
+                                            <label>Password</label>
+                                            <input
+                                                type="password"
+                                                placeholder="Your password"
+                                            />
+                                        </div>
+                                        <button
+                                            className="form-submit"
+                                            onClick={() =>
+                                                window.open(
+                                                    "https://vocabpix.fluento.org",
+                                                    "_blank",
+                                                )
+                                            }
+                                        >
+                                            Login to VocabPix →
+                                        </button>
+                                        <p
+                                            className="form-note"
+                                            style={{ marginTop: "12px" }}
+                                        >
+                                            No account?{" "}
+                                            <a
+                                                href="#"
+                                                onClick={switchToRegister}
+                                                style={{
+                                                    color: "var(--red)",
+                                                    fontWeight: 700,
+                                                }}
+                                            >
+                                                Register free
+                                            </a>
+                                        </p>
+                                    </div>
+                                )}
+
+                                <p className="form-note">
+                                    No credit card needed. Free forever on core
+                                    features.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="success-msg">
+                                <div className="s-icon">🎉</div>
+                                <h3>Welcome to VocabPix!</h3>
+                                <p>
+                                    Your account is ready. Check your email to
+                                    verify and start learning.
+                                </p>
+                                <a
+                                    href="https://vocabpix.fluento.org"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="btn-red"
+                                    style={{
+                                        display: "inline-block",
+                                        padding: "14px 28px",
+                                        borderRadius: "12px",
+                                    }}
+                                >
+                                    Open VocabPix App →
+                                </a>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* App Screenshots */}
+            <section className="screens-section sr" id="screenshots">
+                <div className="screens-inner">
+                    <div className="screens-header">
+                        <div className="section-eyebrow">
+                            📱 See It In Action
+                        </div>
+                        <h2 className="section-title">
+                            Everything You Need, In One App
+                        </h2>
+                        <p className="section-sub">
+                            From your daily dashboard to image-powered word
+                            cards, quizzes, and curated word lists — VocabPix
+                            keeps learning engaging every step of the way.
+                        </p>
+                    </div>
+
+                    <div className="screens-scroll-wrapper">
+                        <div className="screens-track">
+                            {/* Screen 1 — Dashboard */}
+                            <div className="screen-item">
+                                <Phone
+                                    src={dashboardImg}
+                                    alt="VocabPix Dashboard"
+                                />
+                                <div className="screen-label">
+                                    <span>Dashboard</span>
+                                </div>
+                            </div>
+
+                            {/* Screen 2 — Word Card */}
+                            <div className="screen-item">
+                                <Phone
+                                    src={exerciseImg}
+                                    alt="Word Exercise Card"
+                                />
+                                <div className="screen-label">
+                                    <span>Word Card</span>
+                                </div>
+                            </div>
+
+                            {/* Screen 3 — Full Definition */}
+                            <div className="screen-item">
+                                <Phone
+                                    src={exerciseImg2}
+                                    alt="Word Definition & Collocations"
+                                />
+                                <div className="screen-label">
+                                    <span>Full Definition</span>
+                                </div>
+                            </div>
+
+                            {/* Screen 4 — Quiz */}
+                            <div className="screen-item">
+                                <Phone src={quizImg} alt="Synonym Quiz" />
+                                <div className="screen-label">
+                                    <span>Quiz Mode</span>
+                                </div>
+                            </div>
+
+                            {/* Screen 5 — Word Lists */}
+                            <div className="screen-item">
+                                <Phone src={wordlistImg} alt="Word Lists" />
+                                <div className="screen-label">
+                                    <span>Word Lists</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="screens-bottom-cta">
+                        <p>Ready to experience it yourself?</p>
+                        <Link
+                            href="#enroll"
+                            className="btn-red"
+                            style={{
+                                display: "inline-block",
+                                padding: "14px 32px",
+                                borderRadius: "12px",
+                                fontSize: "1rem",
+                            }}
+                        >
+                            🚀 Get Started Free
+                        </Link>
+                    </div>
+                </div>
+            </section>
+
+            {/* FAQ */}
+            <section className="faq-section sr" id="faq">
+                <div style={{ textAlign: "center", marginBottom: "48px" }}>
+                    <div
+                        className="section-eyebrow"
+                        style={{ textAlign: "center" }}
+                    >
+                        ❓ FAQ
+                    </div>
+                    <h2
+                        className="section-title"
+                        style={{ textAlign: "center" }}
+                    >
+                        Common Questions
+                    </h2>
+                </div>
+                {faqs.map((faq, index) => (
+                    <div key={index} className="faq-item">
+                        <button
+                            className="faq-q"
+                            onClick={() => toggleFaq(index)}
+                        >
+                            {faq.q}
+                            <span
+                                className={`faq-icon ${openFaqs.includes(index) ? "open" : ""}`}
+                            >
+                                +
+                            </span>
+                        </button>
+                        <div
+                            className={`faq-a ${openFaqs.includes(index) ? "open" : ""}`}
+                        >
+                            {faq.a}
+                        </div>
+                    </div>
+                ))}
+            </section>
+
+            {/* Footer */}
+            <footer>
+                <div className="footer-inner">
+                    <div className="footer-top">
+                        <div className="footer-brand">
+                            <div className="footer-logo-text">🔴 VocabPix</div>
+                            <p>
+                                A Fluento product · Learn vocabulary the fast
+                                and proven way — both in Bangla and English.
+                                Built for GRE, IELTS, BCS, BBA, Medical, and SAT
+                                learners.
+                            </p>
+                            <a
+                                href="https://vocabpix.fluento.org"
+                                target="_blank"
+                                rel="noreferrer"
+                                className="btn-red"
+                                style={{
+                                    display: "inline-block",
+                                    padding: "10px 20px",
+                                    fontSize: ".85rem",
+                                }}
+                            >
+                                Open App →
+                            </a>
+                        </div>
+                        <div>
+                            <div className="footer-heading">Word Lists</div>
+                            <div className="footer-links-col">
+                                <a href="#">GRE 332</a>
+                                <a href="#">GRE Extended</a>
+                                <a href="#">Oxford 3000</a>
+                                <a href="#">Academic Word List</a>
+                            </div>
+                        </div>
+                        <div>
+                            <div className="footer-heading">Product</div>
+                            <div className="footer-links-col">
+                                <a href="#">Features</a>
+                                <Link href="#pricing">Pricing</Link>
+                                <a href="#">Quiz Mode</a>
+                                <a href="#">XP Shop</a>
+                            </div>
+                        </div>
+                        <div>
+                            <div className="footer-heading">Company</div>
+                            <div className="footer-links-col">
+                                <a href="#">About Fluento</a>
+                                <a href="#">Privacy Policy</a>
+                                <a href="#">Terms</a>
+                                <a href="#">Contact</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="footer-bottom">
+                        <span>© 2026 Fluento. All rights reserved.</span>
+                        <span>Made with ❤️ for Bangladeshi learners</span>
                     </div>
                 </div>
             </footer>

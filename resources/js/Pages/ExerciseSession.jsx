@@ -1238,23 +1238,36 @@ export default function ExerciseSession({
                                                             key={i}
                                                             className={`rounded-xl border px-3 py-2.5 ${colorClass}`}
                                                         >
-                                                            {/* Phrase badge */}
-                                                            {/* <p className="text-xs font-bold uppercase tracking-wide mb-1 opacity-75">
-                                                            {col.phrase}
-                                                        </p> */}
-                                                            {/* Example sentence with phrase highlighted */}
-                                                            {col.example_sentence ? (
-                                                                <p className="text-sm leading-snug dark:text-gray-100">
-                                                                    {renderHighlighted(
-                                                                        col.example_sentence,
-                                                                        col.phrase,
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="flex-1">
+                                                                    {col.example_sentence ? (
+                                                                        <p className="text-sm leading-snug dark:text-gray-100">
+                                                                            {renderHighlighted(
+                                                                                col.example_sentence,
+                                                                                col.phrase,
+                                                                            )}
+                                                                        </p>
+                                                                    ) : (
+                                                                        <p className="text-xs font-bold uppercase tracking-wide opacity-75 dark:text-gray-100">
+                                                                            {
+                                                                                col.phrase
+                                                                            }
+                                                                        </p>
                                                                     )}
-                                                                </p>
-                                                            ) : (
-                                                                <p className="text-xs font-bold uppercase tracking-wide mb-1 opacity-75 dark:text-gray-100">
-                                                                    {col.phrase}
-                                                                </p>
-                                                            )}
+                                                                </div>
+                                                                <button
+                                                                    onClick={() =>
+                                                                        speakWord(
+                                                                            col.example_sentence ||
+                                                                                col.phrase,
+                                                                        )
+                                                                    }
+                                                                    className="flex-none p-1.5 rounded-full opacity-50 hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/10 transition-all"
+                                                                    aria-label="Listen to collocation"
+                                                                >
+                                                                    <Volume2 className="h-4 w-4" />
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     );
                                                 })}

@@ -1599,7 +1599,8 @@
                         স্পষ্ট ও সূক্ষ্মভাবে বোঝার ক্ষমতা।</div>
                     <div class="bangla-def-label">সমার্থক শব্দ</div>
                     <div class="bangla-syn">
-                        <span>sharpness</span><span>keenness</span><span>perception</span><span>astuteness</span></div>
+                        <span>sharpness</span><span>keenness</span><span>perception</span><span>astuteness</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1706,10 +1707,10 @@
                             onclick="setTab(this,'login')">Login</button></div>
                     <div id="tab-register">
                         <div class="form-row">
-                            <div class="fg"><label>First Name</label><input type="text" id="fn"
-                                    placeholder="Your name"></div>
-                            <div class="fg"><label>Last Name</label><input type="text" id="ln"
-                                    placeholder="Last name"></div>
+                            <div class="fg"><label>First Name</label><input type="text" id="fn" placeholder="Your name">
+                            </div>
+                            <div class="fg"><label>Last Name</label><input type="text" id="ln" placeholder="Last name">
+                            </div>
                         </div>
                         <div class="fg"><label>Email Address</label><input type="email" id="em"
                                 placeholder="you@example.com"></div>
@@ -1736,10 +1737,9 @@
                     <div id="tab-login" style="display:none">
                         <div class="fg"><label>Email</label><input type="email" placeholder="you@example.com">
                         </div>
-                        <div class="fg"><label>Password</label><input type="password"
-                                placeholder="Your password"></div>
-                        <button class="form-submit"
-                            onclick="window.open('https://vocabpix.fluento.org','_blank')">Login to VocabPix →</button>
+                        <div class="fg"><label>Password</label><input type="password" placeholder="Your password"></div>
+                        <button class="form-submit" onclick="window.open('https://vocabpix.fluento.org','_blank')">Login
+                            to VocabPix →</button>
                         <p class="form-note" style="margin-top:12px">No account? <a href="#"
                                 onclick="switchToRegister()" style="color:var(--red);font-weight:700">Register
                                 free</a></p>
@@ -1803,13 +1803,13 @@
                 </div>
                 <div>
                     <div class="footer-heading">Word Lists</div>
-                    <div class="footer-links-col"><a href="#">GRE 332</a><a href="#">GRE Extended</a><a
-                            href="#">Oxford 3000</a><a href="#">Academic Word List</a></div>
+                    <div class="footer-links-col"><a href="#">GRE 332</a><a href="#">GRE Extended</a><a href="#">Oxford
+                            3000</a><a href="#">Academic Word List</a></div>
                 </div>
                 <div>
                     <div class="footer-heading">Product</div>
-                    <div class="footer-links-col"><a href="#">Features</a><a href="#pricing">Pricing</a><a
-                            href="#">Quiz Mode</a><a href="#">XP Shop</a></div>
+                    <div class="footer-links-col"><a href="#">Features</a><a href="#pricing">Pricing</a><a href="#">Quiz
+                            Mode</a><a href="#">XP Shop</a></div>
                 </div>
                 <div>
                     <div class="footer-heading">Company</div>
