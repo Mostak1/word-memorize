@@ -124,4 +124,30 @@ class User extends Authenticatable
     {
         return $this->hasMany(UserAchievement::class);
     }
+
+    public function followers()
+    {
+        return $this->belongsToMany(User::class, 'user_follows', 'following_id', 'user_id')
+            ->using(UserFollow::class)
+            ->withTimestamps();
+    }
+
+    public function following()
+    {
+        return $this->belongsToMany(User::class, 'user_follows', 'user_id', 'following_id')
+            ->using(UserFollow::class)
+            ->withTimestamps();
+    }
+
+    // ─── Accessors ───────────────────────────────────────────────────────────────
+
+    public function followerCount()
+    {
+        return $this->followers()->count();
+    }
+
+    public function followingCount()
+    {
+        return $this->following()->count();
+    }
 }

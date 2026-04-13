@@ -11,6 +11,7 @@ import {
     Snowflake,
     Bookmark,
     RotateCcw,
+    Users,
 } from "lucide-react";
 
 // ── Streak Banner ─────────────────────────────────────────────────────────────
@@ -258,6 +259,38 @@ export default function Dashboard({
                             </div>
                         </Link>
 
+                        <Link href={route("leaderboard")} className="block">
+                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm hover:shadow-md transition-shadow min-h-[180px]">
+                                <div className="w-16 h-16 rounded-full bg-orange-100 dark:bg-orange-950/30 flex items-center justify-center">
+                                    <Users className="h-8 w-8 text-orange-500" />
+                                </div>
+                                <div className="text-center">
+                                    <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
+                                        Leaderboard
+                                    </p>
+                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                                        See top learners
+                                    </p>
+                                </div>
+                            </div>
+                        </Link>
+
+                        <Link href={route("achievements")} className="block">
+                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm hover:shadow-md transition-shadow min-h-[180px]">
+                                <div className="w-16 h-16 rounded-full bg-cyan-100 dark:bg-cyan-950/30 flex items-center justify-center">
+                                    <ShieldCheck className="h-8 w-8 text-cyan-500" />
+                                </div>
+                                <div className="text-center">
+                                    <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
+                                        Achievements
+                                    </p>
+                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                                        View earned badges
+                                    </p>
+                                </div>
+                            </div>
+                        </Link>
+
                         {/* ── Revise ── */}
                         <Link href={route("words.revise")} className="block">
                             <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm hover:shadow-md transition-shadow min-h-[180px]">
@@ -270,7 +303,7 @@ export default function Dashboard({
                                     </p>
                                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                                         {reviseCounts.all > 0 ? (
-                                            <span className="font-extrabold text-indigo-500 text-base">
+                                            <span className="font-bold text-indigo-500 text-base">
                                                 {reviseCounts.all} word
                                                 {reviseCounts.all !== 1
                                                     ? "s"

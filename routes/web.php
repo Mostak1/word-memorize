@@ -1,21 +1,23 @@
 <?php
 
+use App\Http\Controllers\BookmarkController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ErrorReportController;
+use App\Http\Controllers\LeaderboardController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicLinkTreeController;
 use App\Http\Controllers\QuizController;
-use App\Http\Controllers\TTSController;
+use App\Http\Controllers\ReviewWordController;
+use App\Http\Controllers\UserPublicProfileController;
 use App\Http\Controllers\UserAchievementController;
 use App\Http\Controllers\UserSettingController;
 use App\Http\Controllers\UserShopController;
+use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\UserWordController;
 use App\Http\Controllers\UserWordListOrderController;
 use App\Http\Controllers\WordListCategoryController;
 use App\Http\Controllers\WordListController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\ReviewWordController;
-use App\Http\Controllers\BookmarkController;
 use App\Http\Controllers\WordProgressController;
-use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -68,6 +70,15 @@ Route::get('/storage-link', function () {
             'message' => $e->getMessage(),
         ]);
     }
+});
+
+Route::get('/run-achievement-seeder', function () {
+    Artisan::call('db:seed', [
+        '--class' => \Database\Seeders\AchievementSeeder::class,
+        '--force' => true, // required in production
+    ]);
+
+    return 'AchievementSeeder executed successfully';
 });
 
 Route::get('/run-seeder', function () {
@@ -138,6 +149,12 @@ Route::get('/l/{link}', [PublicLinkTreeController::class, 'redirect'])->name('li
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
+// ── Leaderboard ───────────────────────────────────────────────────────────────
+Route::get('/leaderboard', [LeaderboardController::class, 'index'])->middleware(['auth', 'verified'])->name('leaderboard');
+Route::get('/users/{user}', [UserPublicProfileController::class, 'show'])->name('public.user.show');
+Route::post('/users/{user}/follow', [FollowController::class, 'follow'])->middleware('auth')->name('public.user.follow');
+Route::delete('/users/{user}/follow', [FollowController::class, 'unfollow'])->middleware('auth')->name('public.user.unfollow');
+
 // ── Public wordlist routes ─────────────────────────────────────────────────────
 Route::get('/wordListCategories', [WordListCategoryController::class, 'index'])->name('wordlistcategory.index');
 Route::get('/wordlist-categories/{category}/wordlists', [WordListCategoryController::class, 'showWordlists'])
@@ -153,6 +170,8 @@ Route::get('/word/{id}', [WordListController::class, 'showWord'])->name('word.sh
 // ── Auth-protected routes ──────────────────────────────────────────────────────
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::get('/profile/followers', [ProfileController::class, 'followers'])->name('profile.followers');
+    Route::get('/profile/following', [ProfileController::class, 'following'])->name('profile.following');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 

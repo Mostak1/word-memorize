@@ -22,6 +22,9 @@ class UserAchievementController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
+        // Check and award any newly-qualified achievements
+        $this->achievementService->checkAndAwardAchievements($user);
+
         $achievements = $this->achievementService->getUserAchievements($user);
 
         return response()->json([

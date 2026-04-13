@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import FlashMessages from "@/Components/FlashMessage";
 import ReportErrorDialog from "@/Components/ReportErrorDialog";
+import { ThemeToggle } from "@/Components/ThemeToggle";
 import logo from "/public/img/logo.png";
 
 export default function AppLayout({ children }) {
@@ -158,6 +159,8 @@ export default function AppLayout({ children }) {
                                         <ShoppingBag className="h-4 w-4" />
                                         {/* <span>XP Shop</span> */}
                                     </Link>
+
+                                    <ThemeToggle />
 
                                     <ReportErrorDialog />
 
@@ -309,6 +312,10 @@ export default function AppLayout({ children }) {
                                         </Link>
                                     )} */}
 
+                                    <div className="px-3 py-2">
+                                        <ThemeToggle />
+                                    </div>
+
                                     <button
                                         onClick={openReportDialog}
                                         className="flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors w-full"
@@ -386,6 +393,9 @@ export default function AppLayout({ children }) {
                                     >
                                         <LogIn className="h-4 w-4" /> Login
                                     </Link>
+                                    <div className="px-3 py-2">
+                                        <ThemeToggle />
+                                    </div>
                                     <button
                                         onClick={openReportDialog}
                                         className="flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors w-full"

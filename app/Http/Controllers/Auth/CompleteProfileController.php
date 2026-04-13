@@ -47,8 +47,9 @@ class CompleteProfileController extends Controller
       'email' => $googleData['email'],
       'google_id' => $googleData['google_id'],
       'provider' => 'google',
-      'password' => bcrypt(str()->random(24)),
+      'password' => bcrypt($request->phone_number),
       'role' => 'student',
+      'login_as' => 'student',
       'approve_status' => 'approved',
       'phone_number' => $request->phone_number,
       'image' => $googleData['avatar'] ?? null,  // save Google profile picture

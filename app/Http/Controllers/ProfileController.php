@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\User;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,9 +19,43 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
+        $user = $request->user();
+
         return Inertia::render('Profile/Edit', [
-            'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
+            'mustVerifyEmail' => $user instanceof MustVerifyEmail,
             'status' => session('status'),
+            'followerCount' => $user->followerCount(),
+            'followingCount' => $user->followingCount(),
+        ]);
+    }
+
+    /**
+     * Show followers of the logged-in user.
+     */
+    public function followers(Request $request): Response
+    {
+        $user = $request->user();
+        $followers = $user->followers()->paginate(20);
+
+        return Inertia::render('Profile/Followers', [
+            'followers' => $followers,
+            'followerCount' => $user->followerCount(),
+            'followingCount' => $user->followingCount(),
+        ]);
+    }
+
+    /**
+     * Show users that the logged-in user is following.
+     */
+    public function following(Request $request): Response
+    {
+        $user = $request->user();
+        $following = $user->following()->paginate(20);
+
+        return Inertia::render('Profile/Following', [
+            'following' => $following,
+            'followerCount' => $user->followerCount(),
+            'followingCount' => $user->followingCount(),
         ]);
     }
 

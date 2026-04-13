@@ -61,7 +61,6 @@ createInertiaApp({
 
         root.render(
             <ThemeProvider defaultTheme="light" storageKey="admin-theme">
-                <PageLoadingState />
                 <App {...props} />
                 <ThemedToaster />
             </ThemeProvider>,
