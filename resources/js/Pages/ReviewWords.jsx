@@ -178,14 +178,14 @@ export default function ReviewWords({ words }) {
                             )}
                         </>
                     ) : (
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-10 text-center shadow-sm">
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl p-10 text-center shadow-sm">
                             <div className="w-20 h-20 rounded-full bg-orange-50 dark:bg-orange-950/30 flex items-center justify-center mx-auto mb-4">
                                 <RefreshCcw className="h-10 w-10 text-orange-200 dark:text-orange-700" />
                             </div>
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50 mb-2">
                                 No Review Words Yet
                             </h3>
-                            <p className="text-gray-500 dark:text-gray-400 text-sm mb-5">
+                            <p className="text-gray-500 dark:text-slate-400 text-sm mb-5">
                                 Press "Didn't Know" on a word during exercise
                                 and it'll appear here for extra practice.
                             </p>

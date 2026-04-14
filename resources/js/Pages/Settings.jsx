@@ -86,7 +86,7 @@ function SectionCard({ title, children }) {
 function Toast({ visible }) {
     if (!visible) return null;
     return (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-gray-900 dark:bg-slate-700 text-white text-sm font-medium px-4 py-2.5 rounded-xl shadow-lg animate-fade-in-up">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-gray-900 dark:bg-slate-700 text-white text-sm font-medium px-4 py-2.5 rounded-xl shadow-lg dark:shadow-2xl animate-fade-in-up">
             <CheckCircle2 className="h-4 w-4 text-green-400 shrink-0" />
             Settings saved
         </div>

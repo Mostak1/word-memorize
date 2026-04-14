@@ -68,15 +68,15 @@ export default function Welcome({ auth }) {
                     </p>
 
                     <div className="grid grid-cols-2 gap-3 mb-3">
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm cursor-pointer hover:shadow-md transition-shadow min-h-[160px]">
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm cursor-pointer hover:shadow-md transition-shadow min-h-[160px]">
                             <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-950/30 flex items-center justify-center">
                                 <Plus className="h-8 w-8 text-blue-500" />
                             </div>
                             <div className="text-center">
-                                <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
+                                <p className="font-semibold text-gray-900 dark:text-gray-50 text-sm">
                                     Add New Word
                                 </p>
-                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                                <p className="text-xs text-gray-400 dark:text-slate-400 mt-0.5">
                                     Expand vocabulary
                                 </p>
                             </div>
@@ -87,15 +87,15 @@ export default function Welcome({ auth }) {
                             href={route("wordlistcategory.index")}
                             className="block"
                         >
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm cursor-pointer hover:shadow-md transition-shadow min-h-[160px]">
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm cursor-pointer hover:shadow-md transition-shadow min-h-[160px]">
                                 <div className="w-16 h-16 rounded-full bg-[#E5201C]/10 dark:bg-red-950/30 flex items-center justify-center">
                                     <BookOpen className="h-8 w-8 text-[#E5201C]" />
                                 </div>
                                 <div className="text-center">
-                                    <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
+                                    <p className="font-semibold text-gray-900 dark:text-gray-50 text-sm">
                                         Exercise
                                     </p>
-                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                                    <p className="text-xs text-gray-400 dark:text-slate-400 mt-0.5">
                                         Practice now
                                     </p>
                                 </div>
@@ -103,17 +103,17 @@ export default function Welcome({ auth }) {
                         </Link>
 
                         <div
-                            className="bg-white dark:bg-slate-900 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm cursor-pointer hover:shadow-md transition-shadow min-h-[160px]"
+                            className="bg-white dark:bg-slate-800 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm cursor-pointer hover:shadow-md transition-shadow min-h-[160px]"
                             onClick={() => setShowStatsDialog(true)}
                         >
                             <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-950/30 flex items-center justify-center">
                                 <BarChart3 className="h-8 w-8 text-green-500" />
                             </div>
                             <div className="text-center">
-                                <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
+                                <p className="font-semibold text-gray-900 dark:text-gray-50 text-sm">
                                     Statistics
                                 </p>
-                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                                <p className="text-xs text-gray-400 dark:text-slate-400 mt-0.5">
                                     Track progress
                                 </p>
                             </div>
@@ -124,15 +124,15 @@ export default function Welcome({ auth }) {
                             href={route("wordlistcategory.index")}
                             className="block"
                         >
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm cursor-pointer hover:shadow-md transition-shadow min-h-[160px]">
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm cursor-pointer hover:shadow-md transition-shadow min-h-[160px]">
                                 <div className="w-16 h-16 rounded-full bg-purple-100 dark:bg-purple-950/30 flex items-center justify-center">
                                     <List className="h-8 w-8 text-purple-500" />
                                 </div>
                                 <div className="text-center">
-                                    <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
+                                    <p className="font-semibold text-gray-900 dark:text-gray-50 text-sm">
                                         Word List
                                     </p>
-                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                                    <p className="text-xs text-gray-400 dark:text-slate-400 mt-0.5">
                                         Browse all
                                     </p>
                                 </div>

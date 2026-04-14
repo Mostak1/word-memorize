@@ -171,14 +171,14 @@ export default function MasteredWordsByList({ words, wordlist }) {
                             )}
                         </>
                     ) : (
-                        <div className="bg-white rounded-2xl p-10 text-center shadow-sm">
-                            <div className="w-20 h-20 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4">
-                                <Trophy className="h-10 w-10 text-green-300" />
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl p-10 text-center shadow-sm">
+                            <div className="w-20 h-20 rounded-full bg-green-50 dark:bg-green-950/30 flex items-center justify-center mx-auto mb-4">
+                                <Trophy className="h-10 w-10 text-green-300 dark:text-green-600" />
                             </div>
-                            <h3 className="text-lg font-bold text-gray-900 mb-2">
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50 mb-2">
                                 No Mastered Words in This List
                             </h3>
-                            <p className="text-gray-500 text-sm mb-5">
+                            <p className="text-gray-500 dark:text-slate-400 text-sm mb-5">
                                 Press "Check" on a word during exercise to mark
                                 it as mastered.
                             </p>

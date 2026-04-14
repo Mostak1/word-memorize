@@ -182,15 +182,15 @@ export default function Achievements() {
                 <Head title="Achievements" />
                 <div className="py-12">
                     <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
-                        <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                        <div className="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg">
                             <div className="p-6">
                                 <div className="animate-pulse space-y-4">
-                                    <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
+                                    <div className="h-8 bg-gray-200 dark:bg-slate-700 rounded w-1/4"></div>
                                     <div className="space-y-3">
                                         {[...Array(6)].map((_, i) => (
                                             <div
                                                 key={i}
-                                                className="h-24 bg-gray-200 dark:bg-gray-700 rounded"
+                                                className="h-24 bg-gray-200 dark:bg-slate-700 rounded"
                                             ></div>
                                         ))}
                                     </div>
@@ -209,14 +209,14 @@ export default function Achievements() {
                 <Head title="Achievements" />
                 <div className="py-12">
                     <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
-                        <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                        <div className="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg">
                             <div className="p-6 text-center">
                                 <p className="text-red-600 dark:text-red-400">
                                     {error}
                                 </p>
                                 <button
                                     onClick={loadAchievements}
-                                    className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                                    className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 dark:hover:bg-blue-700 transition-colors"
                                 >
                                     Try Again
                                 </button>
@@ -234,15 +234,15 @@ export default function Achievements() {
 
             <div className="py-12">
                 <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                    <div className="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6">
                             <div className="flex items-center gap-3 mb-6">
                                 <Trophy className="w-8 h-8 text-yellow-500" />
                                 <div>
-                                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50">
                                         Achievements
                                     </h1>
-                                    <p className="text-gray-600 dark:text-gray-400">
+                                    <p className="text-gray-600 dark:text-slate-400">
                                         {earnedCount} of {totalCount} badges
                                         earned
                                     </p>

@@ -70,10 +70,10 @@ export default function Revise({ reviseCounts = {} }) {
                 <div className="w-full max-w-2xl mx-auto px-4 py-5">
                     {/* ── Header ── */}
                     <div className="mb-5">
-                        <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-100">
+                        <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">
                             Revise
                         </h1>
-                        <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">
+                        <p className="text-sm text-gray-400 dark:text-slate-400 mt-0.5">
                             {totalAll > 0
                                 ? `You have ${totalAll} word${totalAll !== 1 ? "s" : ""} to practise. Pick a focus below.`
                                 : "Choose a filter and start practising."}
@@ -139,16 +139,16 @@ export default function Revise({ reviseCounts = {} }) {
                             <div className="w-16 h-16 rounded-full bg-indigo-100 dark:bg-indigo-950/30 flex items-center justify-center mx-auto mb-3">
                                 <Play className="h-7 w-7 text-indigo-400" />
                             </div>
-                            <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
                                 Nothing to revise yet
                             </p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 mb-4">
+                            <p className="text-xs text-gray-400 dark:text-slate-500 mt-1 mb-4">
                                 Start a word list exercise to add words to your
                                 revision queue.
                             </p>
                             <Link
                                 href={route("wordlistcategory.index")}
-                                className="inline-block px-5 py-2.5 rounded-xl bg-indigo-500 text-white text-sm font-semibold hover:bg-indigo-600 transition-colors"
+                                className="inline-block px-5 py-2.5 rounded-xl bg-indigo-500 text-white text-sm font-semibold hover:bg-indigo-600 dark:hover:bg-indigo-700 transition-colors"
                             >
                                 Browse Word Lists
                             </Link>

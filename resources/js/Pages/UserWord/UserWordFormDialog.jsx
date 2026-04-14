@@ -59,17 +59,17 @@ const emptyCollocation = () => ({ phrase: "", example_sentence: "" });
 
 function CollocationRow({ index, item, onChange, onRemove, isOnly }) {
     return (
-        <div className="relative rounded-xl border border-gray-200 bg-gray-50/60 p-3 space-y-2.5">
+        <div className="relative rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50/60 dark:bg-slate-800/40 p-3 space-y-2.5">
             {/* Row header */}
             <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                <span className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest">
                     #{index + 1}
                 </span>
                 <button
                     type="button"
                     onClick={onRemove}
                     disabled={isOnly}
-                    className="h-5 w-5 rounded flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    className="h-5 w-5 rounded flex items-center justify-center text-gray-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     title="Remove"
                 >
                     <X className="h-3.5 w-3.5" />
@@ -78,20 +78,20 @@ function CollocationRow({ index, item, onChange, onRemove, isOnly }) {
 
             {/* Phrase */}
             <div className="space-y-1">
-                <Label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">
+                <Label className="text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
                     Phrase
                 </Label>
                 <Input
                     value={item.phrase}
                     onChange={(e) => onChange("phrase", e.target.value)}
                     placeholder='e.g. "critically analyse"'
-                    className="rounded-lg border-gray-200 bg-white h-8 text-sm"
+                    className="rounded-lg border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-gray-100 h-8 text-sm"
                 />
             </div>
 
             {/* Example sentence */}
             <div className="space-y-1">
-                <Label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">
+                <Label className="text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
                     Example Sentence
                 </Label>
                 <Input
@@ -100,7 +100,7 @@ function CollocationRow({ index, item, onChange, onRemove, isOnly }) {
                         onChange("example_sentence", e.target.value)
                     }
                     placeholder="e.g. Students must critically analyse the evidence."
-                    className="rounded-lg border-gray-200 bg-white h-8 text-sm"
+                    className="rounded-lg border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-gray-100 h-8 text-sm"
                 />
             </div>
         </div>
@@ -111,20 +111,24 @@ function CollocationRow({ index, item, onChange, onRemove, isOnly }) {
 
 function Field({ label, optional = true, error, children }) {
     return (
-        <div className="space-y-1.5 [&_input::placeholder]:text-gray-300 [&_textarea::placeholder]:text-gray-300">
-            <Label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+        <div className="space-y-1.5 [&_input::placeholder]:text-gray-300 dark:[&_input::placeholder]:text-slate-500 [&_textarea::placeholder]:text-gray-300 dark:[&_textarea::placeholder]:text-slate-500">
+            <Label className="text-xs font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wide">
                 {label}
                 {!optional && (
                     <span className="ml-0.5 text-red-400 font-bold">*</span>
                 )}
                 {optional && (
-                    <span className="ml-1 normal-case font-normal text-gray-400 tracking-normal">
+                    <span className="ml-1 normal-case font-normal text-gray-400 dark:text-slate-500 tracking-normal">
                         (optional)
                     </span>
                 )}
             </Label>
             {children}
-            {error && <p className="text-[11px] text-red-500">{error}</p>}
+            {error && (
+                <p className="text-[11px] text-red-500 dark:text-red-400">
+                    {error}
+                </p>
+            )}
         </div>
     );
 }
@@ -253,8 +257,6 @@ export default function UserWordFormDialog({
         if (!data.parts_of_speech_variations.trim())
             clientErrors.parts_of_speech_variations =
                 "Part of speech is required.";
-        if (!data.pronunciation.trim())
-            clientErrors.pronunciation = "Pronunciation is required.";
         if (!showNewList && !data.wordlist_id)
             clientErrors.wordlist_id = "Please select or create a word list.";
         if (showNewList && !data.new_wordlist_title.trim())
@@ -270,7 +272,6 @@ export default function UserWordFormDialog({
                 "word",
                 "definition",
                 "parts_of_speech_variations",
-                "pronunciation",
                 "wordlist_id",
                 "new_wordlist_title",
             ];
@@ -298,7 +299,6 @@ export default function UserWordFormDialog({
         "wordlist_id",
         "new_wordlist_title",
         "word",
-        "pronunciation",
         // "ipa",
         // "bangla_pronunciation",
         "parts_of_speech_variations",
@@ -331,28 +331,28 @@ export default function UserWordFormDialog({
                 className="
                     w-[calc(100vw-1.5rem)] max-w-lg rounded-2xl p-0 gap-0
                     sm:w-full overflow-hidden flex flex-col
-                    max-h-[90dvh]
+                    max-h-[90dvh] dark:bg-slate-900 dark:border-slate-800
                 "
             >
                 {/* ── Header ── */}
-                <DialogHeader className="px-5 pt-5 pb-3 shrink-0">
-                    <DialogTitle className="text-base font-bold text-gray-900 flex items-center gap-2">
-                        <span className="w-7 h-7 rounded-full bg-[#E5201C]/10 flex items-center justify-center shrink-0">
+                <DialogHeader className="px-5 pt-5 pb-3 shrink-0 dark:border-slate-800">
+                    <DialogTitle className="text-base font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                        <span className="w-7 h-7 rounded-full bg-[#E5201C]/10 dark:bg-[#E5201C]/20 flex items-center justify-center shrink-0">
                             <BookOpen className="h-3.5 w-3.5 text-[#E5201C]" />
                         </span>
                         {isEditing ? "Edit Word" : "Add New Word"}
                     </DialogTitle>
                     {category && (
-                        <DialogDescription className="text-xs text-gray-400 pl-9">
+                        <DialogDescription className="text-xs text-gray-400 dark:text-slate-400 pl-9">
                             Saving to{" "}
-                            <span className="font-medium text-gray-600">
+                            <span className="font-medium text-gray-600 dark:text-slate-300">
                                 {category.name}
                             </span>
                         </DialogDescription>
                     )}
                 </DialogHeader>
 
-                <Separator />
+                <Separator className="dark:bg-slate-800" />
 
                 {/* ── Tabs ── */}
                 <Tabs
@@ -361,7 +361,7 @@ export default function UserWordFormDialog({
                     className="flex flex-col flex-1 min-h-0"
                 >
                     {/* Tab bar */}
-                    <TabsList className="mx-5 mt-3 mb-1 h-9 rounded-xl bg-gray-100 shrink-0 grid grid-cols-3 p-1">
+                    <TabsList className="mx-5 mt-3 mb-1 h-9 rounded-xl bg-gray-100 dark:bg-slate-800 shrink-0 grid grid-cols-3 p-1">
                         {[
                             {
                                 value: "basic",
@@ -402,8 +402,8 @@ export default function UserWordFormDialog({
                             className="mt-3 space-y-4 outline-none"
                         >
                             {/* Word list selector */}
-                            <div className="bg-gray-50 rounded-xl p-3.5 space-y-3">
-                                <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
+                            <div className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-3.5 space-y-3 border border-gray-100 dark:border-slate-700">
+                                <p className="text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
                                     Word List
                                 </p>
 
@@ -421,7 +421,7 @@ export default function UserWordFormDialog({
                                                     clearErrors("wordlist_id");
                                                 }}
                                             >
-                                                <SelectTrigger className="rounded-lg border-gray-200 bg-white h-9 text-sm">
+                                                <SelectTrigger className="rounded-lg border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-gray-100 h-9 text-sm">
                                                     <SelectValue placeholder="Select a list…" />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -501,7 +501,7 @@ export default function UserWordFormDialog({
                                         setData("word", e.target.value)
                                     }
                                     placeholder="e.g. ephemeral"
-                                    className="rounded-lg border-gray-200 h-10 font-semibold text-[15px]"
+                                    className="rounded-lg border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-gray-100 h-10 font-semibold text-[15px]"
                                 />
                             </Field>
 
@@ -520,12 +520,12 @@ export default function UserWordFormDialog({
                                             )
                                         }
                                         placeholder="adjective, noun…"
-                                        className="rounded-lg border-gray-200 h-9 text-sm"
+                                        className="rounded-lg border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-gray-100 h-9 text-sm"
                                     />
                                 </Field>
                                 <Field
                                     label="Pronunciation"
-                                    optional={false}
+                                    optional={true}
                                     error={errors.pronunciation}
                                 >
                                     <Input
@@ -537,7 +537,7 @@ export default function UserWordFormDialog({
                                             )
                                         }
                                         placeholder="e-FEM-er-ul"
-                                        className="rounded-lg border-gray-200 h-9 text-sm"
+                                        className="rounded-lg border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-gray-100 h-9 text-sm"
                                     />
                                 </Field>
                             </div>
@@ -553,7 +553,7 @@ export default function UserWordFormDialog({
                                         setData("definition", e.target.value)
                                     }
                                     placeholder="Lasting for only a short time; transitory…"
-                                    className="rounded-lg border-gray-200 resize-none text-sm"
+                                    className="rounded-lg border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-gray-100 resize-none text-sm"
                                     rows={5}
                                 />
                             </Field>
@@ -634,7 +634,7 @@ export default function UserWordFormDialog({
                                         )
                                     }
                                     placeholder="The ephemeral beauty of cherry blossoms makes them precious."
-                                    className="rounded-lg border-gray-200 resize-none text-sm"
+                                    className="rounded-lg border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-gray-100 resize-none text-sm"
                                     rows={5}
                                 />
                             </Field>
@@ -683,14 +683,14 @@ export default function UserWordFormDialog({
                                     ))}
                                 </div>
 
-                                <p className="text-[10px] text-gray-400">
+                                <p className="text-[10px] text-gray-400 dark:text-slate-500">
                                     Each entry is saved as structured JSON.
                                     Leave all fields empty to store no
                                     collocations.
                                 </p>
 
                                 {errors.collocations && (
-                                    <p className="text-[11px] text-red-500">
+                                    <p className="text-[11px] text-red-500 dark:text-red-400">
                                         {errors.collocations}
                                     </p>
                                 )}
@@ -709,7 +709,7 @@ export default function UserWordFormDialog({
                                         setData("synonym", e.target.value)
                                     }
                                     placeholder="transient, fleeting, momentary, short-lived…"
-                                    className="rounded-lg border-gray-200 resize-none text-sm"
+                                    className="rounded-lg border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-gray-100 resize-none text-sm"
                                     rows={5}
                                 />
                             </Field>
@@ -720,7 +720,7 @@ export default function UserWordFormDialog({
                                         setData("antonym", e.target.value)
                                     }
                                     placeholder="permanent, eternal, lasting, enduring…"
-                                    className="rounded-lg border-gray-200 resize-none text-sm"
+                                    className="rounded-lg border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-gray-100 resize-none text-sm"
                                     rows={5}
                                 />
                             </Field>
@@ -728,7 +728,7 @@ export default function UserWordFormDialog({
                     </div>
                 </Tabs>
 
-                <Separator />
+                <Separator className="dark:bg-slate-800" />
 
                 {/* ── Footer ── */}
                 <DialogFooter className="px-5 py-3.5 shrink-0 flex flex-row gap-2">
@@ -737,7 +737,7 @@ export default function UserWordFormDialog({
                         variant="outline"
                         onClick={() => onOpenChange(false)}
                         disabled={processing}
-                        className="flex-1 rounded-xl h-10 text-sm font-semibold"
+                        className="flex-1 rounded-xl h-10 text-sm font-semibold dark:bg-slate-800 dark:border-slate-700 dark:text-gray-100 dark:hover:bg-slate-700"
                     >
                         Cancel
                     </Button>
@@ -745,7 +745,7 @@ export default function UserWordFormDialog({
                         type="button"
                         onClick={handleSubmit}
                         disabled={processing}
-                        className="flex-1 bg-[#E5201C] hover:bg-red-700 text-white rounded-xl h-10 text-sm font-semibold gap-2"
+                        className="flex-1 bg-[#E5201C] hover:bg-red-700 dark:hover:bg-red-800 text-white rounded-xl h-10 text-sm font-semibold gap-2"
                     >
                         {processing && (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />

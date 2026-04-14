@@ -100,6 +100,11 @@ class User extends Authenticatable
         return $this->hasMany(QuizAttempt::class);
     }
 
+    public function wordProgresses()
+    {
+        return $this->hasMany(WordProgress::class);
+    }
+
     public function streak()
     {
         return $this->hasOne(UserStreak::class);

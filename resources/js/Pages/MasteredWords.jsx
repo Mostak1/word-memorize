@@ -103,15 +103,15 @@ export default function MasteredWords({ wordlists, totalMastered }) {
                                         }}
                                     >
                                         <div
-                                            className={`bg-white rounded-2xl px-5 py-4 shadow-sm hover:shadow-md transition-all ${cfg.glow}`}
+                                            className={`bg-white dark:bg-slate-800 rounded-2xl px-5 py-4 shadow-sm hover:shadow-md dark:hover:shadow-lg transition-all ${cfg.glow}`}
                                         >
                                             <div className="flex items-center justify-between gap-3">
                                                 <div className="flex items-center gap-3 min-w-0">
-                                                    <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center shrink-0">
-                                                        <Layers className="h-5 w-5 text-green-600" />
+                                                    <div className="w-10 h-10 rounded-xl bg-green-50 dark:bg-green-950/30 flex items-center justify-center shrink-0">
+                                                        <Layers className="h-5 w-5 text-green-600 dark:text-green-400" />
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <h3 className="text-base font-bold text-gray-900 truncate">
+                                                        <h3 className="text-base font-bold text-gray-900 dark:text-gray-50 truncate">
                                                             {wl.title}
                                                         </h3>
                                                         <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -124,7 +124,7 @@ export default function MasteredWords({ wordlists, totalMastered }) {
                                                                     }
                                                                 </span>
                                                             )}
-                                                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700">
+                                                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 dark:text-green-400">
                                                                 <Trophy className="h-3 w-3" />
                                                                 {
                                                                     wl.mastered_count
@@ -134,13 +134,13 @@ export default function MasteredWords({ wordlists, totalMastered }) {
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <ChevronRight className="h-5 w-5 text-gray-300 shrink-0" />
+                                                <ChevronRight className="h-5 w-5 text-gray-300 dark:text-slate-600 shrink-0" />
                                             </div>
 
                                             {/* Progress bar */}
                                             {wl.total_words > 0 && (
                                                 <div className="mt-3">
-                                                    <div className="flex justify-between text-xs text-gray-400 mb-1">
+                                                    <div className="flex justify-between text-xs text-gray-400 dark:text-slate-500 mb-1">
                                                         <span>
                                                             {wl.mastered_count}{" "}
                                                             / {wl.total_words}{" "}
@@ -155,7 +155,7 @@ export default function MasteredWords({ wordlists, totalMastered }) {
                                                             %
                                                         </span>
                                                     </div>
-                                                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                                    <div className="h-1.5 bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden">
                                                         <div
                                                             className={`h-full rounded-full ${cfg.bar} transition-all`}
                                                             style={{
@@ -171,14 +171,14 @@ export default function MasteredWords({ wordlists, totalMastered }) {
                             })}
                         </div>
                     ) : (
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-10 text-center shadow-sm">
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl p-10 text-center shadow-sm">
                             <div className="w-20 h-20 rounded-full bg-green-50 dark:bg-green-950/30 flex items-center justify-center mx-auto mb-4">
                                 <Trophy className="h-10 w-10 text-green-300 dark:text-green-600" />
                             </div>
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50 mb-2">
                                 No Mastered Words Yet
                             </h3>
-                            <p className="text-gray-500 dark:text-gray-400 text-sm mb-5">
+                            <p className="text-gray-500 dark:text-slate-400 text-sm mb-5">
                                 Press "I know" on a word during exercise to mark
                                 it as mastered.
                             </p>

@@ -49,6 +49,11 @@ export const sidebarConfig = {
                     icon: Users,
                 },
                 {
+                    name: "User Progress",
+                    route: "admin.user-progress.index",
+                    icon: Users,
+                },
+                {
                     name: "Word Lists",
                     route: "admin.word-lists.index",
                     icon: BookOpen,

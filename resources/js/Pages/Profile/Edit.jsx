@@ -23,18 +23,18 @@ export default function Edit({
             <Head title="Profile" />
 
             <div className="py-6 sm:py-12">
-                <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 space-y-6">
                     {/* Community Stats Tabs */}
                     <div className="mb-8 grid grid-cols-2 gap-3">
                         <Link
                             href={route("profile.followers")}
                             className="block"
                         >
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm hover:shadow-md dark:shadow-lg dark:hover:shadow-xl transition-shadow border border-gray-100 dark:border-slate-700">
                                 <div className="flex items-center gap-3">
-                                    <Users className="h-5 w-5 text-blue-600" />
+                                    <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                                     <div>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                                        <p className="text-sm text-gray-500 dark:text-slate-400">
                                             Followers
                                         </p>
                                         <p className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -49,11 +49,11 @@ export default function Edit({
                             href={route("profile.following")}
                             className="block"
                         >
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm hover:shadow-md dark:shadow-lg dark:hover:shadow-xl transition-shadow border border-gray-100 dark:border-slate-700">
                                 <div className="flex items-center gap-3">
-                                    <Users className="h-5 w-5 text-purple-600" />
+                                    <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                                     <div>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                                        <p className="text-sm text-gray-500 dark:text-slate-400">
                                             Following
                                         </p>
                                         <p className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -68,17 +68,17 @@ export default function Edit({
                     {/* Profile Information Card */}
                     <div className="space-y-6">
                         {/* Profile Information Card */}
-                        <Card className="border-0 shadow-lg dark:border dark:border-zinc-800">
-                            <CardHeader className="border-b border-gray-200 dark:border-zinc-800 pb-4">
+                        <Card className="border-0 shadow-lg dark:bg-slate-800 dark:border dark:border-slate-700">
+                            <CardHeader className="border-b border-gray-200 dark:border-slate-700 pb-4">
                                 <div className="flex items-center gap-3">
                                     <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
                                         <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                                     </div>
                                     <div>
-                                        <CardTitle className="text-lg sm:text-xl">
+                                        <CardTitle className="text-lg sm:text-xl dark:text-white">
                                             Profile Information
                                         </CardTitle>
-                                        <CardDescription className="text-sm mt-1">
+                                        <CardDescription className="text-sm mt-1 dark:text-slate-400">
                                             Update your account's profile
                                             information and email address
                                         </CardDescription>
@@ -95,17 +95,17 @@ export default function Edit({
                         </Card>
 
                         {/* Update Password Card */}
-                        <Card className="border-0 shadow-lg dark:border dark:border-zinc-800">
-                            <CardHeader className="border-b border-gray-200 dark:border-zinc-800 pb-4">
+                        <Card className="border-0 shadow-lg dark:bg-slate-800 dark:border dark:border-slate-700">
+                            <CardHeader className="border-b border-gray-200 dark:border-slate-700 pb-4">
                                 <div className="flex items-center gap-3">
                                     <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
                                         <Lock className="h-5 w-5 text-green-600 dark:text-green-400" />
                                     </div>
                                     <div>
-                                        <CardTitle className="text-lg sm:text-xl">
+                                        <CardTitle className="text-lg sm:text-xl dark:text-white">
                                             Update Password
                                         </CardTitle>
-                                        <CardDescription className="text-sm mt-1">
+                                        <CardDescription className="text-sm mt-1 dark:text-slate-400">
                                             Ensure your account is using a
                                             strong password
                                         </CardDescription>
@@ -118,7 +118,7 @@ export default function Edit({
                         </Card>
 
                         {/* Delete Account Card */}
-                        <Card className="border-0 shadow-lg border-red-200 dark:border-red-900/50">
+                        <Card className="border-0 shadow-lg border-red-200 dark:border-red-900/50 dark:bg-slate-800">
                             <CardHeader className="border-b border-red-200 dark:border-red-900/50 pb-4 bg-red-50 dark:bg-red-900/10">
                                 <div className="flex items-center gap-3">
                                     <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">

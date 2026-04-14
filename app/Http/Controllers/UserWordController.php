@@ -238,7 +238,7 @@ class UserWordController extends Controller
       'wordlist_id' => ['nullable', 'integer'],
       'new_wordlist_title' => ['nullable', 'string', 'max:255'],
       'word' => ['required', 'string', 'max:255'],
-      'pronunciation' => ['required', 'string', 'max:255'],
+      'pronunciation' => ['nullable', 'string', 'max:255'],
       // 'ipa' => ['nullable', 'string', 'max:255'],
       // 'bangla_pronunciation' => ['nullable', 'string', 'max:255'],
       'parts_of_speech_variations' => ['required', 'string', 'max:255'],

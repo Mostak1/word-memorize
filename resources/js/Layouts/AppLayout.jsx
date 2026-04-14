@@ -190,10 +190,10 @@ export default function AppLayout({ children }) {
                                             </span>
                                         </button>
 
-                                        <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-lg border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50">
+                                        <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-lg dark:shadow-2xl border border-gray-100 dark:border-slate-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50">
                                             <Link
                                                 href={route("profile.edit")}
-                                                className="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-t-xl transition-colors"
+                                                className="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-t-xl transition-colors"
                                             >
                                                 <User className="h-4 w-4" />
                                                 Profile
@@ -203,7 +203,7 @@ export default function AppLayout({ children }) {
                                                 href={route("logout")}
                                                 method="post"
                                                 as="button"
-                                                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-b-xl transition-colors border-t border-gray-100"
+                                                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-b-xl transition-colors border-t border-gray-100 dark:border-slate-700"
                                             >
                                                 <LogOut className="h-4 w-4" />
                                                 Log Out

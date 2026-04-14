@@ -9,6 +9,8 @@ class WordProgress extends Model
 {
   use HasFactory;
 
+  protected $table = 'word_progress';
+
   protected $fillable = [
     'user_id',
     'word_id',

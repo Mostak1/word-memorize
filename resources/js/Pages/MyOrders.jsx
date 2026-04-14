@@ -56,10 +56,10 @@ function OrderCard({ order }) {
             }}
         >
             {/* Top strip */}
-            <div className="bg-gray-50 dark:bg-slate-800 px-5 py-3 flex items-center justify-between border-b border-gray-100 dark:border-slate-700">
+            <div className="bg-gray-50 dark:bg-slate-700 px-5 py-3 flex items-center justify-between border-b border-gray-100 dark:border-slate-600">
                 <div className="flex items-center gap-2">
-                    <BookOpen className="h-4 w-4 text-gray-400 dark:text-gray-500 shrink-0" />
-                    <p className="text-sm font-bold text-gray-800 dark:text-gray-200 leading-snug">
+                    <BookOpen className="h-4 w-4 text-gray-400 dark:text-slate-300 shrink-0" />
+                    <p className="text-sm font-bold text-gray-800 dark:text-gray-100 leading-snug">
                         {order.wordlist?.title ?? "Word List"}
                     </p>
                 </div>
@@ -78,7 +78,7 @@ function OrderCard({ order }) {
                 </p>
 
                 {/* Details grid */}
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-gray-500 dark:text-gray-400">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-gray-500 dark:text-slate-400">
                     <Detail label="Name" value={order.name} />
                     <Detail label="Phone" value={order.phone_number} />
                     {order.profession && (
@@ -97,8 +97,8 @@ function OrderCard({ order }) {
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-slate-800">
-                    <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+                <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-slate-700">
+                    <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-slate-500">
                         <Calendar className="h-3 w-3" />
                         {date}
                     </span>
@@ -121,10 +121,10 @@ function OrderCard({ order }) {
 function Detail({ label, value }) {
     return (
         <div>
-            <p className="text-[10px] uppercase tracking-wider font-semibold text-gray-400 dark:text-gray-500 mb-0.5">
+            <p className="text-[10px] uppercase tracking-wider font-semibold text-gray-400 dark:text-slate-500 mb-0.5">
                 {label}
             </p>
-            <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">
+            <p className="text-xs font-medium text-gray-700 dark:text-gray-200 truncate">
                 {value ?? "—"}
             </p>
         </div>
@@ -151,14 +151,14 @@ export default function MyOrders({ orders }) {
                             ))}
                         </div>
                     ) : (
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-10 text-center shadow-sm">
-                            <div className="w-20 h-20 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4">
-                                <ShoppingBag className="h-10 w-10 text-gray-400 dark:text-slate-600" />
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl p-10 text-center shadow-sm">
+                            <div className="w-20 h-20 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center mx-auto mb-4">
+                                <ShoppingBag className="h-10 w-10 text-gray-400 dark:text-slate-500" />
                             </div>
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50 mb-2">
                                 No Orders Yet
                             </h3>
-                            <p className="text-gray-500 dark:text-gray-400 text-sm mb-5">
+                            <p className="text-gray-500 dark:text-slate-400 text-sm mb-5">
                                 You haven't purchased any word lists yet.
                             </p>
                             <Link

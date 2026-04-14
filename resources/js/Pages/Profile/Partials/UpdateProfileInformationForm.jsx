@@ -40,7 +40,7 @@ export default function UpdateProfileInformation({
                 <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
                     Profile Information
                 </h2>
-                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                <p className="mt-1 text-sm text-gray-600 dark:text-slate-400">
                     Update your account's profile information and email address.
                 </p>
             </header>
@@ -51,7 +51,7 @@ export default function UpdateProfileInformation({
                     <InputLabel htmlFor="name" value="Name" />
                     <TextInput
                         id="name"
-                        className="mt-1 block w-full"
+                        className="mt-1 block w-full dark:bg-slate-900 dark:border-slate-700 dark:text-gray-100"
                         value={data.name}
                         onChange={(e) => setData("name", e.target.value)}
                         required
@@ -67,7 +67,7 @@ export default function UpdateProfileInformation({
                     <TextInput
                         id="email"
                         type="email"
-                        className="mt-1 block w-full"
+                        className="mt-1 block w-full dark:bg-slate-900 dark:border-slate-700 dark:text-gray-100"
                         value={data.email}
                         onChange={(e) => setData("email", e.target.value)}
                         required
@@ -82,7 +82,7 @@ export default function UpdateProfileInformation({
                     <TextInput
                         id="phone_number"
                         type="tel"
-                        className="mt-1 block w-full"
+                        className="mt-1 block w-full dark:bg-slate-900 dark:border-slate-700 dark:text-gray-100"
                         value={data.phone_number}
                         onChange={(e) =>
                             setData("phone_number", e.target.value)
@@ -101,7 +101,7 @@ export default function UpdateProfileInformation({
                     <InputLabel htmlFor="location" value="Location" />
                     <TextInput
                         id="location"
-                        className="mt-1 block w-full"
+                        className="mt-1 block w-full dark:bg-slate-900 dark:border-slate-700 dark:text-gray-100"
                         value={data.location}
                         onChange={(e) => setData("location", e.target.value)}
                         placeholder="e.g. Dhaka, Bangladesh"
@@ -118,10 +118,13 @@ export default function UpdateProfileInformation({
                             value={data.gender}
                             onValueChange={(val) => setData("gender", val)}
                         >
-                            <SelectTrigger id="gender" className="mt-1 w-full">
+                            <SelectTrigger
+                                id="gender"
+                                className="mt-1 w-full dark:bg-slate-900 dark:border-slate-700 dark:text-gray-100"
+                            >
                                 <SelectValue placeholder="Select gender" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
                                 <SelectItem value="prefer_not_to_say">
                                     Prefer not to say
                                 </SelectItem>
@@ -142,11 +145,11 @@ export default function UpdateProfileInformation({
                         >
                             <SelectTrigger
                                 id="profession"
-                                className="mt-1 w-full"
+                                className="mt-1 w-full dark:bg-slate-900 dark:border-slate-700 dark:text-gray-100"
                             >
                                 <SelectValue placeholder="Select profession" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
                                 <SelectItem value="Student">Student</SelectItem>
                                 <SelectItem value="Job Holder">
                                     Job Holder
@@ -179,7 +182,7 @@ export default function UpdateProfileInformation({
                         </p>
 
                         {status === "verification-link-sent" && (
-                            <div className="mt-2 text-sm font-medium text-green-600">
+                            <div className="mt-2 text-sm font-medium text-green-600 dark:text-green-400">
                                 A new verification link has been sent to your
                                 email address.
                             </div>

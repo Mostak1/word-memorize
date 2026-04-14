@@ -352,7 +352,10 @@ export default function ExerciseSession({
         const regex = new RegExp(`(${targetWord})`, "gi");
         return sentence.split(regex).map((part, i) =>
             regex.test(part) ? (
-                <strong key={i} className="font-bold text-gray-900">
+                <strong
+                    key={i}
+                    className="font-bold text-gray-900 dark:text-yellow-300"
+                >
                     {part}
                 </strong>
             ) : (
@@ -1219,7 +1222,7 @@ export default function ExerciseSession({
                                                                         key={
                                                                             idx
                                                                         }
-                                                                        className="font-bold bg-transparent underline underline-offset-2 decoration-2 not-italic"
+                                                                        className="font-bold bg-transparent underline underline-offset-2 decoration-2 not-italic dark:text-white"
                                                                         style={{
                                                                             textDecorationColor:
                                                                                 "currentColor",
@@ -1241,7 +1244,7 @@ export default function ExerciseSession({
                                                             <div className="flex items-center gap-2">
                                                                 <div className="flex-1">
                                                                     {col.example_sentence ? (
-                                                                        <p className="text-sm leading-snug dark:text-gray-100">
+                                                                        <p className="text-sm leading-snug dark:text-gray-400">
                                                                             {renderHighlighted(
                                                                                 col.example_sentence,
                                                                                 col.phrase,

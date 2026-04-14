@@ -304,6 +304,22 @@
             justify-content: center;
         }
 
+        .hero-video-wrap {
+            width: 100%;
+            max-width: 500px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, .15);
+            aspect-ratio: 16 / 9;
+            align-self: center;
+        }
+
+        .hero-video-wrap iframe {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
         .card-stack {
             position: relative;
             width: 320px;
@@ -331,6 +347,7 @@
             width: 290px;
             left: 25px;
             top: 8px;
+            height: 420px;
             z-index: 2;
             transform: rotate(3deg);
             opacity: .7;
@@ -341,6 +358,7 @@
             width: 280px;
             left: 30px;
             top: 0;
+            height: 420px;
             z-index: 1;
             transform: rotate(6deg);
             opacity: .45;
@@ -451,6 +469,7 @@
             font-size: .78rem;
             font-weight: 700;
             white-space: nowrap;
+            z-index: 10;
         }
 
         .badge-streak {
@@ -1404,22 +1423,13 @@
                 </div>
             </div>
             <div class="hero-visual">
-                <div class="card-stack">
-                    <div class="word-card wc-back2"></div>
-                    <div class="word-card wc-back1"></div>
-                    <div class="word-card wc-main">
-                        <div class="wc-label">GRE Extended — Sub-List 2</div>
-                        <div><span class="wc-word">acuity</span><span class="wc-pos">noun</span></div>
-                        <div class="wc-phonetic">uhk-YOO-uht-ee | অক·যউ·অট·ই</div>
-                        <div class="wc-img">🔬</div>
-                        <div class="wc-def">Sharpness or keenness of thought, vision, or hearing<br><em
-                                style="font-size:.75rem;color:#aaa;">চিন্তা বা দৃষ্টিশক্তির তীক্ষ্ণতা</em></div>
-                        <div class="wc-actions"><button class="wc-btn-no">✕ Don't Know</button><button
-                                class="wc-btn-yes">✓ I Know!</button></div>
-                    </div>
-                    <div class="float-badge badge-streak">🔥 14-Day Streak</div>
-                    <div class="float-badge badge-mastered">✓ 340 Mastered</div>
-                    <div class="float-badge badge-xp">⚡ 1,250 XP</div>
+                <div class="card-stack" style="display:none;"></div>
+                <div class="hero-video-wrap">
+                    <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ?rel=0&modestbranding=1" title="VocabPix Demo"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen>
+                    </iframe>
                 </div>
             </div>
         </div>
@@ -1778,12 +1788,12 @@
             <div class="faq-a">Yes. BCS and Medical vocabulary lists are in development. GRE Extended and Academic
                 Word List already have significant overlap with BCS English sections.</div>
         </div>
-        <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">How is this different from Quizlet or
+        <!-- <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">How is this different from Quizlet or
                 Anki? <span class="faq-icon">+</span></button>
             <div class="faq-a">Quizlet and Anki are general tools — you build your own content. VocabPix is
                 purpose-built for South Asian English learners, with professionally curated lists, contextual images,
                 Bangla support, collocations, and a gamification system all built in.</div>
-        </div>
+        </div> -->
         <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Can I add my own words? <span
                     class="faq-icon">+</span></button>
             <div class="faq-a">Yes! "Add New Word" lets you create personal word entries with definition,

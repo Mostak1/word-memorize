@@ -39,42 +39,42 @@ import UserWordFormDialog from "./UserWordFormDialog";
 
 function WordCard({ word, onEdit, onDelete }) {
     return (
-        <div className="bg-white rounded-xl px-4 py-3 flex items-start gap-3 group border border-gray-100 hover:border-gray-200 transition-colors">
+        <div className="bg-white dark:bg-slate-800 rounded-xl px-4 py-3 flex items-start gap-3 group border border-gray-100 dark:border-slate-700 hover:border-gray-200 dark:hover:border-slate-600 transition-colors">
             {/* Visibility icon */}
             <div className="mt-0.5 shrink-0">
                 {word.is_public ? (
                     <Globe className="h-3.5 w-3.5 text-blue-400" />
                 ) : (
-                    <Lock className="h-3.5 w-3.5 text-gray-300" />
+                    <Lock className="h-3.5 w-3.5 text-gray-300 dark:text-slate-500" />
                 )}
             </div>
 
             {/* Info */}
             <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-baseline gap-2">
-                    <span className="font-semibold text-gray-900 text-sm">
+                    <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
                         {word.word}
                     </span>
                     {word.parts_of_speech_variations && (
-                        <span className="text-[10px] italic text-gray-400">
+                        <span className="text-[10px] italic text-gray-400 dark:text-slate-400">
                             {word.parts_of_speech_variations}
                         </span>
                     )}
                     {word.ipa && (
-                        <span className="text-[10px] font-mono text-gray-400">
+                        <span className="text-[10px] font-mono text-gray-400 dark:text-slate-400">
                             {word.ipa}
                         </span>
                     )}
                 </div>
 
                 {word.pronunciation && (
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="text-xs text-gray-400 dark:text-slate-400 mt-0.5">
                         {word.pronunciation}
                     </p>
                 )}
 
                 {word.definition && (
-                    <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-1 line-clamp-2">
                         {word.definition}
                     </p>
                 )}
@@ -86,7 +86,7 @@ function WordCard({ word, onEdit, onDelete }) {
                     variant="ghost"
                     size="icon"
                     onClick={() => onEdit(word)}
-                    className="h-7 w-7 rounded-full hover:bg-blue-50"
+                    className="h-7 w-7 rounded-full hover:bg-blue-50 dark:hover:bg-blue-950"
                     aria-label="Edit"
                 >
                     <Pencil className="h-3 w-3 text-blue-500" />
@@ -95,7 +95,7 @@ function WordCard({ word, onEdit, onDelete }) {
                     variant="ghost"
                     size="icon"
                     onClick={() => onDelete(word)}
-                    className="h-7 w-7 rounded-full hover:bg-red-50"
+                    className="h-7 w-7 rounded-full hover:bg-red-50 dark:hover:bg-red-950"
                     aria-label="Delete"
                 >
                     <Trash2 className="h-3 w-3 text-red-400" />
@@ -121,22 +121,22 @@ function WordListGroup({
         <Collapsible open={open} onOpenChange={setOpen}>
             <CollapsibleTrigger asChild>
                 <button className="w-full flex items-center gap-2.5 px-1 py-1.5 group select-none">
-                    <span className="w-6 h-6 rounded-full bg-[#E5201C]/10 flex items-center justify-center shrink-0">
+                    <span className="w-6 h-6 rounded-full bg-[#E5201C]/10 dark:bg-[#E5201C]/20 flex items-center justify-center shrink-0">
                         <BookOpen className="h-3 w-3 text-[#E5201C]" />
                     </span>
-                    <span className="flex-1 text-left font-semibold text-gray-800 text-sm truncate">
+                    <span className="flex-1 text-left font-semibold text-gray-800 dark:text-gray-100 text-sm truncate">
                         {listTitle}
                     </span>
                     <Badge
                         variant="secondary"
-                        className="text-[10px] font-semibold bg-gray-100 text-gray-500 h-5 px-2 rounded-full"
+                        className="text-[10px] font-semibold bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300 h-5 px-2 rounded-full"
                     >
                         {words.length}
                     </Badge>
                     {open ? (
-                        <ChevronDown className="h-4 w-4 text-gray-400 shrink-0" />
+                        <ChevronDown className="h-4 w-4 text-gray-400 dark:text-slate-500 shrink-0" />
                     ) : (
-                        <ChevronRight className="h-4 w-4 text-gray-400 shrink-0" />
+                        <ChevronRight className="h-4 w-4 text-gray-400 dark:text-slate-500 shrink-0" />
                     )}
                 </button>
             </CollapsibleTrigger>
@@ -237,28 +237,28 @@ export default function Index({ words, category, wordLists = [] }) {
         <AppLayout>
             <Head title="My Words" />
 
-            <div className="min-h-screen bg-[#F0F2F5]">
+            <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
                 {/* ── Sticky top bar ── */}
-                <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
+                <div className="bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 sticky top-0 z-10">
                     <div className="w-full max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
                         <Link href={route("dashboard")}>
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className="rounded-full h-9 w-9 hover:bg-gray-100"
+                                className="rounded-full h-9 w-9 hover:bg-gray-100 dark:hover:bg-slate-800"
                             >
-                                <ArrowLeft className="h-5 w-5 text-gray-600" />
+                                <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-slate-400" />
                             </Button>
                         </Link>
                         <div className="flex-1">
-                            <h1 className="font-semibold text-gray-900 text-base">
+                            <h1 className="font-semibold text-gray-900 dark:text-gray-100 text-base">
                                 My Words
                             </h1>
-                            <p className="text-xs text-gray-400">
+                            <p className="text-xs text-gray-400 dark:text-slate-400">
                                 {words.total ?? 0}{" "}
                                 {words.total === 1 ? "word" : "words"}
                                 {wordLists.length > 0 && (
-                                    <span className="ml-1 text-gray-300">
+                                    <span className="ml-1 text-gray-300 dark:text-slate-500">
                                         · {wordLists.length}{" "}
                                         {wordLists.length === 1
                                             ? "list"
@@ -281,7 +281,7 @@ export default function Index({ words, category, wordLists = [] }) {
                 <div className="w-full max-w-2xl mx-auto px-4 py-5 space-y-4">
                     {/* ── Flash ── */}
                     {flash?.type === "success" && (
-                        <div className="bg-green-50 border border-green-200 text-green-700 text-sm rounded-xl px-4 py-2.5">
+                        <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 text-sm rounded-xl px-4 py-2.5">
                             {flash.message}
                         </div>
                     )}
@@ -289,12 +289,12 @@ export default function Index({ words, category, wordLists = [] }) {
                     {/* ── Search ── */}
                     {(words.total ?? 0) > 0 && (
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-slate-400 pointer-events-none" />
                             <Input
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 placeholder="Search words…"
-                                className="pl-9 rounded-xl border-gray-200 bg-white"
+                                className="pl-9 rounded-xl border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
                             />
                         </div>
                     )}
@@ -305,7 +305,7 @@ export default function Index({ words, category, wordLists = [] }) {
                             {grouped.map((group, idx) => (
                                 <div
                                     key={group.id}
-                                    className="bg-white rounded-2xl shadow-sm px-4 py-3"
+                                    className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm dark:shadow-lg dark:shadow-slate-950 px-4 py-3"
                                 >
                                     <WordListGroup
                                         listId={group.id}
@@ -319,14 +319,14 @@ export default function Index({ words, category, wordLists = [] }) {
                             ))}
                         </div>
                     ) : (
-                        <div className="bg-white rounded-2xl shadow-sm px-6 py-14 text-center">
-                            <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm dark:shadow-lg dark:shadow-slate-950 px-6 py-14 text-center">
+                            <div className="w-16 h-16 rounded-full bg-red-50 dark:bg-red-950/30 flex items-center justify-center mx-auto mb-4">
                                 <BookOpen className="h-7 w-7 text-[#E5201C]" />
                             </div>
-                            <p className="font-semibold text-gray-800 text-sm">
+                            <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm">
                                 {search ? "No matching words" : "No words yet"}
                             </p>
-                            <p className="text-xs text-gray-400 mt-1 mb-5">
+                            <p className="text-xs text-gray-400 dark:text-slate-400 mt-1 mb-5">
                                 {search
                                     ? "Try a different search term"
                                     : "Start building your personal vocabulary list"}

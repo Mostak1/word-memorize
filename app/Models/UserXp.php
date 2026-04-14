@@ -29,6 +29,13 @@ class UserXp extends Model
     return $this->hasMany(StreakFreezePurchase::class, 'user_id', 'user_id');
   }
 
+  // ── Accessors ───────────────────────────────────────────────────────────────
+
+  public function getXpAttribute(): int
+  {
+    return $this->xp_balance ?? 0;
+  }
+
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   /**
