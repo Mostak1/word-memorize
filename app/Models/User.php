@@ -130,6 +130,11 @@ class User extends Authenticatable
         return $this->hasMany(UserAchievement::class);
     }
 
+    public function devices()
+    {
+        return $this->hasMany(UserDevice::class);
+    }
+
     public function followers()
     {
         return $this->belongsToMany(User::class, 'user_follows', 'following_id', 'user_id')

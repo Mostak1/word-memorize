@@ -2,6 +2,7 @@ import GuestLayout from "@/Layouts/GuestLayout";
 import { Head, Link, useForm } from "@inertiajs/react";
 import { useState } from "react";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { getDeviceId } from "@/Utils/getDeviceId";
 import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
@@ -15,6 +16,7 @@ export default function Login({ status, canResetPassword }) {
         email: "",
         password: "",
         remember: false,
+        device_id: getDeviceId(),
     });
 
     const [showPassword, setShowPassword] = useState(false);
@@ -61,6 +63,11 @@ export default function Login({ status, canResetPassword }) {
 
                 {/* Form */}
                 <form onSubmit={submit} className="space-y-4">
+                    <input
+                        type="hidden"
+                        name="device_id"
+                        value={data.device_id}
+                    />
                     {/* Email Field */}
                     <div className="space-y-2">
                         <Label htmlFor="email" className="text-sm font-medium">

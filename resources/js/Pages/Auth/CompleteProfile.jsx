@@ -4,10 +4,12 @@ import { Phone } from "lucide-react";
 import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
+import { getDeviceId } from "@/Utils/getDeviceId";
 
 export default function CompleteProfile({ googleUser }) {
     const { data, setData, post, processing, errors } = useForm({
         phone_number: "",
+        device_id: getDeviceId(),
     });
 
     const submit = (e) => {
@@ -144,6 +146,13 @@ export default function CompleteProfile({ googleUser }) {
                             </p>
                         )}
                     </div>
+
+                    {/* Hidden Device ID */}
+                    <input
+                        type="hidden"
+                        name="device_id"
+                        value={data.device_id}
+                    />
 
                     {/* Submit */}
                     <Button

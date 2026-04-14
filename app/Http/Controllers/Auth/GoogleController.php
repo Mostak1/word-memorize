@@ -3,6 +3,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\DeviceSessionService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Facades\Socialite;
 
@@ -13,7 +15,7 @@ class GoogleController extends Controller
         return Socialite::driver('google')->redirect();
     }
 
-    public function callback()
+    public function callback(Request $request)
     {
         try {
             $googleUser = Socialite::driver('google')->user();
@@ -53,14 +55,36 @@ class GoogleController extends Controller
 
         Auth::login($user, true);
 
+        $request->session()->regenerate();
+
+        $deviceService = app(DeviceSessionService::class);
+        $fingerprint = $deviceService->fingerprint($request);
+        $deviceService->revokeConflictingSessions($user, $fingerprint);
+        $deviceService->touchCurrentDevice(
+            $user,
+            $fingerprint,
+            $request->session()->getId(),
+            $request
+        );
+
         $userName = $user->name;
 
-        return redirect('/dashboard')
+        if ($user->isAdmin()) {
+            return redirect()->intended(route('admin.dashboard'))
+                ->with('flash', [
+                    'toast' => [
+                        'type' => 'success',
+                        'message' => "Welcome back, {$userName}! 👋"
+                    ]
+                ]);
+        }
+
+        return redirect()->intended(route('dashboard', absolute: false))
             ->with('flash', [
                 'toast' => [
                     'type' => 'success',
-                    'message' => "Welcome back, {$userName}! 👋",
-                ],
+                    'message' => "Welcome back, {$userName}! 👋"
+                ]
             ]);
     }
 }

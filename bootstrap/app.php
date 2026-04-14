@@ -29,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Register middleware aliases
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
+            'active.device' => \App\Http\Middleware\EnsureDeviceSessionActive::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -7,6 +7,7 @@ import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
 import FlashMessages from "@/Components/FlashMessage";
 import { toast } from "sonner";
+import { getDeviceId } from "@/Utils/getDeviceId";
 
 export default function Register() {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -15,6 +16,7 @@ export default function Register() {
         phone_number: "",
         password: "",
         password_confirmation: "",
+        device_id: getDeviceId(),
     });
 
     const [showPassword, setShowPassword] = useState(false);
@@ -241,6 +243,13 @@ export default function Register() {
                             </p>
                         )}
                     </div>
+
+                    {/* Hidden Device ID */}
+                    <input
+                        type="hidden"
+                        name="device_id"
+                        value={data.device_id}
+                    />
 
                     {/* Submit Button */}
                     <Button
