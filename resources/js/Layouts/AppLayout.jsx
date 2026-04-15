@@ -50,9 +50,11 @@ export default function AppLayout({ children }) {
         setReportDialogOpen(true);
     };
 
+    const [darkModeUnlocked, setDarkModeUnlocked] = useState(false);
+
     // Fetch XP status from API
     useEffect(() => {
-        if (!user || xpData) return;
+        if (!user) return;
 
         const fetchXpStatus = async () => {
             try {
@@ -80,13 +82,14 @@ export default function AppLayout({ children }) {
                 }
                 const data = await response.json();
                 setXpData(data.xp);
+                setDarkModeUnlocked(data.dark_mode_unlocked || false);
             } catch (error) {
                 console.error("Failed to fetch XP status:", error);
             }
         };
 
         fetchXpStatus();
-    }, [user, xpData, xpRefreshKey.current]);
+    }, [user, xpRefreshKey.current]);
 
     return (
         <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
@@ -99,7 +102,7 @@ export default function AppLayout({ children }) {
 
             {/* Fixed Top Nav */}
             <div
-                className={`bg-[#E5201C] text-white shadow-md fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ease-in-out ${
+                className={`bg-[#E70013] dark:bg-[#b80015] text-white shadow-md fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ease-in-out ${
                     headerVisible ? "translate-y-0" : "-translate-y-full"
                 }`}
             >
@@ -160,7 +163,7 @@ export default function AppLayout({ children }) {
                                         {/* <span>XP Shop</span> */}
                                     </Link>
 
-                                    <ThemeToggle />
+                                    {darkModeUnlocked && <ThemeToggle />}
 
                                     <ReportErrorDialog />
 
@@ -312,9 +315,11 @@ export default function AppLayout({ children }) {
                                         </Link>
                                     )} */}
 
-                                    <div className="px-3 py-2">
-                                        <ThemeToggle />
-                                    </div>
+                                    {darkModeUnlocked && (
+                                        <div className="px-3 py-2">
+                                            <ThemeToggle />
+                                        </div>
+                                    )}
 
                                     <button
                                         onClick={openReportDialog}

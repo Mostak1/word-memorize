@@ -6,34 +6,35 @@ use Illuminate\Database\Eloquent\Model;
 
 class UserDailyActivity extends Model
 {
-  protected $fillable = [
-    'user_id',
-    'activity_date',
-    'completed',
-    'session_xp_earned',
-  ];
+    protected $fillable = [
+        'user_id',
+        'activity_date',
+        'completed',
+        'session_xp_earned',
+        'quiz_xp_earned',
+    ];
 
-  protected $casts = [
-    'activity_date' => 'date',
-    'completed' => 'boolean',
-  ];
+    protected $casts = [
+        'activity_date' => 'date',
+        'completed' => 'boolean',
+    ];
 
-  // ── Relationships ─────────────────────────────────────────────────────────
+    // ── Relationships ─────────────────────────────────────────────────────────
 
-  public function user()
-  {
-    return $this->belongsTo(User::class);
-  }
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
-  // ── Scopes ────────────────────────────────────────────────────────────────
+    // ── Scopes ────────────────────────────────────────────────────────────────
 
-  public function scopeCompleted($query)
-  {
-    return $query->where('completed', true);
-  }
+    public function scopeCompleted($query)
+    {
+        return $query->where('completed', true);
+    }
 
-  public function scopeForUser($query, int $userId)
-  {
-    return $query->where('user_id', $userId);
-  }
+    public function scopeForUser($query, int $userId)
+    {
+        return $query->where('user_id', $userId);
+    }
 }

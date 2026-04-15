@@ -7,37 +7,39 @@ use Illuminate\Database\Eloquent\Model;
 
 class UserSetting extends Model
 {
-  use HasFactory;
+    use HasFactory;
 
-  protected $fillable = [
-    'user_id',
-    'show_bangla',
-  ];
-
-  protected function casts(): array
-  {
-    return [
-      'show_bangla' => 'boolean',
+    protected $fillable = [
+        'user_id',
+        'show_bangla',
+        'sound_effects',
     ];
-  }
 
-  // ── Relationship ──────────────────────────────────────────────────────────
+    protected function casts(): array
+    {
+        return [
+            'show_bangla' => 'boolean',
+            'sound_effects' => 'boolean',
+        ];
+    }
 
-  public function user()
-  {
-    return $this->belongsTo(User::class);
-  }
+    // ── Relationship ──────────────────────────────────────────────────────────
 
-  // ── Helper ────────────────────────────────────────────────────────────────
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
-  /**
-   * Return (or lazily create) the settings row for a user.
-   */
-  public static function forUser(User $user): self
-  {
-    return self::firstOrCreate(
-      ['user_id' => $user->id],
-      ['show_bangla' => true]
-    );
-  }
+    // ── Helper ────────────────────────────────────────────────────────────────
+
+    /**
+     * Return (or lazily create) the settings row for a user.
+     */
+    public static function forUser(User $user): self
+    {
+        return self::firstOrCreate(
+            ['user_id' => $user->id],
+            ['show_bangla' => true, 'sound_effects' => true]
+        );
+    }
 }

@@ -10,6 +10,7 @@ import {
     BookOpen,
     Lock,
     ShoppingBag,
+    SunMoon,
 } from "lucide-react";
 import PurchaseOrderDialog from "@/Components/PurchaseOrderDialog";
 
@@ -415,7 +416,9 @@ function ShopItemCard({
                     )}
                 </button>
                 <p className="text-xs text-gray-400 text-center mt-3">
-                    Protects your streak for one missed day
+                    {title === "Streak Freeze"
+                        ? "Protects your streak for one missed day"
+                        : "Theme will be available everywhere once unlocked"}
                 </p>
             </div>
         </div>
@@ -496,8 +499,35 @@ function XpShopTab() {
                 method: "POST",
             });
             if (data.success) {
-                setStatus({ xp: data.xp, streak: data.streak });
+                setStatus({
+                    xp: data.xp,
+                    streak: data.streak,
+                    dark_mode_unlocked: data.dark_mode_unlocked,
+                });
                 showToast("Streak freeze purchased! 🧊");
+            } else {
+                showToast(data.error ?? "Purchase failed.", "error");
+            }
+        } catch {
+            showToast("Something went wrong.", "error");
+        } finally {
+            setPurchasing(false);
+        }
+    };
+
+    const handleBuyDarkMode = async () => {
+        setPurchasing(true);
+        try {
+            const data = await apiFetch(route("api.xp-shop.buy-dark-mode"), {
+                method: "POST",
+            });
+            if (data.success) {
+                setStatus({
+                    xp: data.xp,
+                    streak: data.streak,
+                    dark_mode_unlocked: data.dark_mode_unlocked,
+                });
+                showToast("Dark Mode unlocked! 🌙");
             } else {
                 showToast(data.error ?? "Purchase failed.", "error");
             }
@@ -543,16 +573,49 @@ function XpShopTab() {
                 <h2 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
                     Available items
                 </h2>
-                <ShopItemCard
-                    title="Streak Freeze"
-                    description="Skip one missed day without losing your streak."
-                    icon={ShieldCheck}
-                    iconBg="bg-gradient-to-br from-blue-500 to-indigo-600"
-                    cost={status?.xp?.next_freeze_cost ?? 1000}
-                    canAfford={status?.xp?.can_afford_freeze ?? false}
-                    purchasing={purchasing}
-                    onBuy={handleBuyFreeze}
-                />
+                <div className="grid gap-3">
+                    <ShopItemCard
+                        title="Streak Freeze"
+                        description="Skip one missed day without losing your streak."
+                        icon={ShieldCheck}
+                        iconBg="bg-gradient-to-br from-blue-500 to-indigo-600"
+                        cost={status?.xp?.next_freeze_cost ?? 1000}
+                        canAfford={status?.xp?.can_afford_freeze ?? false}
+                        purchasing={purchasing}
+                        onBuy={handleBuyFreeze}
+                    />
+
+                    {!status?.dark_mode_unlocked && (
+                        <ShopItemCard
+                            title="Dark Mode"
+                            description="Unlock dark theme for the entire app."
+                            icon={SunMoon}
+                            iconBg="bg-gradient-to-br from-slate-700 to-slate-900"
+                            cost={5000}
+                            canAfford={(status?.xp?.balance ?? 0) >= 5000}
+                            purchasing={purchasing}
+                            onBuy={handleBuyDarkMode}
+                        />
+                    )}
+
+                    {status?.dark_mode_unlocked && (
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-5">
+                            <div className="flex items-center gap-4">
+                                <div className="bg-gradient-to-br from-slate-700 to-slate-900 rounded-xl p-3">
+                                    <SunMoon className="h-8 w-8 text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">
+                                        Dark Mode
+                                    </h3>
+                                    <p className="text-sm text-green-600 font-medium">
+                                        ✓ Unlocked permanently
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
 
             <HowXpWorks />

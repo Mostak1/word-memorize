@@ -250,7 +250,7 @@ export default function Dashboard({
                                 </div>
                                 <div className="text-center">
                                     <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
-                                        Testing Your Learning
+                                        Test Your Learning
                                     </p>
                                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                                         Practice now

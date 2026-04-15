@@ -59,7 +59,7 @@ class WordListController extends Controller
         $sortDir = $request->input('direction') === 'desc' ? 'desc' : 'asc';
         $perPage = in_array((int) $request->input('per_page'), [10, 20, 50, 100])
             ? (int) $request->input('per_page')
-            : 10;
+            : 100;
 
         $words = $wordList->words()
             ->with('images')

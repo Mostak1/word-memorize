@@ -69,6 +69,7 @@ class UserShopController extends Controller
     return response()->json([
       'xp' => $xpSummary,
       'streak' => $this->streakService->getSummary($user),
+      'dark_mode_unlocked' => $this->xpService->hasDarkModeUnlocked($user),
     ]);
   }
 
@@ -116,6 +117,49 @@ class UserShopController extends Controller
 
     return response()->json([
       'error' => 'Failed to purchase streak freeze',
+    ], 500);
+  }
+
+  /**
+   * Purchase Dark Mode unlock with XP.
+   */
+  public function buyDarkMode(Request $request)
+  {
+    $user = $request->user();
+
+    if (!$user) {
+      return response()->json(['error' => 'Unauthorized'], 401);
+    }
+
+    if ($this->xpService->hasDarkModeUnlocked($user)) {
+      return response()->json([
+        'error' => 'Already unlocked',
+        'message' => 'Dark Mode is already unlocked.',
+      ], 400);
+    }
+
+    $userXp = $this->xpService->getOrCreate($user);
+
+    if ($userXp->xp_balance < \App\Services\XpService::DARK_MODE_COST) {
+      return response()->json([
+        'error' => 'Insufficient XP',
+        'balance' => $userXp->xp_balance,
+        'required' => \App\Services\XpService::DARK_MODE_COST,
+      ], 400);
+    }
+
+    if ($this->xpService->buyDarkMode($user)) {
+      return response()->json([
+        'success' => true,
+        'message' => 'Dark Mode unlocked!',
+        'xp' => $this->xpService->getSummary($user),
+        'streak' => $this->streakService->getSummary($user),
+        'dark_mode_unlocked' => true,
+      ]);
+    }
+
+    return response()->json([
+      'error' => 'Failed to unlock Dark Mode',
     ], 500);
   }
 }

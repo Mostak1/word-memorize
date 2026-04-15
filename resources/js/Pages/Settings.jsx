@@ -1,7 +1,7 @@
 import AppLayout from "@/Layouts/AppLayout";
 import { Head, router, usePage } from "@inertiajs/react";
 import { useState } from "react";
-import { Languages, ChevronLeft, CheckCircle2 } from "lucide-react";
+import { Languages, ChevronLeft, CheckCircle2, Volume2 } from "lucide-react";
 import { Link } from "@inertiajs/react";
 
 // ── Toggle Switch ─────────────────────────────────────────────────────────────
@@ -98,6 +98,7 @@ function Toast({ visible }) {
 export default function Settings({ settings: initialSettings }) {
     const [settings, setSettings] = useState({
         show_bangla: initialSettings?.show_bangla ?? true,
+        sound_effects: initialSettings?.sound_effects ?? true,
     });
     const [saving, setSaving] = useState(false);
     const [toastVisible, setToastVisible] = useState(false);
@@ -158,6 +159,23 @@ export default function Settings({ settings: initialSettings }) {
                             }
                             checked={settings.show_bangla}
                             onChange={handleToggle("show_bangla")}
+                            saving={saving}
+                        />
+                    </SectionCard>
+
+                    {/* Sound Effects */}
+                    <SectionCard title="Sound Effects">
+                        <SettingRow
+                            icon={Volume2}
+                            iconBg="bg-pink-100 dark:bg-pink-950/40 text-pink-600 dark:text-pink-400"
+                            title="Sound Effects"
+                            description={
+                                settings.sound_effects
+                                    ? "Play sounds for correct, wrong answers and session complete."
+                                    : "Sound effects are disabled. Turn on to hear feedback sounds."
+                            }
+                            checked={settings.sound_effects}
+                            onChange={handleToggle("sound_effects")}
                             saving={saving}
                         />
                     </SectionCard>

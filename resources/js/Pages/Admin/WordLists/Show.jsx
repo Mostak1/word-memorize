@@ -77,7 +77,7 @@ export default function Show({ wordList, words, filters, quiz = null }) {
     const [editingList, setEditingList] = useState(null);
     const [deletingWord, setDeletingWord] = useState(null);
     const [search, setSearch] = useState(filters?.search ?? "");
-    const [perPage, setPerPage] = useState(filters?.per_page ?? 10);
+    const [perPage, setPerPage] = useState(filters?.per_page ?? 100);
     const [quizModalOpen, setQuizModalOpen] = useState(false);
     const debounceRef = useRef(null);
 
@@ -153,29 +153,6 @@ export default function Show({ wordList, words, filters, quiz = null }) {
     );
 
     const columns = [
-        columnHelper.accessor("word", {
-            header: () => <SortableHeader column="word" label="Word" />,
-            cell: (info) => (
-                <span className="font-medium">{info.getValue()}</span>
-            ),
-        }),
-        columnHelper.accessor("definition", {
-            header: () => (
-                <SortableHeader column="definition" label="Definition" />
-            ),
-            cell: (info) => (
-                <span className="block max-w-xs truncate">
-                    {info.getValue()}
-                </span>
-            ),
-        }),
-        columnHelper.accessor("bangla_meaning", {
-            header: "Bangla",
-            cell: (info) =>
-                info.getValue() || (
-                    <span className="text-muted-foreground">—</span>
-                ),
-        }),
         // Images column
         columnHelper.accessor("images", {
             header: () => <span className="block text-center">Images</span>,
@@ -196,11 +173,11 @@ export default function Show({ wordList, words, filters, quiz = null }) {
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <div className="flex -space-x-2 cursor-pointer">
+                                    <div className="flex -space-x-3 cursor-pointer">
                                         {images.slice(0, 3).map((img, i) => (
                                             <div
                                                 key={img.id}
-                                                className="relative h-9 w-9 overflow-hidden rounded border-2 border-background"
+                                                className="relative h-32 overflow-hidden rounded border-2 border-background"
                                                 style={{ zIndex: 3 - i }}
                                             >
                                                 <img
@@ -233,7 +210,7 @@ export default function Show({ wordList, words, filters, quiz = null }) {
                                                     alt={
                                                         img.caption || wordLabel
                                                     }
-                                                    className="h-28 w-full object-cover"
+                                                    className="h-32 w-full object-cover"
                                                 />
                                                 {img.caption && (
                                                     <p className="mt-0.5 text-center text-[10px] text-muted-foreground truncate px-1">
@@ -258,6 +235,30 @@ export default function Show({ wordList, words, filters, quiz = null }) {
                 );
             },
         }),
+        columnHelper.accessor("word", {
+            header: () => <SortableHeader column="word" label="Word" />,
+            cell: (info) => (
+                <span className="font-medium">{info.getValue()}</span>
+            ),
+        }),
+        columnHelper.accessor("definition", {
+            header: () => (
+                <SortableHeader column="definition" label="Definition" />
+            ),
+            cell: (info) => (
+                <span className="block max-w-xs truncate">
+                    {info.getValue()}
+                </span>
+            ),
+        }),
+        columnHelper.accessor("bangla_meaning", {
+            header: "Bangla",
+            cell: (info) =>
+                info.getValue() || (
+                    <span className="text-muted-foreground">—</span>
+                ),
+        }),
+
         // Actions column
         columnHelper.display({
             id: "actions",

@@ -25,6 +25,12 @@ import {
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import FlashMessages from "@/Components/FlashMessage";
 import { usePage } from "@inertiajs/react";
+import {
+    playCorrect,
+    playIncorrect,
+    playSessionComplete,
+    playXpPurchase,
+} from "@/Utils/sounds";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const MASTERED_BOX = 4;
@@ -166,6 +172,8 @@ export default function ExerciseSession({
     useEffect(() => {
         if (!isDone || !auth?.user) return;
 
+        playSessionComplete(userSettings);
+
         const _xsrfRow = document.cookie
             .split("; ")
             .find((row) => row.startsWith("XSRF-TOKEN="));
@@ -186,18 +194,34 @@ export default function ExerciseSession({
             .then((data) => {
                 if (data.xp_awarded && xp_enabled) {
                     setSessionXpAwarded(data.xp_awarded);
+                    // playXpPurchase();
                 }
 
                 if (data.streak) {
                     const newStreak = data.streak.current_streak ?? 0;
                     const prevStreak = previousStreak.current;
 
-                    if (newStreak > prevStreak) {
+                    // ✅ Fix for midnight streak: if it's a new calendar day AND streak is same as before,
+                    // this means it's the first session of the new day - streak is being maintained!
+                    // We still show the streak increase animation for the first session of each day
+                    const today = new Date().toDateString();
+                    const lastSessionDay =
+                        localStorage.getItem("lastSessionDay");
+
+                    if (
+                        newStreak > prevStreak ||
+                        (newStreak === prevStreak &&
+                            lastSessionDay !== today &&
+                            newStreak > 0)
+                    ) {
                         setStreakChange("up");
                         // Show Fire Streak Animation with the NEW streak count
                         setShowStreakEffect(true);
                         // Auto hide after animation
                         setTimeout(() => setShowStreakEffect(false), 2800);
+
+                        // Store today as last session day
+                        localStorage.setItem("lastSessionDay", today);
                     } else if (newStreak < prevStreak) {
                         setStreakChange("down");
                     }
@@ -427,11 +451,14 @@ export default function ExerciseSession({
 
         setExiting(true);
 
+        // Increased from 200ms to 400ms to ensure mastery overlay animations
+        // complete before the queue updates, preventing blank screen bugs
+        // when multiple words are mastered consecutively
         setTimeout(() => {
             setExiting(false);
             setCardKey((k) => k + 1);
             callback();
-        }, 200);
+        }, 400);
     };
 
     // ── Core actions ──────────────────────────────────────────────────────────
@@ -455,6 +482,7 @@ export default function ExerciseSession({
         }
         if (isSubmitting) return;
 
+        playCorrect(userSettings);
         setIsSubmitting(true);
 
         const currentBox = word.srs_box ?? 1;
@@ -499,6 +527,7 @@ export default function ExerciseSession({
         }
         if (isSubmitting) return;
 
+        playIncorrect(userSettings);
         setIsSubmitting(true);
         setDontKnowCount((c) => c + 1);
 
@@ -636,6 +665,25 @@ export default function ExerciseSession({
                     />
                 )}
 
+                {/* Global confetti celebration for EVERY completed session */}
+                <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+                    {CONFETTI.map((p) => (
+                        <div
+                            key={p.id}
+                            style={{
+                                position: "absolute",
+                                left: p.left,
+                                top: "-12px",
+                                width: `${p.size}px`,
+                                height: `${p.size}px`,
+                                backgroundColor: p.color,
+                                borderRadius: p.borderRadius,
+                                animation: `confettiFall ${p.duration} ${p.delay} ease-in forwards`,
+                            }}
+                        />
+                    ))}
+                </div>
+
                 <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 flex flex-col items-center justify-center px-4 py-10">
                     <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-md dark:shadow-xl dark:shadow-slate-950 w-full max-w-md p-8 text-center">
                         {/* Lottie celebration animation */}
@@ -664,15 +712,21 @@ export default function ExerciseSession({
 
                         {/* Stats */}
                         <div className="grid grid-cols-3 gap-3 mb-8">
-                            <div className="bg-green-50 dark:bg-green-950/30 rounded-2xl py-4">
+                            <div
+                                className="bg-green-50 dark:bg-green-950/30 rounded-2xl py-4 animate-bounce-in"
+                                style={{ animationDelay: "0.1s" }}
+                            >
                                 <p className="text-2xl font-extrabold text-green-600 dark:text-green-400">
                                     {promotedCount}
                                 </p>
                                 <p className="text-xs text-green-600 dark:text-green-400 mt-0.5 font-medium">
-                                    Cleared
+                                    Cleared ✅
                                 </p>
                             </div>
-                            <div className="bg-red-50 dark:bg-red-950/30 rounded-2xl py-4">
+                            <div
+                                className="bg-red-50 dark:bg-red-950/30 rounded-2xl py-4 animate-bounce-in"
+                                style={{ animationDelay: "0.2s" }}
+                            >
                                 <p className="text-2xl font-extrabold text-red-400 dark:text-red-400">
                                     {retries}
                                 </p>
@@ -680,12 +734,15 @@ export default function ExerciseSession({
                                     Retries
                                 </p>
                             </div>
-                            <div className="bg-blue-50 dark:bg-blue-950/30 rounded-2xl py-4">
+                            <div
+                                className="bg-blue-50 dark:bg-blue-950/30 rounded-2xl py-4 animate-bounce-in"
+                                style={{ animationDelay: "0.3s" }}
+                            >
                                 <p className="text-2xl font-extrabold text-blue-500 dark:text-blue-400">
                                     {promotedCount + retries}
                                 </p>
                                 <p className="text-xs text-blue-500 dark:text-blue-400 mt-0.5 font-medium">
-                                    Total Reps
+                                    Total Reps 💪
                                 </p>
                             </div>
                         </div>
@@ -718,18 +775,22 @@ export default function ExerciseSession({
                             </div>
                         )}
 
-                        {streak && (
-                            <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl py-4 px-4 mb-6 border border-gray-200 dark:border-slate-700">
-                                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
-                                    Current Streak: {streak.current_streak} day
-                                    {streak.current_streak !== 1 ? "s" : ""}
+                        {/* Only show streak when streak INCREASED - hide completely when unchanged or decreased */}
+                        {streak && streakChange === "up" && (
+                            <div
+                                className={`rounded-2xl py-4 px-4 mb-6 border bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800 animate-bounce-in`}
+                            >
+                                <p
+                                    className={`text-lg font-bold mb-1 text-orange-600 dark:text-orange-400`}
+                                >
+                                    🔥 Current Streak: {streak.current_streak}{" "}
+                                    day{streak.current_streak !== 1 ? "s" : ""}
                                 </p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    {streakChange === "up"
-                                        ? "Streak increased — keep it going!"
-                                        : streakChange === "down"
-                                          ? "Your streak reset, but you restarted it today."
-                                          : "Your streak status is unchanged."}
+                                <p
+                                    className={`text-sm text-orange-700 dark:text-orange-300`}
+                                >
+                                    ✨ Amazing! You're on fire! Keep this
+                                    momentum going! 🎉
                                 </p>
                             </div>
                         )}
@@ -1054,10 +1115,14 @@ export default function ExerciseSession({
                                     <div className="mx-4 mb-4 border-l-4 border-green-400 dark:border-green-600 pl-3 py-1">
                                         <p className="text-base text-gray-800 dark:text-gray-200 leading-snug">
                                             {highlightWord(
-                                                word.example_sentences
-                                                    ?.split(".")
-                                                    .map((s) => s.trim())
-                                                    .filter(Boolean)[0] + ".",
+                                                // Priority: image_related_sentence > first example sentence
+                                                word.image_related_sentence
+                                                    ? word.image_related_sentence
+                                                    : word.example_sentences
+                                                          ?.split(".")
+                                                          .map((s) => s.trim())
+                                                          .filter(Boolean)[0] +
+                                                          ".",
                                                 word.word,
                                             )}
                                         </p>

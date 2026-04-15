@@ -239,10 +239,10 @@ class GREWordListSeeder extends Seeder
             return [];
         }
 
-        fgetcsv($handle); // Skip header row
+        fgetcsv($handle, 0, ',', '"', ''); // Skip header row
 
         $rows = [];
-        while (($row = fgetcsv($handle)) !== false) {
+        while (($row = fgetcsv($handle, 0, ',', '"', '')) !== false) {
             $rows[] = $row;
         }
 
@@ -459,7 +459,7 @@ class GREWordListSeeder extends Seeder
             // CSV column mapping:
             // 0  word
             // 1  sentence          → example_sentences
-            // 2  phrase            → image_related_sentence
+            // 2  phrase            → useless row
             // 3  definition
             // 4  list              (used for grouping, not stored per-word)
             // 5  type              → parts_of_speech_variations
@@ -473,7 +473,16 @@ class GREWordListSeeder extends Seeder
 
             $word = $this->clean($row[0] ?? null);
 
-            if ($word === null || $word === '') {
+            // Skip blank rows AND any garbage rows produced by CSV mis-parsing
+            // (e.g. JSON fragment keys like 'phrase"": ""term""' or ']"')
+            if (
+                $word === null ||
+                $word === '' ||
+                str_contains($word, '"') ||
+                str_contains($word, '{') ||
+                str_contains($word, '[') ||
+                str_contains($word, ']')
+            ) {
                 $skipped++;
                 continue;
             }
@@ -491,7 +500,7 @@ class GREWordListSeeder extends Seeder
                 'example_sentences' => $this->clean($row[1] ?? null) ?? '',
                 'synonym' => $this->clean($row[9] ?? null),
                 'antonym' => $this->clean($row[10] ?? null),
-                'image_related_sentence' => $this->clean($row[2] ?? null),
+                'image_related_sentence' => null, // phrase col (2) intentionally unused; always null
                 'ai_prompt' => null,
                 'hyphenation' => null,
                 'image_url' => null,

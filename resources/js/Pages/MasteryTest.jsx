@@ -1,6 +1,11 @@
 import Lottie from "lottie-react";
 import doneAnimation from "../../../public/lottie/Done.json";
-import { Head, Link } from "@inertiajs/react";
+import { Head, Link, usePage } from "@inertiajs/react";
+import {
+    playCorrect,
+    playIncorrect,
+    playSessionComplete,
+} from "@/Utils/sounds";
 import AppLayout from "@/Layouts/AppLayout";
 import {
     AlertDialog,
@@ -408,6 +413,7 @@ export default function MasteryTest({
     wordlistId = null,
     categoryId = null,
 }) {
+    const { userSettings } = usePage().props;
     const [current, setCurrent] = useState(0);
     const [selected, setSelected] = useState(null);
     const [answered, setAnswered] = useState(false);
@@ -434,8 +440,10 @@ export default function MasteryTest({
         setIsCorrect(correct);
         if (correct) {
             setScore((s) => s + 1);
+            playCorrect(userSettings);
             toast.success("Correct! Well done.", { duration: 2000, icon: "✓" });
         } else {
+            playIncorrect(userSettings);
             toast.error("Wrong answer!", { duration: 2000, icon: "✗" });
         }
     };
@@ -447,11 +455,13 @@ export default function MasteryTest({
         const passed = correctCount >= matchPassThreshold;
         if (passed) setScore((s) => s + 1);
         if (passed) {
+            playCorrect(userSettings);
             toast.success(
                 `${correctCount}/${q.pairs.length} correct — great job!`,
                 { duration: 2500, icon: "✓" },
             );
         } else {
+            playIncorrect(userSettings);
             toast.error(
                 `${correctCount}/${q.pairs.length} correct — keep practising!`,
                 { duration: 2500, icon: "✗" },
@@ -489,6 +499,7 @@ export default function MasteryTest({
                 console.error(e);
             }
             setDone(true);
+            playSessionComplete(userSettings);
         } else {
             setCurrent((c) => c + 1);
             setSelected(null);

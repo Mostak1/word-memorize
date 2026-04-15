@@ -21,7 +21,7 @@ class SrsService
   const QUEUE_SIZE = 20;
 
   /** Max overdue L2/L3 review words to pull per session. */
-  const REVIEW_LIMIT = 15;
+  const REVIEW_LIMIT = 20;
 
   // ── Core answer handlers ──────────────────────────────────────────────────
 

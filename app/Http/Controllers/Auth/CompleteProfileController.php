@@ -8,6 +8,7 @@ use App\Services\DeviceSessionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -48,7 +49,7 @@ class CompleteProfileController extends Controller
       'email' => $googleData['email'],
       'google_id' => $googleData['google_id'],
       'provider' => 'google',
-      'password' => bcrypt($request->phone_number),
+      'password' => Hash::make($request->phone_number),
       'role' => 'student',
       'login_as' => 'student',
       'approve_status' => 'approved',

@@ -41,6 +41,30 @@
             overflow-x: hidden;
         }
 
+        /* ── Language toggle ── */
+        .t-bn {
+            display: none;
+        }
+
+        body.lang-bn .t-en {
+            display: none;
+        }
+
+        body.lang-bn .t-bn {
+            display: inline;
+        }
+
+        body.lang-bn div.t-bn,
+        body.lang-bn p.t-bn,
+        body.lang-bn li.t-bn {
+            display: block;
+        }
+
+        body.lang-bn {
+            font-family: 'Hind Siliguri', 'Nunito', sans-serif;
+        }
+
+        /* ── Topbar ── */
         .topbar {
             background: var(--red);
             color: #fff;
@@ -59,6 +83,7 @@
             font-size: 12px;
         }
 
+        /* ── Nav ── */
         nav {
             position: sticky;
             top: 0;
@@ -132,6 +157,106 @@
             gap: 12px;
         }
 
+        /* Language toggle button */
+        .lang-toggle-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--bg);
+            border: 1.5px solid var(--border);
+            border-radius: 20px;
+            padding: 5px 14px;
+            font-size: .82rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .2s;
+            font-family: inherit;
+            color: var(--dark);
+        }
+
+        .lang-toggle-btn:hover {
+            border-color: var(--red);
+            color: var(--red);
+        }
+
+        /* Hamburger */
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 6px;
+        }
+
+        .hamburger span {
+            display: block;
+            width: 24px;
+            height: 2.5px;
+            background: var(--dark);
+            border-radius: 2px;
+            transition: all .3s;
+        }
+
+        .hamburger.open span:nth-child(1) {
+            transform: translateY(7.5px) rotate(45deg);
+        }
+
+        .hamburger.open span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .hamburger.open span:nth-child(3) {
+            transform: translateY(-7.5px) rotate(-45deg);
+        }
+
+        /* Mobile nav drawer */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            top: 64px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #fff;
+            z-index: 199;
+            padding: 24px;
+            flex-direction: column;
+            gap: 0;
+            overflow-y: auto;
+            border-top: 1.5px solid var(--border);
+        }
+
+        .mobile-nav.open {
+            display: flex;
+        }
+
+        .mobile-nav a,
+        .mobile-nav button.mobile-nav-link {
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border);
+            text-decoration: none;
+            color: var(--dark);
+            font-weight: 700;
+            font-size: 1rem;
+            display: block;
+            background: none;
+            border-left: none;
+            border-right: none;
+            border-top: none;
+            text-align: left;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .mobile-nav-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
         .btn-ghost {
             padding: 9px 20px;
             border: 2px solid var(--border);
@@ -168,6 +293,7 @@
             transform: translateY(-1px);
         }
 
+        /* ── Hero ── */
         .hero {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -194,9 +320,9 @@
         }
 
         .hero h1 {
-            font-size: clamp(2.2rem, 4.5vw, 3.4rem);
+            font-size: clamp(2rem, 4.5vw, 3.4rem);
             font-weight: 900;
-            line-height: 1.1;
+            line-height: 1.15;
             color: var(--dark);
             margin-bottom: 18px;
         }
@@ -298,6 +424,7 @@
             color: #fff;
         }
 
+        /* Hero visual / video */
         .hero-visual {
             position: relative;
             display: flex;
@@ -320,6 +447,7 @@
             display: block;
         }
 
+        /* (card stack kept but hidden) */
         .card-stack {
             position: relative;
             width: 320px;
@@ -377,119 +505,7 @@
             }
         }
 
-        .wc-label {
-            font-size: .7rem;
-            color: var(--muted);
-            font-weight: 700;
-            letter-spacing: .06em;
-            text-transform: uppercase;
-            margin-bottom: 10px;
-        }
-
-        .wc-word {
-            font-size: 2rem;
-            font-weight: 900;
-            color: var(--dark);
-        }
-
-        .wc-pos {
-            background: #F3F4F6;
-            border-radius: 5px;
-            padding: 2px 8px;
-            font-size: .7rem;
-            font-weight: 700;
-            color: var(--muted);
-            margin-left: 6px;
-        }
-
-        .wc-phonetic {
-            font-size: .82rem;
-            color: var(--red);
-            margin: 6px 0 14px;
-        }
-
-        .wc-img {
-            width: 100%;
-            height: 130px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #FFF0F1, #FFE4E6);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3.5rem;
-            margin-bottom: 14px;
-        }
-
-        .wc-def {
-            font-size: .82rem;
-            color: var(--body);
-            line-height: 1.6;
-            background: #F9FAFB;
-            border-radius: 10px;
-            padding: 10px 12px;
-        }
-
-        .wc-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 14px;
-        }
-
-        .wc-btn-no {
-            flex: 1;
-            padding: 9px;
-            border-radius: 10px;
-            border: 1.5px solid #FFCDD1;
-            background: #FFF5F5;
-            color: var(--red);
-            font-weight: 700;
-            font-size: .8rem;
-            cursor: pointer;
-        }
-
-        .wc-btn-yes {
-            flex: 1;
-            padding: 9px;
-            border-radius: 10px;
-            background: var(--green);
-            color: #fff;
-            font-weight: 700;
-            font-size: .8rem;
-            border: none;
-            cursor: pointer;
-        }
-
-        .float-badge {
-            position: absolute;
-            background: #fff;
-            border-radius: 12px;
-            padding: 10px 14px;
-            border: 1.5px solid var(--border);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, .08);
-            font-size: .78rem;
-            font-weight: 700;
-            white-space: nowrap;
-            z-index: 10;
-        }
-
-        .badge-streak {
-            right: -20px;
-            top: 30px;
-            color: #FF6B00;
-        }
-
-        .badge-mastered {
-            left: -30px;
-            bottom: 60px;
-            color: var(--green);
-        }
-
-        .badge-xp {
-            right: -10px;
-            bottom: 100px;
-            color: var(--blue);
-        }
-
+        /* ── Stats ── */
         .stats-row {
             background: var(--dark);
             padding: 36px 24px;
@@ -526,12 +542,7 @@
             margin-top: 2px;
         }
 
-        .exams-section {
-            max-width: 1140px;
-            margin: 0 auto;
-            padding: 80px 24px;
-        }
-
+        /* ── Sections shared ── */
         .section-eyebrow {
             font-size: .75rem;
             font-weight: 800;
@@ -555,6 +566,13 @@
             line-height: 1.7;
             max-width: 500px;
             margin-bottom: 48px;
+        }
+
+        /* ── Exams ── */
+        .exams-section {
+            max-width: 1140px;
+            margin: 0 auto;
+            padding: 80px 24px;
         }
 
         .exams-grid {
@@ -599,6 +617,7 @@
             font-weight: 600;
         }
 
+        /* ── How It Works ── */
         .how-section {
             background: #fff;
             padding: 80px 24px;
@@ -668,6 +687,7 @@
             z-index: 1;
         }
 
+        /* ── Features ── */
         .feat-section {
             max-width: 1140px;
             margin: 0 auto;
@@ -738,6 +758,7 @@
             color: var(--body);
         }
 
+        /* ── Bangla Section ── */
         .bangla-section {
             background: linear-gradient(135deg, #1C1B1F 0%, #2D1F2A 100%);
             padding: 80px 24px;
@@ -853,6 +874,7 @@
             color: #fff;
         }
 
+        /* ── Testimonials ── */
         .testi-section {
             max-width: 1140px;
             margin: 0 auto;
@@ -924,6 +946,7 @@
             color: var(--muted);
         }
 
+        /* ── Pricing ── */
         .pricing-section {
             background: #fff;
             padding: 80px 24px;
@@ -1025,6 +1048,7 @@
             color: var(--muted);
         }
 
+        /* ── Enroll ── */
         .enroll-section {
             background: linear-gradient(135deg, #E8192C 0%, #9B111E 100%);
             padding: 80px 24px;
@@ -1209,6 +1233,7 @@
             margin-bottom: 20px;
         }
 
+        /* ── FAQ ── */
         .faq-section {
             max-width: 760px;
             margin: 0 auto;
@@ -1258,6 +1283,7 @@
             display: block;
         }
 
+        /* ── Footer ── */
         footer {
             background: var(--dark);
             color: rgba(255, 255, 255, .5);
@@ -1325,6 +1351,7 @@
             color: #fff;
         }
 
+        /* ── Scroll reveal ── */
         .sr {
             opacity: 0;
             transform: translateY(28px);
@@ -1336,23 +1363,232 @@
             transform: none;
         }
 
-        @media(max-width:900px) {
+        /* ════════════════════════════════
+           MOBILE — max 768px
+        ════════════════════════════════ */
+        @media(max-width:768px) {
+
+            /* Nav */
             nav {
-                padding: 0 20px;
+                padding: 0 16px;
             }
 
             .nav-links {
                 display: none;
             }
 
+            .nav-right .btn-ghost,
+            .nav-right .btn-red {
+                display: none;
+            }
+
+            .nav-right .lang-toggle-btn {
+                display: flex;
+            }
+
+            .hamburger {
+                display: flex;
+            }
+
+            /* Hero */
             .hero {
                 grid-template-columns: 1fr;
-                gap: 40px;
-                padding: 60px 20px 40px;
+                gap: 32px;
+                padding: 40px 16px 32px;
+            }
+
+            .hero h1 {
+                font-size: clamp(1.8rem, 7vw, 2.4rem);
+            }
+
+            .hero-sub {
+                font-size: .95rem;
+                max-width: 100%;
             }
 
             .hero-visual {
+                display: flex;
+            }
+
+            .hero-video-wrap {
+                max-width: 100%;
+                border-radius: 14px;
+            }
+
+            .hero-actions {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .btn-hero {
+                width: 100%;
+                text-align: center;
+                padding: 14px 20px;
+            }
+
+            /* Stats */
+            .stats-row {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 0;
+            }
+
+            .stat-item {
+                padding: 20px 12px;
+                border-right: 1px solid rgba(255, 255, 255, .1);
+                border-bottom: 1px solid rgba(255, 255, 255, .1);
+            }
+
+            .stat-item:nth-child(2n) {
+                border-right: none;
+            }
+
+            .stat-item:nth-last-child(-n+2) {
+                border-bottom: none;
+            }
+
+            .stat-n {
+                font-size: 1.9rem;
+            }
+
+            /* Exams */
+            .exams-section {
+                padding: 48px 16px;
+            }
+
+            .exams-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            /* How it works */
+            .how-section {
+                padding: 48px 16px;
+            }
+
+            .how-steps {
+                grid-template-columns: 1fr;
+                gap: 16px;
+                margin-top: 32px;
+            }
+
+            .how-step-arrow {
                 display: none;
+            }
+
+            .how-step {
+                padding: 24px 20px;
+            }
+
+            /* Features */
+            .feat-section {
+                padding: 48px 16px;
+            }
+
+            .feat-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .feat-card.big {
+                grid-row: auto;
+            }
+
+            .feat-card {
+                padding: 24px;
+            }
+
+            /* Bangla */
+            .bangla-section {
+                padding: 48px 16px;
+            }
+
+            .bangla-inner {
+                grid-template-columns: 1fr;
+                gap: 32px;
+            }
+
+            /* Testimonials */
+            .testi-section {
+                padding: 48px 16px;
+            }
+
+            .testi-grid {
+                grid-template-columns: 1fr;
+            }
+
+            /* Pricing */
+            .pricing-section {
+                padding: 48px 16px;
+            }
+
+            .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .price-card {
+                padding: 28px 20px;
+            }
+
+            /* Enroll */
+            .enroll-section {
+                padding: 48px 16px;
+            }
+
+            .enroll-form {
+                padding: 24px 16px;
+                border-radius: 16px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .goal-chips {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            /* FAQ */
+            .faq-section {
+                padding: 48px 16px;
+            }
+
+            /* Footer */
+            footer {
+                padding: 40px 16px 24px;
+            }
+
+            .footer-top {
+                grid-template-columns: 1fr;
+                gap: 32px;
+            }
+
+            .footer-bottom {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            /* Sections */
+            .section-title {
+                font-size: clamp(1.5rem, 6vw, 2rem);
+            }
+
+            .section-sub {
+                margin-bottom: 28px;
+            }
+        }
+
+        /* Tablet 769–900px */
+        @media(min-width:769px) and (max-width:900px) {
+            nav {
+                padding: 0 24px;
+            }
+
+            .nav-links {
+                gap: 16px;
+            }
+
+            .hero {
+                gap: 32px;
+                padding: 60px 24px 40px;
             }
 
             .feat-grid {
@@ -1365,6 +1601,7 @@
 
             .bangla-inner {
                 grid-template-columns: 1fr;
+                gap: 32px;
             }
 
             .pricing-grid {
@@ -1378,40 +1615,100 @@
             .form-row {
                 grid-template-columns: 1fr;
             }
-
-            .stat-item {
-                padding: 20px 28px;
-                border-right: none;
-                border-bottom: 1px solid rgba(255, 255, 255, .1);
-            }
         }
     </style>
 </head>
 
-<body>
-    <div class="topbar">🎓 GRE, IELTS, BCS, SAT, Medical & more — All in one place <span>Free to Start</span></div>
+<body class="lang-en">
+    <!-- Topbar -->
+    <div class="topbar">
+        <span class="t-en">🎓 GRE, IELTS, BCS, SAT, Medical & more — All in one place</span>
+        <span class="t-bn">🎓 GRE, IELTS, BCS, SAT, মেডিকেল ও আরও — সব এক জায়গায়</span>
+        <span><span class="t-en">Free to Start</span><span class="t-bn">বিনামূল্যে শুরু করুন</span></span>
+    </div>
+
+    <!-- Nav -->
     <nav>
         <a class="nav-logo" href="#">
-            <div class="nav-logo-mark">V</div><span class="nav-logo-text">VocabPix <sup>BETA</sup></span>
+            <div class="nav-logo-mark">V</div>
+            <span class="nav-logo-text">VocabPix <sup>BETA</sup></span>
         </a>
-        <div class="nav-links"><a href="#exams">Word Lists</a><a href="#features">Features</a><a
-                href="#bangla">Bangla</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a></div>
-        <div class="nav-right"><a href="https://vocabpix.fluento.org" class="btn-ghost" target="_blank">Login</a><a
-                href="#enroll" class="btn-red">Register Free →</a></div>
+        <div class="nav-links">
+            <a href="#exams"><span class="t-en">Word Lists</span><span class="t-bn">শব্দ তালিকা</span></a>
+            <a href="#features"><span class="t-en">Features</span><span class="t-bn">ফিচার</span></a>
+            <a href="#bangla"><span class="t-en">Bangla</span><span class="t-bn">বাংলা</span></a>
+            <a href="#pricing"><span class="t-en">Pricing</span><span class="t-bn">মূল্য</span></a>
+            <a href="#faq"><span class="t-en">FAQ</span><span class="t-bn">প্রশ্নোত্তর</span></a>
+        </div>
+        <div class="nav-right">
+            <button class="lang-toggle-btn" onclick="toggleLang()" id="lang-btn">
+                <span class="t-en">🇧🇩 বাংলা</span>
+                <span class="t-bn">🇬🇧 English</span>
+            </button>
+            <a href="https://vocabpix.fluento.org" class="btn-ghost" target="_blank">
+                <span class="t-en">Login</span><span class="t-bn">লগইন</span>
+            </a>
+            <a href="#enroll" class="btn-red">
+                <span class="t-en">Register Free →</span><span class="t-bn">বিনামূল্যে নিবন্ধন →</span>
+            </a>
+        </div>
+        <button class="hamburger" id="hamburger" onclick="toggleMenu()" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </button>
     </nav>
+
+    <!-- Mobile nav drawer -->
+    <div class="mobile-nav" id="mobile-nav">
+        <a href="#exams" onclick="closeMenu()"><span class="t-en">Word Lists</span><span class="t-bn">শব্দ
+                তালিকা</span></a>
+        <a href="#features" onclick="closeMenu()"><span class="t-en">Features</span><span class="t-bn">ফিচার</span></a>
+        <a href="#bangla" onclick="closeMenu()"><span class="t-en">Bangla</span><span class="t-bn">বাংলা</span></a>
+        <a href="#pricing" onclick="closeMenu()"><span class="t-en">Pricing</span><span class="t-bn">মূল্য</span></a>
+        <a href="#faq" onclick="closeMenu()"><span class="t-en">FAQ</span><span class="t-bn">প্রশ্নোত্তর</span></a>
+        <div class="mobile-nav-actions">
+            <a href="https://vocabpix.fluento.org" class="btn-ghost" target="_blank" style="text-align:center">
+                <span class="t-en">Login</span><span class="t-bn">লগইন</span>
+            </a>
+            <a href="#enroll" class="btn-red" onclick="closeMenu()"
+                style="text-align:center;display:block;padding:12px">
+                <span class="t-en">Register Free →</span><span class="t-bn">বিনামূল্যে নিবন্ধন →</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Hero -->
     <section>
         <div class="hero">
             <div class="hero-left">
-                <div class="hero-badge">🔬 Scientific Vocabulary Learning</div>
-                <h1>Learn English Vocabulary <em>Fast & Smart</em> — in Bangla & English</h1>
-                <p class="hero-sub">VocabPix uses visual memory techniques, spaced repetition, and Bangla-English
+                <div class="hero-badge">
+                    🔬 <span class="t-en">Scientific Vocabulary Learning</span><span class="t-bn">বৈজ্ঞানিক শব্দ
+                        শিক্ষা</span>
+                </div>
+                <h1>
+                    <span class="t-en">Learn English Vocabulary <em>Fast & Smart</em> — in Bangla & English</span>
+                    <span class="t-bn">বাংলায় শিখুন ইংরেজি শব্দ — <em>দ্রুত ও স্মার্টভাবে</em></span>
+                </h1>
+                <p class="hero-sub t-en">VocabPix uses visual memory techniques, spaced repetition, and Bangla-English
                     bilingual support to help you master 10,000+ words for exams and everyday fluency.</p>
-                <div class="hero-exam-tags"><span class="exam-tag">📝 GRE</span><span class="exam-tag">🎓
-                        IELTS</span><span class="exam-tag">📖 BCS</span><span class="exam-tag">💼 BBA</span><span
-                        class="exam-tag">🏥 Medical</span><span class="exam-tag">📐 SAT</span></div>
-                <div class="hero-actions"><a href="#enroll" class="btn-hero btn-hero-primary">🚀 Start Learning
-                        Free</a><a href="https://vocabpix.fluento.org" class="btn-hero btn-hero-secondary"
-                        target="_blank">👀 Explore App</a></div>
+                <p class="hero-sub t-bn">VocabPix ভিজ্যুয়াল মেমরি কৌশল, স্পেসড রিপিটিশন এবং বাংলা-ইংরেজি দ্বিভাষিক
+                    সহায়তা ব্যবহার করে ১০,০০০+ শব্দ আয়ত্ত করতে সাহায্য করে।</p>
+                <div class="hero-exam-tags">
+                    <span class="exam-tag">📝 GRE</span>
+                    <span class="exam-tag">🎓 IELTS</span>
+                    <span class="exam-tag">📖 BCS</span>
+                    <span class="exam-tag">💼 BBA</span>
+                    <span class="exam-tag">🏥 <span class="t-en">Medical</span><span class="t-bn">মেডিকেল</span></span>
+                    <span class="exam-tag">📐 SAT</span>
+                </div>
+                <div class="hero-actions">
+                    <a href="#enroll" class="btn-hero btn-hero-primary">
+                        🚀 <span class="t-en">Start Learning Free</span><span class="t-bn">বিনামূল্যে শেখা শুরু
+                            করুন</span>
+                    </a>
+                    <a href="https://vocabpix.fluento.org" class="btn-hero btn-hero-secondary" target="_blank">
+                        👀 <span class="t-en">Explore App</span><span class="t-bn">অ্যাপ দেখুন</span>
+                    </a>
+                </div>
                 <div class="hero-trust">
                     <div class="trust-avatars">
                         <div class="trust-avatar" style="background:#E8192C">R</div>
@@ -1419,7 +1716,10 @@
                         <div class="trust-avatar" style="background:#1DB954">M</div>
                         <div class="trust-avatar" style="background:#FF6B00">S</div>
                     </div>
-                    <span>Joined by <strong>5,000+</strong> learners this month</span>
+                    <span>
+                        <span class="t-en">Joined by <strong>5,000+</strong> learners this month</span>
+                        <span class="t-bn">এই মাসে <strong>৫,০০০+</strong> শিক্ষার্থী যোগ দিয়েছেন</span>
+                    </span>
                 </div>
             </div>
             <div class="hero-visual">
@@ -1434,168 +1734,257 @@
             </div>
         </div>
     </section>
+
+    <!-- Stats -->
     <div class="stats-row">
         <div class="stat-item">
             <div class="stat-n">10<span>K+</span></div>
-            <div class="stat-l">Curated Words</div>
+            <div class="stat-l"><span class="t-en">Curated Words</span><span class="t-bn">বাছাইকৃত শব্দ</span></div>
         </div>
         <div class="stat-item">
             <div class="stat-n">122</div>
-            <div class="stat-l">Word Lists</div>
+            <div class="stat-l"><span class="t-en">Word Lists</span><span class="t-bn">শব্দ তালিকা</span></div>
         </div>
         <div class="stat-item">
             <div class="stat-n">6</div>
-            <div class="stat-l">Exam Categories</div>
+            <div class="stat-l"><span class="t-en">Exam Categories</span><span class="t-bn">পরীক্ষার বিভাগ</span></div>
         </div>
         <div class="stat-item">
             <div class="stat-n">95<span>%</span></div>
-            <div class="stat-l">Retention Rate</div>
+            <div class="stat-l"><span class="t-en">Retention Rate</span><span class="t-bn">ধারণ হার</span></div>
         </div>
         <div class="stat-item">
             <div class="stat-n">5<span>K+</span></div>
-            <div class="stat-l">Active Learners</div>
+            <div class="stat-l"><span class="t-en">Active Learners</span><span class="t-bn">সক্রিয় শিক্ষার্থী</span>
+            </div>
         </div>
     </div>
+
+    <!-- Exams -->
     <section class="exams-section sr" id="exams">
-        <div class="section-eyebrow">📚 Word Lists</div>
-        <h2 class="section-title">Curated for Your Exam Goal</h2>
-        <p class="section-sub">Whether it's GRE, IELTS, BCS, or everyday fluency — every word list is organized,
+        <div class="section-eyebrow">📚 <span class="t-en">Word Lists</span><span class="t-bn">শব্দ তালিকা</span></div>
+        <h2 class="section-title">
+            <span class="t-en">Curated for Your Exam Goal</span>
+            <span class="t-bn">আপনার পরীক্ষার লক্ষ্য অনুযায়ী বাছাই করা</span>
+        </h2>
+        <p class="section-sub t-en">Whether it's GRE, IELTS, BCS, or everyday fluency — every word list is organized,
             level-tagged, and ready to learn.</p>
+        <p class="section-sub t-bn">GRE, IELTS, BCS বা দৈনন্দিন দক্ষতা — প্রতিটি শব্দ তালিকা সংগঠিত, স্তর-চিহ্নিত এবং
+            শেখার জন্য প্রস্তুত।</p>
         <div class="exams-grid">
             <a class="exam-card" href="https://vocabpix.fluento.org" target="_blank">
                 <div class="exam-icon">📘</div>
                 <div class="exam-name">GRE 332</div>
-                <div class="exam-words">17 Lists · 332 Words</div>
+                <div class="exam-words">17 <span class="t-en">Lists</span><span class="t-bn">তালিকা</span> · 332 <span
+                        class="t-en">Words</span><span class="t-bn">শব্দ</span></div>
             </a>
             <a class="exam-card" href="https://vocabpix.fluento.org" target="_blank">
                 <div class="exam-icon">🎓</div>
                 <div class="exam-name">GRE Extended</div>
-                <div class="exam-words">23 Lists · 1,380 Words</div>
+                <div class="exam-words">23 <span class="t-en">Lists</span><span class="t-bn">তালিকা</span> · 1,380 <span
+                        class="t-en">Words</span><span class="t-bn">শব্দ</span></div>
             </a>
             <a class="exam-card" href="https://vocabpix.fluento.org" target="_blank">
                 <div class="exam-icon">🌍</div>
                 <div class="exam-name">Oxford 3000</div>
-                <div class="exam-words">72 Lists · 3,000 Words</div>
+                <div class="exam-words">72 <span class="t-en">Lists</span><span class="t-bn">তালিকা</span> · 3,000 <span
+                        class="t-en">Words</span><span class="t-bn">শব্দ</span></div>
             </a>
             <a class="exam-card" href="https://vocabpix.fluento.org" target="_blank">
                 <div class="exam-icon">🏛️</div>
-                <div class="exam-name">Academic Word List</div>
-                <div class="exam-words">10 Lists · 570 Words</div>
+                <div class="exam-name"><span class="t-en">Academic Word List</span><span class="t-bn">একাডেমিক শব্দ
+                        তালিকা</span></div>
+                <div class="exam-words">10 <span class="t-en">Lists</span><span class="t-bn">তালিকা</span> · 570 <span
+                        class="t-en">Words</span><span class="t-bn">শব্দ</span></div>
             </a>
             <a class="exam-card" href="https://vocabpix.fluento.org" target="_blank">
                 <div class="exam-icon">📝</div>
                 <div class="exam-name">IELTS Essentials</div>
-                <div class="exam-words">Coming Soon</div>
+                <div class="exam-words"><span class="t-en">Coming Soon</span><span class="t-bn">শীঘ্রই আসছে</span></div>
             </a>
             <a class="exam-card" href="https://vocabpix.fluento.org" target="_blank">
                 <div class="exam-icon">🏥</div>
-                <div class="exam-name">Medical Vocab</div>
-                <div class="exam-words">Coming Soon</div>
+                <div class="exam-name"><span class="t-en">Medical Vocab</span><span class="t-bn">মেডিকেল
+                        শব্দভান্ডার</span></div>
+                <div class="exam-words"><span class="t-en">Coming Soon</span><span class="t-bn">শীঘ্রই আসছে</span></div>
             </a>
         </div>
     </section>
+
+    <!-- How It Works -->
     <div class="how-section">
         <div class="how-inner sr">
-            <div class="section-eyebrow">🗺️ How It Works</div>
-            <h2 class="section-title">From Zero to Fluent in 4 Steps</h2>
-            <p class="section-sub">No complicated setup. Open the app and start in under 60 seconds.</p>
+            <div class="section-eyebrow">🗺️ <span class="t-en">How It Works</span><span class="t-bn">কিভাবে কাজ
+                    করে</span></div>
+            <h2 class="section-title">
+                <span class="t-en">From Zero to Fluent in 4 Steps</span>
+                <span class="t-bn">৪ ধাপে শূন্য থেকে দক্ষ</span>
+            </h2>
+            <p class="section-sub t-en">No complicated setup. Open the app and start in under 60 seconds.</p>
+            <p class="section-sub t-bn">কোনো জটিল সেটআপ নেই। অ্যাপ খুলুন এবং ৬০ সেকেন্ডের মধ্যে শুরু করুন।</p>
             <div class="how-steps">
                 <div class="how-step">
                     <div class="how-step-num">1</div>
                     <div class="how-step-icon">📋</div>
-                    <h3>Pick a List</h3>
-                    <p>Choose GRE, Oxford 3000, Academic, or your own list. Each split into 60-word sub-lists.</p>
+                    <h3><span class="t-en">Pick a List</span><span class="t-bn">তালিকা বেছে নিন</span></h3>
+                    <p class="t-en">Choose GRE, Oxford 3000, Academic, or your own list. Each split into 60-word
+                        sub-lists.</p>
+                    <p class="t-bn">GRE, Oxford 3000, Academic বা নিজের তালিকা বেছে নিন। প্রতিটি ৬০-শব্দের সাব-লিস্টে
+                        ভাগ করা।</p>
                     <div class="how-step-arrow">›</div>
                 </div>
                 <div class="how-step">
                     <div class="how-step-num">2</div>
                     <div class="how-step-icon">🖼️</div>
-                    <h3>Learn with Images</h3>
-                    <p>Each word card shows an image, pronunciation, Bangla definition, synonyms, antonyms &
-                        collocations.</p>
+                    <h3><span class="t-en">Learn with Images</span><span class="t-bn">ছবির সাথে শিখুন</span></h3>
+                    <p class="t-en">Each word card shows an image, pronunciation, Bangla definition, synonyms, antonyms
+                        & collocations.</p>
+                    <p class="t-bn">প্রতিটি শব্দ কার্ডে ছবি, উচ্চারণ, বাংলা সংজ্ঞা, সমার্থক ও বিপরীতার্থক শব্দ দেখুন।
+                    </p>
                     <div class="how-step-arrow">›</div>
                 </div>
                 <div class="how-step">
                     <div class="how-step-num">3</div>
                     <div class="how-step-icon">🧠</div>
-                    <h3>Rate Your Memory</h3>
-                    <p>Tap "I Know" or "I Don't Know." Hard words resurface automatically. Track your mastered count.
-                    </p>
+                    <h3><span class="t-en">Rate Your Memory</span><span class="t-bn">স্মৃতি মূল্যায়ন করুন</span></h3>
+                    <p class="t-en">Tap "I Know" or "I Don't Know." Hard words resurface automatically. Track your
+                        mastered count.</p>
+                    <p class="t-bn">"জানি" বা "জানি না" ট্যাপ করুন। কঠিন শব্দ স্বয়ংক্রিয়ভাবে ফিরে আসে। আয়ত্ত শব্দ
+                        গণনা করুন।</p>
                     <div class="how-step-arrow">›</div>
                 </div>
                 <div class="how-step">
                     <div class="how-step-num">4</div>
                     <div class="how-step-icon">🏆</div>
-                    <h3>Earn XP & Streak</h3>
-                    <p>Daily sessions build your streak. Earn XP for sessions, mastered words, and completed lists.</p>
+                    <h3><span class="t-en">Earn XP & Streak</span><span class="t-bn">XP ও স্ট্রিক অর্জন করুন</span></h3>
+                    <p class="t-en">Daily sessions build your streak. Earn XP for sessions, mastered words, and
+                        completed lists.</p>
+                    <p class="t-bn">দৈনিক সেশনে স্ট্রিক গড়ুন। সেশন, আয়ত্ত শব্দ ও সম্পূর্ণ তালিকার জন্য XP অর্জন করুন।
+                    </p>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Features -->
     <section class="feat-section sr" id="features">
-        <div class="section-eyebrow">✨ Features</div>
-        <h2 class="section-title">Everything You Need to Master Words</h2>
-        <p class="section-sub">Not flashcards. Not a dictionary. A complete vocabulary system.</p>
+        <div class="section-eyebrow">✨ <span class="t-en">Features</span><span class="t-bn">ফিচার</span></div>
+        <h2 class="section-title">
+            <span class="t-en">Everything You Need to Master Words</span>
+            <span class="t-bn">শব্দ আয়ত্ত করতে যা দরকার সবকিছু</span>
+        </h2>
+        <p class="section-sub t-en">Not flashcards. Not a dictionary. A complete vocabulary system.</p>
+        <p class="section-sub t-bn">শুধু ফ্ল্যাশকার্ড নয়। শুধু অভিধান নয়। একটি সম্পূর্ণ শব্দভান্ডার সিস্টেম।</p>
         <div class="feat-grid">
             <div class="feat-card big">
                 <div class="feat-icon">🖼️</div>
-                <h3>Picture-Memory Learning</h3>
-                <p>Every word is anchored to a vivid, contextual image. Visual memory increases retention by up to 65%
-                    compared to plain text — your brain never forgets an image it has truly seen.</p>
-                <br>
-                <p>Our image-word pairing engine ensures the picture matches the word's meaning, tone, and usage — not
-                    just a generic stock photo.</p>
-                <div class="feat-pill-row"><span class="feat-pill">65% better retention</span><span
-                        class="feat-pill">Contextual images</span><span class="feat-pill">Visual anchors</span></div>
+                <h3><span class="t-en">Picture-Memory Learning</span><span class="t-bn">ছবি-স্মৃতি শিক্ষা</span></h3>
+                <div class="t-en">
+                    <p>Every word is anchored to a vivid, contextual image. Visual memory increases retention by up to
+                        65% compared to plain text — your brain never forgets an image it has truly seen.</p>
+                    <br>
+                    <p>Our image-word pairing engine ensures the picture matches the word's meaning, tone, and usage —
+                        not just a generic stock photo.</p>
+                </div>
+                <div class="t-bn">
+                    <p>প্রতিটি শব্দ একটি প্রাণবন্ত ছবির সাথে যুক্ত। ভিজ্যুয়াল মেমরি সাধারণ টেক্সটের তুলনায় ৬৫% বেশি
+                        ধারণ ক্ষমতা বাড়ায় — মস্তিষ্ক একটি সত্যিকারের দেখা ছবি কখনো ভোলে না।</p>
+                    <br>
+                    <p>আমাদের ছবি-শব্দ পেয়ারিং ইঞ্জিন নিশ্চিত করে যে ছবিটি শব্দের অর্থ, স্বর এবং ব্যবহারের সাথে মেলে।
+                    </p>
+                </div>
+                <div class="feat-pill-row">
+                    <span class="feat-pill"><span class="t-en">65% better retention</span><span class="t-bn">৬৫% বেশি
+                            ধারণ</span></span>
+                    <span class="feat-pill"><span class="t-en">Contextual images</span><span class="t-bn">প্রাসঙ্গিক
+                            ছবি</span></span>
+                    <span class="feat-pill"><span class="t-en">Visual anchors</span><span class="t-bn">ভিজ্যুয়াল
+                            অ্যাংকার</span></span>
+                </div>
             </div>
             <div class="feat-card">
                 <div class="feat-icon">🔊</div>
-                <h3>Audio + Phonetic Pronunciation</h3>
-                <p>Hear every word spoken aloud. Get phonetic spelling in English and Bangla transliteration so you know
-                    exactly how to say it.</p>
+                <h3><span class="t-en">Audio + Phonetic Pronunciation</span><span class="t-bn">অডিও ও ধ্বনিগত
+                        উচ্চারণ</span></h3>
+                <p class="t-en">Hear every word spoken aloud. Get phonetic spelling in English and Bangla
+                    transliteration so you know exactly how to say it.</p>
+                <p class="t-bn">প্রতিটি শব্দ উচ্চস্বরে শুনুন। বাংলা লিপ্যন্তরসহ ধ্বনিগত বানান পান যাতে সঠিক উচ্চারণ
+                    জানতে পারেন।</p>
             </div>
             <div class="feat-card">
                 <div class="feat-icon">🔄</div>
-                <h3>Synonyms, Antonyms & Collocations</h3>
-                <p>See how words connect — synonyms, antonyms, and real sentence collocations so you learn words in
-                    context, not in isolation.</p>
+                <h3><span class="t-en">Synonyms, Antonyms & Collocations</span><span class="t-bn">সমার্থক, বিপরীতার্থক ও
+                        কোলোকেশন</span></h3>
+                <p class="t-en">See how words connect — synonyms, antonyms, and real sentence collocations so you learn
+                    words in context, not in isolation.</p>
+                <p class="t-bn">শব্দের সংযোগ দেখুন — সমার্থক, বিপরীতার্থক এবং বাস্তব বাক্যে কোলোকেশন, যাতে বিচ্ছিন্নভাবে
+                    নয়, প্রসঙ্গে শিখতে পারেন।</p>
             </div>
             <div class="feat-card">
                 <div class="feat-icon">⚡</div>
-                <h3>XP & Gamified Streaks</h3>
-                <p>Earn XP for sessions, mastered words, and completed lists. Build daily streaks. Hit milestones. Stay
-                    hooked on learning.</p>
+                <h3><span class="t-en">XP & Gamified Streaks</span><span class="t-bn">XP ও গেমিফাইড স্ট্রিক</span></h3>
+                <p class="t-en">Earn XP for sessions, mastered words, and completed lists. Build daily streaks. Hit
+                    milestones. Stay hooked on learning.</p>
+                <p class="t-bn">সেশন, আয়ত্ত শব্দ ও সম্পূর্ণ তালিকার জন্য XP অর্জন করুন। দৈনিক স্ট্রিক গড়ুন। মাইলস্টোন
+                    অর্জন করুন।</p>
             </div>
             <div class="feat-card">
                 <div class="feat-icon">📝</div>
-                <h3>Custom Word Collections</h3>
-                <p>Add any word you encounter — in class, reading, or exams. Build personal lists and practice them
-                    anytime.</p>
+                <h3><span class="t-en">Custom Word Collections</span><span class="t-bn">কাস্টম শব্দ সংগ্রহ</span></h3>
+                <p class="t-en">Add any word you encounter — in class, reading, or exams. Build personal lists and
+                    practice them anytime.</p>
+                <p class="t-bn">ক্লাসে, পড়ায় বা পরীক্ষায় যেকোনো শব্দ যোগ করুন। ব্যক্তিগত তালিকা তৈরি করুন এবং যেকোনো
+                    সময় অনুশীলন করুন।</p>
             </div>
         </div>
     </section>
+
+    <!-- Bangla Section -->
     <div class="bangla-section">
         <div class="bangla-inner sr" id="bangla">
             <div>
-                <div class="section-eyebrow">🇧🇩 Bangla Support</div>
-                <h2 class="section-title" style="color:#fff">শিখুন বাংলায়,<br>জিতুন ইংরেজিতে</h2>
-                <p class="section-sub">The only vocabulary app built with Bengali learners in mind — definitions,
+                <div class="section-eyebrow">🇧🇩 <span class="t-en">Bangla Support</span><span class="t-bn">বাংলা
+                        সহায়তা</span></div>
+                <h2 class="section-title">
+                    <span class="t-en">Learn in Bangla,<br>Win in English</span>
+                    <span class="t-bn">শিখুন বাংলায়,<br>জিতুন ইংরেজিতে</span>
+                </h2>
+                <p class="section-sub t-en">The only vocabulary app built with Bengali learners in mind — definitions,
                     pronunciation guides, and memory cues all available in Bangla.</p>
+                <p class="section-sub t-bn">বাংলাভাষী শিক্ষার্থীদের কথা মাথায় রেখে তৈরি একমাত্র শব্দভান্ডার অ্যাপ —
+                    সংজ্ঞা, উচ্চারণ গাইড এবং স্মৃতি সংকেত সবকিছু বাংলায়।</p>
                 <div class="bangla-perks">
                     <div class="bangla-perk">
                         <div class="perk-dot"></div>
-                        <div class="perk-text"><strong>Bangla definitions</strong> — understand word meaning in your
-                            native language first, then internalize the English.</div>
+                        <div class="perk-text">
+                            <strong><span class="t-en">Bangla definitions</span><span class="t-bn">বাংলা
+                                    সংজ্ঞা</span></strong> —
+                            <span class="t-en">understand word meaning in your native language first, then internalize
+                                the English.</span>
+                            <span class="t-bn">প্রথমে মাতৃভাষায় শব্দের অর্থ বুঝুন, তারপর ইংরেজি আত্মস্থ করুন।</span>
+                        </div>
                     </div>
                     <div class="bangla-perk">
                         <div class="perk-dot"></div>
-                        <div class="perk-text"><strong>Bengali phonetic guide</strong> — every word has a Bangla script
-                            pronunciation (অক·যউ·অট·ই) so you say it correctly from day one.</div>
+                        <div class="perk-text">
+                            <strong><span class="t-en">Bengali phonetic guide</span><span class="t-bn">বাংলা ধ্বনি
+                                    নির্দেশিকা</span></strong> —
+                            <span class="t-en">every word has a Bangla script pronunciation (অক·যউ·অট·ই) so you say it
+                                correctly from day one.</span>
+                            <span class="t-bn">প্রতিটি শব্দে বাংলা লিপিতে উচ্চারণ (অক·যউ·অট·ই) আছে যাতে প্রথম দিন থেকেই
+                                সঠিকভাবে বলতে পারেন।</span>
+                        </div>
                     </div>
                     <div class="bangla-perk">
                         <div class="perk-dot"></div>
-                        <div class="perk-text"><strong>Exam-focused lists</strong> — GRE, IELTS, BCS, BBA, SAT and
-                            Medical words used in Bangladesh's top competitive exams.</div>
+                        <div class="perk-text">
+                            <strong><span class="t-en">Exam-focused lists</span><span class="t-bn">পরীক্ষা-কেন্দ্রিক
+                                    তালিকা</span></strong> —
+                            <span class="t-en">GRE, IELTS, BCS, BBA, SAT and Medical words used in Bangladesh's top
+                                competitive exams.</span>
+                            <span class="t-bn">GRE, IELTS, BCS, BBA, SAT ও মেডিকেল শব্দ যা বাংলাদেশের শীর্ষ
+                                প্রতিযোগিতামূলক পরীক্ষায় ব্যবহৃত হয়।</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1604,10 +1993,14 @@
                     <div class="bangla-word">acuity</div>
                     <div class="bangla-eng">noun · uhk-YOO-uht-ee · <span
                             style="font-size:.82rem;color:#FF8A94">অক·যউ·অট·ই</span></div>
+                    <div class="bangla-def-label"><span class="t-en">English Definition</span><span class="t-bn">ইংরেজি
+                            সংজ্ঞা</span></div>
+                    <div class="bangla-def t-en">Sharpness or keenness of thought, vision, or hearing</div>
                     <div class="bangla-def-label">বাংলা সংজ্ঞা</div>
                     <div class="bangla-def">চিন্তাশক্তি, দৃষ্টিশক্তি বা শ্রবণশক্তির তীক্ষ্ণতা বা প্রখরতা। কোনো বিষয়কে
                         স্পষ্ট ও সূক্ষ্মভাবে বোঝার ক্ষমতা।</div>
-                    <div class="bangla-def-label">সমার্থক শব্দ</div>
+                    <div class="bangla-def-label"><span class="t-en">Synonyms</span><span class="t-bn">সমার্থক
+                            শব্দ</span></div>
                     <div class="bangla-syn">
                         <span>sharpness</span><span>keenness</span><span>perception</span><span>astuteness</span>
                     </div>
@@ -1615,10 +2008,16 @@
             </div>
         </div>
     </div>
+
+    <!-- Testimonials -->
     <section class="testi-section sr" id="testimonials">
-        <div class="section-eyebrow">💬 Reviews</div>
-        <h2 class="section-title">Learners Love VocabPix</h2>
-        <p class="section-sub">Real feedback from real students — from Dhaka to diaspora.</p>
+        <div class="section-eyebrow">💬 <span class="t-en">Reviews</span><span class="t-bn">পর্যালোচনা</span></div>
+        <h2 class="section-title">
+            <span class="t-en">Learners Love VocabPix</span>
+            <span class="t-bn">শিক্ষার্থীরা VocabPix ভালোবাসেন</span>
+        </h2>
+        <p class="section-sub t-en">Real feedback from real students — from Dhaka to diaspora.</p>
+        <p class="section-sub t-bn">ঢাকা থেকে প্রবাসী পর্যন্ত — বাস্তব শিক্ষার্থীদের বাস্তব মতামত।</p>
         <div class="testi-grid">
             <div class="testi-card">
                 <div class="testi-stars">★★★★★</div>
@@ -1628,7 +2027,8 @@
                     <div class="testi-av" style="background:#E8192C">RS</div>
                     <div>
                         <div class="testi-name">Rahul S.</div>
-                        <div class="testi-role">GRE Prep · scored 162 Verbal</div>
+                        <div class="testi-role">GRE Prep · <span class="t-en">scored 162 Verbal</span><span
+                                class="t-bn">GRE Verbal ১৬২ পেয়েছেন</span></div>
                     </div>
                 </div>
             </div>
@@ -1640,7 +2040,8 @@
                     <div class="testi-av" style="background:#2563EB">TF</div>
                     <div>
                         <div class="testi-name">Tasfia F.</div>
-                        <div class="testi-role">University Student · Dhaka</div>
+                        <div class="testi-role"><span class="t-en">University Student</span><span
+                                class="t-bn">বিশ্ববিদ্যালয় শিক্ষার্থী</span> · Dhaka</div>
                     </div>
                 </div>
             </div>
@@ -1652,211 +2053,382 @@
                     <div class="testi-av" style="background:#1DB954">MK</div>
                     <div>
                         <div class="testi-name">Mohammad K.</div>
-                        <div class="testi-role">English Teacher · Chittagong</div>
+                        <div class="testi-role"><span class="t-en">English Teacher</span><span class="t-bn">ইংরেজি
+                                শিক্ষক</span> · Chittagong</div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
+
+    <!-- Pricing -->
     <div class="pricing-section sr" id="pricing">
         <div class="pricing-inner">
             <div style="text-align:center;margin-bottom:48px">
-                <div class="section-eyebrow" style="text-align:center">💳 Pricing</div>
-                <h2 class="section-title" style="text-align:center">Simple, Honest Pricing</h2>
-                <p class="section-sub" style="margin:0 auto;text-align:center">Start free. Upgrade when you're ready.
+                <div class="section-eyebrow" style="text-align:center">💳 <span class="t-en">Pricing</span><span
+                        class="t-bn">মূল্য</span></div>
+                <h2 class="section-title" style="text-align:center">
+                    <span class="t-en">Simple, Honest Pricing</span>
+                    <span class="t-bn">সহজ, সৎ মূল্য নির্ধারণ</span>
+                </h2>
+                <p class="section-sub" style="margin:0 auto;text-align:center">
+                    <span class="t-en">Start free. Upgrade when you're ready.</span>
+                    <span class="t-bn">বিনামূল্যে শুরু করুন। প্রস্তুত হলে আপগ্রেড করুন।</span>
                 </p>
             </div>
             <div class="pricing-grid">
                 <div class="price-card">
-                    <div class="price-plan">Free</div>
+                    <div class="price-plan"><span class="t-en">Free</span><span class="t-bn">বিনামূল্যে</span></div>
                     <div class="price-amount"><sub>৳</sub>0</div>
-                    <div class="price-period">Forever free</div>
+                    <div class="price-period"><span class="t-en">Forever free</span><span class="t-bn">চিরকাল
+                            বিনামূল্যে</span></div>
                     <ul class="price-features">
-                        <li>All public word lists</li>
-                        <li>Image + audio for every word</li>
-                        <li>Bangla definitions & phonetics</li>
-                        <li>XP & streak tracking</li>
-                        <li>Basic quiz mode</li>
-                        <li class="no">Custom word collections</li>
-                        <li class="no">Streak freeze protection</li>
-                        <li class="no">Offline mode</li>
+                        <li><span class="t-en">All public word lists</span><span class="t-bn">সব পাবলিক শব্দ
+                                তালিকা</span></li>
+                        <li><span class="t-en">Image + audio for every word</span><span class="t-bn">প্রতিটি শব্দে ছবি +
+                                অডিও</span></li>
+                        <li><span class="t-en">Bangla definitions & phonetics</span><span class="t-bn">বাংলা সংজ্ঞা ও
+                                ধ্বনিতত্ত্ব</span></li>
+                        <li><span class="t-en">XP & streak tracking</span><span class="t-bn">XP ও স্ট্রিক
+                                ট্র্যাকিং</span></li>
+                        <li><span class="t-en">Basic quiz mode</span><span class="t-bn">মৌলিক কুইজ মোড</span></li>
+                        <li class="no"><span class="t-en">Custom word collections</span><span class="t-bn">কাস্টম শব্দ
+                                সংগ্রহ</span></li>
+                        <li class="no"><span class="t-en">Streak freeze protection</span><span class="t-bn">স্ট্রিক
+                                ফ্রিজ সুরক্ষা</span></li>
+                        <li class="no"><span class="t-en">Offline mode</span><span class="t-bn">অফলাইন মোড</span></li>
                     </ul>
-                    <a href="#enroll" class="btn-ghost" style="display:block;text-align:center;padding:13px">Start
-                        Free →</a>
+                    <a href="#enroll" class="btn-ghost" style="display:block;text-align:center;padding:13px">
+                        <span class="t-en">Start Free →</span><span class="t-bn">বিনামূল্যে শুরু করুন →</span>
+                    </a>
                 </div>
                 <div class="price-card featured">
-                    <div class="price-badge">🔥 Most Popular</div>
+                    <div class="price-badge">🔥 <span class="t-en">Most Popular</span><span class="t-bn">সবচেয়ে
+                            জনপ্রিয়</span></div>
                     <div class="price-plan">Pro</div>
                     <div class="price-amount"><sub>৳</sub>299</div>
-                    <div class="price-period">per month · cancel anytime</div>
+                    <div class="price-period"><span class="t-en">per month · cancel anytime</span><span
+                            class="t-bn">প্রতি মাসে · যেকোনো সময় বাতিল</span></div>
                     <ul class="price-features">
-                        <li>Everything in Free</li>
-                        <li>Unlimited custom collections</li>
-                        <li>Streak freeze protection</li>
-                        <li>Offline mode</li>
-                        <li>Advanced quiz analytics</li>
-                        <li>Early access to new lists</li>
-                        <li>Ad-free experience</li>
+                        <li><span class="t-en">Everything in Free</span><span class="t-bn">বিনামূল্যের সব সুবিধা</span>
+                        </li>
+                        <li><span class="t-en">Unlimited custom collections</span><span class="t-bn">সীমাহীন কাস্টম
+                                সংগ্রহ</span></li>
+                        <li><span class="t-en">Streak freeze protection</span><span class="t-bn">স্ট্রিক ফ্রিজ
+                                সুরক্ষা</span></li>
+                        <li><span class="t-en">Offline mode</span><span class="t-bn">অফলাইন মোড</span></li>
+                        <li><span class="t-en">Advanced quiz analytics</span><span class="t-bn">উন্নত কুইজ
+                                বিশ্লেষণ</span></li>
+                        <li><span class="t-en">Early access to new lists</span><span class="t-bn">নতুন তালিকায় আগাম
+                                প্রবেশ</span></li>
+                        <li><span class="t-en">Ad-free experience</span><span class="t-bn">বিজ্ঞাপন-মুক্ত
+                                অভিজ্ঞতা</span></li>
                     </ul>
                     <a href="#enroll" class="btn-red"
-                        style="display:block;text-align:center;padding:13px;border-radius:12px;font-size:.95rem">Get
-                        Pro — ৳299/mo →</a>
+                        style="display:block;text-align:center;padding:13px;border-radius:12px;font-size:.95rem">
+                        <span class="t-en">Get Pro — ৳299/mo →</span><span class="t-bn">Pro নিন — ৳২৯৯/মাস →</span>
+                    </a>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Enroll -->
     <div class="enroll-section" id="enroll">
         <div class="enroll-inner sr">
-            <h2 class="enroll-title">শুরু করুন আজই। বিনামূল্যে।</h2>
-            <p class="enroll-sub">Create your free account and access all word lists, quizzes, and your personal
-                vocabulary journal instantly.</p>
+            <h2 class="enroll-title">
+                <span class="t-en">Start Today. For Free.</span>
+                <span class="t-bn">শুরু করুন আজই। বিনামূল্যে।</span>
+            </h2>
+            <p class="enroll-sub">
+                <span class="t-en">Create your free account and access all word lists, quizzes, and your personal
+                    vocabulary journal instantly.</span>
+                <span class="t-bn">আজই বিনামূল্যে অ্যাকাউন্ট তৈরি করুন এবং সমস্ত শব্দ তালিকা, কুইজ ও ব্যক্তিগত
+                    শব্দভান্ডার জার্নালে তাৎক্ষণিক প্রবেশাধিকার পান।</span>
+            </p>
             <div class="enroll-form">
                 <div id="form-body">
-                    <div class="form-tabs"><button class="form-tab active"
-                            onclick="setTab(this,'register')">Register</button><button class="form-tab"
-                            onclick="setTab(this,'login')">Login</button></div>
+                    <div class="form-tabs">
+                        <button class="form-tab active" onclick="setTab(this,'register')">
+                            <span class="t-en">Register</span><span class="t-bn">নিবন্ধন</span>
+                        </button>
+                        <button class="form-tab" onclick="setTab(this,'login')">
+                            <span class="t-en">Login</span><span class="t-bn">লগইন</span>
+                        </button>
+                    </div>
                     <div id="tab-register">
                         <div class="form-row">
-                            <div class="fg"><label>First Name</label><input type="text" id="fn" placeholder="Your name">
+                            <div class="fg">
+                                <label><span class="t-en">First Name</span><span class="t-bn">প্রথম নাম</span></label>
+                                <input type="text" id="fn" placeholder="Your name">
                             </div>
-                            <div class="fg"><label>Last Name</label><input type="text" id="ln" placeholder="Last name">
+                            <div class="fg">
+                                <label><span class="t-en">Last Name</span><span class="t-bn">শেষ নাম</span></label>
+                                <input type="text" id="ln" placeholder="Last name">
                             </div>
                         </div>
-                        <div class="fg"><label>Email Address</label><input type="email" id="em"
-                                placeholder="you@example.com"></div>
-                        <div class="fg"><label>Password</label><input type="password" id="pw"
-                                placeholder="Min. 6 characters"></div>
-                        <div class="fg"><label>Your Learning Goal</label>
-                            <div class="goal-chips"><button class="goal-chip" onclick="toggleChip(this)">📝
-                                    GRE</button><button class="goal-chip" onclick="toggleChip(this)">🎓
-                                    IELTS</button><button class="goal-chip" onclick="toggleChip(this)">📖
-                                    BCS</button><button class="goal-chip" onclick="toggleChip(this)">💼
-                                    BBA</button><button class="goal-chip" onclick="toggleChip(this)">🏥
-                                    Medical</button><button class="goal-chip" onclick="toggleChip(this)">✏️
-                                    Other</button></div>
+                        <div class="fg">
+                            <label><span class="t-en">Email Address</span><span class="t-bn">ইমেইল ঠিকানা</span></label>
+                            <input type="email" id="em" placeholder="you@example.com">
                         </div>
-                        <div class="fg"><label>Daily Word Target</label><select id="dg">
-                                <option value="">Choose daily goal...</option>
+                        <div class="fg">
+                            <label><span class="t-en">Password</span><span class="t-bn">পাসওয়ার্ড</span></label>
+                            <input type="password" id="pw" placeholder="Min. 6 characters">
+                        </div>
+                        <div class="fg">
+                            <label><span class="t-en">Your Learning Goal</span><span class="t-bn">আপনার শেখার
+                                    লক্ষ্য</span></label>
+                            <div class="goal-chips">
+                                <button class="goal-chip" onclick="toggleChip(this)">📝 GRE</button>
+                                <button class="goal-chip" onclick="toggleChip(this)">🎓 IELTS</button>
+                                <button class="goal-chip" onclick="toggleChip(this)">📖 BCS</button>
+                                <button class="goal-chip" onclick="toggleChip(this)">💼 BBA</button>
+                                <button class="goal-chip" onclick="toggleChip(this)">🏥 <span
+                                        class="t-en">Medical</span><span class="t-bn">মেডিকেল</span></button>
+                                <button class="goal-chip" onclick="toggleChip(this)">✏️ <span
+                                        class="t-en">Other</span><span class="t-bn">অন্যান্য</span></button>
+                            </div>
+                        </div>
+                        <div class="fg">
+                            <label><span class="t-en">Daily Word Target</span><span class="t-bn">দৈনিক শব্দ
+                                    লক্ষ্যমাত্রা</span></label>
+                            <select id="dg">
+                                <option value=""><span class="t-en">Choose daily goal...</span></option>
                                 <option>20 words/day — Casual</option>
                                 <option>40 words/day — Steady</option>
                                 <option>60 words/day — Intensive</option>
                                 <option>80+ words/day — Expert</option>
-                            </select></div>
-                        <button class="form-submit" onclick="doRegister()">🚀 Create Free Account</button>
+                            </select>
+                        </div>
+                        <button class="form-submit" onclick="doRegister()">
+                            🚀 <span class="t-en">Create Free Account</span><span class="t-bn">বিনামূল্যে অ্যাকাউন্ট
+                                তৈরি করুন</span>
+                        </button>
                     </div>
                     <div id="tab-login" style="display:none">
-                        <div class="fg"><label>Email</label><input type="email" placeholder="you@example.com">
+                        <div class="fg">
+                            <label><span class="t-en">Email</span><span class="t-bn">ইমেইল</span></label>
+                            <input type="email" placeholder="you@example.com">
                         </div>
-                        <div class="fg"><label>Password</label><input type="password" placeholder="Your password"></div>
-                        <button class="form-submit" onclick="window.open('https://vocabpix.fluento.org','_blank')">Login
-                            to VocabPix →</button>
-                        <p class="form-note" style="margin-top:12px">No account? <a href="#"
-                                onclick="switchToRegister()" style="color:var(--red);font-weight:700">Register
-                                free</a></p>
+                        <div class="fg">
+                            <label><span class="t-en">Password</span><span class="t-bn">পাসওয়ার্ড</span></label>
+                            <input type="password" placeholder="Your password">
+                        </div>
+                        <button class="form-submit" onclick="window.open('https://vocabpix.fluento.org','_blank')">
+                            <span class="t-en">Login to VocabPix →</span><span class="t-bn">VocabPix-এ লগইন করুন
+                                →</span>
+                        </button>
+                        <p class="form-note" style="margin-top:12px">
+                            <span class="t-en">No account? <a href="#" onclick="switchToRegister()"
+                                    style="color:var(--red);font-weight:700">Register free</a></span>
+                            <span class="t-bn">অ্যাকাউন্ট নেই? <a href="#" onclick="switchToRegister()"
+                                    style="color:var(--red);font-weight:700">বিনামূল্যে নিবন্ধন করুন</a></span>
+                        </p>
                     </div>
-                    <p class="form-note">No credit card needed. Free forever on core features.</p>
+                    <p class="form-note">
+                        <span class="t-en">No credit card needed. Free forever on core features.</span>
+                        <span class="t-bn">কোনো ক্রেডিট কার্ড প্রয়োজন নেই। মূল ফিচারগুলো চিরকাল বিনামূল্যে।</span>
+                    </p>
                 </div>
                 <div class="success-msg" id="success-msg">
                     <div class="s-icon">🎉</div>
-                    <h3>Welcome to VocabPix!</h3>
-                    <p>Your account is ready. Check your email to verify and start learning.</p><a
-                        href="https://vocabpix.fluento.org" target="_blank" class="btn-red"
-                        style="display:inline-block;padding:14px 28px;border-radius:12px">Open VocabPix App →</a>
+                    <h3><span class="t-en">Welcome to VocabPix!</span><span class="t-bn">VocabPix-এ স্বাগতম!</span></h3>
+                    <p><span class="t-en">Your account is ready. Check your email to verify and start
+                            learning.</span><span class="t-bn">আপনার অ্যাকাউন্ট প্রস্তুত। যাচাই করতে ইমেইল চেক করুন এবং
+                            শেখা শুরু করুন।</span></p>
+                    <a href="https://vocabpix.fluento.org" target="_blank" class="btn-red"
+                        style="display:inline-block;padding:14px 28px;border-radius:12px">
+                        <span class="t-en">Open VocabPix App →</span><span class="t-bn">VocabPix অ্যাপ খুলুন →</span>
+                    </a>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- FAQ -->
     <section class="faq-section sr" id="faq">
         <div style="text-align:center;margin-bottom:48px">
-            <div class="section-eyebrow" style="text-align:center">❓ FAQ</div>
-            <h2 class="section-title" style="text-align:center">Common Questions</h2>
+            <div class="section-eyebrow" style="text-align:center">❓ <span class="t-en">FAQ</span><span
+                    class="t-bn">প্রশ্নোত্তর</span></div>
+            <h2 class="section-title" style="text-align:center">
+                <span class="t-en">Common Questions</span>
+                <span class="t-bn">সাধারণ প্রশ্নসমূহ</span>
+            </h2>
         </div>
-        <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Is VocabPix really free? <span
-                    class="faq-icon">+</span></button>
-            <div class="faq-a">Yes — all public word lists (GRE, Oxford 3000, Academic), images, audio, Bangla
-                definitions, XP tracking and quizzes are completely free. Pro adds custom collections, streak
-                protection, and offline mode.</div>
+        <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">
+                <span class="t-en">Is VocabPix really free?</span><span class="t-bn">VocabPix কি সত্যিই
+                    বিনামূল্যে?</span>
+                <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-a">
+                <span class="t-en">Yes — all public word lists (GRE, Oxford 3000, Academic), images, audio, Bangla
+                    definitions, XP tracking and quizzes are completely free. Pro adds custom collections, streak
+                    protection, and offline mode.</span>
+                <span class="t-bn">হ্যাঁ — সব পাবলিক শব্দ তালিকা (GRE, Oxford 3000, Academic), ছবি, অডিও, বাংলা সংজ্ঞা,
+                    XP ট্র্যাকিং ও কুইজ সম্পূর্ণ বিনামূল্যে। Pro-তে কাস্টম সংগ্রহ, স্ট্রিক সুরক্ষা ও অফলাইন মোড
+                    আছে।</span>
+            </div>
         </div>
-        <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Why does VocabPix use images? <span
-                    class="faq-icon">+</span></button>
-            <div class="faq-a">Visual memory is one of the strongest memory systems in the brain. Pairing a word with
-                a vivid image creates a "memory anchor." Studies show picture-word pairing improves long-term retention
-                by 40–65% over text-only methods.</div>
+        <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">
+                <span class="t-en">Why does VocabPix use images?</span><span class="t-bn">VocabPix কেন ছবি ব্যবহার
+                    করে?</span>
+                <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-a">
+                <span class="t-en">Visual memory is one of the strongest memory systems in the brain. Pairing a word
+                    with a vivid image creates a "memory anchor." Studies show picture-word pairing improves long-term
+                    retention by 40–65% over text-only methods.</span>
+                <span class="t-bn">ভিজ্যুয়াল মেমরি মস্তিষ্কের সবচেয়ে শক্তিশালী স্মৃতি ব্যবস্থাগুলির মধ্যে একটি। একটি
+                    শব্দের সাথে একটি প্রাণবন্ত ছবি যুক্ত করলে "মেমরি অ্যাংকার" তৈরি হয়। গবেষণায় দেখা গেছে ছবি-শব্দ
+                    পেয়ারিং শুধু টেক্সট পদ্ধতির চেয়ে ৪০-৬৫% বেশি দীর্ঘমেয়াদী ধারণ উন্নত করে।</span>
+            </div>
         </div>
-        <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Does it work for BCS and local
-                Bangladesh exams? <span class="faq-icon">+</span></button>
-            <div class="faq-a">Yes. BCS and Medical vocabulary lists are in development. GRE Extended and Academic
-                Word List already have significant overlap with BCS English sections.</div>
+        <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">
+                <span class="t-en">Does it work for BCS and local Bangladesh exams?</span><span class="t-bn">BCS ও
+                    বাংলাদেশের স্থানীয় পরীক্ষার জন্য কি কাজ করে?</span>
+                <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-a">
+                <span class="t-en">Yes. BCS and Medical vocabulary lists are in development. GRE Extended and Academic
+                    Word List already have significant overlap with BCS English sections.</span>
+                <span class="t-bn">হ্যাঁ। BCS ও মেডিকেল শব্দভান্ডার তালিকা তৈরি হচ্ছে। GRE Extended এবং Academic Word
+                    List ইতিমধ্যে BCS English অংশের সাথে উল্লেখযোগ্য মিল রয়েছে।</span>
+            </div>
         </div>
-        <!-- <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">How is this different from Quizlet or
-                Anki? <span class="faq-icon">+</span></button>
-            <div class="faq-a">Quizlet and Anki are general tools — you build your own content. VocabPix is
-                purpose-built for South Asian English learners, with professionally curated lists, contextual images,
-                Bangla support, collocations, and a gamification system all built in.</div>
-        </div> -->
-        <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Can I add my own words? <span
-                    class="faq-icon">+</span></button>
-            <div class="faq-a">Yes! "Add New Word" lets you create personal word entries with definition,
-                pronunciation, and part of speech. Pro unlocks unlimited custom collections with full image and audio
-                support.</div>
+        <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">
+                <span class="t-en">Can I add my own words?</span><span class="t-bn">আমি কি নিজের শব্দ যোগ করতে
+                    পারি?</span>
+                <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-a">
+                <span class="t-en">Yes! "Add New Word" lets you create personal word entries with definition,
+                    pronunciation, and part of speech. Pro unlocks unlimited custom collections with full image and
+                    audio support.</span>
+                <span class="t-bn">হ্যাঁ! "নতুন শব্দ যোগ করুন" দিয়ে সংজ্ঞা, উচ্চারণ ও পদ পরিচয়সহ ব্যক্তিগত শব্দ
+                    এন্ট্রি তৈরি করুন। Pro-তে সম্পূর্ণ ছবি ও অডিও সহায়তাসহ সীমাহীন কাস্টম সংগ্রহ আনলক হয়।</span>
+            </div>
         </div>
     </section>
+
+    <!-- Footer -->
     <footer>
         <div class="footer-inner">
             <div class="footer-top">
                 <div class="footer-brand">
                     <div class="footer-logo-text">🔴 VocabPix</div>
-                    <p>A Fluento product · Learn vocabulary the fast and proven way — both in Bangla and English. Built
-                        for GRE, IELTS, BCS, BBA, Medical, and SAT learners.</p><a href="https://vocabpix.fluento.org"
-                        target="_blank" class="btn-red"
-                        style="display:inline-block;padding:10px 20px;font-size:.85rem">Open App →</a>
+                    <p>
+                        <span class="t-en">A Fluento product · Learn vocabulary the fast and proven way — both in Bangla
+                            and English. Built for GRE, IELTS, BCS, BBA, Medical, and SAT learners.</span>
+                        <span class="t-bn">একটি Fluento পণ্য · দ্রুত ও প্রমাণিত উপায়ে শব্দভান্ডার শিখুন — বাংলা ও
+                            ইংরেজি উভয়ে। GRE, IELTS, BCS, BBA, মেডিকেল ও SAT শিক্ষার্থীদের জন্য তৈরি।</span>
+                    </p>
+                    <a href="https://vocabpix.fluento.org" target="_blank" class="btn-red"
+                        style="display:inline-block;padding:10px 20px;font-size:.85rem">
+                        <span class="t-en">Open App →</span><span class="t-bn">অ্যাপ খুলুন →</span>
+                    </a>
                 </div>
                 <div>
-                    <div class="footer-heading">Word Lists</div>
-                    <div class="footer-links-col"><a href="#">GRE 332</a><a href="#">GRE Extended</a><a href="#">Oxford
-                            3000</a><a href="#">Academic Word List</a></div>
+                    <div class="footer-heading"><span class="t-en">Word Lists</span><span class="t-bn">শব্দ
+                            তালিকা</span></div>
+                    <div class="footer-links-col">
+                        <a href="#">GRE 332</a>
+                        <a href="#">GRE Extended</a>
+                        <a href="#">Oxford 3000</a>
+                        <a href="#"><span class="t-en">Academic Word List</span><span class="t-bn">একাডেমিক শব্দ
+                                তালিকা</span></a>
+                    </div>
                 </div>
                 <div>
-                    <div class="footer-heading">Product</div>
-                    <div class="footer-links-col"><a href="#">Features</a><a href="#pricing">Pricing</a><a href="#">Quiz
-                            Mode</a><a href="#">XP Shop</a></div>
+                    <div class="footer-heading"><span class="t-en">Product</span><span class="t-bn">পণ্য</span></div>
+                    <div class="footer-links-col">
+                        <a href="#"><span class="t-en">Features</span><span class="t-bn">ফিচার</span></a>
+                        <a href="#pricing"><span class="t-en">Pricing</span><span class="t-bn">মূল্য</span></a>
+                        <a href="#"><span class="t-en">Quiz Mode</span><span class="t-bn">কুইজ মোড</span></a>
+                        <a href="#">XP Shop</a>
+                    </div>
                 </div>
                 <div>
-                    <div class="footer-heading">Company</div>
-                    <div class="footer-links-col"><a href="#">About Fluento</a><a href="#">Privacy
-                            Policy</a><a href="#">Terms</a><a href="#">Contact</a></div>
+                    <div class="footer-heading"><span class="t-en">Company</span><span class="t-bn">কোম্পানি</span>
+                    </div>
+                    <div class="footer-links-col">
+                        <a href="#"><span class="t-en">About Fluento</span><span class="t-bn">Fluento
+                                সম্পর্কে</span></a>
+                        <a href="#"><span class="t-en">Privacy Policy</span><span class="t-bn">গোপনীয়তা নীতি</span></a>
+                        <a href="#"><span class="t-en">Terms</span><span class="t-bn">শর্তাবলী</span></a>
+                        <a href="#"><span class="t-en">Contact</span><span class="t-bn">যোগাযোগ</span></a>
+                    </div>
                 </div>
             </div>
-            <div class="footer-bottom"><span>© 2026 Fluento. All rights reserved.</span><span>Made with ❤️ for
-                    Bangladeshi learners</span></div>
+            <div class="footer-bottom">
+                <span>© 2026 Fluento. <span class="t-en">All rights reserved.</span><span class="t-bn">সর্বস্বত্ব
+                        সংরক্ষিত।</span></span>
+                <span><span class="t-en">Made with ❤️ for Bangladeshi learners</span><span class="t-bn">বাংলাদেশি
+                        শিক্ষার্থীদের জন্য ❤️ দিয়ে তৈরি</span></span>
+            </div>
         </div>
     </footer>
+
     <script>
+        // ── Scroll reveal ──
         const obs = new IntersectionObserver(es => es.forEach(e => {
             if (e.isIntersecting) e.target.classList.add('vis');
-        }), {
-            threshold: .1
-        });
+        }), { threshold: .1 });
         document.querySelectorAll('.sr').forEach(el => obs.observe(el));
 
+        // ── Language toggle ──
+        function toggleLang() {
+            const body = document.body;
+            const isEn = body.classList.contains('lang-en');
+            body.classList.toggle('lang-en', !isEn);
+            body.classList.toggle('lang-bn', isEn);
+            localStorage.setItem('vp-lang', isEn ? 'bn' : 'en');
+        }
+        // Restore saved language
+        const saved = localStorage.getItem('vp-lang');
+        if (saved === 'bn') {
+            document.body.classList.remove('lang-en');
+            document.body.classList.add('lang-bn');
+        }
+
+        // ── Mobile menu ──
+        function toggleMenu() {
+            const ham = document.getElementById('hamburger');
+            const menu = document.getElementById('mobile-nav');
+            ham.classList.toggle('open');
+            menu.classList.toggle('open');
+            document.body.style.overflow = menu.classList.contains('open') ? 'hidden' : '';
+        }
+        function closeMenu() {
+            document.getElementById('hamburger').classList.remove('open');
+            document.getElementById('mobile-nav').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        // Close on outside click
+        document.getElementById('mobile-nav').addEventListener('click', function (e) {
+            if (e.target === this) closeMenu();
+        });
+
+        // ── FAQ ──
         function toggleFaq(btn) {
-            const a = btn.nextElementSibling,
-                icon = btn.querySelector('.faq-icon');
+            const a = btn.nextElementSibling, icon = btn.querySelector('.faq-icon');
             a.classList.toggle('open');
             icon.classList.toggle('open');
         }
 
-        function toggleChip(el) {
-            el.classList.toggle('active');
-        }
+        // ── Chips ──
+        function toggleChip(el) { el.classList.toggle('active'); }
 
+        // ── Form tabs ──
         function setTab(btn, tab) {
             document.querySelectorAll('.form-tab').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             document.getElementById('tab-register').style.display = tab === 'register' ? '' : 'none';
             document.getElementById('tab-login').style.display = tab === 'login' ? '' : 'none';
         }
-
         function switchToRegister() {
             const tabs = document.querySelectorAll('.form-tab');
             tabs[0].classList.add('active');
@@ -1864,21 +2436,21 @@
             document.getElementById('tab-register').style.display = '';
             document.getElementById('tab-login').style.display = 'none';
         }
-
         function doRegister() {
             const fn = document.getElementById('fn').value.trim(),
                 em = document.getElementById('em').value.trim(),
                 pw = document.getElementById('pw').value.trim();
+            const isBn = document.body.classList.contains('lang-bn');
             if (!fn || !em || !pw) {
-                alert('Please fill in your name, email, and password.');
+                alert(isBn ? 'অনুগ্রহ করে নাম, ইমেইল ও পাসওয়ার্ড পূরণ করুন।' : 'Please fill in your name, email, and password.');
                 return;
             }
             if (!em.includes('@')) {
-                alert('Please enter a valid email address.');
+                alert(isBn ? 'একটি বৈধ ইমেইল ঠিকানা দিন।' : 'Please enter a valid email address.');
                 return;
             }
             if (pw.length < 6) {
-                alert('Password must be at least 6 characters.');
+                alert(isBn ? 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।' : 'Password must be at least 6 characters.');
                 return;
             }
             document.getElementById('form-body').style.display = 'none';

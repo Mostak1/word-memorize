@@ -40,6 +40,7 @@ class User extends Authenticatable
         'wallet',
         'google_id',
         'provider',
+        'dark_mode_unlocked',
     ];
 
     /**
@@ -63,6 +64,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'wallet' => 'double',
+            'dark_mode_unlocked' => 'boolean',
         ];
     }
 
