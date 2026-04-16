@@ -13,6 +13,7 @@ class UserSetting extends Model
         'user_id',
         'show_bangla',
         'sound_effects',
+        'dark_mode_unlocked',
     ];
 
     protected function casts(): array
@@ -20,6 +21,7 @@ class UserSetting extends Model
         return [
             'show_bangla' => 'boolean',
             'sound_effects' => 'boolean',
+            'dark_mode_unlocked' => 'boolean',
         ];
     }
 
@@ -39,7 +41,7 @@ class UserSetting extends Model
     {
         return self::firstOrCreate(
             ['user_id' => $user->id],
-            ['show_bangla' => true, 'sound_effects' => true]
+            ['show_bangla' => true, 'sound_effects' => true, 'dark_mode_unlocked' => false]
         );
     }
 }

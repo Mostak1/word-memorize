@@ -35,6 +35,7 @@ class HandleInertiaRequests extends Middleware
 
         return [
             ...parent::share($request),
+            'assetUrl' => url('/'),
             'auth' => [
                 'user' => $user ? [
                     'id' => $user->id,
@@ -57,11 +58,11 @@ class HandleInertiaRequests extends Middleware
                 ] : null,
             ],
             'userSettings' => function () use ($user) {
-                if (! $user) {
+                if (!$user) {
                     return ['show_bangla' => true, 'sound_effects' => true];
                 }
                 $settings = UserSetting::forUser($user);   // This creates row automatically if not exists
-
+    
                 return [
                     'show_bangla' => (bool) $settings->show_bangla,
                     'sound_effects' => (bool) $settings->sound_effects,
@@ -69,12 +70,12 @@ class HandleInertiaRequests extends Middleware
             },
             // ✅ Flash messages for Sonner toasts
             'flash' => [
-                'toast' => fn () => $request->session()->get('flash.toast'),
-                'success' => fn () => $request->session()->get('success'),
-                'error' => fn () => $request->session()->get('error'),
-                'warning' => fn () => $request->session()->get('warning'),
-                'info' => fn () => $request->session()->get('info'),
-                'message' => fn () => $request->session()->get('message'),
+                'toast' => fn() => $request->session()->get('flash.toast'),
+                'success' => fn() => $request->session()->get('success'),
+                'error' => fn() => $request->session()->get('error'),
+                'warning' => fn() => $request->session()->get('warning'),
+                'info' => fn() => $request->session()->get('info'),
+                'message' => fn() => $request->session()->get('message'),
             ],
         ];
     }

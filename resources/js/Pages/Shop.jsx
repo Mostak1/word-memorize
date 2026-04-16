@@ -1,5 +1,6 @@
 import AppLayout from "@/Layouts/AppLayout";
-import { Head } from "@inertiajs/react";
+import { Head, router } from "@inertiajs/react";
+import { toast } from "sonner";
 import { useState, useEffect, useCallback } from "react";
 import {
     Zap,
@@ -527,6 +528,19 @@ function XpShopTab() {
                     streak: data.streak,
                     dark_mode_unlocked: data.dark_mode_unlocked,
                 });
+
+                // ✅ PERFECT NO-FLASH SOLUTION:
+                // 1. Set localStorage FIRST - ThemeProvider watches this
+                localStorage.setItem("theme", "dark");
+
+                // 2. Then reload shared props
+                router.reload({
+                    only: ["auth"],
+                    preserveState: true,
+                    preserveScroll: true,
+                });
+
+                // ThemeProvider will automatically detect localStorage change and enable dark mode by itself
                 showToast("Dark Mode unlocked! 🌙");
             } else {
                 showToast(data.error ?? "Purchase failed.", "error");
@@ -591,8 +605,8 @@ function XpShopTab() {
                             description="Unlock dark theme for the entire app."
                             icon={SunMoon}
                             iconBg="bg-gradient-to-br from-slate-700 to-slate-900"
-                            cost={5000}
-                            canAfford={(status?.xp?.balance ?? 0) >= 5000}
+                            cost={6000}
+                            canAfford={(status?.xp?.balance ?? 0) >= 6000}
                             purchasing={purchasing}
                             onBuy={handleBuyDarkMode}
                         />
@@ -631,8 +645,25 @@ export default function Shop({
     wordListCategories = [],
     pendingCategoryIds = [],
     accessCategoryIds = [],
+    defaultTab = "shop",
 }) {
-    const [activeTab, setActiveTab] = useState("shop");
+    // Determine initial tab: from props, or from URL query parameter, or default to "shop"
+    const getInitialTab = () => {
+        // Check URL parameters first
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabFromUrl = urlParams.get("tab");
+        if (tabFromUrl === "xp" || tabFromUrl === "shop") {
+            return tabFromUrl;
+        }
+        // Fallback to prop value if valid
+        if (defaultTab === "xp" || defaultTab === "shop") {
+            return defaultTab;
+        }
+        // Default fallback
+        return "shop";
+    };
+
+    const [activeTab, setActiveTab] = useState(getInitialTab);
 
     return (
         <AppLayout>

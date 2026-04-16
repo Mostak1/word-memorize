@@ -56,16 +56,24 @@ class UserXp extends Model
   }
 
   /**
-   * Spend XP from the user's balance.
+   * Spend XP from the user's balance using atomic database operation.
    * Returns true if successful, false if insufficient balance.
+   * 
+   * Uses a database-level UPDATE with WHERE clause to prevent race conditions
+   * where multiple concurrent requests could both pass the balance check.
    */
   public function spendXp(int $amount): bool
   {
-    if (!$this->canAffordFreeze($amount)) {
-      return false;
+    $updated = \Illuminate\Support\Facades\DB::table('user_xp')
+      ->where('user_id', $this->user_id)
+      ->where('xp_balance', '>=', $amount)
+      ->decrement('xp_balance', $amount);
+
+    if ($updated > 0) {
+      $this->refresh();
+      return true;
     }
 
-    $this->decrement('xp_balance', $amount);
-    return true;
+    return false;
   }
 }

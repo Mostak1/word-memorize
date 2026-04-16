@@ -40,7 +40,6 @@ class User extends Authenticatable
         'wallet',
         'google_id',
         'provider',
-        'dark_mode_unlocked',
     ];
 
     /**
@@ -64,7 +63,6 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'wallet' => 'double',
-            'dark_mode_unlocked' => 'boolean',
         ];
     }
 
@@ -161,5 +159,18 @@ class User extends Authenticatable
     public function followingCount()
     {
         return $this->following()->count();
+    }
+
+    /**
+     * Get dark mode unlocked status from user settings
+     */
+    public function getDarkModeUnlockedAttribute(): bool
+    {
+        // Admin users always have dark mode unlocked
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        return $this->settings?->dark_mode_unlocked ?? false;
     }
 }

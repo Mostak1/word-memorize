@@ -25,7 +25,9 @@ class QuizController extends Controller
     // Min correct pairs to award a point on match_pairs (auto-generated quiz)
     private const MATCH_PASS_THRESHOLD = 3;
 
-    public function __construct(private StreakService $streakService, private AchievementService $achievementService, private XpService $xpService) {}
+    public function __construct(private StreakService $streakService, private AchievementService $achievementService, private XpService $xpService)
+    {
+    }
 
     // ── Public routes ──────────────────────────────────────────────────────────
 
@@ -58,15 +60,15 @@ class QuizController extends Controller
         }
 
         $fillBlankWords = $words->filter(
-            fn ($w) => ! empty($w->example_sentences)
+            fn($w) => !empty($w->example_sentences)
             && stripos($w->example_sentences, $w->word) !== false
         )->values();
 
-        $synonymWords = $words->filter(fn ($w) => ! empty(trim($w->synonym ?? '')))->values();
-        $antonymWords = $words->filter(fn ($w) => ! empty(trim($w->antonym ?? '')))->values();
-        $translationWords = $words->filter(fn ($w) => ! empty(trim($w->bangla_meaning ?? '')))->values();
+        $synonymWords = $words->filter(fn($w) => !empty(trim($w->synonym ?? '')))->values();
+        $antonymWords = $words->filter(fn($w) => !empty(trim($w->antonym ?? '')))->values();
+        $translationWords = $words->filter(fn($w) => !empty(trim($w->bangla_meaning ?? '')))->values();
         $matchPairWords = $words->filter(
-            fn ($w) => ! empty(trim($w->definition ?? '')) || ! empty(trim($w->bangla_meaning ?? ''))
+            fn($w) => !empty(trim($w->definition ?? '')) || !empty(trim($w->bangla_meaning ?? ''))
         )->values();
 
         $totalEligible = $fillBlankWords->count() + $synonymWords->count()
@@ -89,7 +91,7 @@ class QuizController extends Controller
                 $usedIds[] = $w->id;
             }
             $pairs = $pairWords->map(function ($w) {
-                $meaning = ! empty(trim($w->definition ?? '')) ? $w->definition : $w->bangla_meaning;
+                $meaning = !empty(trim($w->definition ?? '')) ? $w->definition : $w->bangla_meaning;
 
                 return ['word' => $w->word, 'meaning' => $meaning];
             })->values()->toArray();
@@ -98,11 +100,11 @@ class QuizController extends Controller
 
         $pool = [];
 
-        foreach ($fillBlankWords->filter(fn ($w) => ! in_array($w->id, $usedIds))->take(4) as $word) {
+        foreach ($fillBlankWords->filter(fn($w) => !in_array($w->id, $usedIds))->take(4) as $word) {
             $blank = '___________';
-            $pattern = '/\b'.preg_quote($word->word, '/').'\b/i';
+            $pattern = '/\b' . preg_quote($word->word, '/') . '\b/i';
             $sentence = $this->pickSentenceWithBlank($word->example_sentences, $pattern, $blank);
-            if (! $sentence) {
+            if (!$sentence) {
                 continue;
             }
             $wrongOptions = $this->buildWrongOptions($word, $masteredWordIds);
@@ -111,7 +113,7 @@ class QuizController extends Controller
             $pool[] = ['type' => 'fill_blank', 'word' => $word->word, 'sentence' => $sentence, 'options' => $options, 'correct' => $word->word];
         }
 
-        foreach ($synonymWords->filter(fn ($w) => ! in_array($w->id, $usedIds))->take(3) as $word) {
+        foreach ($synonymWords->filter(fn($w) => !in_array($w->id, $usedIds))->take(3) as $word) {
             $list = $this->splitWordList($word->synonym);
             if (empty($list)) {
                 continue;
@@ -123,7 +125,7 @@ class QuizController extends Controller
             $pool[] = ['type' => 'synonym', 'word' => $word->word, 'options' => $options, 'correct' => $correct];
         }
 
-        foreach ($antonymWords->filter(fn ($w) => ! in_array($w->id, $usedIds))->take(3) as $word) {
+        foreach ($antonymWords->filter(fn($w) => !in_array($w->id, $usedIds))->take(3) as $word) {
             $list = $this->splitWordList($word->antonym);
             if (empty($list)) {
                 continue;
@@ -137,9 +139,9 @@ class QuizController extends Controller
 
         // Only generate translation questions if user has Bangla translation enabled
         if ($userId && UserSetting::forUser(User::find($userId))->show_bangla) {
-            foreach ($translationWords->filter(fn ($w) => ! in_array($w->id, $usedIds))->take(4) as $word) {
+            foreach ($translationWords->filter(fn($w) => !in_array($w->id, $usedIds))->take(4) as $word) {
                 $distractors = $translationWords
-                    ->filter(fn ($w2) => $w2->id !== $word->id && ! empty(trim($w2->bangla_meaning ?? '')))
+                    ->filter(fn($w2) => $w2->id !== $word->id && !empty(trim($w2->bangla_meaning ?? '')))
                     ->shuffle()->take(3)->pluck('bangla_meaning')->toArray();
                 if (count($distractors) < 3) {
                     continue;
@@ -186,7 +188,7 @@ class QuizController extends Controller
         // immediately preceding wordlist (ordered by id) before they can take
         // this one.  This prevents direct URL access to a locked quiz.
         if ($wordlist->is_locked) {
-            if (! $userId) {
+            if (!$userId) {
                 abort(403, 'You must be logged in to take this quiz.');
             }
 
@@ -196,7 +198,7 @@ class QuizController extends Controller
                 ->orderBy('id', 'desc')
                 ->first();
 
-            if (! $prevWordlist) {
+            if (!$prevWordlist) {
                 abort(403, 'This quiz is not accessible.');
             }
 
@@ -206,7 +208,7 @@ class QuizController extends Controller
                 ->where('quizzes.wordlist_id', $prevWordlist->id)
                 ->exists();
 
-            if (! $hasPassedPrev) {
+            if (!$hasPassedPrev) {
                 abort(403, 'Pass the previous quiz first to unlock this wordlist.');
             }
         }
@@ -214,7 +216,7 @@ class QuizController extends Controller
         // ── DB Quiz branch ────────────────────────────────────────────────────
         $dbQuiz = $wordlist->quizzes()
             ->where('is_active', true)
-            ->with(['questions' => fn ($q) => $q->orderBy('sort_order')])
+            ->with(['questions' => fn($q) => $q->orderBy('sort_order')])
             ->first();
 
         if ($dbQuiz && $dbQuiz->questions->count() > 0) {
@@ -229,7 +231,7 @@ class QuizController extends Controller
                 if (is_string($correctAnswer)) {
                     $decoded = json_decode($correctAnswer, true);
                     $correctAnswer = is_array($decoded) ? $decoded : [$correctAnswer];
-                } elseif (! is_array($correctAnswer)) {
+                } elseif (!is_array($correctAnswer)) {
                     $correctAnswer = [];
                 }
 
@@ -324,7 +326,7 @@ class QuizController extends Controller
             : 0;
 
         $passed = $score >= $quiz->pass_mark;
-        $nextAttemptAt = ! $passed
+        $nextAttemptAt = !$passed
             ? now()->addDay()->startOfDay()
             : null;
 
@@ -343,10 +345,7 @@ class QuizController extends Controller
         $this->streakService->recordActivity($request->user());
 
         // Award XP for passing quiz
-        $xpAwarded = 0;
-        if ($passed) {
-            $xpAwarded = $this->xpService->awardQuizXp($request->user());
-        }
+        $xpAwarded = $this->xpService->awardQuizXp($request->user(), $score);
 
         // Check for achievements (especially perfect scores)
         $this->achievementService->checkAndAwardAchievements($request->user());
@@ -376,7 +375,7 @@ class QuizController extends Controller
 
         // If the request carries wordlist result data, persist a QuizAttempt.
         if (
-            ! empty($data['wordlist_id']) &&
+            !empty($data['wordlist_id']) &&
             isset($data['correct_count'], $data['total_questions'])
         ) {
             $userId = Auth::id();
@@ -392,7 +391,7 @@ class QuizController extends Controller
                     'title' => '__auto__',
                 ],
                 [
-                    'pass_mark' => 60,
+                    'pass_mark' => 70,
                     'is_active' => false,
                     'created_by' => $userId,
                 ]
@@ -401,7 +400,7 @@ class QuizController extends Controller
             $score = $totalQuestions > 0
                 ? round(($correctCount / $totalQuestions) * 100, 2)
                 : 0;
-            $passed = $score >= $autoQuiz->pass_mark;
+            $passed = $score >= 70;
 
             QuizAttempt::create([
                 'user_id' => $userId,
@@ -411,7 +410,7 @@ class QuizController extends Controller
                 'score' => $score,
                 'passed' => $passed,
                 'answers' => [],
-                'next_attempt_at' => ! $passed
+                'next_attempt_at' => !$passed
                     ? now()->addDay()->startOfDay()
                     : null,
             ]);
@@ -419,10 +418,7 @@ class QuizController extends Controller
 
         $streak = $this->streakService->recordActivity($request->user());
 
-        $xpAwarded = 0;
-        if ($passed) {
-            $xpAwarded = $this->xpService->awardQuizXp($request->user());
-        }
+        $xpAwarded = $this->xpService->awardQuizXp($request->user(), $score);
 
         // Check for achievements
         $this->achievementService->checkAndAwardAchievements($request->user());
@@ -450,11 +446,11 @@ class QuizController extends Controller
      */
     private function buildWordlistAutoQuestions(Collection $words, ?int $userId = null): Collection
     {
-        $fillBlankWords = $words->filter(fn ($w) => ! empty($w->example_sentences) && stripos($w->example_sentences, $w->word) !== false)->values();
-        $synonymWords = $words->filter(fn ($w) => ! empty(trim($w->synonym ?? '')))->values();
-        $antonymWords = $words->filter(fn ($w) => ! empty(trim($w->antonym ?? '')))->values();
-        $translationWords = $words->filter(fn ($w) => ! empty(trim($w->bangla_meaning ?? '')))->values();
-        $matchPairWords = $words->filter(fn ($w) => ! empty(trim($w->definition ?? '')) || ! empty(trim($w->bangla_meaning ?? '')))->values();
+        $fillBlankWords = $words->filter(fn($w) => !empty($w->example_sentences) && stripos($w->example_sentences, $w->word) !== false)->values();
+        $synonymWords = $words->filter(fn($w) => !empty(trim($w->synonym ?? '')))->values();
+        $antonymWords = $words->filter(fn($w) => !empty(trim($w->antonym ?? '')))->values();
+        $translationWords = $words->filter(fn($w) => !empty(trim($w->bangla_meaning ?? '')))->values();
+        $matchPairWords = $words->filter(fn($w) => !empty(trim($w->definition ?? '')) || !empty(trim($w->bangla_meaning ?? '')))->values();
 
         $questions = collect();
         $usedIds = [];
@@ -465,7 +461,7 @@ class QuizController extends Controller
                 $usedIds[] = $w->id;
             }
             $pairs = $pairWords->map(function ($w) {
-                $meaning = ! empty(trim($w->definition ?? '')) ? $w->definition : $w->bangla_meaning;
+                $meaning = !empty(trim($w->definition ?? '')) ? $w->definition : $w->bangla_meaning;
 
                 return ['word' => $w->word, 'meaning' => $meaning];
             })->values()->toArray();
@@ -474,11 +470,11 @@ class QuizController extends Controller
 
         $pool = [];
 
-        foreach ($fillBlankWords->filter(fn ($w) => ! in_array($w->id, $usedIds))->shuffle()->take(7) as $word) {
+        foreach ($fillBlankWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(7) as $word) {
             $blank = '___________';
-            $pattern = '/'.preg_quote($word->word, '/').'/i';
+            $pattern = '/' . preg_quote($word->word, '/') . '/i';
             $sentence = $this->pickSentenceWithBlank($word->example_sentences, $pattern, $blank);
-            if (! $sentence) {
+            if (!$sentence) {
                 continue;
             }
             $wrongOptions = $this->buildWordlistWrongOptions($word, $words);
@@ -487,7 +483,7 @@ class QuizController extends Controller
             $pool[] = ['type' => 'fill_blank', 'word' => $word->word, 'sentence' => $sentence, 'options' => $options, 'correct' => $word->word];
         }
 
-        foreach ($synonymWords->filter(fn ($w) => ! in_array($w->id, $usedIds))->shuffle()->take(6) as $word) {
+        foreach ($synonymWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(6) as $word) {
             $list = $this->splitWordList($word->synonym);
             if (empty($list)) {
                 continue;
@@ -499,7 +495,7 @@ class QuizController extends Controller
             $pool[] = ['type' => 'synonym', 'word' => $word->word, 'options' => $options, 'correct' => $correct];
         }
 
-        foreach ($antonymWords->filter(fn ($w) => ! in_array($w->id, $usedIds))->shuffle()->take(6) as $word) {
+        foreach ($antonymWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(6) as $word) {
             $list = $this->splitWordList($word->antonym);
             if (empty($list)) {
                 continue;
@@ -513,9 +509,9 @@ class QuizController extends Controller
 
         // Only generate translation questions if user has Bangla translation enabled
         if ($userId && UserSetting::forUser(User::find($userId))->show_bangla) {
-            foreach ($translationWords->filter(fn ($w) => ! in_array($w->id, $usedIds))->shuffle()->take(6) as $word) {
+            foreach ($translationWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(6) as $word) {
                 $distractors = $translationWords
-                    ->filter(fn ($w2) => $w2->id !== $word->id && ! empty(trim($w2->bangla_meaning ?? '')))
+                    ->filter(fn($w2) => $w2->id !== $word->id && !empty(trim($w2->bangla_meaning ?? '')))
                     ->shuffle()->take(3)->pluck('bangla_meaning')->toArray();
                 if (count($distractors) < 3) {
                     continue;
@@ -540,7 +536,7 @@ class QuizController extends Controller
         $correctWord = strtolower($word->word);
 
         $candidates = $wordlistWords
-            ->filter(fn ($w) => strtolower($w->word) !== $correctWord)
+            ->filter(fn($w) => strtolower($w->word) !== $correctWord)
             ->shuffle()
             ->pluck('word')
             ->toArray();
@@ -580,7 +576,7 @@ class QuizController extends Controller
     private function buildWordDistractors(string $correct, string $targetWord, Collection $pool, int $count): array
     {
         return $pool
-            ->filter(fn ($w) => strtolower($w->word) !== strtolower($targetWord) && strtolower($w->word) !== strtolower($correct))
+            ->filter(fn($w) => strtolower($w->word) !== strtolower($targetWord) && strtolower($w->word) !== strtolower($correct))
             ->shuffle()
             ->take($count)
             ->pluck('word')

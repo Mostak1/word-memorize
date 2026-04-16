@@ -1,46 +1,119 @@
 // Sound Effects Utility
-// Preload and manage all application sound effects
+// Safe for Laravel + Inertia + React
 
-const SOUND_PATHS = {
-  sessionComplete: '/sounds/freesound_community-success-fanfare-trumpets-6185.mp3.mpeg',
-  correct: '/sounds/universfield-new-notification.mp3.mpeg',
-  incorrect: '/sounds/lesiakower-error-mistake-sound-effect-incorrect-answer.mp3.mpeg',
-  xpPurchase: '/sounds/freesound_crunchpixstudio-purchase-success.mp3.mpeg',
-};
+// 🔹 Global asset base (set from React)
+let assetBaseUrl = "";
 
-// Preload audio objects
+// 🔹 Audio cache
 const audioCache = {};
 
-// Initialize and preload all sounds
+// 🔹 Sound paths (initialized later)
+let SOUND_PATHS = {};
+
+// 🔹 Set asset base URL (call from component)
+export const setAssetBaseUrl = (url) => {
+    assetBaseUrl = url || "";
+};
+
+// 🔹 Helper to build full URL
+const getAssetUrl = (path) => {
+    return `${assetBaseUrl}${path}`;
+};
+
+// 🔹 Initialize and preload sounds
 export const initSounds = () => {
-  Object.entries(SOUND_PATHS).forEach(([key, path]) => {
-    audioCache[key] = new Audio(path);
-    audioCache[key].preload = 'auto';
-    audioCache[key].volume = 0.6;
-  });
-};
+    if (typeof window === "undefined") return;
 
-// Play sound helper
-const playSound = (key, userSettings) => {
-  // Skip if sound effects are disabled
-  if (userSettings?.sound_effects === false) {
-    return;
-  }
-  if (audioCache[key]) {
-    // Reset playback position to allow rapid consecutive plays
-    audioCache[key].currentTime = 0;
-    audioCache[key].play().catch(() => {
-      // Ignore autoplay policy errors - browser will block until first user interaction
-      // This is normal expected behavior
+    SOUND_PATHS = {
+        sessionComplete: getAssetUrl(
+            "/sounds/freesound_community-success-fanfare-trumpets-6185.mp3.mpeg"
+        ),
+        correct: getAssetUrl(
+            "/sounds/universfield-new-notification.mp3.mpeg"
+        ),
+        incorrect: getAssetUrl(
+            "/sounds/lesiakower-error-mistake-sound-effect-incorrect-answer.mp3.mpeg"
+        ),
+        xpPurchase: getAssetUrl(
+            "/sounds/freesound_crunchpixstudio-purchase-success.mp3.mpeg"
+        ),
+    };
+
+    Object.entries(SOUND_PATHS).forEach(([key, path]) => {
+        try {
+            const audio = new Audio(path);
+            audio.preload = "auto";
+            audio.volume = 0.6;
+            audio.load();
+
+            audioCache[key] = audio;
+        } catch (e) {
+            console.warn(`Failed to load sound ${key}:`, e);
+        }
     });
-  }
 };
 
-// Export individual sound functions
-export const playSessionComplete = (userSettings) => playSound('sessionComplete', userSettings);
-export const playCorrect = (userSettings) => playSound('correct', userSettings);
-export const playIncorrect = (userSettings) => playSound('incorrect', userSettings);
-export const playXpPurchase = (userSettings) => playSound('xpPurchase', userSettings);
+// 🔹 Play sound
+const playSound = (key, userSettings) => {
+    if (
+        typeof window === "undefined" ||
+        userSettings?.sound_effects === false ||
+        window.__SOUND_DISABLED === true
+    ) {
+        return;
+    }
 
-// Initialize on module import
-initSounds();
+    const audio = audioCache[key];
+    if (!audio) return;
+
+    try {
+        audio.currentTime = 0;
+
+        const playPromise = audio.play();
+
+        if (playPromise !== undefined) {
+            playPromise.catch((error) => {
+                if (error.name !== "NotAllowedError") {
+                    console.warn(`Sound playback failed for ${key}:`, error);
+                }
+            });
+        }
+    } catch (e) {
+        console.warn(`Sound error ${key}:`, e);
+    }
+};
+
+// 🔹 Public sound methods
+export const playSessionComplete = (userSettings) =>
+    playSound("sessionComplete", userSettings);
+
+export const playCorrect = (userSettings) =>
+    playSound("correct", userSettings);
+
+export const playIncorrect = (userSettings) =>
+    playSound("incorrect", userSettings);
+
+export const playXpPurchase = (userSettings) =>
+    playSound("xpPurchase", userSettings);
+
+// 🔹 Global controls
+export const disableSoundsGlobally = () => {
+    window.__SOUND_DISABLED = true;
+};
+
+export const enableSoundsGlobally = () => {
+    window.__SOUND_DISABLED = false;
+};
+
+// 🔹 Lazy init after user interaction (fix autoplay policy)
+if (typeof window !== "undefined") {
+    const initOnInteraction = () => {
+        initSounds();
+
+        document.removeEventListener("click", initOnInteraction);
+        document.removeEventListener("keydown", initOnInteraction);
+    };
+
+    document.addEventListener("click", initOnInteraction, { once: true });
+    document.addEventListener("keydown", initOnInteraction, { once: true });
+}

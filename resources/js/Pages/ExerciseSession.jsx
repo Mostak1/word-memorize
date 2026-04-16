@@ -29,7 +29,6 @@ import {
     playCorrect,
     playIncorrect,
     playSessionComplete,
-    playXpPurchase,
 } from "@/Utils/sounds";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -527,7 +526,7 @@ export default function ExerciseSession({
         }
         if (isSubmitting) return;
 
-        playIncorrect(userSettings);
+        // playIncorrect(userSettings);
         setIsSubmitting(true);
         setDontKnowCount((c) => c + 1);
 

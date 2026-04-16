@@ -5,17 +5,6 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-    /**
-     * Leitner System — 5 boxes, each with a longer review interval.
-     *
-     *  Box 1 → 1 day   (new / just missed)
-     *  Box 2 → 3 days
-     *  Box 3 → 7 days
-     *  Box 4 → 14 days
-     *  Box 5 → 30 days  (effectively mastered — also written to mastered_words)
-     *
-     * next_review_at = null  means "show immediately" (brand-new word, never seen).
-     */
     public function up(): void
     {
         Schema::create('word_progress', function (Blueprint $table) {

@@ -58,9 +58,15 @@ createInertiaApp({
         ),
     setup({ el, App, props }) {
         const root = createRoot(el);
+        const isAdmin =
+            props.initialPage.props.auth?.user?.role === "admin" || false;
 
         root.render(
-            <ThemeProvider defaultTheme="light" storageKey="admin-theme">
+            <ThemeProvider
+                defaultTheme="light"
+                storageKey="admin-theme"
+                isAdmin={isAdmin}
+            >
                 <App {...props} />
                 <ThemedToaster />
             </ThemeProvider>,

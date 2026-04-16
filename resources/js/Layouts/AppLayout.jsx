@@ -16,17 +16,24 @@ import {
 import FlashMessages from "@/Components/FlashMessage";
 import ReportErrorDialog from "@/Components/ReportErrorDialog";
 import { ThemeToggle } from "@/Components/ThemeToggle";
+import { useTheme } from "@/Components/ThemeProvider";
 import logo from "/public/img/logo.png";
+import { setAssetBaseUrl } from "@/Utils/sounds";
 
 export default function AppLayout({ children }) {
-    const { auth } = usePage().props;
+    const { auth, assetUrl } = usePage().props;
     const user = auth?.user ?? null;
+    const { setDarkModeUnlocked } = useTheme();
     const [mobileOpen, setMobileOpen] = useState(false);
     const [headerVisible, setHeaderVisible] = useState(true);
     const [reportDialogOpen, setReportDialogOpen] = useState(false);
     const [xpData, setXpData] = useState(user?.xp ?? null);
     const lastScrollY = useRef(0);
     const xpRefreshKey = useRef(0);
+
+    useEffect(() => {
+        setAssetBaseUrl(assetUrl);
+    }, [assetUrl]);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -50,7 +57,15 @@ export default function AppLayout({ children }) {
         setReportDialogOpen(true);
     };
 
-    const [darkModeUnlocked, setDarkModeUnlocked] = useState(false);
+    const [darkModeUnlocked, setLocalDarkModeUnlocked] = useState(false);
+
+    // Immediately unlock dark mode for admin users before API fetch
+    useEffect(() => {
+        if (user?.role === "admin") {
+            setDarkModeUnlocked(true);
+            setLocalDarkModeUnlocked(true);
+        }
+    }, [user, setDarkModeUnlocked]);
 
     // Fetch XP status from API
     useEffect(() => {
@@ -82,7 +97,15 @@ export default function AppLayout({ children }) {
                 }
                 const data = await response.json();
                 setXpData(data.xp);
-                setDarkModeUnlocked(data.dark_mode_unlocked || false);
+                let unlocked = data.dark_mode_unlocked || false;
+
+                // Admin users always have dark mode unlocked
+                if (user?.role === "admin") {
+                    unlocked = true;
+                }
+
+                setDarkModeUnlocked(unlocked);
+                setLocalDarkModeUnlocked(unlocked);
             } catch (error) {
                 console.error("Failed to fetch XP status:", error);
             }
@@ -90,6 +113,14 @@ export default function AppLayout({ children }) {
 
         fetchXpStatus();
     }, [user, xpRefreshKey.current]);
+
+    // Reset dark mode lock when user logs out
+    useEffect(() => {
+        if (!user) {
+            setDarkModeUnlocked(false);
+            setLocalDarkModeUnlocked(false);
+        }
+    }, [user, setDarkModeUnlocked]);
 
     return (
         <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
@@ -163,7 +194,7 @@ export default function AppLayout({ children }) {
                                         {/* <span>XP Shop</span> */}
                                     </Link>
 
-                                    {darkModeUnlocked && <ThemeToggle />}
+                                    <ThemeToggle />
 
                                     <ReportErrorDialog />
 
@@ -315,11 +346,9 @@ export default function AppLayout({ children }) {
                                         </Link>
                                     )} */}
 
-                                    {darkModeUnlocked && (
-                                        <div className="px-3 py-2">
-                                            <ThemeToggle />
-                                        </div>
-                                    )}
+                                    <div className="px-3 py-2">
+                                        <ThemeToggle />
+                                    </div>
 
                                     <button
                                         onClick={openReportDialog}
@@ -399,13 +428,6 @@ export default function AppLayout({ children }) {
                                         <LogIn className="h-4 w-4" /> Login
                                     </Link>
 
-                                    <button
-                                        onClick={openReportDialog}
-                                        className="flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors w-full"
-                                    >
-                                        <Flag className="h-4 w-4 shrink-0" />
-                                        Report Error
-                                    </button>
                                     <Link
                                         href={route("register")}
                                         onClick={() => setMobileOpen(false)}
@@ -414,6 +436,14 @@ export default function AppLayout({ children }) {
                                         <UserPlus className="h-4 w-4" />{" "}
                                         Register
                                     </Link>
+                                    <button
+                                        onClick={openReportDialog}
+                                        className="flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors w-full"
+                                    >
+                                        <Flag className="h-4 w-4 shrink-0" />
+                                        Report Error
+                                    </button>
+
                                     <div className="px-3 py-2">
                                         <ThemeToggle />
                                     </div>

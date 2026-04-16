@@ -5,10 +5,12 @@ namespace App\Services;
 use App\Models\StreakFreezePurchase;
 use App\Models\User;
 use App\Models\UserDailyActivity;
+use App\Models\UserSetting;
 use App\Models\UserXp;
 use App\Models\Word;
 use App\Models\WordProgress;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class XpService
 {
@@ -30,11 +32,11 @@ class XpService
     /** XP earned when user completes a word list (all words mastered) */
     const XP_PER_WORDLIST_COMPLETION = 50;
 
-    /** XP earned per passed quiz */
-    const XP_PER_QUIZ_PASS = 100;
+    /** XP earned per passed quiz (70%+ score) */
+    const XP_PER_QUIZ_PASS = 150;
 
-    /** Maximum daily quiz XP (100 XP × 5 quizzes) */
-    const MAX_QUIZ_XP_PER_DAY = 500;
+    /** XP earned for perfect quiz score (100%) */
+    const XP_PER_QUIZ_PERFECT = 200;
 
     /** Streak freeze costs: 1st purchase = 1000, 2nd = 2000, 3rd = 4000 */
     const FIRST_FREEZE_COST = 1000;
@@ -44,7 +46,7 @@ class XpService
     const THIRD_FREEZE_COST = 4000;
 
     /** Dark Mode unlock price */
-    const DARK_MODE_COST = 5000;
+    const DARK_MODE_COST = 6000;
 
     /** Streak milestone rewards (day => xp) */
     const STREAK_MILESTONES = [
@@ -125,32 +127,24 @@ class XpService
     /**
      * Award XP for passing a quiz.
      *
-     * Respects the daily cap: max 500 XP per day from quizzes (5 × 100 XP).
-     *
-     * Returns the amount actually awarded (0 if already at cap).
+     * @param User $user
+     * @param float $score Percentage score 0-100
+     * @return int XP actually awarded
      */
-    public function awardQuizXp(User $user): int
+    public function awardQuizXp(User $user, float $score): int
     {
-        $today = Carbon::today();
+        $xpToAward = 0;
 
-        $activity = UserDailyActivity::firstOrCreate(
-            ['user_id' => $user->id, 'activity_date' => $today],
-            ['completed' => false, 'session_xp_earned' => 0, 'quiz_xp_earned' => 0]
-        );
-
-        if ($activity->quiz_xp_earned >= self::MAX_QUIZ_XP_PER_DAY) {
-            return 0;
+        if ($score >= 100) {
+            $xpToAward = self::XP_PER_QUIZ_PERFECT;
+        } elseif ($score >= 70) {
+            $xpToAward = self::XP_PER_QUIZ_PASS;
         }
 
-        $xpToAward = min(
-            self::XP_PER_QUIZ_PASS,
-            self::MAX_QUIZ_XP_PER_DAY - $activity->quiz_xp_earned
-        );
-
-        $userXp = $this->getOrCreate($user);
-        $userXp->addXp($xpToAward);
-
-        $activity->increment('quiz_xp_earned', $xpToAward);
+        if ($xpToAward > 0) {
+            $userXp = $this->getOrCreate($user);
+            $userXp->addXp($xpToAward);
+        }
 
         return $xpToAward;
     }
@@ -271,34 +265,41 @@ class XpService
      *   - Purchase record is created
      *   - The actual streak freeze is awarded elsewhere (via StreakService)
      *
+     * Wrapped in a database transaction to prevent race conditions where
+     * multiple concurrent requests could both succeed.
+     *
      * Returns success/failure.
      */
     public function buyStreakFreeze(User $user): bool
     {
-        // Check purchase limit (max 3 per user)
-        $purchaseCount = StreakFreezePurchase::where('user_id', $user->id)->count();
-        if ($purchaseCount >= 3) {
-            return false;
-        }
+        return DB::transaction(function () use ($user) {
+            // Check purchase limit (max 3 per user)
+            $purchaseCount = StreakFreezePurchase::where('user_id', $user->id)->count();
+            if ($purchaseCount >= 3) {
+                return false;
+            }
 
-        $cost = $this->getNextFreezeCost($user);
-        $userXp = $this->getOrCreate($user);
+            $cost = $this->getNextFreezeCost($user);
+            $userXp = $this->getOrCreate($user);
 
-        // Check if user can afford
-        if (!$userXp->canAffordFreeze($cost)) {
-            return false;
-        }
+            // Check if user can afford (preliminary check)
+            if (!$userXp->canAffordFreeze($cost)) {
+                return false;
+            }
 
-        // Deduct XP
-        $userXp->spendXp($cost);
+            // Deduct XP (atomic operation with database WHERE clause)
+            if (!$userXp->spendXp($cost)) {
+                return false;
+            }
 
-        // Record purchase
-        StreakFreezePurchase::create([
-            'user_id' => $user->id,
-            'xp_cost' => $cost,
-        ]);
+            // Record purchase
+            StreakFreezePurchase::create([
+                'user_id' => $user->id,
+                'xp_cost' => $cost,
+            ]);
 
-        return true;
+            return true;
+        });
     }
 
     /**
@@ -311,27 +312,36 @@ class XpService
 
     /**
      * Purchase Dark Mode unlock
+     *
+     * Wrapped in a database transaction to prevent race conditions where
+     * multiple concurrent requests could both succeed or result in
+     * inconsistent state (XP deducted but unlock not applied, or vice versa).
      */
     public function buyDarkMode(User $user): bool
     {
-        if ($this->hasDarkModeUnlocked($user)) {
-            return false;
-        }
+        return DB::transaction(function () use ($user) {
+            if ($this->hasDarkModeUnlocked($user)) {
+                return false;
+            }
 
-        $userXp = $this->getOrCreate($user);
+            $userXp = $this->getOrCreate($user);
 
-        // Check if user can afford
-        if ($userXp->xp_balance < self::DARK_MODE_COST) {
-            return false;
-        }
+            // Check if user can afford (preliminary check)
+            if ($userXp->xp_balance < self::DARK_MODE_COST) {
+                return false;
+            }
 
-        // Deduct XP
-        $userXp->spendXp(self::DARK_MODE_COST);
+            // Deduct XP (atomic operation with database WHERE clause)
+            if (!$userXp->spendXp(self::DARK_MODE_COST)) {
+                return false;
+            }
 
-        // Unlock Dark Mode for user
-        $user->update(['dark_mode_unlocked' => true]);
+            // Unlock Dark Mode for user
+            $settings = UserSetting::forUser($user);
+            $settings->update(['dark_mode_unlocked' => true]);
 
-        return true;
+            return true;
+        });
     }
 
     /**
