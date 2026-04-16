@@ -160,7 +160,7 @@ const columns = [
                                 lists.map((item) => (
                                     <div
                                         key={item.wordlist_id}
-                                        className="rounded-lg border bg-white p-3 shadow-sm"
+                                        className="rounded-lg border bg-white dark:bg-gray-800 dark:border-gray-700 p-3 shadow-sm"
                                     >
                                         <div className="font-medium text-sm">
                                             {item.wordlist_title}

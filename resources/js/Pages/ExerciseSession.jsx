@@ -76,6 +76,111 @@ const CONFETTI = Array.from({ length: 36 }, (_, i) => ({
     borderRadius: i % 3 === 0 ? "50%" : "2px",
 }));
 
+// Image preloader utility – now preloads EVERYTHING with progress
+const preloadImages = async (words, onProgress) => {
+    const allImages = [];
+
+    words.forEach((word) => {
+        if (word.images?.length) {
+            word.images.forEach((img) => {
+                if (img.image_url_full) allImages.push(img.image_url_full);
+            });
+        }
+    });
+
+    if (allImages.length === 0) {
+        onProgress?.(100);
+        return;
+    }
+
+    let loaded = 0;
+    const total = allImages.length;
+    const batchSize = 8;
+
+    for (let i = 0; i < allImages.length; i += batchSize) {
+        const batch = allImages.slice(i, i + batchSize);
+        await Promise.allSettled(
+            batch.map(
+                (src) =>
+                    new Promise((resolve) => {
+                        const img = new Image();
+                        img.onload = img.onerror = () => {
+                            loaded++;
+                            onProgress?.(Math.round((loaded / total) * 100));
+                            resolve(null);
+                        };
+                        img.src = src;
+                    }),
+            ),
+        );
+    }
+
+    onProgress?.(100);
+};
+
+// ── MasteryOverlay ────────────────────────────────────────────────────────────
+// Defined at MODULE scope (outside ExerciseSession) so its identity is stable
+// across parent re-renders. This prevents React from unmounting/remounting it
+// on every state change (bookmark clicks, show meaning, etc.), which was
+// causing the animation to replay on every button press.
+//
+// Receiving a new `key` prop from the parent causes React to fully unmount
+// and remount this component, giving each rapid mastery its own fresh
+// state and independent timers — no stale closures, no timer collisions.
+function MasteryOverlay() {
+    const [flash, setFlash] = useState(true);
+    const [visible, setVisible] = useState(true);
+
+    useEffect(() => {
+        const t1 = setTimeout(() => setFlash(false), 900);
+        const t2 = setTimeout(() => setVisible(false), 2800);
+        return () => {
+            clearTimeout(t1);
+            clearTimeout(t2);
+        };
+    }, []);
+
+    if (!visible) return null;
+
+    return (
+        <>
+            {/* Green flash */}
+            {flash && (
+                <div className="fixed inset-0 pointer-events-none z-40 bg-green-400/20" />
+            )}
+            {/* Confetti + badge */}
+            <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+                {CONFETTI.map((p) => (
+                    <div
+                        key={p.id}
+                        style={{
+                            position: "absolute",
+                            left: p.left,
+                            top: "-12px",
+                            width: `${p.size}px`,
+                            height: `${p.size}px`,
+                            backgroundColor: p.color,
+                            borderRadius: p.borderRadius,
+                            animation: `confettiFall ${p.duration} ${p.delay} ease-in forwards`,
+                        }}
+                    />
+                ))}
+                <div className="absolute inset-x-0 top-24 flex justify-center pointer-events-none">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl dark:shadow-2xl dark:shadow-slate-900 px-8 py-4 text-center animate-bounce-in border border-green-100 dark:border-green-900">
+                        <p className="text-3xl mb-1">🌟</p>
+                        <p className="text-lg font-extrabold text-green-600 dark:text-green-400">
+                            Mastered!
+                        </p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                            Word added to your Mastery Garden
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </>
+    );
+}
+
 export default function ExerciseSession({
     wordList,
     subcategory,
@@ -90,6 +195,8 @@ export default function ExerciseSession({
     const [streak, setStreak] = useState(initialStreak);
     const [streakChange, setStreakChange] = useState(null);
     const [showStreakEffect, setShowStreakEffect] = useState(false);
+    const [isPreloading, setIsPreloading] = useState(true);
+    const [loadingProgress, setLoadingProgress] = useState(0);
 
     const previousStreak = useRef(initialStreak?.current_streak ?? 0);
 
@@ -141,7 +248,7 @@ export default function ExerciseSession({
     const word = queue[0] ?? null;
     const isDone = queue.length === 0 && !exiting;
 
-    const [openCollocationIndex, setOpenCollocationIndex] = useState(null);
+    // const [openCollocationIndex, setOpenCollocationIndex] = useState(null);
     const meaningCardRef = useRef(null);
     const buttonsRef = useRef(null);
 
@@ -155,11 +262,6 @@ export default function ExerciseSession({
     useEffect(() => {
         if (showMeaning && meaningCardRef.current) {
             setTimeout(() => {
-                // buttonsRef.current?.scrollIntoView({
-                //     behavior: "smooth",
-                //     block: "end",
-                // });
-
                 meaningCardRef.current?.scrollIntoView({
                     behavior: "smooth",
                     block: "end",
@@ -232,6 +334,42 @@ export default function ExerciseSession({
             .catch(() => {});
     }, [isDone, auth?.user]);
 
+    // Background preload next few words (fixed)
+    useEffect(() => {
+        if (!queue.length || isPreloading) return;
+        // Only preload next 3 words, no progress needed
+        const nextWords = queue.slice(0, 3);
+        preloadImages(nextWords, null); // null = no progress callback
+    }, [queue.length, isPreloading]);
+
+    // Initial full preload + localStorage cache
+    useEffect(() => {
+        const runPreload = async () => {
+            setIsPreloading(true);
+            setLoadingProgress(0);
+
+            await preloadImages(initialWords, setLoadingProgress);
+
+            // Cache words JSON for future visits
+            if (wordList?.id && initialWords.length > 0) {
+                try {
+                    localStorage.setItem(
+                        `cached-session-${wordList.id}`,
+                        JSON.stringify({
+                            words: initialWords,
+                            timestamp: Date.now(),
+                        }),
+                    );
+                } catch (e) {}
+            }
+
+            setIsPreloading(false);
+            setLoadingProgress(100);
+        };
+
+        runPreload();
+    }, [initialWords, wordList?.id]);
+
     // Snap scroll to top when a new word appears — timed to coincide with the
     // card exit animation so the position reset is invisible to the user.
     useEffect(() => {
@@ -245,64 +383,6 @@ export default function ExerciseSession({
     }, [word?.id]);
 
     // ── Helpers ───────────────────────────────────────────────────────────────
-    // ── MasteryOverlay ────────────────────────────────────────────────────────
-    // Self-contained overlay for a single mastery event.
-    // Receiving a new `key` prop from the parent causes React to fully unmount
-    // and remount this component, giving each rapid mastery its own fresh
-    // state and independent timers — no stale closures, no timer collisions.
-    const MasteryOverlay = () => {
-        const [flash, setFlash] = useState(true);
-        const [visible, setVisible] = useState(true);
-
-        useEffect(() => {
-            const t1 = setTimeout(() => setFlash(false), 900);
-            const t2 = setTimeout(() => setVisible(false), 2800);
-            return () => {
-                clearTimeout(t1);
-                clearTimeout(t2);
-            };
-        }, []);
-
-        if (!visible) return null;
-
-        return (
-            <>
-                {/* Green flash */}
-                {flash && (
-                    <div className="fixed inset-0 pointer-events-none z-40 bg-green-400/20" />
-                )}
-                {/* Confetti + badge */}
-                <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-                    {CONFETTI.map((p) => (
-                        <div
-                            key={p.id}
-                            style={{
-                                position: "absolute",
-                                left: p.left,
-                                top: "-12px",
-                                width: `${p.size}px`,
-                                height: `${p.size}px`,
-                                backgroundColor: p.color,
-                                borderRadius: p.borderRadius,
-                                animation: `confettiFall ${p.duration} ${p.delay} ease-in forwards`,
-                            }}
-                        />
-                    ))}
-                    <div className="absolute inset-x-0 top-24 flex justify-center pointer-events-none">
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl dark:shadow-2xl dark:shadow-slate-900 px-8 py-4 text-center animate-bounce-in border border-green-100 dark:border-green-900">
-                            <p className="text-3xl mb-1">🌟</p>
-                            <p className="text-lg font-extrabold text-green-600 dark:text-green-400">
-                                Mastered!
-                            </p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                Word added to your Mastery Garden
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </>
-        );
-    };
 
     const StreakPop = ({ streakCount, onComplete }) => {
         useEffect(() => {
@@ -611,6 +691,52 @@ export default function ExerciseSession({
                   wordList.word_list_category_id,
               )
             : route("wordlist.show", wordList?.id));
+
+    // ── Loading Screen ─────────────────────────────────────────────────────
+    if (isPreloading) {
+        return (
+            <AppLayout>
+                <Head title="Loading Session..." />
+                <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 flex flex-col items-center justify-center px-4">
+                    <div className="max-w-md w-full text-center">
+                        <div className="flex justify-center mb-8">
+                            <div className="w-24 h-24 border-4 border-[#E5201C] border-t-transparent rounded-full animate-spin" />
+                        </div>
+
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                            Preparing your session...
+                        </h1>
+                        <p className="text-gray-500 dark:text-gray-400 mb-6">
+                            Loading words &amp; images
+                        </p>
+
+                        <div className="h-2.5 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden mb-3">
+                            <div
+                                className="h-full bg-[#E5201C] transition-all duration-300"
+                                style={{ width: `${loadingProgress}%` }}
+                            />
+                        </div>
+
+                        <p className="text-xs font-mono text-gray-400 dark:text-gray-500">
+                            {loadingProgress}% — {initialWords.length} words •{" "}
+                            {initialWords.reduce(
+                                (sum, w) => sum + (w.images?.length || 0),
+                                0,
+                            )}{" "}
+                            images
+                        </p>
+
+                        <p className="text-[10px] text-gray-400 mt-8">
+                            This only happens the first time.
+                            <br />
+                            Images are cached in your browser for future
+                            sessions.
+                        </p>
+                    </div>
+                </div>
+            </AppLayout>
+        );
+    }
 
     // ── Empty queue (nothing due, nothing new) ────────────────────────────────
     if (initialQueueSize === 0) {

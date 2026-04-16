@@ -15,7 +15,56 @@ export default function WordlistDetail({
     words,
     category,
 }) {
+    const [isLoading, setIsLoading] = useState(false);
+    const [loadingProgress, setLoadingProgress] = useState(0);
+    const [loadingMessage, setLoadingMessage] = useState("");
+
     const hasSubcategories = subcategories && subcategories.length > 0;
+
+    // Image preloader function
+    const preloadImages = async (words) => {
+        const allImages = [];
+
+        // Collect all image urls
+        words.forEach((word) => {
+            if (word.images && word.images.length) {
+                word.images.forEach((img) => {
+                    if (img.image_url_full) {
+                        allImages.push(img.image_url_full);
+                    }
+                });
+            }
+        });
+
+        if (allImages.length === 0) return;
+
+        setLoadingMessage(`Caching ${allImages.length} images...`);
+
+        let loaded = 0;
+        const total = allImages.length;
+
+        // Preload 8 images in parallel
+        const batchSize = 8;
+        for (let i = 0; i < allImages.length; i += batchSize) {
+            const batch = allImages.slice(i, i + batchSize);
+            await Promise.allSettled(
+                batch.map(
+                    (src) =>
+                        new Promise((resolve) => {
+                            const img = new Image();
+                            img.onload = img.onerror = () => {
+                                loaded++;
+                                setLoadingProgress(
+                                    50 + Math.round((loaded / total) * 50),
+                                );
+                                resolve();
+                            };
+                            img.src = src;
+                        }),
+                ),
+            );
+        }
+    };
 
     const collocationColors = [
         "bg-red-100/70 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800",
@@ -111,14 +160,97 @@ export default function WordlistDetail({
                         </div>
                     </div>
 
+                    {/* Loading Overlay */}
+                    {isLoading && (
+                        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+                            <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 w-full max-w-md text-center shadow-2xl animate-bounce-in">
+                                <div className="mb-6">
+                                    <div className="w-20 h-20 mx-auto rounded-full bg-[#E5201C]/10 flex items-center justify-center mb-4 animate-pulse">
+                                        <Play className="h-10 w-10 fill-[#E5201C]" />
+                                    </div>
+                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
+                                        Preparing Session
+                                    </h3>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                                        {loadingMessage || "Loading words..."}
+                                    </p>
+                                </div>
+
+                                {/* Progress Bar */}
+                                <div className="h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden mb-4">
+                                    <div
+                                        className="h-full bg-[#E5201C] rounded-full transition-all duration-300"
+                                        style={{ width: `${loadingProgress}%` }}
+                                    />
+                                </div>
+
+                                <p className="text-xs text-gray-400 dark:text-gray-500">
+                                    {loadingProgress}% complete
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Start Exercise button */}
-                    <Link
-                        href={route("wordlist.start", wordList.id)}
-                        className="w-full bg-[#E5201C] hover:bg-red-700 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 text-base shadow-md transition-colors mb-5"
+                    <button
+                        disabled={isLoading}
+                        onClick={async () => {
+                            setIsLoading(true);
+                            setLoadingProgress(10);
+                            setLoadingMessage("Building your session queue...");
+
+                            // Game-like preloading
+                            router.visit(route("wordlist.start", wordList.id), {
+                                preserveScroll: true,
+                                onStart: () => {
+                                    setLoadingProgress(30);
+                                },
+                                onProgress: (event) => {
+                                    setLoadingProgress(
+                                        30 + Math.round(event.progress * 20),
+                                    );
+                                },
+                                onSuccess: async (page) => {
+                                    setLoadingProgress(50);
+
+                                    // Preload all images into browser cache
+                                    if (page.props.words) {
+                                        await preloadImages(page.props.words);
+                                    }
+
+                                    setLoadingProgress(100);
+                                    setLoadingMessage(
+                                        "Starting your exercise...",
+                                    );
+
+                                    // Small delay for smooth transition
+                                    setTimeout(() => {
+                                        router.reload({
+                                            preserveState: true,
+                                            preserveScroll: true,
+                                        });
+                                    }, 300);
+                                },
+                                onError: () => {
+                                    setIsLoading(false);
+                                    setLoadingProgress(0);
+                                },
+                            });
+                        }}
+                        className="w-full bg-[#E5201C] hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-wait text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 text-base shadow-md transition-colors mb-5"
                     >
-                        <Play className="h-5 w-5 fill-white" />
-                        Start Exercise
-                    </Link>
+                        {isLoading ? (
+                            <>
+                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                Loading...
+                            </>
+                        ) : (
+                            <>
+                                <Play className="h-5 w-5 fill-white" />
+                                Start Exercise
+                            </>
+                        )}
+                    </button>
 
                     {/* ── SUBCATEGORY MODE ── */}
                     {hasSubcategories && (

@@ -88,47 +88,40 @@ export default function Revise({ reviseCounts = {} }) {
                             const isEmpty = count === 0;
 
                             return (
-                                <Link
+                                <div
                                     key={f.key}
-                                    href={route("words.revise.session", {
-                                        filter: f.key,
-                                    })}
-                                    className={`block ${isEmpty ? "opacity-50 pointer-events-none" : ""}`}
+                                    className={`block ${isEmpty ? "opacity-50 pointer-events-none" : ""} bg-white dark:bg-slate-900 rounded-2xl p-4 flex items-center gap-4 shadow-sm border ${f.accent} hover:shadow-md transition-all`}
                                     aria-disabled={isEmpty}
                                 >
+                                    {/* Icon */}
                                     <div
-                                        className={`bg-white dark:bg-slate-900 rounded-2xl p-4 flex items-center gap-4 shadow-sm border ${f.accent} hover:shadow-md transition-all`}
+                                        className={`w-12 h-12 rounded-full ${f.iconBg} flex items-center justify-center shrink-0`}
                                     >
-                                        {/* Icon */}
-                                        <div
-                                            className={`w-12 h-12 rounded-full ${f.iconBg} flex items-center justify-center shrink-0`}
-                                        >
-                                            <Icon
-                                                className={`h-6 w-6 ${f.iconColor}`}
-                                            />
-                                        </div>
-
-                                        {/* Text */}
-                                        <div className="flex-1 min-w-0">
-                                            <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
-                                                {f.label}
-                                            </p>
-                                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                                {f.description}
-                                            </p>
-                                        </div>
-
-                                        {/* Count badge + arrow */}
-                                        <div className="flex items-center gap-2 shrink-0">
-                                            <span
-                                                className={`text-xs font-bold px-2.5 py-1 rounded-full ${f.countColor}`}
-                                            >
-                                                {count}
-                                            </span>
-                                            <ChevronRight className="h-4 w-4 text-gray-300 dark:text-slate-600" />
-                                        </div>
+                                        <Icon
+                                            className={`h-6 w-6 ${f.iconColor}`}
+                                        />
                                     </div>
-                                </Link>
+
+                                    {/* Text */}
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
+                                            {f.label}
+                                        </p>
+                                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                                            {f.description}
+                                        </p>
+                                    </div>
+
+                                    {/* Count badge + arrow */}
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <span
+                                            className={`text-xs font-bold px-2.5 py-1 rounded-full ${f.countColor}`}
+                                        >
+                                            {count}
+                                        </span>
+                                        <ChevronRight className="h-4 w-4 text-gray-300 dark:text-slate-600" />
+                                    </div>
+                                </div>
                             );
                         })}
                     </div>
