@@ -31,4 +31,28 @@ class UserAchievementController extends Controller
             'achievements' => $achievements,
         ]);
     }
+
+    /**
+     * Get unseen achievements and mark them as seen (notified).
+     */
+    public function getUnseen(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json(['unseen' => []]);
+        }
+
+        $unseen = \App\Models\UserAchievement::where('user_id', $user->id)
+            ->where('notified', false)
+            ->with('achievement')
+            ->get();
+
+        if ($unseen->isNotEmpty()) {
+            \App\Models\UserAchievement::whereIn('id', $unseen->pluck('id'))
+                ->update(['notified' => true]);
+        }
+
+        return response()->json(['unseen' => $unseen]);
+    }
 }

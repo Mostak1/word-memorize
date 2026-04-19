@@ -14,6 +14,7 @@ import {
     SunMoon,
 } from "lucide-react";
 import PurchaseOrderDialog from "@/Components/PurchaseOrderDialog";
+import { playXpPurchase } from "@/Utils/sounds";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -428,6 +429,8 @@ function ShopItemCard({
 
 const XP_SOURCES = [
     { label: "Complete a session", xp: "+100 XP", note: "up to 2× per day" },
+    { label: "Pass a quiz", xp: "+150 XP", note: "score 70% or more" },
+    { label: "Perfect quiz", xp: "+200 XP", note: "score 100%" },
     { label: "Master a word", xp: "+10 XP", note: "per word" },
     { label: "Complete a word list", xp: "+50 XP", note: "one-time bonus" },
     { label: "7-day streak", xp: "+50 XP", note: "milestone reward" },
@@ -506,6 +509,7 @@ function XpShopTab() {
                     dark_mode_unlocked: data.dark_mode_unlocked,
                 });
                 showToast("Streak freeze purchased! 🧊");
+                playXpPurchase();
             } else {
                 showToast(data.error ?? "Purchase failed.", "error");
             }
@@ -532,6 +536,7 @@ function XpShopTab() {
                 // ✅ PERFECT NO-FLASH SOLUTION:
                 // 1. Set localStorage FIRST - ThemeProvider watches this
                 localStorage.setItem("theme", "dark");
+                playXpPurchase();
 
                 // 2. Then reload shared props
                 router.reload({

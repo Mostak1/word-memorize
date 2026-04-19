@@ -18,12 +18,7 @@ Route::prefix('linktree')->name('api.linktree.')->group(function () {
     Route::post('/{link}/click', [LinkTreeController::class, 'click'])->name('click');
 });
 
-// ── XP Shop API ───────────────────────────────────────────────────────────────
 
-Route::middleware('auth:sanctum')->prefix('xp-shop')->name('api.xp-shop.')->group(function () {
-    Route::get('/status', [UserShopController::class, 'getStatus'])->name('status');
-    Route::post('/buy-streak-freeze', [UserShopController::class, 'buyStreakFreeze'])->name('buy-freeze');
-});
 
 // ── Achievements API ───────────────────────────────────────────────────────────
 

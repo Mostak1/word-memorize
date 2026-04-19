@@ -19,6 +19,7 @@ import { ThemeToggle } from "@/Components/ThemeToggle";
 import { useTheme } from "@/Components/ThemeProvider";
 import logo from "/public/img/logo.png";
 import { setAssetBaseUrl } from "@/Utils/sounds";
+import AchievementToaster from "@/Components/AchievementToaster";
 
 export default function AppLayout({ children }) {
     const { auth, assetUrl } = usePage().props;
@@ -125,6 +126,7 @@ export default function AppLayout({ children }) {
     return (
         <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
             <FlashMessages />
+            <AchievementToaster />
 
             <ReportErrorDialog
                 controlledOpen={reportDialogOpen}

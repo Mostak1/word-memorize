@@ -11,10 +11,12 @@ class UserAchievement extends Model
         'user_id',
         'achievement_id',
         'awarded_at',
+        'notified',
     ];
 
     protected $casts = [
         'awarded_at' => 'datetime',
+        'notified' => 'boolean',
     ];
 
     public function user(): BelongsTo

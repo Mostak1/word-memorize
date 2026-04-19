@@ -1,5 +1,6 @@
 import { Head, Link, router } from "@inertiajs/react";
 import Lottie from "lottie-react";
+import CryptoJS from "crypto-js";
 import AppLayout from "@/Layouts/AppLayout";
 import approvedAnimation from "../../../public/lottie/Approved.json";
 import fireStreakAnimation from "../../../public/lottie/FireStreakOrange.json";
@@ -293,6 +294,9 @@ export default function ExerciseSession({
         })
             .then((response) => response.json())
             .then((data) => {
+                // Check if any new achievements were earned during this session
+                window.dispatchEvent(new Event("check-achievements"));
+
                 if (data.xp_awarded && xp_enabled) {
                     setSessionXpAwarded(data.xp_awarded);
                     // playXpPurchase();
@@ -353,12 +357,17 @@ export default function ExerciseSession({
             // Cache words JSON for future visits
             if (wordList?.id && initialWords.length > 0) {
                 try {
+                    const cacheData = JSON.stringify({
+                        words: initialWords,
+                        timestamp: Date.now(),
+                    });
+                    // Obfuscating cache data so casual users cannot read it
+                    const SECRET_KEY = "wm-cache-secure-key";
+                    const encryptedData = CryptoJS.AES.encrypt(cacheData, SECRET_KEY).toString();
+
                     localStorage.setItem(
                         `cached-session-${wordList.id}`,
-                        JSON.stringify({
-                            words: initialWords,
-                            timestamp: Date.now(),
-                        }),
+                        encryptedData
                     );
                 } catch (e) {}
             }
@@ -717,21 +726,22 @@ export default function ExerciseSession({
                             />
                         </div>
 
-                        <p className="text-xs font-mono text-gray-400 dark:text-gray-500">
-                            {loadingProgress}% — {initialWords.length} words •{" "}
+                        <p className="text-xs font-mono text-gray-400 dark:text-gray-500 text-center">
+                            {loadingProgress}%
+                            {/* — {initialWords.length} words •{" "}
                             {initialWords.reduce(
                                 (sum, w) => sum + (w.images?.length || 0),
                                 0,
                             )}{" "}
-                            images
+                            images */}
                         </p>
 
-                        <p className="text-[10px] text-gray-400 mt-8">
+                        {/* <p className="text-[10px] text-gray-400 mt-8">
                             This only happens the first time.
                             <br />
                             Images are cached in your browser for future
                             sessions.
-                        </p>
+                        </p> */}
                     </div>
                 </div>
             </AppLayout>
