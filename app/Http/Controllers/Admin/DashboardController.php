@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ErrorReport;
 use App\Models\User;
+use App\Models\UserXp;
 use App\Models\Word;
 use App\Models\WordList;
 use App\Models\WordListCategory;
@@ -16,25 +18,30 @@ class DashboardController extends Controller
     public function index()
     {
         $totalWordLists = WordList::count();
-        $totalWords = Word::count();
+        $totalWords     = Word::count();
 
         $stats = [
-            'total_users' => User::count(),
-            'total_admins' => User::where('role', 'admin')->count(),
-            'total_categories' => WordListCategory::count(),
-            'total_word_lists' => $totalWordLists,
-            'active_users' => User::where('created_at', '>=', Carbon::now()->subDays(30))
-                ->orWhere('updated_at', '>=', Carbon::now()->subDays(30))
-                ->count(),
-            'total_words' => $totalWords,
+            'total_users'         => User::count(),
+            'total_admins'        => User::where('role', 'admin')->count(),
+            'total_categories'    => WordListCategory::count(),
+            'total_word_lists'    => $totalWordLists,
+            'total_words'         => $totalWords,
+            'active_users'        => User::where('updated_at', '>=', Carbon::now()->subDays(30))->count(),
             'new_users_this_week' => User::where('created_at', '>=', Carbon::now()->subDays(7))->count(),
-            'avg_words_per_list' => $totalWordLists > 0
+            'avg_words_per_list'  => $totalWordLists > 0
                 ? round($totalWords / $totalWordLists, 1)
                 : 0,
+            'open_error_reports'  => ErrorReport::where('status', 'open')->count(),
+            'total_xp_awarded'    => (int) UserXp::sum('xp_balance'),
         ];
 
+        $recentUsers = User::latest()
+            ->limit(5)
+            ->get(['id', 'name', 'email', 'role', 'created_at']);
+
         return Inertia::render('Admin/Dashboard', [
-            'stats' => $stats,
+            'stats'       => $stats,
+            'recentUsers' => $recentUsers,
         ]);
     }
 
@@ -77,12 +84,12 @@ class DashboardController extends Controller
     {
         $reports = [
             'users_by_role' => [
-                'admins' => User::where('role', 'admin')->count(),
+                'admins'      => User::where('role', 'admin')->count(),
                 'instructors' => User::where('role', 'instructor')->count(),
-                'students' => User::where('role', 'student')->count(),
+                'students'    => User::where('role', 'student')->count(),
             ],
             'users_by_verification' => [
-                'verified' => User::whereNotNull('email_verified_at')->count(),
+                'verified'   => User::whereNotNull('email_verified_at')->count(),
                 'unverified' => User::whereNull('email_verified_at')->count(),
             ],
             'registration_trend' => User::select(

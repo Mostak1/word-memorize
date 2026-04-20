@@ -70,6 +70,9 @@ class ReviewWordController extends Controller
                 $this->srsService->recordCorrect($user, $word, $this->wordListAwardsXp($word));
             } else if ($item['action'] === 'learn') {
                 $this->srsService->recordIncorrect($user, $word);
+            } else if ($item['action'] === 'master') {
+                // User confirmed they already know this word — fast-track to Mastered
+                $this->srsService->recordMastered($user, $word, $this->wordListAwardsXp($word));
             }
         }
 
@@ -132,29 +135,7 @@ class ReviewWordController extends Controller
         $user = Auth::user();
         $filter = $request->query('filter', 'all');
 
-        $query = WordProgress::where('user_id', $user->id)
-            ->where('box', '<', WordProgress::MASTERED_BOX);
-
-        switch ($filter) {
-            case 'learning':
-                $query->where('box', 2);
-                $sessionTitle = 'Learning Words';
-                break;
-
-            case 'reviewing':
-                $query->where('box', 3);
-                $sessionTitle = 'Reviewing Words';
-                break;
-
-            case 'more_practice':
-                $query->where('incorrect_count', '>=', 2);
-                $sessionTitle = 'More Practice Needed';
-                break;
-
-            default: // 'all'
-                $sessionTitle = 'Revise — All Words';
-                break;
-        }
+        [$query, $sessionTitle] = $this->getReviseQuery($user, $filter);
 
         $wordIds = $query->pluck('word_id')->toArray();
 
@@ -197,6 +178,23 @@ class ReviewWordController extends Controller
         ]);
     }
 
+    public function reviseWordsList(Request $request, $filter)
+    {
+        $user = Auth::user();
+        [$query, $title] = $this->getReviseQuery($user, $filter);
+
+        $words = Word::whereIn('id', $query->pluck('word_id'))
+            ->with(['wordList', 'images'])
+            ->paginate(15)
+            ->withQueryString();
+
+        return Inertia::render('ReviseWordsList', [
+            'words' => $words,
+            'filter' => $filter,
+            'title' => $title,
+        ]);
+    }
+
     /**
      * 🔁 Start a focused exercise session using only the user's review words.
      */
@@ -228,6 +226,32 @@ class ReviewWordController extends Controller
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
+
+    private function getReviseQuery($user, $filter): array
+    {
+        $query = WordProgress::where('user_id', $user->id)
+            ->where('box', '<', WordProgress::MASTERED_BOX);
+
+        switch ($filter) {
+            case 'learning':
+                $query->where('box', 2);
+                $title = 'Learning Words';
+                break;
+            case 'reviewing':
+                $query->where('box', 3);
+                $title = 'Reviewing Words';
+                break;
+            case 'more_practice':
+                $query->where('incorrect_count', '>=', 2);
+                $title = 'More Practice Needed';
+                break;
+            default:
+                $title = 'Revise — All Words';
+                break;
+        }
+
+        return [$query, $title];
+    }
 
     /**
      * Word counts per revise filter (used by both the landing page

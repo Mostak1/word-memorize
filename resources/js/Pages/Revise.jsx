@@ -88,8 +88,9 @@ export default function Revise({ reviseCounts = {} }) {
                             const isEmpty = count === 0;
 
                             return (
-                                <div
+                                <Link
                                     key={f.key}
+                                    href={route("words.revise.list", f.key)}
                                     className={`block ${isEmpty ? "opacity-50 pointer-events-none" : ""} bg-white dark:bg-slate-900 rounded-2xl p-4 flex items-center gap-4 shadow-sm border ${f.accent} hover:shadow-md transition-all`}
                                     aria-disabled={isEmpty}
                                 >
@@ -121,7 +122,7 @@ export default function Revise({ reviseCounts = {} }) {
                                         </span>
                                         <ChevronRight className="h-4 w-4 text-gray-300 dark:text-slate-600" />
                                     </div>
-                                </div>
+                                </Link>
                             );
                         })}
                     </div>

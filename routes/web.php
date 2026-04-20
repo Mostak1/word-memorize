@@ -219,6 +219,7 @@ Route::middleware(['auth', 'active.device'])->group(function () {
     Route::get('/my/review/practice', [ReviewWordController::class, 'practiceReview'])->name('words.review.practice');
 
     Route::get('/my/revise', [ReviewWordController::class, 'revisePage'])->name('words.revise');
+    Route::get('/my/revise/{filter}', [ReviewWordController::class, 'reviseWordsList'])->name('words.revise.list');
 
     // Revise exercise session (started from the Revise page)
     Route::get('/my/revise/session', [ReviewWordController::class, 'reviseSession'])->name('words.revise.session');

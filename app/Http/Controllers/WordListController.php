@@ -190,21 +190,44 @@ class WordListController extends Controller
 
         $prevWordId = null;
         $nextWordId = null;
+        $isRevise = $request->query('from') === 'revise';
+        $reviseFilter = $request->query('filter');
 
-        if ($request->query('from') === 'mastered' && auth()->check()) {
-            $masteredIds = WordProgress::where('word_progress.user_id', auth()->id())
-                ->where('word_progress.box', '>=', WordProgress::MASTERED_BOX)
-                ->join('words', 'word_progress.word_id', '=', 'words.id')
-                ->where('words.wordlist_id', $word->wordlist_id)
-                ->orderBy('words.id')
-                ->pluck('word_progress.word_id')
-                ->toArray();
+        if (auth()->check()) {
+            if ($request->query('from') === 'mastered') {
+                $masteredIds = WordProgress::where('word_progress.user_id', auth()->id())
+                    ->where('word_progress.box', '>=', WordProgress::MASTERED_BOX)
+                    ->join('words', 'word_progress.word_id', '=', 'words.id')
+                    ->where('words.wordlist_id', $word->wordlist_id)
+                    ->orderBy('words.id')
+                    ->pluck('word_progress.word_id')
+                    ->toArray();
 
-            $currentIndex = array_search($word->id, $masteredIds);
+                $currentIndex = array_search($word->id, $masteredIds);
 
-            if ($currentIndex !== false) {
-                $prevWordId = $currentIndex > 0 ? $masteredIds[$currentIndex - 1] : null;
-                $nextWordId = $currentIndex < count($masteredIds) - 1 ? $masteredIds[$currentIndex + 1] : null;
+                if ($currentIndex !== false) {
+                    $prevWordId = $currentIndex > 0 ? $masteredIds[$currentIndex - 1] : null;
+                    $nextWordId = $currentIndex < count($masteredIds) - 1 ? $masteredIds[$currentIndex + 1] : null;
+                }
+            } elseif ($isRevise) {
+                $query = WordProgress::where('user_id', auth()->id())
+                    ->where('box', '<', WordProgress::MASTERED_BOX);
+
+                if ($reviseFilter === 'learning') {
+                    $query->where('box', 2);
+                } elseif ($reviseFilter === 'reviewing') {
+                    $query->where('box', 3);
+                } elseif ($reviseFilter === 'more_practice') {
+                    $query->where('incorrect_count', '>=', 2);
+                }
+
+                $reviseIds = $query->orderBy('word_id')->pluck('word_id')->toArray();
+                $currentIndex = array_search($word->id, $reviseIds);
+
+                if ($currentIndex !== false) {
+                    $prevWordId = $currentIndex > 0 ? $reviseIds[$currentIndex - 1] : null;
+                    $nextWordId = $currentIndex < count($reviseIds) - 1 ? $reviseIds[$currentIndex + 1] : null;
+                }
             }
         }
 
@@ -213,6 +236,8 @@ class WordListController extends Controller
             'wordList' => $word->wordList,
             'subCategory' => $word->subcategory,
             'isMastered' => $request->query('from') === 'mastered',
+            'isRevise' => $isRevise,
+            'reviseFilter' => $reviseFilter,
             'isBookmarked' => $isBookmarked,
             'prevWordId' => $prevWordId,
             'nextWordId' => $nextWordId,

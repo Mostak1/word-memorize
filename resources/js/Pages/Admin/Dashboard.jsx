@@ -5,69 +5,144 @@ import { Button } from "@/Components/ui/button";
 import {
     Users,
     BookOpen,
-    UserCheck,
     Shield,
     TrendingUp,
     BookMarked,
     ArrowRight,
+    UserCheck,
+    LayoutGrid,
+    Zap,
+    AlertTriangle,
+    Settings,
+    Clock,
 } from "lucide-react";
 
-export default function Dashboard({ stats }) {
-    // Primary stats cards
+export default function Dashboard({ stats, recentUsers }) {
+    // ── Primary stat cards ────────────────────────────────────────────────────
     const statCards = [
         {
             title: "Total Users",
-            value: stats.total_users,
+            value: stats.total_users.toLocaleString(),
             icon: Users,
             color: "text-blue-600",
             bgColor: "bg-blue-50 dark:bg-blue-950",
-            description: "Registered users",
+            description: "Registered accounts",
+        },
+        {
+            title: "Active Users (30d)",
+            value: stats.active_users.toLocaleString(),
+            icon: UserCheck,
+            color: "text-purple-600",
+            bgColor: "bg-purple-50 dark:bg-purple-950",
+            description: "Active last 30 days",
         },
         {
             title: "Word Lists",
-            value: stats.total_word_lists,
+            value: stats.total_word_lists.toLocaleString(),
             icon: BookOpen,
             color: "text-green-600",
             bgColor: "bg-green-50 dark:bg-green-950",
-            description: "Total groups",
+            description: "Total word lists",
         },
-        // {
-        //     title: "Active Users (30d)",
-        //     value: stats.active_users,
-        //     icon: UserCheck,
-        //     color: "text-purple-600",
-        //     bgColor: "bg-purple-50 dark:bg-purple-950",
-        //     description: "Last 30 days",
-        // },
         {
             title: "Administrators",
-            value: stats.total_admins,
+            value: stats.total_admins.toLocaleString(),
             icon: Shield,
             color: "text-orange-600",
             bgColor: "bg-orange-50 dark:bg-orange-950",
-            description: "Admin users",
+            description: "Admin accounts",
         },
     ];
+
+    // ── Secondary stat cards ──────────────────────────────────────────────────
+    const secondaryCards = [
+        {
+            title: "Total Words",
+            value: stats.total_words.toLocaleString(),
+            icon: BookMarked,
+            color: "text-indigo-600",
+            bgColor: "bg-indigo-50 dark:bg-indigo-950",
+            description: "Across all word lists",
+        },
+        {
+            title: "New Users (7d)",
+            value: stats.new_users_this_week.toLocaleString(),
+            icon: TrendingUp,
+            color: "text-emerald-600",
+            bgColor: "bg-emerald-50 dark:bg-emerald-950",
+            description: "Joined this week",
+        },
+        {
+            title: "Categories",
+            value: stats.total_categories.toLocaleString(),
+            icon: LayoutGrid,
+            color: "text-cyan-600",
+            bgColor: "bg-cyan-50 dark:bg-cyan-950",
+            description: "Word list categories",
+        },
+        {
+            title: "Total XP Awarded",
+            value: stats.total_xp_awarded.toLocaleString(),
+            icon: Zap,
+            color: "text-yellow-600",
+            bgColor: "bg-yellow-50 dark:bg-yellow-950",
+            description: "XP across all users",
+        },
+    ];
+
+    // ── Role badge helper ─────────────────────────────────────────────────────
+    const roleBadge = (role) => {
+        const map = {
+            admin: "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300",
+            instructor:
+                "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
+            student:
+                "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
+        };
+        return map[role] ?? "bg-gray-100 text-gray-700";
+    };
+
+    const formatDate = (dateStr) =>
+        new Date(dateStr).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+        });
 
     return (
         <AdminLayout>
             <Head title="Admin Dashboard" />
 
             <div className="space-y-6">
-                {/* Header */}
+                {/* ── Header ──────────────────────────────────────────────── */}
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight">
                             Dashboard
                         </h1>
                         <p className="text-muted-foreground">
-                            Welcome to your admin dashboard
+                            Welcome back — here's what's happening in VocabPix.
                         </p>
                     </div>
+
+                    {/* Open error-reports alert badge */}
+                    {stats.open_error_reports > 0 && (
+                        <Link href={route("admin.error-reports.index")}>
+                            <Button
+                                variant="destructive"
+                                size="sm"
+                                className="gap-2"
+                            >
+                                <AlertTriangle className="h-4 w-4" />
+                                {stats.open_error_reports} Open Report
+                                {stats.open_error_reports !== 1 ? "s" : ""}
+                            </Button>
+                        </Link>
+                    )}
                 </div>
 
-                {/* Primary Stats Grid */}
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                {/* ── Primary Stats ────────────────────────────────────────── */}
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     {statCards.map((stat) => {
                         const Icon = stat.icon;
                         return (
@@ -86,190 +161,124 @@ export default function Dashboard({ stats }) {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-2xl font-bold">
-                                        {stat.value.toLocaleString()}
+                                        {stat.value}
                                     </div>
-                                    {stat.description && (
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                            {stat.description}
-                                        </p>
-                                    )}
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        {stat.description}
+                                    </p>
                                 </CardContent>
                             </Card>
                         );
                     })}
                 </div>
 
-                {/* Secondary Stats Grid */}
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {/* Total Words */}
-                    {/* <Card>
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground">
-                                Total Words
-                            </CardTitle>
-                            <div className="rounded-full p-2 bg-indigo-50 dark:bg-indigo-950">
-                                <BookMarked className="h-4 w-4 text-indigo-600" />
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                {stats.total_words.toLocaleString()}
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                                Across all groups
-                            </p>
-                        </CardContent>
-                    </Card> */}
-
-                    {/* New Users This Week */}
-                    {/* <Card>
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground">
-                                New Users (7d)
-                            </CardTitle>
-                            <div className="rounded-full p-2 bg-emerald-50 dark:bg-emerald-950">
-                                <TrendingUp className="h-4 w-4 text-emerald-600" />
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                {stats.new_users_this_week.toLocaleString()}
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                                Last 7 days
-                            </p>
-                        </CardContent>
-                    </Card> */}
-
-                    {/* Average Words per Group */}
-                    {/* <Card>
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground">
-                                Avg Words/Group
-                            </CardTitle>
-                            <div className="rounded-full p-2 bg-pink-50 dark:bg-pink-950">
-                                <BookOpen className="h-4 w-4 text-pink-600" />
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                {Math.round(
-                                    stats.avg_words_per_group,
-                                ).toLocaleString()}
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                                Per exercise group
-                            </p>
-                        </CardContent>
-                    </Card> */}
+                {/* ── Secondary Stats ──────────────────────────────────────── */}
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    {secondaryCards.map((stat) => {
+                        const Icon = stat.icon;
+                        return (
+                            <Card key={stat.title} className="overflow-hidden">
+                                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                                        {stat.title}
+                                    </CardTitle>
+                                    <div
+                                        className={`rounded-full p-2 ${stat.bgColor}`}
+                                    >
+                                        <Icon
+                                            className={`h-4 w-4 ${stat.color}`}
+                                        />
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">
+                                        {stat.value}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        {stat.description}
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        );
+                    })}
                 </div>
 
-                {/* Content Overview & Quick Actions */}
-                <div className="grid gap-4 md:grid-cols-2">
-                    {/* Quick Stats Summary */}
-                    {/* <Card>
-                        <CardHeader>
-                            <CardTitle>Quick Overview</CardTitle>
+                {/* ── Bottom Row: Recent Users + Quick Actions ─────────────── */}
+                <div className="grid gap-4 lg:grid-cols-3">
+                    {/* Recent Users table — spans 2 cols */}
+                    <Card className="lg:col-span-2">
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <CardTitle className="flex items-center gap-2">
+                                <Clock className="h-4 w-4 text-muted-foreground" />
+                                Recent Users
+                            </CardTitle>
+                            <Link href={route("admin.users.index")}>
+                                <Button variant="ghost" size="sm" className="gap-1 text-xs">
+                                    View all <ArrowRight className="h-3 w-3" />
+                                </Button>
+                            </Link>
                         </CardHeader>
                         <CardContent>
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between border-b pb-3">
-                                    <div className="space-y-1">
-                                        <p className="text-sm font-medium">
-                                            User Growth
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                            New registrations this week
-                                        </p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-2xl font-bold text-emerald-600">
-                                            +{stats.new_users_this_week}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center justify-between border-b pb-3">
-                                    <div className="space-y-1">
-                                        <p className="text-sm font-medium">
-                                            Content Library
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                            Exercise groups & words
-                                        </p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-sm font-medium">
-                                            {stats.total_word_lists} groups
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {stats.total_words} words
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center justify-between">
-                                    <div className="space-y-1">
-                                        <p className="text-sm font-medium">
-                                            Administration
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                            Admin user accounts
-                                        </p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-2xl font-bold text-orange-600">
-                                            {stats.total_admins}
-                                        </p>
-                                    </div>
-                                </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm">
+                                    <thead>
+                                        <tr className="border-b text-xs text-muted-foreground">
+                                            <th className="pb-2 text-left font-medium">
+                                                Name
+                                            </th>
+                                            <th className="pb-2 text-left font-medium">
+                                                Email
+                                            </th>
+                                            <th className="pb-2 text-left font-medium">
+                                                Role
+                                            </th>
+                                            <th className="pb-2 text-left font-medium">
+                                                Joined
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y">
+                                        {(recentUsers ?? []).map((user) => (
+                                            <tr
+                                                key={user.id}
+                                                className="hover:bg-muted/40 transition-colors"
+                                            >
+                                                <td className="py-2.5 pr-4 font-medium">
+                                                    {user.name}
+                                                </td>
+                                                <td className="py-2.5 pr-4 text-muted-foreground truncate max-w-[180px]">
+                                                    {user.email}
+                                                </td>
+                                                <td className="py-2.5 pr-4">
+                                                    <span
+                                                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${roleBadge(user.role)}`}
+                                                    >
+                                                        {user.role ?? "user"}
+                                                    </span>
+                                                </td>
+                                                <td className="py-2.5 text-muted-foreground text-xs">
+                                                    {formatDate(
+                                                        user.created_at,
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
                         </CardContent>
-                    </Card> */}
+                    </Card>
 
                     {/* Quick Actions */}
-                    {/* <Card>
+                    <Card>
                         <CardHeader>
-                            <CardTitle>Quick Actions</CardTitle>
+                            <CardTitle className="flex items-center gap-2">
+                                <Settings className="h-4 w-4 text-muted-foreground" />
+                                Quick Actions
+                            </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="space-y-3">
-                                <Button
-                                    asChild
-                                    className="w-full justify-between"
-                                    variant="outline"
-                                >
-                                    <Link
-                                        href={route(
-                                            "admin.exercise-groups.create",
-                                        )}
-                                    >
-                                        <span className="flex items-center gap-2">
-                                            <BookOpen className="h-4 w-4" />
-                                            Create Exercise Group
-                                        </span>
-                                        <ArrowRight className="h-4 w-4" />
-                                    </Link>
-                                </Button>
-
-                                <Button
-                                    asChild
-                                    className="w-full justify-between"
-                                    variant="outline"
-                                >
-                                    <Link
-                                        href={route(
-                                            "admin.exercise-groups.index",
-                                        )}
-                                    >
-                                        <span className="flex items-center gap-2">
-                                            <BookMarked className="h-4 w-4" />
-                                            Manage Exercise Groups
-                                        </span>
-                                        <ArrowRight className="h-4 w-4" />
-                                    </Link>
-                                </Button>
-
+                            <div className="space-y-2.5">
                                 <Button
                                     asChild
                                     className="w-full justify-between"
@@ -279,6 +288,53 @@ export default function Dashboard({ stats }) {
                                         <span className="flex items-center gap-2">
                                             <Users className="h-4 w-4" />
                                             Manage Users
+                                        </span>
+                                        <ArrowRight className="h-4 w-4" />
+                                    </Link>
+                                </Button>
+
+                                <Button
+                                    asChild
+                                    className="w-full justify-between"
+                                    variant="outline"
+                                >
+                                    <Link href={route("admin.word-lists.index")}>
+                                        <span className="flex items-center gap-2">
+                                            <BookOpen className="h-4 w-4" />
+                                            Manage Word Lists
+                                        </span>
+                                        <ArrowRight className="h-4 w-4" />
+                                    </Link>
+                                </Button>
+
+                                <Button
+                                    asChild
+                                    className="w-full justify-between"
+                                    variant="outline"
+                                >
+                                    <Link href={route("admin.error-reports.index")}>
+                                        <span className="flex items-center gap-2">
+                                            <AlertTriangle className="h-4 w-4" />
+                                            Error Reports
+                                            {stats.open_error_reports > 0 && (
+                                                <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-xs text-white">
+                                                    {stats.open_error_reports}
+                                                </span>
+                                            )}
+                                        </span>
+                                        <ArrowRight className="h-4 w-4" />
+                                    </Link>
+                                </Button>
+
+                                <Button
+                                    asChild
+                                    className="w-full justify-between"
+                                    variant="outline"
+                                >
+                                    <Link href={route("admin.user-progress.index")}>
+                                        <span className="flex items-center gap-2">
+                                            <TrendingUp className="h-4 w-4" />
+                                            User Progress
                                         </span>
                                         <ArrowRight className="h-4 w-4" />
                                     </Link>
@@ -299,22 +355,40 @@ export default function Dashboard({ stats }) {
                                 </Button>
                             </div>
                         </CardContent>
-                    </Card> */}
+                    </Card>
                 </div>
 
-                {/* Recent Activity Placeholder */}
-                {/* <Card>
-                    <CardHeader>
-                        <CardTitle>Recent Activity</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-sm text-muted-foreground">
-                            Recent activity log will be displayed here. This
-                            could include newly created exercise groups, user
-                            registrations, and system events.
-                        </p>
+                {/* ── Content Summary Bar ──────────────────────────────────── */}
+                <Card>
+                    <CardContent className="pt-6">
+                        <div className="grid gap-6 sm:grid-cols-3 text-center">
+                            <div>
+                                <p className="text-3xl font-bold">
+                                    {stats.avg_words_per_list.toLocaleString()}
+                                </p>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    Avg. words per list
+                                </p>
+                            </div>
+                            <div className="sm:border-x">
+                                <p className="text-3xl font-bold">
+                                    {stats.total_categories.toLocaleString()}
+                                </p>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    Active categories
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-3xl font-bold">
+                                    {stats.total_xp_awarded.toLocaleString()}
+                                </p>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    Total XP earned by users
+                                </p>
+                            </div>
+                        </div>
                     </CardContent>
-                </Card> */}
+                </Card>
             </div>
         </AdminLayout>
     );

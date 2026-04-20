@@ -1,5 +1,4 @@
 import { Head, Link, router } from "@inertiajs/react";
-import Lottie from "lottie-react";
 import CryptoJS from "crypto-js";
 import AppLayout from "@/Layouts/AppLayout";
 import approvedAnimation from "../../../public/lottie/Approved.json";
@@ -14,175 +13,86 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/Components/ui/alert-dialog";
-import {
-    Volume2,
-    LogIn,
-    Bookmark,
-    ChevronLeft,
-    X,
-    Check,
-    Zap,
-} from "lucide-react";
+import { LogIn } from "lucide-react";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import FlashMessages from "@/Components/FlashMessage";
 import { usePage } from "@inertiajs/react";
 import {
     playCorrect,
-    playIncorrect,
-    playSessionComplete,
     playMastered,
+    playSessionComplete,
 } from "@/Utils/sounds";
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-const MASTERED_BOX = 4;
+// ── Sub-components ────────────────────────────────────────────────────────────
+import { MASTERED_BOX, preloadImages } from "./ExerciseSession/constants";
+import MasteryOverlay from "./ExerciseSession/MasteryOverlay";
+import QuizPanel from "./ExerciseSession/QuizPanel";
+import LoadingScreen from "./ExerciseSession/LoadingScreen";
+import EmptyQueueScreen from "./ExerciseSession/EmptyQueueScreen";
+import SessionCompleteScreen from "./ExerciseSession/SessionCompleteScreen";
+import SessionProgressBar from "./ExerciseSession/SessionProgressBar";
+import FlashCard from "./ExerciseSession/FlashCard";
+import MeaningCard from "./ExerciseSession/MeaningCard";
 
-const LEVEL_META = {
-    1: {
-        label: "New",
-        color: "bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-300",
-        dot: "bg-gray-400 dark:bg-slate-600",
-    },
-    2: {
-        label: "Learning",
-        color: "bg-cyan-100 text-cyan-600 dark:bg-cyan-950 dark:text-cyan-400",
-        dot: "bg-cyan-400 dark:bg-cyan-500",
-    },
-    3: {
-        label: "Reviewing",
-        color: "bg-orange-100 text-orange-600 dark:bg-orange-950 dark:text-orange-400",
-        dot: "bg-orange-400 dark:bg-orange-500",
-    },
-    4: {
-        label: "Mastered",
-        color: "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400",
-        dot: "bg-green-500 dark:bg-green-400",
-    },
+// ── Inline CSS keyframes (card animations, confetti, streak pop) ──────────────
+const SESSION_STYLES = `
+    @keyframes streakPop {
+        0%   { opacity: 0; transform: scale(0.2) translateY(60px); }
+        40%  { transform: scale(1.25) translateY(-15px); }
+        70%  { transform: scale(0.95) translateY(5px); }
+        100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    @keyframes cardEnterRight {
+        from { opacity: 0; transform: translateX(60px)  scale(0.96); }
+        to   { opacity: 1; transform: translateX(0)      scale(1);    }
+    }
+    @keyframes cardEnterLeft {
+        from { opacity: 0; transform: translateX(-60px) scale(0.96); }
+        to   { opacity: 1; transform: translateX(0)      scale(1);    }
+    }
+    @keyframes cardExitLeft {
+        from { opacity: 1; transform: translateX(0)    scale(1);    }
+        to   { opacity: 0; transform: translateX(-80px) scale(0.94); }
+    }
+    @keyframes cardExitRight {
+        from { opacity: 1; transform: translateX(0)   scale(1);    }
+        to   { opacity: 0; transform: translateX(80px) scale(0.94); }
+    }
+    .card-enter-right { animation: cardEnterRight 0.28s cubic-bezier(0.22,1,0.36,1) forwards; }
+    .card-enter-left  { animation: cardEnterLeft  0.28s cubic-bezier(0.22,1,0.36,1) forwards; }
+    .card-exit-left   { animation: cardExitLeft   0.18s ease-in forwards; pointer-events: none; }
+    .card-exit-right  { animation: cardExitRight  0.18s ease-in forwards; pointer-events: none; }
+
+    @keyframes confettiFall {
+        0%   { transform: translateY(-20px) rotate(0deg);   opacity: 1; }
+        100% { transform: translateY(110vh)  rotate(720deg); opacity: 0; }
+    }
+    @keyframes bounceIn {
+        0%   { opacity: 0; transform: scale(0.5) translateY(-20px); }
+        60%  { opacity: 1; transform: scale(1.08) translateY(4px);  }
+        100% { opacity: 1; transform: scale(1)    translateY(0);    }
+    }
+    .animate-bounce-in { animation: bounceIn 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+`;
+
+// ── Quiz builder helpers ───────────────────────────────────────────────────────
+const pickOne = (str) => {
+    if (!str?.trim()) return null;
+    const parts = str.split(/[,;/]+/).map((s) => s.trim()).filter(Boolean);
+    return parts.length ? parts[Math.floor(Math.random() * parts.length)] : null;
 };
 
-// Confetti pieces — stable (generated once outside component)
-const CONFETTI = Array.from({ length: 36 }, (_, i) => ({
-    id: i,
-    left: `${(i * 2.85) % 100}%`,
-    delay: `${(i * 0.055) % 0.5}s`,
-    duration: `${1.5 + (i % 5) * 0.18}s`,
-    color: [
-        "#E5201C",
-        "#22c55e",
-        "#3b82f6",
-        "#f59e0b",
-        "#8b5cf6",
-        "#ec4899",
-        "#14b8a6",
-    ][i % 7],
-    size: 6 + (i % 5) * 2,
-    borderRadius: i % 3 === 0 ? "50%" : "2px",
-}));
-
-// Image preloader utility – now preloads EVERYTHING with progress
-const preloadImages = async (words, onProgress) => {
-    const allImages = [];
-
-    words.forEach((word) => {
-        if (word.images?.length) {
-            word.images.forEach((img) => {
-                if (img.image_url_full) allImages.push(img.image_url_full);
-            });
-        }
-    });
-
-    if (allImages.length === 0) {
-        onProgress?.(100);
-        return;
+const makeFillBlank = (word, sentences) => {
+    if (!sentences) return null;
+    const parts = sentences.split(/(?<=[.!?])\s+/);
+    for (const s of parts) {
+        const re = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
+        if (re.test(s)) return s.replace(re, "___________");
     }
-
-    let loaded = 0;
-    const total = allImages.length;
-    const batchSize = 8;
-
-    for (let i = 0; i < allImages.length; i += batchSize) {
-        const batch = allImages.slice(i, i + batchSize);
-        await Promise.allSettled(
-            batch.map(
-                (src) =>
-                    new Promise((resolve) => {
-                        const img = new Image();
-                        img.onload = img.onerror = () => {
-                            loaded++;
-                            onProgress?.(Math.round((loaded / total) * 100));
-                            resolve(null);
-                        };
-                        img.src = src;
-                    }),
-            ),
-        );
-    }
-
-    onProgress?.(100);
+    return null;
 };
 
-// ── MasteryOverlay ────────────────────────────────────────────────────────────
-// Defined at MODULE scope (outside ExerciseSession) so its identity is stable
-// across parent re-renders. This prevents React from unmounting/remounting it
-// on every state change (bookmark clicks, show meaning, etc.), which was
-// causing the animation to replay on every button press.
-//
-// Receiving a new `key` prop from the parent causes React to fully unmount
-// and remount this component, giving each rapid mastery its own fresh
-// state and independent timers — no stale closures, no timer collisions.
-function MasteryOverlay() {
-    const [flash, setFlash] = useState(true);
-    const [visible, setVisible] = useState(true);
-
-    useEffect(() => {
-        const t1 = setTimeout(() => setFlash(false), 900);
-        const t2 = setTimeout(() => setVisible(false), 2800);
-        return () => {
-            clearTimeout(t1);
-            clearTimeout(t2);
-        };
-    }, []);
-
-    if (!visible) return null;
-
-    return (
-        <>
-            {/* Green flash */}
-            {flash && (
-                <div className="fixed inset-0 pointer-events-none z-40 bg-green-400/20" />
-            )}
-            {/* Confetti + badge */}
-            <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-                {CONFETTI.map((p) => (
-                    <div
-                        key={p.id}
-                        style={{
-                            position: "absolute",
-                            left: p.left,
-                            top: "-12px",
-                            width: `${p.size}px`,
-                            height: `${p.size}px`,
-                            backgroundColor: p.color,
-                            borderRadius: p.borderRadius,
-                            animation: `confettiFall ${p.duration} ${p.delay} ease-in forwards`,
-                        }}
-                    />
-                ))}
-                <div className="absolute inset-x-0 top-24 flex justify-center pointer-events-none">
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl dark:shadow-2xl dark:shadow-slate-900 px-8 py-4 text-center animate-bounce-in border border-green-100 dark:border-green-900">
-                        <p className="text-3xl mb-1">🌟</p>
-                        <p className="text-lg font-extrabold text-green-600 dark:text-green-400">
-                            Mastered!
-                        </p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                            Word added to your Mastery Garden
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </>
-    );
-}
-
+// ── Main component ────────────────────────────────────────────────────────────
 export default function ExerciseSession({
     wordList,
     subcategory,
@@ -194,40 +104,37 @@ export default function ExerciseSession({
     xp_enabled = true,
 }) {
     const { auth, userSettings } = usePage().props;
+
+    // ── Streak ────────────────────────────────────────────────────────────────
     const [streak, setStreak] = useState(initialStreak);
     const [streakChange, setStreakChange] = useState(null);
     const [showStreakEffect, setShowStreakEffect] = useState(false);
+    const previousStreak = useRef(initialStreak?.current_streak ?? 0);
+
+    // ── Loading ───────────────────────────────────────────────────────────────
     const [isPreloading, setIsPreloading] = useState(true);
     const [loadingProgress, setLoadingProgress] = useState(0);
 
-    const previousStreak = useRef(initialStreak?.current_streak ?? 0);
-
-    // Lottie JSON is already a JS object via Vite's JSON import — use directly.
-    const fireAnim = fireStreakAnimation;
-    const approvedAnim = approvedAnimation;
-
-    // const [streakValue, setStreakValue] = useState(1);
-    // ── Queue state ───────────────────────────────────────────────────────────
-    // The Active Queue: queue[0] is always the current word.
-    // "I Know"       → remove from front (word leaves session).
-    // "I Don't Know" → move from front to back (word stays in session).
-    const [queue, setQueue] = useState(() =>
-        initialWords.map((w) => ({ ...w })),
-    );
-    const initialQueueSize = useMemo(() => initialWords.length, []); // cap at session start
+    // ── Queue ─────────────────────────────────────────────────────────────────
+    const [queue, setQueue] = useState(() => initialWords.map((w) => ({ ...w })));
+    const initialQueueSize = useMemo(() => initialWords.length, []);
 
     // ── Session stats ─────────────────────────────────────────────────────────
-    const [promotedCount, setPromotedCount] = useState(0); // words answered "I Know"
-    const [dontKnowCount, setDontKnowCount] = useState(0); // total "I Don't Know" taps
-    const [sessionXpAwarded, setSessionXpAwarded] = useState(0); // XP earned this session
-
+    const [promotedCount, setPromotedCount] = useState(0);
+    const [dontKnowCount, setDontKnowCount] = useState(0);
+    const [sessionXpAwarded, setSessionXpAwarded] = useState(0);
     const [sessionResults, setSessionResults] = useState([]);
+    const answeredCount = promotedCount + dontKnowCount;
+
+    // ── Navigation guard ──────────────────────────────────────────────────────
     const [showLeaveDialog, setShowLeaveDialog] = useState(false);
     const [pendingVisit, setPendingVisit] = useState(null);
     const allowNavigation = useRef(false);
 
-    // NEW: Total cards processed in this session (used for progress bar)
-    const answeredCount = promotedCount + dontKnowCount;
+    // ── Inline quiz ───────────────────────────────────────────────────────────
+    const QUIZ_INTERVAL = 4;
+    const [seenWordBuffer, setSeenWordBuffer] = useState([]);
+    const [activeQuiz, setActiveQuiz] = useState(null);
 
     // ── UI state ──────────────────────────────────────────────────────────────
     const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -238,66 +145,96 @@ export default function ExerciseSession({
     );
     const [showMeaning, setShowMeaning] = useState(false);
 
-    // ── Card animation state ──────────────────────────────────────────────────
-    // exitDir: 'left' = I Know (word leaves), 'right' = I Don't Know (shuffles back)
+    // ── Card animation ────────────────────────────────────────────────────────
     const exitDir = useRef("left");
     const [cardKey, setCardKey] = useState(0);
     const [exiting, setExiting] = useState(false);
 
-    // ── Gamification state ────────────────────────────────────────────────────
-    // masteryEventKey increments on every mastery so each event gets its own
-    // keyed overlay instance with independent timers — rapid presses each
-    // play their full animation without cancelling the previous one.
+    // ── Gamification ──────────────────────────────────────────────────────────
     const [masteryEventKey, setMasteryEventKey] = useState(0);
     const [levelUpPulse, setLevelUpPulse] = useState(false);
 
-    // Current word is always the front of the queue
+    // ── "Already Know" popup ──────────────────────────────────────────────────
+    const [showAlreadyKnowDialog, setShowAlreadyKnowDialog] = useState(false);
+    const alreadyKnowWordRef = useRef(null); // the word pending mastery confirmation
+    const consecutiveKnowMap = useRef({}); // wordId → count of consecutive knows (no incorrect)
+
+    // ── Refs ──────────────────────────────────────────────────────────────────
+    const meaningCardRef = useRef(null);
+    const isDoneRef = useRef(false);
+
+    // ── Derived ───────────────────────────────────────────────────────────────
     const word = queue[0] ?? null;
-    const isDone = queue.length === 0 && !exiting;
-    const isDoneRef = useRef(isDone);
+    const isDone =
+        (queue.length === 0 || (answeredCount >= initialQueueSize && !activeQuiz)) &&
+        !exiting;
+
+    const backHref =
+        backUrl ??
+        (wordList?.word_list_category_id
+            ? route("wordlistcategory.wordlists", wordList.word_list_category_id)
+            : route("wordlist.show", wordList?.id));
+
+    const sessionProgress =
+        initialQueueSize > 0 ? (answeredCount / initialQueueSize) * 100 : 0;
+
+    // ── Collocation parser ────────────────────────────────────────────────────
+    const collocationList = (() => {
+        const raw = word?.collocations;
+        if (!raw) return [];
+        if (Array.isArray(raw)) return raw;
+        try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) return parsed;
+        } catch (e) {}
+        return raw
+            .split(/[\n,]+/)
+            .map((c) => c.trim())
+            .filter(Boolean)
+            .map((phrase) => ({ phrase, example_sentence: "" }));
+    })();
+
+    // ── Sync isDoneRef ────────────────────────────────────────────────────────
     useEffect(() => {
         isDoneRef.current = isDone;
     }, [isDone]);
 
-    // const [openCollocationIndex, setOpenCollocationIndex] = useState(null);
-    const meaningCardRef = useRef(null);
-    const buttonsRef = useRef(null);
-
-    // Reset per-card UI when the front of the queue changes
+    // ── Reset per-card UI ─────────────────────────────────────────────────────
     useEffect(() => {
         setActiveImageIndex(0);
         setShowMeaning(false);
     }, [word?.id]);
 
-    // Auto-scroll to I Know / I Don't Know buttons when meaning is revealed
+    // ── Auto-scroll to buttons when meaning revealed ──────────────────────────
     useEffect(() => {
         if (showMeaning && meaningCardRef.current) {
             setTimeout(() => {
-                meaningCardRef.current?.scrollIntoView({
-                    behavior: "smooth",
-                    block: "end",
-                });
+                meaningCardRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
             }, 250);
         }
     }, [showMeaning]);
 
+    // ── Snap scroll to top on word change ────────────────────────────────────
     useEffect(() => {
-        // Push a proxy state into the history API so the first back-button press
-        // doesn't actually leave the page.
+        if (!word?.id) return;
+        const timer = setTimeout(() => {
+            window.scrollTo({ top: 0, behavior: "instant" });
+        }, 180);
+        return () => clearTimeout(timer);
+    }, [word?.id]);
+
+    // ── Navigation guard (back button + Inertia + beforeunload) ──────────────
+    useEffect(() => {
         window.history.pushState(null, "", window.location.href);
 
         const handlePopState = (event) => {
             if (!isDoneRef.current && !allowNavigation.current) {
-                // Prevent Inertia from handling the popstate event
                 event.stopPropagation();
-                // Push the proxy state again to intercept the next back button
                 window.history.pushState(null, "", window.location.href);
-                setPendingVisit({ type: 'popstate' });
+                setPendingVisit({ type: "popstate" });
                 setShowLeaveDialog(true);
             }
         };
-
-        window.addEventListener("popstate", handlePopState, { capture: true });
 
         const handleBefore = (event) => {
             if (!isDoneRef.current && !allowNavigation.current) {
@@ -314,6 +251,7 @@ export default function ExerciseSession({
             }
         };
 
+        window.addEventListener("popstate", handlePopState, { capture: true });
         const removeListener = router.on("before", handleBefore);
         window.addEventListener("beforeunload", handleBeforeUnload);
 
@@ -324,6 +262,7 @@ export default function ExerciseSession({
         };
     }, []);
 
+    // ── Session complete — batch save + streak ────────────────────────────────
     useEffect(() => {
         if (!isDone || !auth?.user || initialQueueSize === 0) return;
 
@@ -345,40 +284,27 @@ export default function ExerciseSession({
             },
             body: JSON.stringify({ wordlist_id: wordList?.id, results: sessionResults }),
         })
-            .then((response) => response.json())
+            .then((r) => r.json())
             .then((data) => {
-                // Check if any new achievements were earned during this session
                 window.dispatchEvent(new Event("check-achievements"));
 
                 if (data.xp_awarded && xp_enabled) {
                     setSessionXpAwarded(data.xp_awarded);
-                    // playXpPurchase();
                 }
 
                 if (data.streak) {
                     const newStreak = data.streak.current_streak ?? 0;
                     const prevStreak = previousStreak.current;
-
-                    // ✅ Fix for midnight streak: if it's a new calendar day AND streak is same as before,
-                    // this means it's the first session of the new day - streak is being maintained!
-                    // We still show the streak increase animation for the first session of each day
                     const today = new Date().toDateString();
-                    const lastSessionDay =
-                        localStorage.getItem("lastSessionDay");
+                    const lastSessionDay = localStorage.getItem("lastSessionDay");
 
                     if (
                         newStreak > prevStreak ||
-                        (newStreak === prevStreak &&
-                            lastSessionDay !== today &&
-                            newStreak > 0)
+                        (newStreak === prevStreak && lastSessionDay !== today && newStreak > 0)
                     ) {
                         setStreakChange("up");
-                        // Show Fire Streak Animation with the NEW streak count
                         setShowStreakEffect(true);
-                        // Auto hide after animation
                         setTimeout(() => setShowStreakEffect(false), 2800);
-
-                        // Store today as last session day
                         localStorage.setItem("lastSessionDay", today);
                     } else if (newStreak < prevStreak) {
                         setStreakChange("down");
@@ -391,118 +317,60 @@ export default function ExerciseSession({
             .catch(() => {});
     }, [isDone, auth?.user]);
 
-    // Background preload next few words (fixed)
+    // ── Background preload next words ─────────────────────────────────────────
     useEffect(() => {
         if (!queue.length || isPreloading) return;
-        // Only preload next 3 words, no progress needed
-        const nextWords = queue.slice(0, 3);
-        preloadImages(nextWords, null); // null = no progress callback
+        preloadImages(queue.slice(0, 3), null);
     }, [queue.length, isPreloading]);
 
-    // Initial full preload + localStorage cache
+    // ── Initial preload + localStorage cache (24-hour TTL) ───────────────────
     useEffect(() => {
+        const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+        const CACHE_PREFIX = "cached-session-";
+
+        // Evict ALL stale cached-session-* entries on mount
+        try {
+            Object.keys(localStorage)
+                .filter((k) => k.startsWith(CACHE_PREFIX))
+                .forEach((key) => {
+                    try {
+                        const raw = localStorage.getItem(key);
+                        if (!raw) { localStorage.removeItem(key); return; }
+                        const decrypted = CryptoJS.AES.decrypt(raw, "wm-cache-secure-key").toString(CryptoJS.enc.Utf8);
+                        const { timestamp } = JSON.parse(decrypted);
+                        if (!timestamp || Date.now() - timestamp > CACHE_TTL_MS) {
+                            localStorage.removeItem(key);
+                        }
+                    } catch {
+                        // Corrupt entry — delete it
+                        localStorage.removeItem(key);
+                    }
+                });
+        } catch (e) {}
+
         const runPreload = async () => {
             setIsPreloading(true);
             setLoadingProgress(0);
-
             await preloadImages(initialWords, setLoadingProgress);
 
-            // Cache words JSON for future visits
+            // Write a fresh cache entry (only used for potential future optimisation;
+            // the session always runs from the server-provided initialWords prop).
             if (wordList?.id && initialWords.length > 0) {
                 try {
-                    const cacheData = JSON.stringify({
-                        words: initialWords,
-                        timestamp: Date.now(),
-                    });
-                    // Obfuscating cache data so casual users cannot read it
-                    const SECRET_KEY = "wm-cache-secure-key";
-                    const encryptedData = CryptoJS.AES.encrypt(cacheData, SECRET_KEY).toString();
-
-                    localStorage.setItem(
-                        `cached-session-${wordList.id}`,
-                        encryptedData
-                    );
+                    const cacheKey = `${CACHE_PREFIX}${wordList.id}`;
+                    const cacheData = JSON.stringify({ words: initialWords, timestamp: Date.now() });
+                    const encrypted = CryptoJS.AES.encrypt(cacheData, "wm-cache-secure-key").toString();
+                    localStorage.setItem(cacheKey, encrypted);
                 } catch (e) {}
             }
 
             setIsPreloading(false);
             setLoadingProgress(100);
         };
-
         runPreload();
     }, [initialWords, wordList?.id]);
 
-    // Snap scroll to top when a new word appears — timed to coincide with the
-    // card exit animation so the position reset is invisible to the user.
-    useEffect(() => {
-        if (!word?.id) return;
-        // Fire at ~180ms so the page resets while the old card is fading out,
-        // before the new card enters view (exit anim duration = 200ms).
-        const timer = setTimeout(() => {
-            window.scrollTo({ top: 0, behavior: "instant" });
-        }, 180);
-        return () => clearTimeout(timer);
-    }, [word?.id]);
-
     // ── Helpers ───────────────────────────────────────────────────────────────
-
-    const StreakPop = ({ streakCount, onComplete }) => {
-        useEffect(() => {
-            const timer = setTimeout(() => {
-                onComplete?.();
-            }, 2400); // Slightly longer for better Lottie + number feel
-            return () => clearTimeout(timer);
-        }, [onComplete]);
-
-        return (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none bg-black/40">
-                <div className="relative flex flex-col items-center">
-                    {/* Fire Streak Lottie */}
-                    {/* <Player
-                        autoplay
-                        loop={false}
-                        keepLastFrame={false}
-                        src={fireStreakAnimation}
-                        style={{ width: 340, height: 340 }}
-                    /> */}
-
-                    {/* {fireStreakAnimation && (
-                        <Lottie
-                            animationData={fireStreakAnimation}
-                            loop={false}
-                            style={{ width: 340, height: 340 }}
-                        />
-                    )} */}
-
-                    {fireAnim && (
-                        <Lottie
-                            animationData={fireAnim}
-                            loop={false}
-                            style={{ width: 340, height: 340 }}
-                        />
-                    )}
-
-                    {/* Dynamic Number */}
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-                        <div
-                            className="text-2xl font-black text-white tracking-[-6px] drop-shadow-[0_0_50px_#FF9500] animate-[streakPop_0.75s_cubic-bezier(0.34,1.56,0.64,1)_forwards]"
-                            style={{
-                                textShadow: "0 20px 50px rgba(255, 0, 0, 0.95)",
-                            }}
-                        >
-                            +{streakCount}
-                        </div>
-                    </div>
-
-                    {/* STREAK Text */}
-                    <div className="absolute bottom-16 text-orange-600 font-bold text-2xl tracking-[4px] animate-pulse">
-                        STREAK
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
     const speakWord = useCallback((text) => {
         if ("speechSynthesis" in window) {
             window.speechSynthesis.cancel();
@@ -512,73 +380,20 @@ export default function ExerciseSession({
         }
     }, []);
 
-    const highlightWord = (sentence, targetWord) => {
-        if (!sentence || !targetWord) return sentence;
-        const regex = new RegExp(`(${targetWord})`, "gi");
-        return sentence.split(regex).map((part, i) =>
-            regex.test(part) ? (
-                <strong
-                    key={i}
-                    className="font-bold text-gray-900 dark:text-yellow-300"
-                >
-                    {part}
-                </strong>
-            ) : (
-                part
-            ),
-        );
-    };
-
     const handleBookmark = (wordId) => {
-        if (!auth?.user) {
-            setShowLoginDialog(true);
-            return;
-        }
+        if (!auth?.user) { setShowLoginDialog(true); return; }
         setBookmarks((prev) => ({ ...prev, [wordId]: !prev[wordId] }));
-        router.post(
-            route("word.bookmark", wordId),
-            {},
-            {
-                preserveScroll: true,
-                preserveState: true,
-                onError: () =>
-                    setBookmarks((prev) => ({
-                        ...prev,
-                        [wordId]: !prev[wordId],
-                    })),
-            },
-        );
+        router.post(route("word.bookmark", wordId), {}, {
+            preserveScroll: true,
+            preserveState: true,
+            onError: () => setBookmarks((prev) => ({ ...prev, [wordId]: !prev[wordId] })),
+        });
     };
-
-    // ── Fire-and-forget server call ───────────────────────────────────────────
-    // Removed pingServer in favor of batch updating at the end of session.
-
-    // ── Animate then mutate queue ─────────────────────────────────────────────
-    // const animateThen = (direction, callback) => {
-    //     exitDir.current = direction;
-
-    //     setShowMeaning(false);
-
-    //     setExiting(true);
-
-    //     setTimeout(() => {
-    //         setExiting(false);
-    //         setCardKey((k) => k + 1);
-    //         callback();
-    //     }, 200);
-    // };
 
     const animateThen = (direction, callback) => {
         exitDir.current = direction;
-
-        // Force close meaning card immediately
         setShowMeaning(false);
-
         setExiting(true);
-
-        // Increased from 200ms to 400ms to ensure mastery overlay animations
-        // complete before the queue updates, preventing blank screen bugs
-        // when multiple words are mastered consecutively
         setTimeout(() => {
             setExiting(false);
             setCardKey((k) => k + 1);
@@ -586,1141 +401,314 @@ export default function ExerciseSession({
         }, 400);
     };
 
-    // ── Core actions ──────────────────────────────────────────────────────────
+    // ── Quiz builder ──────────────────────────────────────────────────────────
+    const buildQuizFromBuffer = (buffer) => {
+        if (buffer.length < 2) return null;
 
-    /**
-     * "I Know"
-     *
-     * Level 1 (New/Learning):
-     *   → Remove from queue (promoted to L2 via server)
-     *
-     * Level 2 / 3 (Review):
-     *   → Remove from queue (promoted to next level via server)
-     *
-     * Level 3 → 4: triggers mastery celebration.
-     */
-    const handleKnow = () => {
-        if (!word) return;
-        if (!auth?.user) {
-            setShowLoginDialog(true);
-            return;
-        }
-        if (isSubmitting) return;
+        const targetIdx = Math.floor(Math.random() * buffer.length);
+        const target = buffer[targetIdx];
+        const others = buffer.filter((_, i) => i !== targetIdx);
 
-        setIsSubmitting(true);
-        const currentBox = word.srs_box ?? 1;
-        const willMaster = currentBox >= MASTERED_BOX - 1; // L3 → L4
-        const willLevelUp = currentBox < MASTERED_BOX;
+        const candidates = [];
 
-        if (willMaster) {
-            playMastered(userSettings);
-            // Increment key → React unmounts old overlay, mounts a fresh one
-            // with its own independent timer. Safe for rapid presses.
-            setMasteryEventKey((k) => k + 1);
-        } else {
-            playCorrect(userSettings);
-            if (willLevelUp) {
-                setLevelUpPulse(true);
-                setTimeout(() => setLevelUpPulse(false), 500);
+        // 1. Definition
+        const defAnswer = target.definition?.trim();
+        if (defAnswer) {
+            const distractors = others.map((w) => w.definition?.trim()).filter(Boolean).filter((d) => d !== defAnswer).slice(0, 3);
+            if (distractors.length >= 1) {
+                candidates.push({
+                    type: "definition",
+                    prompt: `What does "${target.word}" mean?`,
+                    options: [defAnswer, ...distractors].sort(() => Math.random() - 0.5),
+                    correct: defAnswer,
+                });
             }
         }
 
-        const wordId = word.id;
-        animateThen("left", () => {
-            setSessionResults((prev) => [...prev, { word_id: wordId, action: "know" }]);
-            setQueue((prev) => prev.slice(1)); // remove from front
-            setPromotedCount((c) => c + 1);
-            setIsSubmitting(false);
-        });
+        // 2. Fill-in-the-blank
+        const blank = makeFillBlank(target.word, target.example_sentences);
+        if (blank) {
+            const distractors = others.map((w) => w.word).filter((w) => w.toLowerCase() !== target.word.toLowerCase()).slice(0, 3);
+            if (distractors.length >= 1) {
+                candidates.push({
+                    type: "fill_blank",
+                    prompt: blank,
+                    options: [target.word, ...distractors].sort(() => Math.random() - 0.5),
+                    correct: target.word,
+                });
+            }
+        }
+
+        // 3. Synonym
+        const synAnswer = pickOne(target.synonym);
+        if (synAnswer) {
+            const distractors = others.map((w) => w.word).filter((w) => w.toLowerCase() !== target.word.toLowerCase()).slice(0, 3);
+            if (distractors.length >= 1) {
+                candidates.push({
+                    type: "synonym",
+                    prompt: `Which word is a synonym of "${target.word}"?`,
+                    options: [synAnswer, ...distractors].sort(() => Math.random() - 0.5),
+                    correct: synAnswer,
+                });
+            }
+        }
+
+        // 4. Antonym
+        const antAnswer = pickOne(target.antonym);
+        if (antAnswer) {
+            const distractors = others.map((w) => w.word).filter((w) => w.toLowerCase() !== target.word.toLowerCase()).slice(0, 3);
+            if (distractors.length >= 1) {
+                candidates.push({
+                    type: "antonym",
+                    prompt: `Which word is the opposite of "${target.word}"?`,
+                    options: [antAnswer, ...distractors].sort(() => Math.random() - 0.5),
+                    correct: antAnswer,
+                });
+            }
+        }
+
+        // 5. Translation (only if user has Bangla enabled)
+        const banglaAnswer = target.bangla_meaning?.trim();
+        if (banglaAnswer && userSettings?.show_bangla) {
+            const distractors = others.map((w) => w.bangla_meaning?.trim()).filter(Boolean).filter((d) => d !== banglaAnswer).slice(0, 3);
+            if (distractors.length >= 1) {
+                candidates.push({
+                    type: "translation",
+                    prompt: `What is the Bengali meaning of "${target.word}"?`,
+                    options: [banglaAnswer, ...distractors].sort(() => Math.random() - 0.5),
+                    correct: banglaAnswer,
+                });
+            }
+        }
+
+        if (candidates.length === 0) return null;
+        const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+        return { ...chosen, targetWordId: target.id, targetBox: target.srs_box ?? 1 };
     };
+
+    const maybeShowQuiz = (updatedBuffer) => {
+        if (updatedBuffer.length >= QUIZ_INTERVAL) {
+            const quiz = buildQuizFromBuffer(updatedBuffer);
+            if (quiz) { setActiveQuiz(quiz); return; }
+            setSeenWordBuffer([]);
+        }
+    };
+
+    const handleQuizAnswer = (isCorrect) => {
+        if (!activeQuiz) return;
+        const { targetWordId, targetBox } = activeQuiz;
+
+        if (isCorrect) {
+            if (targetBox >= MASTERED_BOX - 1) { playMastered(userSettings); setMasteryEventKey((k) => k + 1); }
+            else { playCorrect(userSettings); }
+            setSessionResults((prev) => [...prev, { word_id: targetWordId, action: "know" }]);
+            setPromotedCount((c) => c + 1);
+        } else {
+            setSessionResults((prev) => [...prev, { word_id: targetWordId, action: "learn" }]);
+            setDontKnowCount((c) => c + 1);
+        }
+
+        setActiveQuiz(null);
+        setSeenWordBuffer([]);
+    };
+
+    // ── Core flashcard actions ────────────────────────────────────────────────
 
     /**
-     * "I Don't Know"
-     *
-     * Level 1 (New/Learning):
-     *   → Shuffle to back of queue at L1 (server records incorrect, box stays 1).
-     *   → Word CANNOT leave the session until answered correctly.
-     *
-     * Level 2 / 3 (Review):
-     *   → Demote to L1 on server.
-     *   → Shuffle to back of queue with srs_box updated to 1 locally.
-     *   → Word re-enters the learning phase in this session.
+     * Called when user confirms "Yes, I already know this word" in the dialog.
+     * Fast-tracks the word to Mastered immediately.
      */
-    const handleDontKnow = () => {
-        if (!word) return;
-        if (!auth?.user) {
-            setShowLoginDialog(true);
-            return;
-        }
-        if (isSubmitting) return;
+    const handleConfirmAlreadyKnow = () => {
+        const w = alreadyKnowWordRef.current;
+        if (!w) return;
+        setShowAlreadyKnowDialog(false);
+        alreadyKnowWordRef.current = null;
+        playMastered(userSettings);
+        setMasteryEventKey((k) => k + 1);
+        // The word was already removed from the queue by handleKnow's animateThen.
+        // We just need to record the master action and update counts.
+        setSessionResults((prev) => [
+            ...prev,
+            { word_id: w.id, action: "master" },
+        ]);
+    };
 
-        // playIncorrect(userSettings);
+    const handleKnow = () => {
+        if (!word || !auth?.user || isSubmitting) { if (!auth?.user) setShowLoginDialog(true); return; }
         setIsSubmitting(true);
-        setDontKnowCount((c) => c + 1);
-
+        const currentBox = word.srs_box ?? 1;
+        if (currentBox >= MASTERED_BOX - 1) { playMastered(userSettings); setMasteryEventKey((k) => k + 1); }
+        else {
+            playCorrect(userSettings);
+            if (currentBox < MASTERED_BOX) { setLevelUpPulse(true); setTimeout(() => setLevelUpPulse(false), 500); }
+        }
         const wordId = word.id;
+        const seenWord = { ...word };
+        const noErrors = (word.srs_incorrect ?? 0) === 0;
 
-        animateThen("right", () => {
-            setSessionResults((prev) => [...prev, { word_id: wordId, action: "learn" }]);
-            setQueue((prev) => prev.slice(1)); // ← word leaves session
+        // Track consecutive "I Know" presses for words the user has never gotten wrong
+        let triggerAlreadyKnow = false;
+        if (noErrors) {
+            const prev = consecutiveKnowMap.current[wordId] ?? 0;
+            const next = prev + 1;
+            consecutiveKnowMap.current[wordId] = next;
+            if (next >= 2) {
+                triggerAlreadyKnow = true;
+                // Reset so it doesn't trigger again
+                consecutiveKnowMap.current[wordId] = 0;
+            }
+        } else {
+            // Reset counter if they've ever gotten it wrong
+            consecutiveKnowMap.current[wordId] = 0;
+        }
+
+        animateThen("left", () => {
+            setSessionResults((prev) => [...prev, { word_id: wordId, action: "know" }]);
+            setQueue((prev) => prev.slice(1));
+            setPromotedCount((c) => c + 1);
             setIsSubmitting(false);
+            setSeenWordBuffer((prev) => { const updated = [...prev, seenWord]; maybeShowQuiz(updated); return updated; });
+            if (triggerAlreadyKnow) {
+                alreadyKnowWordRef.current = seenWord;
+                setShowAlreadyKnowDialog(true);
+            }
         });
     };
 
-    // ── Layout helpers ────────────────────────────────────────────────────────
-
-    // const collocationList = word?.collocations
-    //     ? word.collocations
-    //           .split(/[\n,]+/)
-    //           .map((c) => c.trim())
-    //           .filter(Boolean)
-    //     : [];
-
-    const collocationList = (() => {
-        const raw = word?.collocations;
-
-        if (!raw) return [];
-
-        // Case 1: already array (ideal future case)
-        if (Array.isArray(raw)) return raw;
-
-        // Case 2: JSON string
-        try {
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed)) return parsed;
-        } catch (e) {}
-
-        // Case 3: fallback (old comma-separated string)
-        return raw
-            .split(/[\n,]+/)
-            .map((c) => c.trim())
-            .filter(Boolean)
-            .map((phrase) => ({
-                phrase,
-                example_sentence: "", // no example available
-            }));
-    })();
-
-    const collocationColors = [
-        "bg-red-100/70 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800",
-        "bg-blue-100/70 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800",
-        "bg-green-100/70 text-green-700 border-green-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800",
-        "bg-amber-100/70 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800",
-        "bg-purple-100/70 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800",
-        "bg-teal-100/70 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-400 dark:border-teal-800",
-        "bg-pink-100/70 text-pink-700 border-pink-200 dark:bg-pink-950/40 dark:text-pink-400 dark:border-pink-800",
-        "bg-indigo-100/70 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-800",
-    ];
-
-    const formatIPA = (ipa) => {
-        if (!ipa) return "";
-        let f = ipa.trim();
-        if (!f.startsWith("/")) f = "/" + f;
-        if (!f.endsWith("/")) f = f + "/";
-        return f;
+    const handleDontKnow = () => {
+        if (!word || !auth?.user || isSubmitting) { if (!auth?.user) setShowLoginDialog(true); return; }
+        setIsSubmitting(true);
+        setDontKnowCount((c) => c + 1);
+        const wordId = word.id;
+        const seenWord = { ...word };
+        animateThen("right", () => {
+            setSessionResults((prev) => [...prev, { word_id: wordId, action: "learn" }]);
+            setQueue((prev) => prev.slice(1));
+            setIsSubmitting(false);
+            setSeenWordBuffer((prev) => { const updated = [...prev, seenWord]; maybeShowQuiz(updated); return updated; });
+        });
     };
 
-    const wordFontSize = (w) => {
-        if (!w) return "text-4xl";
-        if (w.length <= 8) return "text-4xl";
-        if (w.length <= 12) return "text-3xl";
-        if (w.length <= 16) return "text-2xl";
-        return "text-xl";
-    };
+    // ── Early returns ─────────────────────────────────────────────────────────
+    if (isPreloading) return <LoadingScreen loadingProgress={loadingProgress} />;
 
-    const images = word?.images?.length > 0 ? word.images : [];
-    const activeImage = images[activeImageIndex] ?? null;
-
-    const backHref =
-        backUrl ??
-        (wordList?.word_list_category_id
-            ? route(
-                  "wordlistcategory.wordlists",
-                  wordList.word_list_category_id,
-              )
-            : route("wordlist.show", wordList?.id));
-
-    // ── Loading Screen ─────────────────────────────────────────────────────
-    if (isPreloading) {
+    if (initialQueueSize === 0)
         return (
-            <AppLayout>
-                <Head title="Loading Session..." />
-                <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 flex flex-col items-center justify-center px-4">
-                    <div className="max-w-md w-full text-center">
-                        <div className="flex justify-center mb-8">
-                            <div className="w-24 h-24 border-4 border-[#E5201C] border-t-transparent rounded-full animate-spin" />
-                        </div>
-
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                            Preparing your session...
-                        </h1>
-                        <p className="text-gray-500 dark:text-gray-400 mb-6">
-                            Loading words &amp; images
-                        </p>
-
-                        <div className="h-2.5 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden mb-3">
-                            <div
-                                className="h-full bg-[#E5201C] transition-all duration-300"
-                                style={{ width: `${loadingProgress}%` }}
-                            />
-                        </div>
-
-                        <p className="text-xs font-mono text-gray-400 dark:text-gray-500 text-center">
-                            {loadingProgress}%
-                            {/* — {initialWords.length} words •{" "}
-                            {initialWords.reduce(
-                                (sum, w) => sum + (w.images?.length || 0),
-                                0,
-                            )}{" "}
-                            images */}
-                        </p>
-
-                        {/* <p className="text-[10px] text-gray-400 mt-8">
-                            This only happens the first time.
-                            <br />
-                            Images are cached in your browser for future
-                            sessions.
-                        </p> */}
-                    </div>
-                </div>
-            </AppLayout>
+            <EmptyQueueScreen
+                wordList={wordList}
+                subcategory={subcategory}
+                backHref={backHref}
+            />
         );
-    }
 
-    // ── Empty queue (nothing due, nothing new) ────────────────────────────────
-    if (initialQueueSize === 0) {
+    if (isDone)
         return (
-            <AppLayout>
-                <Head title="All Caught Up!" />
-                <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 flex flex-col items-center justify-center px-4 py-10">
-                    <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-md dark:shadow-xl dark:shadow-slate-950 w-full max-w-md p-8 text-center">
-                        <div className="text-6xl mb-4">🎯</div>
-                        <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 mb-1">
-                            All Caught Up!
-                        </h1>
-                        <p className="text-gray-400 dark:text-gray-500 text-sm mb-2">
-                            {subcategory ? subcategory.name : wordList.title}
-                        </p>
-                        <p className="text-gray-500 dark:text-gray-400 text-sm mb-8">
-                            No words are due for review right now. Check back
-                            tomorrow to keep your streak going!
-                        </p>
-                        <div className="flex flex-col gap-3">
-                            <Link
-                                href={route("words.mastered")}
-                                className="w-full py-3.5 bg-green-600 text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-green-700 transition"
-                            >
-                                View Mastered Words
-                            </Link>
-                            <Link
-                                href={backHref}
-                                className="w-full py-3.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 font-semibold rounded-2xl flex items-center justify-center gap-2 hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-slate-900 transition"
-                            >
-                                <ChevronLeft className="h-4 w-4" /> Back to List
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            </AppLayout>
+            <SessionCompleteScreen
+                wordList={wordList}
+                subcategory={subcategory}
+                backHref={backHref}
+                promotedCount={promotedCount}
+                dontKnowCount={dontKnowCount}
+                totalWordsInList={totalWordsInList}
+                sessionXpAwarded={sessionXpAwarded}
+                xp_enabled={xp_enabled}
+                streak={streak}
+                streakChange={streakChange}
+                showStreakEffect={showStreakEffect}
+                setShowStreakEffect={setShowStreakEffect}
+                approvedAnim={approvedAnimation}
+                fireAnim={fireStreakAnimation}
+                auth={auth}
+            />
         );
-    }
 
-    // ── Session complete screen ───────────────────────────────────────────────
-    if (isDone) {
-        const retries = dontKnowCount; // total "I Don't Know" taps during session
-        return (
-            <AppLayout>
-                <Head title="Session Complete" />
-                {/* StreakPop overlay — only for streak increase */}
-                {showStreakEffect && streakChange === "up" && (
-                    <StreakPop
-                        streakCount={streak?.current_streak ?? 1}
-                        onComplete={() => setShowStreakEffect(false)}
-                    />
-                )}
-
-                {/* Global confetti celebration for EVERY completed session */}
-                <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-                    {CONFETTI.map((p) => (
-                        <div
-                            key={p.id}
-                            style={{
-                                position: "absolute",
-                                left: p.left,
-                                top: "-12px",
-                                width: `${p.size}px`,
-                                height: `${p.size}px`,
-                                backgroundColor: p.color,
-                                borderRadius: p.borderRadius,
-                                animation: `confettiFall ${p.duration} ${p.delay} ease-in forwards`,
-                            }}
-                        />
-                    ))}
-                </div>
-
-                <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 flex flex-col items-center justify-center px-4 py-10">
-                    <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-md dark:shadow-xl dark:shadow-slate-950 w-full max-w-md p-8 text-center">
-                        {/* Lottie celebration animation */}
-                        <div className="flex justify-center -mt-2 -mb-2">
-                            {/* {approvedAnimation && (
-                                <Lottie
-                                    animationData={approvedAnimation}
-                                    loop={false}
-                                    style={{ height: 160, width: 160 }}
-                                />
-                            )} */}
-                            {approvedAnim && (
-                                <Lottie
-                                    animationData={approvedAnim}
-                                    loop={false}
-                                    style={{ height: 160, width: 160 }}
-                                />
-                            )}
-                        </div>
-                        <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 mb-1">
-                            Session Complete!
-                        </h1>
-                        <p className="text-gray-400 dark:text-gray-500 text-sm mb-6">
-                            {subcategory ? subcategory.name : wordList.title}
-                        </p>
-
-                        {/* Stats */}
-                        <div className="grid grid-cols-3 gap-3 mb-8">
-                            <div
-                                className="bg-green-50 dark:bg-green-950/30 rounded-2xl py-4 animate-bounce-in"
-                                style={{ animationDelay: "0.1s" }}
-                            >
-                                <p className="text-2xl font-extrabold text-green-600 dark:text-green-400">
-                                    {promotedCount}
-                                </p>
-                                <p className="text-xs text-green-600 dark:text-green-400 mt-0.5 font-medium">
-                                    Cleared ✅
-                                </p>
-                            </div>
-                            <div
-                                className="bg-red-50 dark:bg-red-950/30 rounded-2xl py-4 animate-bounce-in"
-                                style={{ animationDelay: "0.2s" }}
-                            >
-                                <p className="text-2xl font-extrabold text-red-400 dark:text-red-400">
-                                    {retries}
-                                </p>
-                                <p className="text-xs text-red-500 dark:text-red-400 mt-0.5 font-medium">
-                                    Retries
-                                </p>
-                            </div>
-                            <div
-                                className="bg-blue-50 dark:bg-blue-950/30 rounded-2xl py-4 animate-bounce-in"
-                                style={{ animationDelay: "0.3s" }}
-                            >
-                                <p className="text-2xl font-extrabold text-blue-500 dark:text-blue-400">
-                                    {promotedCount + retries}
-                                </p>
-                                <p className="text-xs text-blue-500 dark:text-blue-400 mt-0.5 font-medium">
-                                    Total Reps 💪
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* XP Earned Display */}
-                        {sessionXpAwarded > 0 && (
-                            <div className="bg-yellow-50 dark:bg-yellow-950/30 rounded-2xl py-6 px-4 mb-8 text-center border-2 border-yellow-200 dark:border-yellow-800">
-                                <div className="flex items-center justify-center gap-2 mb-2">
-                                    <Zap className="h-6 w-6 text-yellow-500" />
-                                    <p className="text-3xl font-extrabold text-yellow-600 dark:text-yellow-400">
-                                        +{sessionXpAwarded}
-                                    </p>
-                                    <Zap className="h-6 w-6 text-yellow-500" />
-                                </div>
-                                <p className="text-sm font-medium text-yellow-700 dark:text-yellow-300">
-                                    Experience Points Earned
-                                </p>
-                            </div>
-                        )}
-
-                        {/* No-XP notice for non-admin word lists */}
-                        {!xp_enabled && (
-                            <div className="bg-gray-50 dark:bg-slate-800/50 rounded-2xl py-4 px-4 mb-8 text-center border border-gray-200 dark:border-slate-700">
-                                <div className="flex items-center justify-center gap-2">
-                                    <Zap className="h-4 w-4 text-gray-400" />
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                                        XP is not awarded for custom word lists
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Only show streak when streak INCREASED - hide completely when unchanged or decreased */}
-                        {streak && streakChange === "up" && (
-                            <div
-                                className={`rounded-2xl py-4 px-4 mb-6 border bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800 animate-bounce-in`}
-                            >
-                                <p
-                                    className={`text-lg font-bold mb-1 text-orange-600 dark:text-orange-400`}
-                                >
-                                    🔥 Current Streak: {streak.current_streak}{" "}
-                                    day{streak.current_streak !== 1 ? "s" : ""}
-                                </p>
-                                <p
-                                    className={`text-sm text-orange-700 dark:text-orange-300`}
-                                >
-                                    ✨ Amazing! You're on fire! Keep this
-                                    momentum going! 🎉
-                                </p>
-                            </div>
-                        )}
-
-                        {/* List-level progress bar */}
-                        {totalWordsInList > 0 && (
-                            <div className="mb-8">
-                                <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500 mb-1.5">
-                                    <span>List Progress</span>
-                                    <span>
-                                        {Math.round(
-                                            (promotedCount / totalWordsInList) *
-                                                100,
-                                        )}
-                                        %
-                                    </span>
-                                </div>
-                                <div className="h-2.5 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                    <div
-                                        className="h-full bg-green-500 rounded-full transition-all"
-                                        style={{
-                                            width: `${Math.min((promotedCount / totalWordsInList) * 100, 100)}%`,
-                                        }}
-                                    />
-                                </div>
-                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5 text-center">
-                                    {promotedCount} of {totalWordsInList} words
-                                    in this session's queue
-                                </p>
-                            </div>
-                        )}
-
-                        <div className="flex flex-col gap-3">
-                            <Link
-                                href={route("wordlist.start", wordList.id)}
-                                className="w-full py-3.5 bg-[#E5201C] text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-red-700 transition"
-                            >
-                                New Session
-                            </Link>
-                            {auth?.user && (
-                                <Link
-                                    href={route("words.bookmarked")}
-                                    className="w-full py-3.5 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-400 font-semibold rounded-2xl flex items-center justify-center gap-2 hover:shadow-md transition"
-                                >
-                                    <Bookmark
-                                        className="h-4 w-4 fill-yellow-400 text-yellow-400"
-                                        strokeWidth={1.8}
-                                    />
-                                    View Bookmarks
-                                </Link>
-                            )}
-                            <Link
-                                href={backHref}
-                                className="w-full py-3.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 font-semibold rounded-2xl flex items-center justify-center gap-2 hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-slate-900 transition"
-                            >
-                                <ChevronLeft className="h-4 w-4" /> Back to List
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            </AppLayout>
-        );
-    }
-
-    // ── Main session card ─────────────────────────────────────────────────────
-    const currentBox = word?.srs_box ?? 1;
-    const meta = LEVEL_META[currentBox] ?? LEVEL_META[1];
-
-    // Progress within this session: how many of the initial queue have been cleared
-    // const sessionProgress =
-    //     initialQueueSize > 0 ? (promotedCount / initialQueueSize) * 100 : 0;
-    const sessionProgress =
-        initialQueueSize > 0 ? (answeredCount / initialQueueSize) * 100 : 0;
-
+    // ── Main session UI ───────────────────────────────────────────────────────
     return (
         <AppLayout>
             <Head title={`Exercise — ${word?.word ?? ""}`} />
             <FlashMessages />
+            <style>{SESSION_STYLES}</style>
 
-            {/* ── Mastery overlay — keyed so each event is an independent instance ── */}
+            {/* Mastery overlay — keyed per event */}
             {masteryEventKey > 0 && <MasteryOverlay key={masteryEventKey} />}
 
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 pb-10 pt-1 mt-3">
-                {/* ── Session progress bar ─────────────────────────────────── */}
-                <div className="max-w-lg mx-auto px-3 pb-2">
-                    <div className="flex items-center gap-2.5">
-                        <Link
-                            href={backHref}
-                            className="flex-none p-1.5 rounded-lg text-gray-400 dark:text-gray-600 hover:text-gray-600 dark:hover:text-gray-400 transition"
-                        >
-                            <ChevronLeft className="h-5 w-5" />
-                        </Link>
-                        <div className="flex-1 h-1.5 bg-gray-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                            <div
-                                className="h-full bg-[#E5201C] rounded-full transition-all duration-500"
-                                style={{ width: `${sessionProgress}%` }}
-                            />
-                        </div>
-                        {/* Queue remaining badge */}
-                        <span className="shrink-0 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-full px-2.5 py-0.5 shadow-sm dark:shadow-lg">
-                            {queue.length} left
-                        </span>
-                        {/* Bookmarks shortcut */}
-                        {auth?.user && (
-                            <Link
-                                href={route("words.bookmarked")}
-                                className="flex-none p-1.5 rounded-lg text-gray-400 dark:text-gray-600 hover:text-yellow-500 dark:hover:text-yellow-400 transition"
-                                aria-label="View bookmarked words"
-                            >
-                                <Bookmark
-                                    className="h-5 w-5"
-                                    strokeWidth={1.8}
-                                />
-                            </Link>
-                        )}
-                    </div>
-                </div>
+                {/* Progress bar */}
+                <SessionProgressBar
+                    backHref={backHref}
+                    sessionProgress={sessionProgress}
+                    answeredCount={answeredCount}
+                    initialQueueSize={initialQueueSize}
+                    auth={auth}
+                />
 
-                {/* ── Card area ────────────────────────────────────────────── */}
+                {/* Card area */}
                 <div className="flex items-start justify-center w-full">
                     <main className="max-w-lg w-full px-3">
-                        {/* Swipeable / animating card */}
 
-                        <div
-                            key={cardKey}
-                            className={`bg-white dark:bg-slate-900 rounded-3xl shadow-md dark:shadow-xl dark:shadow-slate-950 overflow-hidden select-none ${
-                                exiting
-                                    ? exitDir.current === "left"
-                                        ? "card-exit-left"
-                                        : "card-exit-right"
-                                    : exitDir.current === "left"
-                                      ? "card-enter-right"
-                                      : "card-enter-left"
-                            }`}
-                        >
-                            {/* Exercise group label */}
-                            <div className="px-4">
-                                <div className="h-px bg-gray-100 dark:bg-slate-800 mb-3" />
-                                <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
-                                    Part of Exercise:{" "}
-                                    {subcategory
-                                        ? `${wordList.title} › ${subcategory.name}`
-                                        : wordList.title}
-                                </p>
-                            </div>
-                            {/* Top row: bookmark | word | speaker */}
-                            <div className="flex items-center px-5 pt-5 pb-2">
-                                <div className="flex-none w-8 flex justify-start">
-                                    <button
-                                        onClick={() => handleBookmark(word.id)}
-                                        className="p-1 transition-colors"
-                                        aria-label={
-                                            bookmarks[word.id]
-                                                ? "Remove bookmark"
-                                                : "Bookmark word"
-                                        }
-                                    >
-                                        <Bookmark
-                                            className={`h-6 w-6 transition-colors ${
-                                                bookmarks[word.id]
-                                                    ? "fill-yellow-400 text-yellow-400"
-                                                    : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                                            }`}
-                                            strokeWidth={1.8}
-                                        />
-                                    </button>
-                                </div>
+                        {/* Inline quiz */}
+                        {activeQuiz && !exiting && (
+                            <QuizPanel
+                                key={activeQuiz.targetWordId}
+                                question={activeQuiz}
+                                onAnswer={handleQuizAnswer}
+                            />
+                        )}
 
-                                <div className="flex-1 flex flex-col items-center text-center px-2">
-                                    <h1
-                                        className={`${wordFontSize(word.word)} font-extrabold text-gray-900 dark:text-gray-100 tracking-tight leading-tight break-words w-full`}
-                                    >
-                                        {word.word}
-                                        {word.parts_of_speech_variations && (
-                                            <span className="bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 text-sm font-medium px-3 py-0.5 rounded-md ml-2">
-                                                {
-                                                    word.parts_of_speech_variations
-                                                }
-                                            </span>
-                                        )}
-                                    </h1>
-                                </div>
-                                <div className="flex-none w-8 flex justify-end">
-                                    <button
-                                        onClick={() => speakWord(word.word)}
-                                        className="p-1 text-gray-500 hover:text-gray-700 transition"
-                                    >
-                                        <Volume2
-                                            className="h-6 w-6"
-                                            strokeWidth={1.8}
-                                        />
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* ── 4-dot level badge ──────────────────────────── */}
-                            {auth?.user && (
-                                <div className="flex justify-center pb-1">
-                                    <div
-                                        className="flex items-center gap-1.5"
-                                        style={{
-                                            transform: levelUpPulse
-                                                ? "scale(1.25)"
-                                                : "scale(1)",
-                                            transition:
-                                                "transform 0.3s cubic-bezier(0.34,1.56,0.64,1)",
-                                        }}
-                                    >
-                                        {[1, 2, 3, 4].map((box) => (
-                                            <div
-                                                key={box}
-                                                className={`rounded-full w-2 h-2 transition-all duration-200 ${
-                                                    box <= currentBox
-                                                        ? (LEVEL_META[box]
-                                                              ?.dot ??
-                                                          "bg-gray-400")
-                                                        : "bg-gray-200 dark:bg-slate-700"
-                                                }`}
-                                            />
-                                        ))}
-                                        <span
-                                            className={`text-xs font-semibold px-2 py-0.5 rounded-full ml-1 ${meta.color}`}
-                                        >
-                                            {meta.label}
-                                        </span>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Pronunciation */}
-                            <div className="px-5 pb-4 text-center">
-                                {word.pronunciation && (
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 font-mono mt-1">
-                                        <span className="text-blue-600 dark:text-blue-400">
-                                            {word.pronunciation}{" "}
-                                        </span>
-                                        <span className="text-black">|</span>{" "}
-                                        <span className="text-teal-600 dark:text-teal-400">
-                                            {formatIPA(word.ipa)}{" "}
-                                        </span>
-                                        {userSettings?.show_bangla}
-                                        {/* Show Bangla only if user setting allows it */}
-                                        {userSettings?.show_bangla &&
-                                            word.bangla_pronunciation && (
-                                                <>
-                                                    {" "}
-                                                    <span className="text-black">
-                                                        |
-                                                    </span>{" "}
-                                                    <span className="text-orange-600 dark:text-orange-400">
-                                                        {
-                                                            word.bangla_pronunciation
-                                                        }
-                                                    </span>
-                                                </>
-                                            )}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Image */}
-                            {images.length > 0 && (
-                                <div className="px-4 pb-3">
-                                    <div className="relative rounded-2xl overflow-hidden bg-[#EEF6F5] dark:bg-slate-800">
-                                        <img
-                                            src={activeImage?.image_url_full}
-                                            alt={
-                                                activeImage?.caption ||
-                                                word.word
-                                            }
-                                            className="w-full h-auto object-contain"
-                                            style={{
-                                                maxHeight: "300px",
-                                            }}
-                                        />
-                                        {currentBox >= MASTERED_BOX && (
-                                            <div className="absolute top-2 right-2">
-                                                <span className="bg-green-500 dark:bg-green-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md dark:shadow-lg">
-                                                    ✨ Mastered
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-                                    {images.length > 1 && (
-                                        <div className="flex justify-center gap-1.5 mt-2">
-                                            {images.map((_, idx) => (
-                                                <button
-                                                    key={idx}
-                                                    onClick={() =>
-                                                        setActiveImageIndex(idx)
-                                                    }
-                                                    className={`rounded-full transition-all ${
-                                                        idx === activeImageIndex
-                                                            ? "w-5 h-2 bg-gray-500 dark:bg-gray-400"
-                                                            : "w-2 h-2 bg-gray-300 dark:bg-slate-700"
-                                                    }`}
-                                                />
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Example sentence */}
-                            {/* {(word.image_related_sentence ||
-                                word.example_sentences) && (
-                                <div className="mx-4 mb-4 border-l-4 border-green-400 dark:border-green-600 pl-3 py-1">
-                                    <p className="text-base text-gray-800 dark:text-gray-200 leading-snug">
-                                        {highlightWord(
-                                            word.image_related_sentence ||
-                                                word.example_sentences,
-                                            word.word,
-                                        )}
-                                    </p>
-                                </div>
-                            )} */}
-
-                            {/* Example sentence */}
-                            {word.show_example_sentences &&
-                                (word.image_related_sentence ||
-                                    word.example_sentences) && (
-                                    <div className="mx-4 mb-4 border-l-4 border-green-400 dark:border-green-600 pl-3 py-1">
-                                        <p className="text-base text-gray-800 dark:text-gray-200 leading-snug">
-                                            {highlightWord(
-                                                // Priority: image_related_sentence > first example sentence
-                                                word.image_related_sentence
-                                                    ? word.image_related_sentence
-                                                    : word.example_sentences
-                                                          ?.split(".")
-                                                          .map((s) => s.trim())
-                                                          .filter(Boolean)[0] +
-                                                          ".",
-                                                word.word,
-                                            )}
-                                        </p>
-                                    </div>
-                                )}
-
-                            {/* Tap to see meaning */}
-                            <div className="px-4 pb-3">
-                                <button
-                                    onClick={() =>
-                                        setShowMeaning((prev) => !prev)
-                                    }
-                                    className="w-full flex items-center justify-center gap-2 py-2.5 border border-dashed border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-slate-600 transition"
-                                >
-                                    {showMeaning ? (
-                                        <>
-                                            <svg
-                                                className="w-4 h-4"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
-                                                />
-                                            </svg>
-                                            Hide Meaning
-                                        </>
-                                    ) : (
-                                        <>
-                                            <svg
-                                                className="w-4 h-4"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                                />
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                                                />
-                                            </svg>
-                                            Tap to see meaning
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-                        {/* end main card */}
-
-                        {/* ── Meaning card ─────────────────────────────────────── */}
-                        <div
-                            ref={meaningCardRef}
-                            className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                                showMeaning ? "opacity-100" : "opacity-0"
-                            }`}
-                            style={{
-                                maxHeight: showMeaning ? "1600px" : "0px", // lowered from 2000px
-                                marginTop: showMeaning ? "12px" : "0px",
-                            }}
-                        >
-                            <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-md dark:shadow-xl dark:shadow-slate-950 overflow-hidden pb-2">
-                                <div className="mx-4 mt-4 mb-3">
-                                    <p
-                                        className={`text-center text-lg font-bold text-gray-500 underline dark:text-gray-600 tracking-tight`}
-                                    >
-                                        {word.word}
-                                    </p>
-                                </div>
-
-                                {word.definition && (
-                                    <div className="mx-4 mt-4 mb-4">
-                                        <div className="border-l-4 border-[#E5201C] dark:border-red-600 pl-3 py-1">
-                                            <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">
-                                                Definition
-                                            </p>
-                                            <p className="text-sm text-gray-900 dark:text-gray-200 leading-snug">
-                                                {word.definition}
-
-                                                {userSettings?.show_bangla &&
-                                                    word.bangla_meaning && (
-                                                        <span className="text-gray-500 dark:text-gray-400 font-medium ml-1">
-                                                            (
-                                                            {
-                                                                word.bangla_meaning
-                                                            }
-                                                            )
-                                                        </span>
-                                                    )}
-                                            </p>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* {collocationList.length > 0 && (
-                                    <div className="px-4 pb-4">
-                                        <div className="h-px bg-gray-100 mb-3" />
-                                        <p className="text-sm font-semibold text-gray-600 mb-2">
-                                            Common Collocations
-                                        </p>
-                                        <div className="flex flex-wrap gap-2">
-                                            {collocationList.map((col, i) => (
-                                                <span
-                                                    key={i}
-                                                    className={`text-sm px-3 py-1.5 rounded-full border ${collocationColors[i % collocationColors.length]}`}
-                                                >
-                                                    {col}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )} */}
-
-                                {collocationList.length > 0 && (
-                                    <div className="px-4 pb-4">
-                                        <div className="h-px bg-gray-100 dark:bg-slate-800 mb-3" />
-                                        <p className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-3">
-                                            Common Collocations
-                                        </p>
-                                        <div className="flex flex-col gap-3">
-                                            {collocationList
-                                                .slice(0, 3)
-                                                .map((col, i) => {
-                                                    const colorClass =
-                                                        collocationColors[
-                                                            i %
-                                                                collocationColors.length
-                                                        ];
-
-                                                    // Highlight the collocation phrase inside the example sentence
-                                                    const renderHighlighted = (
-                                                        sentence,
-                                                        phrase,
-                                                    ) => {
-                                                        if (
-                                                            !sentence ||
-                                                            !phrase
-                                                        )
-                                                            return sentence;
-                                                        const regex =
-                                                            new RegExp(
-                                                                `(${phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
-                                                                "gi",
-                                                            );
-                                                        return sentence
-                                                            .split(regex)
-                                                            .map((part, idx) =>
-                                                                regex.test(
-                                                                    part,
-                                                                ) ? (
-                                                                    <mark
-                                                                        key={
-                                                                            idx
-                                                                        }
-                                                                        className="font-bold bg-transparent underline underline-offset-2 decoration-2 not-italic dark:text-white"
-                                                                        style={{
-                                                                            textDecorationColor:
-                                                                                "currentColor",
-                                                                        }}
-                                                                    >
-                                                                        {part}
-                                                                    </mark>
-                                                                ) : (
-                                                                    part
-                                                                ),
-                                                            );
-                                                    };
-
-                                                    return (
-                                                        <div
-                                                            key={i}
-                                                            className={`rounded-xl border px-3 py-2.5 ${colorClass}`}
-                                                        >
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="flex-1">
-                                                                    {col.example_sentence ? (
-                                                                        <p className="text-sm leading-snug dark:text-gray-400">
-                                                                            {renderHighlighted(
-                                                                                col.example_sentence,
-                                                                                col.phrase,
-                                                                            )}
-                                                                        </p>
-                                                                    ) : (
-                                                                        <p className="text-xs font-bold uppercase tracking-wide opacity-75 dark:text-gray-100">
-                                                                            {
-                                                                                col.phrase
-                                                                            }
-                                                                        </p>
-                                                                    )}
-                                                                </div>
-                                                                <button
-                                                                    onClick={() =>
-                                                                        speakWord(
-                                                                            col.example_sentence ||
-                                                                                col.phrase,
-                                                                        )
-                                                                    }
-                                                                    className="flex-none p-1.5 rounded-full opacity-50 hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/10 transition-all"
-                                                                    aria-label="Listen to collocation"
-                                                                >
-                                                                    <Volume2 className="h-4 w-4" />
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                        </div>
-                                        {/* {collocationList.length > 3 && (
-                                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">
-                                                +{collocationList.length - 3}{" "}
-                                                more collocation
-                                                {collocationList.length - 3 > 1
-                                                    ? "s"
-                                                    : ""}
-                                            </p>
-                                        )} */}
-                                    </div>
-                                )}
-
-                                {(word.synonym ||
-                                    word.antonym ||
-                                    word.bangla_synonym ||
-                                    word.bangla_antonym) && (
-                                    <div className="pb-4">
-                                        <div className="h-px bg-gray-100 dark:bg-slate-800 mx-4 mb-4" />
-                                        {(word.synonym || word.antonym) && (
-                                            <div className="grid grid-cols-2 gap-0 mx-4 mb-4">
-                                                {word.synonym ? (
-                                                    <div className="border-l-4 border-[#E5201C] dark:border-red-600 pl-3 pr-2 py-1">
-                                                        <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
-                                                            Synonyms
-                                                        </p>
-                                                        <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug">
-                                                            {word.synonym}
-                                                        </p>
-                                                    </div>
-                                                ) : (
-                                                    <div />
-                                                )}
-                                                {word.antonym ? (
-                                                    <div className="border-l-4 border-blue-400 dark:border-blue-600 pl-3 pr-2 py-1">
-                                                        <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
-                                                            Antonyms
-                                                        </p>
-                                                        <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug">
-                                                            {word.antonym}
-                                                        </p>
-                                                    </div>
-                                                ) : (
-                                                    <div />
-                                                )}
-                                            </div>
-                                        )}
-                                        {(word.bangla_synonym ||
-                                            word.bangla_antonym) && (
-                                            <div className="grid grid-cols-2 gap-0 mx-4">
-                                                {word.bangla_synonym ? (
-                                                    <div className="border-l-4 border-[#E5201C] dark:border-red-600 pl-3 pr-2 py-1">
-                                                        <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
-                                                            প্রতিশব্দ
-                                                        </p>
-                                                        <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug font-medium">
-                                                            {
-                                                                word.bangla_synonym
-                                                            }
-                                                        </p>
-                                                    </div>
-                                                ) : (
-                                                    <div />
-                                                )}
-                                                {word.bangla_antonym ? (
-                                                    <div className="border-l-4 border-blue-400 dark:border-blue-600 pl-3 pr-2 py-1">
-                                                        <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
-                                                            বিপরীত শব্দ
-                                                        </p>
-                                                        <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug font-medium">
-                                                            {
-                                                                word.bangla_antonym
-                                                            }
-                                                        </p>
-                                                    </div>
-                                                ) : (
-                                                    <div />
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* ── I Don't Know / I Know buttons ─────────── */}
-                                <div
-                                    ref={buttonsRef}
-                                    className="px-4 pt-4 pb-5"
-                                >
-                                    <div className="h-px bg-gray-100 dark:bg-slate-800 mb-4" />
-                                    <div className="flex gap-3">
-                                        <button
-                                            onClick={handleDontKnow}
-                                            disabled={isSubmitting}
-                                            className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl border-2 border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 font-bold text-[15px] hover:bg-red-100 dark:hover:bg-red-950/50 active:scale-95 disabled:opacity-50 transition-all shadow-sm dark:shadow-md"
-                                        >
-                                            <X
-                                                className="h-5 w-5"
-                                                strokeWidth={2.5}
-                                            />
-                                            I Don't Know
-                                        </button>
-                                        <button
-                                            onClick={handleKnow}
-                                            disabled={isSubmitting}
-                                            className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl bg-green-600 text-white font-bold text-[15px] hover:bg-green-700 active:scale-95 disabled:opacity-50 transition-all shadow-lg shadow-green-100 dark:shadow-green-900/30"
-                                        >
-                                            <Check
-                                                className="h-5 w-5"
-                                                strokeWidth={2.5}
-                                            />
-                                            I Know
-                                        </button>
-                                    </div>
-                                    {/* Context hint */}
-                                    {auth?.user && (
-                                        <p className="text-center text-[11px] text-gray-400 dark:text-gray-500 mt-2">
-                                            {currentBox <= 1
-                                                ? "New word — master it today in another session ✨"
-                                                : currentBox === 2
-                                                  ? "Learning — keep going, one more session!"
-                                                  : currentBox === 3
-                                                    ? "Reviewing — final push to mastery!"
-                                                    : "✨ Already mastered — just confirming!"}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                        {/* end meaning card */}
+                        {/* Flashcard + meaning (hidden during quiz) */}
+                        {!activeQuiz && (
+                            <>
+                                <FlashCard
+                                    word={word}
+                                    cardKey={cardKey}
+                                    exiting={exiting}
+                                    exitDir={exitDir.current}
+                                    wordList={wordList}
+                                    subcategory={subcategory}
+                                    bookmarks={bookmarks}
+                                    onBookmark={handleBookmark}
+                                    onSpeak={speakWord}
+                                    showMeaning={showMeaning}
+                                    onToggleMeaning={() => setShowMeaning((p) => !p)}
+                                    levelUpPulse={levelUpPulse}
+                                    auth={auth}
+                                    userSettings={userSettings}
+                                    activeImageIndex={activeImageIndex}
+                                    setActiveImageIndex={setActiveImageIndex}
+                                />
+                                <MeaningCard
+                                    word={word}
+                                    collocationList={collocationList}
+                                    showMeaning={showMeaning}
+                                    handleKnow={handleKnow}
+                                    handleDontKnow={handleDontKnow}
+                                    isSubmitting={isSubmitting}
+                                    auth={auth}
+                                    userSettings={userSettings}
+                                    onSpeak={speakWord}
+                                    meaningCardRef={meaningCardRef}
+                                />
+                            </>
+                        )}
                     </main>
                 </div>
             </div>
 
-            {/* Card animations + confetti keyframes */}
-            <style>{`
-                @keyframes streakPop {
-                    0% {
-                        opacity: 0;
-                        transform: scale(0.2) translateY(60px);
-                    }
-                    40% {
-                        transform: scale(1.25) translateY(-15px);
-                    }
-                    70% {
-                        transform: scale(0.95) translateY(5px);
-                    }
-                    100% {
-                        opacity: 1;
-                        transform: scale(1) translateY(0);
-                    }
-                }
-                @keyframes cardEnterRight {
-                    from { opacity: 0; transform: translateX(60px)  scale(0.96); }
-                    to   { opacity: 1; transform: translateX(0)      scale(1);    }
-                }
-                @keyframes cardEnterLeft {
-                    from { opacity: 0; transform: translateX(-60px) scale(0.96); }
-                    to   { opacity: 1; transform: translateX(0)      scale(1);    }
-                }
-                @keyframes cardExitLeft {
-                    from { opacity: 1; transform: translateX(0)    scale(1);    }
-                    to   { opacity: 0; transform: translateX(-80px) scale(0.94); }
-                }
-                @keyframes cardExitRight {
-                    from { opacity: 1; transform: translateX(0)   scale(1);    }
-                    to   { opacity: 0; transform: translateX(80px) scale(0.94); }
-                }
-                .card-enter-right { animation: cardEnterRight 0.28s cubic-bezier(0.22,1,0.36,1) forwards; }
-                .card-enter-left  { animation: cardEnterLeft  0.28s cubic-bezier(0.22,1,0.36,1) forwards; }
-                .card-exit-left   { animation: cardExitLeft   0.18s ease-in forwards; pointer-events: none; }
-                .card-exit-right  { animation: cardExitRight  0.18s ease-in forwards; pointer-events: none; }
-
-                @keyframes confettiFall {
-                    0%   { transform: translateY(-20px) rotate(0deg);   opacity: 1; }
-                    100% { transform: translateY(110vh)  rotate(720deg); opacity: 0; }
-                }
-                @keyframes bounceIn {
-                    0%   { opacity: 0; transform: scale(0.5) translateY(-20px); }
-                    60%  { opacity: 1; transform: scale(1.08) translateY(4px);  }
-                    100% { opacity: 1; transform: scale(1)    translateY(0);    }
-                }
-                .animate-bounce-in { animation: bounceIn 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards; }
-            `}</style>
-
-            {/* Login Dialog */}
-            <AlertDialog
-                open={showLoginDialog}
-                onOpenChange={setShowLoginDialog}
-            >
+            {/* Login dialog */}
+            <AlertDialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
                 <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-md sm:w-full">
                     <AlertDialogHeader>
                         <AlertDialogTitle className="flex items-center gap-2">
-                            <LogIn className="h-5 w-5 text-[#E5201C]" /> Login
-                            Required
+                            <LogIn className="h-5 w-5 text-[#E5201C]" /> Login Required
                         </AlertDialogTitle>
                         <AlertDialogDescription className="text-base">
-                            You need to be logged in to track your progress. Log
-                            in to save your results.
+                            You need to be logged in to track your progress. Log in to save your results.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-                        <AlertDialogCancel className="w-full sm:w-auto">
-                            Skip for now
-                        </AlertDialogCancel>
+                        <AlertDialogCancel className="w-full sm:w-auto">Skip for now</AlertDialogCancel>
                         <AlertDialogAction
-                            onClick={() => {
-                                window.location.href = route("login");
-                            }}
+                            onClick={() => { window.location.href = route("login"); }}
                             className="w-full sm:w-auto bg-[#E5201C] hover:bg-red-700"
                         >
                             Go to Login
@@ -1729,11 +717,43 @@ export default function ExerciseSession({
                 </AlertDialogContent>
             </AlertDialog>
 
-            {/* Leave Dialog */}
-            <AlertDialog
-                open={showLeaveDialog}
-                onOpenChange={setShowLeaveDialog}
-            >
+            {/* "Already Know" dialog */}
+            <AlertDialog open={showAlreadyKnowDialog} onOpenChange={setShowAlreadyKnowDialog}>
+                <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-md sm:w-full">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2">
+                            <span className="text-2xl">🎓</span> Do you already know this word?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-base">
+                            You pressed <strong>«I Know»</strong> twice in a row for{" "}
+                            <strong className="text-gray-900 dark:text-gray-100">
+                                {alreadyKnowWordRef.current?.word ?? "this word"}
+                            </strong>. Want to send it straight to your{" "}
+                            <strong>Mastered</strong> list and skip it in future sessions?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                        <AlertDialogCancel
+                            className="w-full sm:w-auto"
+                            onClick={() => {
+                                setShowAlreadyKnowDialog(false);
+                                alreadyKnowWordRef.current = null;
+                            }}
+                        >
+                            No, keep reviewing
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleConfirmAlreadyKnow}
+                            className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white"
+                        >
+                            Yes, I know it! ✓
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Leave dialog */}
+            <AlertDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
                 <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-md sm:w-full">
                     <AlertDialogHeader>
                         <AlertDialogTitle className="flex items-center gap-2">
@@ -1744,12 +764,9 @@ export default function ExerciseSession({
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-                        <AlertDialogCancel 
+                        <AlertDialogCancel
                             className="w-full sm:w-auto"
-                            onClick={() => {
-                                setPendingVisit(null);
-                                setShowLeaveDialog(false);
-                            }}
+                            onClick={() => { setPendingVisit(null); setShowLeaveDialog(false); }}
                         >
                             Stay Here
                         </AlertDialogCancel>
@@ -1757,8 +774,7 @@ export default function ExerciseSession({
                             onClick={() => {
                                 allowNavigation.current = true;
                                 setShowLeaveDialog(false);
-                                if (pendingVisit?.type === 'popstate') {
-                                    // Because we pushed a dummy state, we need to go back 2 times to actually leave
+                                if (pendingVisit?.type === "popstate") {
                                     window.history.go(-2);
                                 } else if (pendingVisit) {
                                     router.visit(pendingVisit.url, pendingVisit);

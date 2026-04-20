@@ -102,6 +102,38 @@ class SrsService
     return $progress->fresh();
   }
 
+  /**
+   * User confirmed they ALREADY KNOW this word (fast-track to Mastered).
+   *
+   * Directly sets box = MASTERED_BOX regardless of current level,
+   * clears any pending review entries, and optionally awards mastery XP.
+   */
+  public function recordMastered(User $user, Word $word, bool $awardXp = true): WordProgress
+  {
+    $progress = $this->getOrCreate($user, $word);
+    $oldBox = $progress->box;
+    $nextDue = Carbon::today()->addDays(30); // long interval — rarely resurfaces
+
+    $progress->update([
+      'box'              => WordProgress::MASTERED_BOX,
+      'correct_count'   => $progress->correct_count + 1,
+      'last_reviewed_at' => now(),
+      'next_review_at'  => $nextDue,
+    ]);
+
+    // Remove from focused review queue
+    ReviewWord::where('user_id', $user->id)
+      ->where('word_id', $word->id)
+      ->delete();
+
+    // Award XP for mastering (only if it wasn't already mastered)
+    if ($oldBox < WordProgress::MASTERED_BOX && $awardXp) {
+      $this->xpService->awardMasteryXp($user, $word->id);
+    }
+
+    return $progress->fresh();
+  }
+
   // ── Session queue builder ─────────────────────────────────────────────────
 
   /**
@@ -142,7 +174,30 @@ class SrsService
 
     $slotsLeft = self::QUEUE_SIZE - $reviewWords->count();
 
-    // ── Priority 2: new (never-seen) words ───────────────────────────────
+    // ── Priority 2: extra practice (words already reviewed today) ────────────
+    // Use up to half of the remaining slots for words seen today to boost retention
+    $extraPracticeWords = collect();
+    if ($slotsLeft > 0) {
+      $extraPracticeLimit = (int) floor($slotsLeft / 2);
+      if ($extraPracticeLimit > 0) {
+        $extraPracticeWords = Word::with(['images', 'wordList.category:id,show_example_sentences', 'progress' => fn($q) => $q->where('user_id', $userId)])
+          ->where('wordlist_id', $wordlistId)
+          ->whereHas('progress', function ($q) use ($userId) {
+            $q->where('user_id', $userId)
+              ->where('box', '<', WordProgress::MASTERED_BOX)
+              ->whereDate('last_reviewed_at', Carbon::today())
+              ->where('next_review_at', '>', Carbon::now()); // exclude those that were already picked essentially
+          })
+          ->inRandomOrder() // mix them up
+          ->limit($extraPracticeLimit)
+          ->get()
+          ->map(fn($w) => $this->attachSrsMeta($w, $w->progress->first()));
+      }
+    }
+
+    $slotsLeft -= $extraPracticeWords->count();
+
+    // ── Priority 3: new (never-seen) words ───────────────────────────────
     $newWords = collect();
     if ($slotsLeft > 0) {
       $newWords = Word::with([
@@ -157,7 +212,7 @@ class SrsService
         ->map(fn($w) => $this->attachSrsMeta($w, null));
     }
 
-    return $reviewWords->concat($newWords);
+    return $reviewWords->concat($extraPracticeWords)->concat($newWords);
   }
 
   /**

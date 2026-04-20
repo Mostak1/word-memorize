@@ -29,6 +29,8 @@ export default function WordDetail({
     wordList,
     subCategory,
     isMastered = false,
+    isRevise = false,
+    reviseFilter = null,
     isBookmarked: initialBookmarked = false,
     prevWordId = null,
     nextWordId = null,
@@ -130,11 +132,15 @@ export default function WordDetail({
 
     const navigateTo = (wordId) => {
         if (!wordId) return;
-        router.get(
-            route("word.show", wordId) + "?from=mastered",
-            {},
-            { preserveScroll: false },
-        );
+
+        let url = route("word.show", wordId);
+        if (isMastered) {
+            url += "?from=mastered";
+        } else if (isRevise) {
+            url += `?from=revise&filter=${reviseFilter}`;
+        }
+
+        router.get(url, {}, { preserveScroll: false });
     };
 
     const highlightWord = (sentence, targetWord) => {
@@ -566,7 +572,7 @@ export default function WordDetail({
                         {wordList && (
                             <div className="px-4 pb-4">
                                 <div className="h-px bg-gray-100 dark:bg-slate-700 mb-3" />
-                                <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
+                                <div className="text-xs text-gray-400 dark:text-gray-500 text-center">
                                     <div
                                         // href={route(
                                         //     "wordlist.show",
@@ -577,7 +583,7 @@ export default function WordDetail({
                                         <BookOpen className="h-3.5 w-3.5" />
                                         Part of: {wordList.title}
                                     </div>
-                                </p>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -621,8 +627,35 @@ export default function WordDetail({
                 </div>
             )}
 
+            {/* ── Revise: Prev / Next navigation ── */}
+            {isRevise && (
+                <div className="fixed bottom-0 left-0 right-0 z-20">
+                    <div className="max-w-lg mx-auto px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => navigateTo(prevWordId)}
+                                disabled={!prevWordId}
+                                className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl text-sm font-bold bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 shadow-sm hover:shadow-md disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                            >
+                                <ChevronLeft className="h-5 w-5" />
+                                Previous
+                            </button>
+
+                            <button
+                                onClick={() => navigateTo(nextWordId)}
+                                disabled={!nextWordId}
+                                className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl text-sm font-bold bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 shadow-sm hover:shadow-md disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                            >
+                                Next
+                                <ChevronRight className="h-5 w-5" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* ── Normal exercise bottom bar ── */}
-            {!isMastered && (
+            {!isMastered && !isRevise && (
                 <div className="fixed bottom-0 left-0 right-0 z-20">
                     <div className="max-w-lg mx-auto px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
                         <div className="flex gap-3">

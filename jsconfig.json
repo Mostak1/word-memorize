@@ -1,11 +1,12 @@
 {
     "compilerOptions": {
-        "ignoreDeprecations": "6.0",
         "baseUrl": ".",
         "paths": {
             "@/*": ["resources/js/*"],
             "ziggy-js": ["./vendor/tightenco/ziggy"]
-        }
+        },
+        "allowSyntheticDefaultImports": true,
+        "jsx": "react-jsx"
     },
     "exclude": ["node_modules", "public"]
 }
