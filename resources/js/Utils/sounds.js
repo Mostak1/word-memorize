@@ -37,6 +37,9 @@ export const initSounds = () => {
         xpPurchase: getAssetUrl(
             "/sounds/freesound_crunchpixstudio-purchase-success.mp3.mpeg"
         ),
+        mastered: getAssetUrl(
+            "/sounds/freesound_crunchpixstudio-great-success-384935.mp3.mpeg"
+        ),
     };
 
     Object.entries(SOUND_PATHS).forEach(([key, path]) => {
@@ -54,7 +57,7 @@ export const initSounds = () => {
 };
 
 // 🔹 Play sound
-const playSound = (key, userSettings) => {
+const playSound = (key, userSettings, duration = null) => {
     if (
         typeof window === "undefined" ||
         userSettings?.sound_effects === false ||
@@ -72,7 +75,14 @@ const playSound = (key, userSettings) => {
         const playPromise = audio.play();
 
         if (playPromise !== undefined) {
-            playPromise.catch((error) => {
+            playPromise.then(() => {
+                if (duration) {
+                    setTimeout(() => {
+                        audio.pause();
+                        audio.currentTime = 0;
+                    }, duration);
+                }
+            }).catch((error) => {
                 if (error.name !== "NotAllowedError") {
                     console.warn(`Sound playback failed for ${key}:`, error);
                 }
@@ -95,6 +105,9 @@ export const playIncorrect = (userSettings) =>
 
 export const playXpPurchase = (userSettings) =>
     playSound("xpPurchase", userSettings);
+
+export const playMastered = (userSettings) =>
+    playSound("mastered", userSettings, 1000);
 
 // 🔹 Global controls
 export const disableSoundsGlobally = () => {

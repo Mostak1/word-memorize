@@ -60,6 +60,19 @@ class ReviewWordController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
+        $results = $request->input('results', []);
+        
+        foreach ($results as $item) {
+            $word = Word::find($item['word_id']);
+            if (!$word) continue;
+
+            if ($item['action'] === 'know') {
+                $this->srsService->recordCorrect($user, $word, $this->wordListAwardsXp($word));
+            } else if ($item['action'] === 'learn') {
+                $this->srsService->recordIncorrect($user, $word);
+            }
+        }
+
         $wordlistId = $request->input('wordlist_id');
         $xpEnabled = false;
 

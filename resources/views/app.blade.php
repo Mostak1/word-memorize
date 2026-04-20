@@ -12,10 +12,10 @@
     <meta name="apple-mobile-web-app-title" content="{{ config('app.name', 'VocabPix') }}" />
     <meta name="application-name" content="{{ config('app.name', 'VocabPix') }}" />
     <meta name="msapplication-TileColor" content="#e70013" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="mask-icon" href="/masked-icon.svg" color="#e70013" />
-    <link rel="icon" href="/favicon.ico" sizes="any">
-    <link rel="icon" href="/icons/icon-192x192.png" type="image/png">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}" />
+    <link rel="mask-icon" href="{{ asset('masked-icon.svg') }}" color="#e70013" />
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
+    <link rel="icon" href="{{ asset('icon-192x192.png') }}" type="image/png">
 
     <!-- Scripts -->
     @routes

@@ -95,6 +95,10 @@ class WordListController extends Controller
             abort(403, 'This word list category is locked.');
         }
 
+        if ($wordList->words_count < 10) {
+            abort(403, 'This word list needs at least 10 words to start an exercise.');
+        }
+
         if (auth()->check()) {
             $words = $srsService->buildSessionQueue(auth()->user(), (int) $id);
         } else {
@@ -137,6 +141,10 @@ class WordListController extends Controller
 
         if ($this->categoryIsLockedForUser($wordList)) {
             abort(403, 'This word list category is locked.');
+        }
+
+        if ($wordList->words_count < 10) {
+            abort(403, 'This word list needs at least 10 words to start an exercise.');
         }
 
         $words = Word::with([

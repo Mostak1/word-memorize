@@ -243,13 +243,17 @@ Route::middleware(['auth', 'active.device'])->group(function () {
 
     // Achievements API
     Route::get('/api/achievements', [UserAchievementController::class, 'index'])->name('api.achievements.index');
-    Route::get('/api/achievements/unseen', [UserAchievementController::class, 'getUnseen'])->name('api.achievements.unseen');
+
 
     // Achievements page
     Route::get('/achievements', function () {
         return Inertia::render('Achievements');
     })->name('achievements');
+
+
 });
+
+Route::get('/api/achievements/unseen', [UserAchievementController::class, 'getUnseen'])->name('api.achievements.unseen');
 
 require __DIR__ . '/auth.php';
 require __DIR__ . '/admin.php';

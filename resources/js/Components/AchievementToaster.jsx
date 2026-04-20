@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { usePage } from "@inertiajs/react";
 import { toast } from "sonner";
 import { Trophy } from "lucide-react";
 
@@ -6,11 +7,19 @@ import { Trophy } from "lucide-react";
  * Headless component that listens for achievement checks.
  */
 export default function AchievementToaster() {
+    const { auth } = usePage().props;
+
     // We bind to a global event so any component can trigger a check
     useEffect(() => {
         const fetchAchievements = async () => {
+            if (!auth.user) return;
+
             try {
-                const res = await fetch(route("api.achievements.unseen"));
+                const res = await fetch(route("api.achievements.unseen"), {
+                    headers: {
+                        "Accept": "application/json",
+                    }
+                });
                 if (!res.ok) return;
                 const data = await res.json();
 

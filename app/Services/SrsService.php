@@ -128,7 +128,7 @@ class SrsService
       ->where('wordlist_id', $wordlistId)
       ->whereHas('progress', function ($q) use ($userId) {
         $q->where('user_id', $userId)
-          ->whereBetween('box', [2, WordProgress::MASTERED_BOX - 1]) // L2 & L3 only
+          ->whereBetween('box', [1, WordProgress::MASTERED_BOX - 1]) // L2 & L3 only
           ->where(function ($inner) {
             $inner->whereNull('next_review_at')
               ->orWhere('next_review_at', '<=', Carbon::now()); // due today or overdue

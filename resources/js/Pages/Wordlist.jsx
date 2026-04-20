@@ -504,14 +504,16 @@ export default function Wordlist({
                                         );
                                     }
 
+                                    const canExercise = total >= 10;
+
                                     // ── UNLOCKED card — clickable ──
                                     return (
                                         <div key={wordList.id}>
                                             <div
-                                                role="button"
-                                                tabIndex={0}
+                                                role={canExercise ? "button" : undefined}
+                                                tabIndex={canExercise ? 0 : undefined}
                                                 onClick={() =>
-                                                    router.visit(
+                                                    canExercise && router.visit(
                                                         route(
                                                             "wordlist.start",
                                                             wordList.id,
@@ -520,8 +522,8 @@ export default function Wordlist({
                                                 }
                                                 onKeyDown={(e) => {
                                                     if (
-                                                        e.key === "Enter" ||
-                                                        e.key === " "
+                                                        canExercise && (e.key === "Enter" ||
+                                                        e.key === " ")
                                                     )
                                                         router.visit(
                                                             route(
@@ -530,7 +532,11 @@ export default function Wordlist({
                                                             ),
                                                         );
                                                 }}
-                                                className="bg-white dark:bg-slate-900 rounded-2xl px-5 py-4 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                                                className={`bg-white dark:bg-slate-900 rounded-2xl px-5 py-4 shadow-sm border border-transparent transition-all ${
+                                                    canExercise 
+                                                        ? "hover:shadow-md cursor-pointer" 
+                                                        : "opacity-80 cursor-not-allowed"
+                                                }`}
                                                 style={{
                                                     animationDelay: `${index * 0.07}s`,
                                                     animation:
@@ -592,13 +598,15 @@ export default function Wordlist({
                                                             </span>
                                                         ) : null}
                                                     </div>
-                                                    <span className="text-[#E5201C] text-sm font-semibold flex items-center gap-1">
-                                                        {mastered !== null &&
-                                                        mastered >= total &&
-                                                        total > 0
-                                                            ? "Completed"
-                                                            : "Start Exercise"}
-                                                        <Play className="h-3.5 w-3.5 fill-[#E5201C]" />
+                                                    <span className={`${canExercise ? "text-[#E5201C]" : "text-gray-400"} text-sm font-semibold flex items-center gap-1`}>
+                                                        {!canExercise 
+                                                            ? "Needs 10 words"
+                                                            : (mastered !== null &&
+                                                               mastered >= total &&
+                                                               total > 0
+                                                                ? "Completed"
+                                                                : "Start Exercise")}
+                                                        {canExercise && <Play className="h-3.5 w-3.5 fill-[#E5201C]" />}
                                                     </span>
                                                 </div>
                                             </div>

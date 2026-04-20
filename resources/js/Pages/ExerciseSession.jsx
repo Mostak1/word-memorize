@@ -30,6 +30,7 @@ import {
     playCorrect,
     playIncorrect,
     playSessionComplete,
+    playMastered,
 } from "@/Utils/sounds";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -220,6 +221,11 @@ export default function ExerciseSession({
     const [dontKnowCount, setDontKnowCount] = useState(0); // total "I Don't Know" taps
     const [sessionXpAwarded, setSessionXpAwarded] = useState(0); // XP earned this session
 
+    const [sessionResults, setSessionResults] = useState([]);
+    const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+    const [pendingVisit, setPendingVisit] = useState(null);
+    const allowNavigation = useRef(false);
+
     // NEW: Total cards processed in this session (used for progress bar)
     const answeredCount = promotedCount + dontKnowCount;
 
@@ -248,6 +254,10 @@ export default function ExerciseSession({
     // Current word is always the front of the queue
     const word = queue[0] ?? null;
     const isDone = queue.length === 0 && !exiting;
+    const isDoneRef = useRef(isDone);
+    useEffect(() => {
+        isDoneRef.current = isDone;
+    }, [isDone]);
 
     // const [openCollocationIndex, setOpenCollocationIndex] = useState(null);
     const meaningCardRef = useRef(null);
@@ -272,7 +282,50 @@ export default function ExerciseSession({
     }, [showMeaning]);
 
     useEffect(() => {
-        if (!isDone || !auth?.user) return;
+        // Push a proxy state into the history API so the first back-button press
+        // doesn't actually leave the page.
+        window.history.pushState(null, "", window.location.href);
+
+        const handlePopState = (event) => {
+            if (!isDoneRef.current && !allowNavigation.current) {
+                // Prevent Inertia from handling the popstate event
+                event.stopPropagation();
+                // Push the proxy state again to intercept the next back button
+                window.history.pushState(null, "", window.location.href);
+                setPendingVisit({ type: 'popstate' });
+                setShowLeaveDialog(true);
+            }
+        };
+
+        window.addEventListener("popstate", handlePopState, { capture: true });
+
+        const handleBefore = (event) => {
+            if (!isDoneRef.current && !allowNavigation.current) {
+                event.preventDefault();
+                setPendingVisit(event.detail.visit);
+                setShowLeaveDialog(true);
+            }
+        };
+
+        const handleBeforeUnload = (e) => {
+            if (!isDoneRef.current && !allowNavigation.current) {
+                e.preventDefault();
+                e.returnValue = "Are you sure you want to leave? You will lose the exercises progress";
+            }
+        };
+
+        const removeListener = router.on("before", handleBefore);
+        window.addEventListener("beforeunload", handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener("popstate", handlePopState, { capture: true });
+            removeListener();
+            window.removeEventListener("beforeunload", handleBeforeUnload);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!isDone || !auth?.user || initialQueueSize === 0) return;
 
         playSessionComplete(userSettings);
 
@@ -290,7 +343,7 @@ export default function ExerciseSession({
                 "X-XSRF-TOKEN": csrfToken,
                 Accept: "application/json",
             },
-            body: JSON.stringify({ wordlist_id: wordList?.id }),
+            body: JSON.stringify({ wordlist_id: wordList?.id, results: sessionResults }),
         })
             .then((response) => response.json())
             .then((data) => {
@@ -498,23 +551,7 @@ export default function ExerciseSession({
     };
 
     // ── Fire-and-forget server call ───────────────────────────────────────────
-    const pingServer = (routeName, wordId) => {
-        const _xsrfRow = document.cookie
-            .split("; ")
-            .find((row) => row.startsWith("XSRF-TOKEN="));
-        const csrfToken = _xsrfRow
-            ? decodeURIComponent(_xsrfRow.substring("XSRF-TOKEN=".length))
-            : "";
-        fetch(route(routeName, wordId), {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-XSRF-TOKEN": csrfToken,
-                Accept: "application/json",
-            },
-            body: JSON.stringify({ from: "session" }),
-        }).finally(() => setIsSubmitting(false));
-    };
+    // Removed pingServer in favor of batch updating at the end of session.
 
     // ── Animate then mutate queue ─────────────────────────────────────────────
     // const animateThen = (direction, callback) => {
@@ -570,29 +607,31 @@ export default function ExerciseSession({
         }
         if (isSubmitting) return;
 
-        playCorrect(userSettings);
         setIsSubmitting(true);
-
         const currentBox = word.srs_box ?? 1;
         const willMaster = currentBox >= MASTERED_BOX - 1; // L3 → L4
         const willLevelUp = currentBox < MASTERED_BOX;
 
         if (willMaster) {
+            playMastered(userSettings);
             // Increment key → React unmounts old overlay, mounts a fresh one
             // with its own independent timer. Safe for rapid presses.
             setMasteryEventKey((k) => k + 1);
-        } else if (willLevelUp) {
-            setLevelUpPulse(true);
-            setTimeout(() => setLevelUpPulse(false), 500);
+        } else {
+            playCorrect(userSettings);
+            if (willLevelUp) {
+                setLevelUpPulse(true);
+                setTimeout(() => setLevelUpPulse(false), 500);
+            }
         }
 
         const wordId = word.id;
         animateThen("left", () => {
+            setSessionResults((prev) => [...prev, { word_id: wordId, action: "know" }]);
             setQueue((prev) => prev.slice(1)); // remove from front
             setPromotedCount((c) => c + 1);
+            setIsSubmitting(false);
         });
-
-        pingServer("word.know", wordId);
     };
 
     /**
@@ -622,10 +661,10 @@ export default function ExerciseSession({
         const wordId = word.id;
 
         animateThen("right", () => {
+            setSessionResults((prev) => [...prev, { word_id: wordId, action: "learn" }]);
             setQueue((prev) => prev.slice(1)); // ← word leaves session
+            setIsSubmitting(false);
         });
-
-        pingServer("word.learn", wordId);
     };
 
     // ── Layout helpers ────────────────────────────────────────────────────────
@@ -1685,6 +1724,51 @@ export default function ExerciseSession({
                             className="w-full sm:w-auto bg-[#E5201C] hover:bg-red-700"
                         >
                             Go to Login
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Leave Dialog */}
+            <AlertDialog
+                open={showLeaveDialog}
+                onOpenChange={setShowLeaveDialog}
+            >
+                <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-md sm:w-full">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2">
+                            <span className="text-[#E5201C] text-xl">Wait!</span> Are you sure you want to leave?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-base text-gray-500">
+                            You will lose the exercises progress if you leave before completing the session.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                        <AlertDialogCancel 
+                            className="w-full sm:w-auto"
+                            onClick={() => {
+                                setPendingVisit(null);
+                                setShowLeaveDialog(false);
+                            }}
+                        >
+                            Stay Here
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => {
+                                allowNavigation.current = true;
+                                setShowLeaveDialog(false);
+                                if (pendingVisit?.type === 'popstate') {
+                                    // Because we pushed a dummy state, we need to go back 2 times to actually leave
+                                    window.history.go(-2);
+                                } else if (pendingVisit) {
+                                    router.visit(pendingVisit.url, pendingVisit);
+                                } else {
+                                    window.history.back();
+                                }
+                            }}
+                            className="w-full sm:w-auto bg-[#E5201C] hover:bg-red-700"
+                        >
+                            Yes, Leave
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

@@ -27,6 +27,10 @@ import {
     Languages,
     BookOpen,
     ArrowLeftRight,
+    Zap,
+    Brain,
+    Target,
+    Star,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 
@@ -414,6 +418,7 @@ export default function MasteryTest({
     categoryId = null,
 }) {
     const { userSettings } = usePage().props;
+    const [showIntro, setShowIntro] = useState(true);
     const [current, setCurrent] = useState(0);
     const [selected, setSelected] = useState(null);
     const [answered, setAnswered] = useState(false);
@@ -425,6 +430,13 @@ export default function MasteryTest({
         noMasteredWords || noUsableSentences,
     );
     const [showAnimation, setShowAnimation] = useState(true);
+
+    // Derive unique question types for the intro breakdown
+    const uniqueTypes = useMemo(() => {
+        const seen = new Set();
+        questions.forEach((q) => seen.add(q.type));
+        return [...seen];
+    }, [questions]);
 
     const q = questions[current] ?? null;
     const total = questions.length;
@@ -518,6 +530,148 @@ export default function MasteryTest({
         setDone(false);
         setMatchCorrectCount(null);
     };
+
+    // ── Intro screen ───────────────────────────────────────────────────────────
+
+    if (showIntro && !noMasteredWords && !noUsableSentences) {
+        return (
+            <AppLayout>
+                <Head title="Mastery Test" />
+                <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 flex items-center justify-center px-4">
+                    <div
+                        className="w-full max-w-md mb-4"
+                        style={{ animation: "fadeInUp 0.4s ease-out" }}
+                    >
+                        {/* Back link */}
+                        <Link
+                            href={
+                                categoryId
+                                    ? route("wordlistcategory.wordlists", {
+                                          category: categoryId,
+                                      })
+                                    : route("dashboard")
+                            }
+                            className="mt-4 inline-flex items-center gap-1.5 text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 mb-5 transition-colors"
+                        >
+                            <ChevronLeft className="h-4 w-4" />
+                            Back
+                        </Link>
+
+                        {/* Hero card */}
+                        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-md overflow-hidden mb-4">
+                            {/* Gradient banner */}
+                            <div className="bg-gradient-to-br from-[#E5201C] to-rose-600 px-6 pt-8 pb-10 text-white text-center relative">
+                                <div
+                                    className="absolute inset-0 opacity-10"
+                                    style={{
+                                        backgroundImage:
+                                            "radial-gradient(circle at 20% 80%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)",
+                                        backgroundSize: "30px 30px",
+                                    }}
+                                />
+                                <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-2xl mb-4 backdrop-blur-sm">
+                                    <Brain className="h-8 w-8 text-white" />
+                                </div>
+                                <h1 className="text-2xl font-extrabold mb-1">
+                                    Time to Test Your Knowledge!
+                                </h1>
+                                <p className="text-white/80 text-sm">
+                                    {wordListTitle
+                                        ? `Let's see how well you know "${wordListTitle}"`
+                                        : "Let's see how much you've mastered"}
+                                </p>
+                            </div>
+
+                            {/* Stats strip */}
+                            <div className="grid grid-cols-3 divide-x divide-gray-100 dark:divide-slate-800 border-b border-gray-100 dark:border-slate-800">
+                                <div className="py-4 text-center">
+                                    <p className="text-xl font-extrabold text-gray-900 dark:text-gray-100">
+                                        {total}
+                                    </p>
+                                    <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wide mt-0.5">
+                                        Questions
+                                    </p>
+                                </div>
+                                <div className="py-4 text-center">
+                                    <p className="text-xl font-extrabold text-gray-900 dark:text-gray-100">
+                                        {uniqueTypes.length}
+                                    </p>
+                                    <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wide mt-0.5">
+                                        Types
+                                    </p>
+                                </div>
+                                <div className="py-4 text-center">
+                                    <p className="text-xl font-extrabold text-[#E5201C]">
+                                        +{total}
+                                    </p>
+                                    <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wide mt-0.5">
+                                        Max Points
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* What's included */}
+                            <div className="px-6 py-5">
+                                <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
+                                    What's included
+                                </p>
+                                <div className="space-y-2">
+                                    {uniqueTypes.map((type) => {
+                                        const meta = TYPE_META[type] ?? {
+                                            label: type,
+                                            color: "bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-300",
+                                        };
+                                        const Icon = meta.icon ?? BookOpen;
+                                        return (
+                                            <div
+                                                key={type}
+                                                className="flex items-center gap-3"
+                                            >
+                                                <span
+                                                    className={`inline-flex items-center justify-center w-7 h-7 rounded-lg ${meta.color} shrink-0`}
+                                                >
+                                                    <Icon className="h-3.5 w-3.5" />
+                                                </span>
+                                                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                                                    {meta.label}
+                                                </span>
+                                                <Star className="h-3 w-3 text-amber-400 ml-auto" />
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Tips card */}
+                        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 rounded-2xl px-4 py-3.5 mb-5 flex items-start gap-3">
+                            <Zap className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                            <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+                                <span className="font-bold">Quick tip:</span>{" "}
+                                Read each question carefully. You only get one
+                                shot per question!
+                            </p>
+                        </div>
+
+                        {/* CTA */}
+                        <button
+                            onClick={() => setShowIntro(false)}
+                            className="w-full py-4 bg-[#E5201C] hover:bg-red-700 active:scale-[0.98] text-white font-bold text-base rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2"
+                        >
+                            <Target className="h-5 w-5" />
+                            Let's Go!
+                        </button>
+                    </div>
+                </div>
+                <style>{`
+                    @keyframes fadeInUp {
+                        from { opacity: 0; transform: translateY(10px); }
+                        to   { opacity: 1; transform: translateY(0); }
+                    }
+                `}</style>
+            </AppLayout>
+        );
+    }
 
     // ── Done screen ────────────────────────────────────────────────────────────
 
