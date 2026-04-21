@@ -13,10 +13,12 @@ import {
     RotateCcw,
     Users,
 } from "lucide-react";
+import { useTranslation } from "@/Contexts/LanguageContext";
 
 // ── Streak Banner ─────────────────────────────────────────────────────────────
 
 function StreakBanner({ streak }) {
+    const { t } = useTranslation();
     if (!streak) return null;
 
     const {
@@ -35,47 +37,57 @@ function StreakBanner({ streak }) {
               bg: "bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800",
               flame: "text-orange-500",
               label: null,
-              message: "Great job! Come back tomorrow to keep it going.",
+              message: t("streak.message_active_today", {
+                  defaultValue: "Great job! Come back tomorrow to keep it going.",
+              }),
           }
         : is_frozen
           ? {
                 bg: "bg-blue-50 border-blue-300 dark:bg-blue-950/30 dark:border-blue-800",
                 flame: "text-blue-400",
                 label: {
-                    text: "🧊 Streak Frozen",
+                    text: t("streak.frozen"),
                     cls: "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300",
                 },
-                message:
-                    "You missed yesterday, but your streak is saved! Complete a quiz or exercise to continue.",
+                message: t("streak.message_frozen", {
+                    defaultValue:
+                        "You missed yesterday, but your streak is saved! Complete a quiz or exercise to continue.",
+                }),
             }
           : at_risk
             ? {
                   bg: "bg-yellow-50 border-yellow-300 dark:bg-yellow-950/30 dark:border-yellow-800",
                   flame: "text-yellow-400",
                   label: {
-                      text: "⚠️ At Risk",
+                      text: t("streak.at_risk"),
                       cls: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300",
                   },
-                  message:
-                      "No activity yet today — do a quiz or exercise before midnight!",
+                  message: t("streak.message_at_risk", {
+                      defaultValue:
+                          "No activity yet today — do a quiz or exercise before midnight!",
+                  }),
               }
             : is_broken
               ? {
                     bg: "bg-gray-100 border-gray-300 dark:bg-slate-800 dark:border-slate-700",
                     flame: "text-gray-300",
                     label: {
-                        text: "💀 Streak Lost",
+                        text: t("streak.lost"),
                         cls: "bg-gray-200 text-gray-600 dark:bg-slate-700 dark:text-slate-300",
                     },
-                    message:
-                        "You missed too many days. Start a new streak today!",
+                    message: t("streak.message_lost", {
+                        defaultValue:
+                            "You missed too many days. Start a new streak today!",
+                    }),
                 }
               : {
                     bg: "bg-white border-gray-200 dark:bg-slate-900 dark:border-slate-700",
                     flame: "text-gray-300",
                     label: null,
-                    message:
-                        "Complete a quiz or exercise to start your streak.",
+                    message: t("streak.message_start", {
+                        defaultValue:
+                            "Complete a quiz or exercise to start your streak.",
+                    }),
                 };
 
     return (
@@ -91,11 +103,11 @@ function StreakBanner({ streak }) {
                         <p className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 leading-none">
                             {current_streak}
                             <span className="text-sm font-semibold text-gray-400 dark:text-gray-500 ml-1">
-                                day{current_streak !== 1 ? "s" : ""}
+                                {t(current_streak !== 1 ? "streak.days" : "streak.day")}
                             </span>
                         </p>
                         <p className="text-xs text-gray-400 dark:text-gray-500">
-                            Current streak
+                            {t("streak.current")}
                         </p>
                     </div>
                 </div>
@@ -106,7 +118,7 @@ function StreakBanner({ streak }) {
                             {longest_streak}
                         </p>
                         <p className="text-xs text-gray-400 dark:text-gray-500">
-                            Best
+                            {t("streak.best")}
                         </p>
                     </div>
 
@@ -117,7 +129,7 @@ function StreakBanner({ streak }) {
                                 {freeze_count}
                             </div>
                             <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                Safe {freeze_count === 1 ? "day" : "days"}
+                                {t(freeze_count === 1 ? "streak.safe_day" : "streak.safe_days")}
                             </p>
                         </div>
                     )}
@@ -142,21 +154,22 @@ function StreakBanner({ streak }) {
                         href={route("quiz.index")}
                         className="flex-1 text-center text-xs font-semibold bg-blue-500 text-white rounded-xl py-2 hover:bg-blue-600 transition-colors"
                     >
-                        Take a Quiz
+                        {t("streak.take_quiz")}
                     </Link>
                     <Link
                         href={route("wordlistcategory.index")}
                         className="flex-1 text-center text-xs font-semibold bg-white border border-blue-300 text-blue-600 rounded-xl py-2 hover:bg-blue-50 transition-colors dark:bg-slate-800 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-slate-700"
                     >
-                        Do Exercise
+                        {t("streak.do_exercise")}
                     </Link>
                 </div>
             )}
 
             {!active_today && !is_broken && auto_save_available && (
                 <p className="text-xs text-blue-400 dark:text-blue-300 mt-1.5">
-                    🛡️ Auto-save available — if you miss a day this week your
-                    streak will be saved.
+                    {t("streak.auto_save_message", {
+                        defaultValue: "🛡️ Auto-save available — if you miss a day this week your streak will be saved.",
+                    })}
                 </p>
             )}
         </div>
@@ -171,13 +184,14 @@ export default function Dashboard({
     streak = null,
     reviseCounts = {},
 }) {
+    const { t } = useTranslation();
     return (
         <AppLayout>
-            <Head title="Dashboard" />
+            <Head title={t("dashboard.title")} />
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
                 <div className="w-full max-w-2xl mx-auto px-4 py-5">
                     <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">
-                        Start learning and expand your vocabulary
+                        {t("dashboard.subtitle")}
                     </p>
 
                     <StreakBanner streak={streak} />
@@ -193,10 +207,10 @@ export default function Dashboard({
                                 </div>
                                 <div className="text-center">
                                     <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
-                                        Add New Word
+                                        {t("dashboard.add_new_word")}
                                     </p>
                                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                        Expand vocabulary
+                                        {t("dashboard.expand_vocabulary")}
                                     </p>
                                 </div>
                             </div>
@@ -212,10 +226,10 @@ export default function Dashboard({
                                 </div>
                                 <div className="text-center">
                                     <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
-                                        WordLists
+                                        {t("dashboard.word_lists")}
                                     </p>
                                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                        Browse All
+                                        {t("dashboard.browse_all")}
                                     </p>
                                 </div>
                             </div>
@@ -228,15 +242,17 @@ export default function Dashboard({
                                 </div>
                                 <div className="text-center">
                                     <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
-                                        Mastered Words
+                                        {t("dashboard.mastered_words")}
                                     </p>
                                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                                         {masteredCount > 0 ? (
                                             <span className="font-extrabold text-green-600 text-base">
-                                                {masteredCount} words
+                                                {t("dashboard.words_count", {
+                                                    count: masteredCount,
+                                                })}
                                             </span>
                                         ) : (
-                                            "Words you know"
+                                            t("dashboard.words_you_know")
                                         )}
                                     </p>
                                 </div>
@@ -250,10 +266,10 @@ export default function Dashboard({
                                 </div>
                                 <div className="text-center">
                                     <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
-                                        Test Your Learning
+                                        {t("dashboard.test_your_learning")}
                                     </p>
                                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                        Practice now
+                                        {t("dashboard.practice_now")}
                                     </p>
                                 </div>
                             </div>
@@ -266,10 +282,10 @@ export default function Dashboard({
                                 </div>
                                 <div className="text-center">
                                     <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
-                                        Leaderboard
+                                        {t("dashboard.leaderboard")}
                                     </p>
                                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                        See top learners
+                                        {t("dashboard.see_top_learners")}
                                     </p>
                                 </div>
                             </div>
@@ -282,10 +298,10 @@ export default function Dashboard({
                                 </div>
                                 <div className="text-center">
                                     <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
-                                        Achievements
+                                        {t("dashboard.achievements")}
                                     </p>
                                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                        View earned badges
+                                        {t("dashboard.view_earned_badges")}
                                     </p>
                                 </div>
                             </div>
@@ -299,18 +315,17 @@ export default function Dashboard({
                                 </div>
                                 <div className="text-center">
                                     <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
-                                        Revise
+                                        {t("dashboard.revise")}
                                     </p>
                                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                                         {reviseCounts.all > 0 ? (
                                             <span className="font-bold text-indigo-500 text-base">
-                                                {reviseCounts.all} word
-                                                {reviseCounts.all !== 1
-                                                    ? "s"
-                                                    : ""}
+                                                {t("dashboard.words_count", {
+                                                    count: reviseCounts.all,
+                                                })}
                                             </span>
                                         ) : (
-                                            "Practise & review"
+                                            t("dashboard.practice_review")
                                         )}
                                     </p>
                                 </div>
@@ -332,10 +347,10 @@ export default function Dashboard({
                             </div>
                             <div>
                                 <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
-                                    Bookmarked Words
+                                    {t("dashboard.bookmarked_words")}
                                 </p>
                                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                    Words saved for later review
+                                    {t("dashboard.saved_for_later")}
                                 </p>
                             </div>
                         </div>
@@ -347,7 +362,7 @@ export default function Dashboard({
                             <div className="bg-white dark:bg-slate-900 rounded-2xl py-5 px-3 flex flex-col items-center justify-center gap-2 shadow-sm hover:shadow-md transition-shadow h-full">
                                 <Settings className="h-6 w-6 text-gray-400" />
                                 <span className="text-xs font-medium text-gray-600 dark:text-gray-400 text-center">
-                                    Settings
+                                    {t("dashboard.settings")}
                                 </span>
                             </div>
                         </Link>
@@ -356,10 +371,10 @@ export default function Dashboard({
                     <Link href={route("my.words.index")}>
                         <div className="bg-[#E5201C] dark:bg-red-700 rounded-2xl py-5 px-6 text-center shadow-md hover:bg-red-700 dark:hover:bg-red-800 transition-colors cursor-pointer">
                             <p className="text-white font-bold text-sm">
-                                My Word Collection
+                                {t("dashboard.my_word_collection")}
                             </p>
                             <p className="text-white/80 text-xs mt-1">
-                                View &amp; manage all your personal words
+                                {t("dashboard.manage_personal_words")}
                             </p>
                         </div>
                     </Link>

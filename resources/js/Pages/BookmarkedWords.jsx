@@ -10,6 +10,7 @@ import {
     Search,
 } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "@/Contexts/LanguageContext";
 
 // ── WordCard ──────────────────────────────────────────────────────────────────
 
@@ -147,8 +148,8 @@ function WordCard({ word, onRemove }) {
 }
 
 // ── Empty state ───────────────────────────────────────────────────────────────
-
 function EmptyState() {
+    const { t } = useTranslation();
     return (
         <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
             <div className="w-20 h-20 rounded-full bg-yellow-50 dark:bg-yellow-950/30 flex items-center justify-center mb-5">
@@ -158,17 +159,16 @@ function EmptyState() {
                 />
             </div>
             <h2 className="text-xl font-extrabold text-gray-900 dark:text-gray-100 mb-2">
-                No bookmarks yet
+                {t("bookmarks.no_bookmarks")}
             </h2>
             <p className="text-sm text-gray-400 dark:text-gray-500 mb-6 max-w-xs">
-                Tap the bookmark icon while studying a word to save it here for
-                later review.
+                {t("bookmarks.no_bookmarks_desc")}
             </p>
             <Link
                 href={route("wordlistcategory.index")}
                 className="px-6 py-3 bg-[#E5201C] text-white font-bold rounded-2xl text-sm hover:bg-red-700 transition-colors"
             >
-                Start Studying
+                {t("bookmarks.start_studying")}
             </Link>
         </div>
     );
@@ -177,6 +177,7 @@ function EmptyState() {
 // ── BookmarkedWords ───────────────────────────────────────────────────────────
 
 export default function BookmarkedWords({ words }) {
+    const { t } = useTranslation();
     const [localWords, setLocalWords] = useState(words.data);
 
     const handleRemove = (wordId) => {
@@ -187,7 +188,7 @@ export default function BookmarkedWords({ words }) {
 
     return (
         <AppLayout>
-            <Head title="Bookmarked Words" />
+            <Head title={t("bookmarks.title")} />
 
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 pb-10">
                 <div className="w-full max-w-2xl mx-auto px-4 pt-5">
@@ -205,12 +206,12 @@ export default function BookmarkedWords({ words }) {
                                 strokeWidth={1.8}
                             />
                             <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-100">
-                                Bookmarked Words
+                                {t("bookmarks.title")}
                             </h1>
                         </div>
                         {localWords.length > 0 && (
                             <span className="ml-auto text-xs font-semibold bg-yellow-100 dark:bg-yellow-950/40 text-yellow-700 dark:text-yellow-400 px-2.5 py-1 rounded-full">
-                                {words.total} saved
+                                {t("bookmarks.saved_count", { count: words.total })}
                             </span>
                         )}
                     </div>
@@ -221,14 +222,14 @@ export default function BookmarkedWords({ words }) {
                     ) : localWords.length === 0 ? (
                         <div className="text-center py-16">
                             <p className="text-gray-400 dark:text-gray-500 text-sm">
-                                All bookmarks on this page removed.
+                                {t("bookmarks.all_removed")}
                             </p>
                             {hasMore && (
                                 <Link
                                     href={words.next_page_url}
                                     className="mt-4 inline-block text-sm font-semibold text-[#E5201C]"
                                 >
-                                    Load next page →
+                                    {t("bookmarks.load_next")}
                                 </Link>
                             )}
                         </div>
@@ -254,15 +255,17 @@ export default function BookmarkedWords({ words }) {
                                             className="flex items-center gap-1.5 px-4 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 font-semibold text-sm rounded-xl hover:shadow-md transition-all"
                                         >
                                             <ChevronLeft className="h-4 w-4" />
-                                            Previous
+                                            {t("bookmarks.previous")}
                                         </Link>
                                     ) : (
                                         <div />
                                     )}
 
                                     <span className="text-xs text-gray-400 dark:text-gray-500">
-                                        Page {words.current_page} of{" "}
-                                        {words.last_page}
+                                        {t("bookmarks.page_info", {
+                                            current: words.current_page,
+                                            total: words.last_page,
+                                        })}
                                     </span>
 
                                     {words.next_page_url ? (
@@ -270,7 +273,7 @@ export default function BookmarkedWords({ words }) {
                                             href={words.next_page_url}
                                             className="flex items-center gap-1.5 px-4 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 font-semibold text-sm rounded-xl hover:shadow-md transition-all"
                                         >
-                                            Next
+                                            {t("bookmarks.next")}
                                             <ChevronRight className="h-4 w-4" />
                                         </Link>
                                     ) : (

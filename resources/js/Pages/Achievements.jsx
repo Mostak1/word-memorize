@@ -11,6 +11,7 @@ import {
     Sunrise,
     Award,
 } from "lucide-react";
+import { useTranslation } from "@/Contexts/LanguageContext";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -40,6 +41,7 @@ async function apiFetch(url, options = {}) {
 // ── Achievement Card ──────────────────────────────────────────────────────────
 
 function AchievementCard({ achievement, earned, progress, earnedAt }) {
+    const { t } = useTranslation();
     const isEarned = earned;
     const progressPercent = Math.min(100, progress.percentage);
 
@@ -104,13 +106,17 @@ function AchievementCard({ achievement, earned, progress, earnedAt }) {
                         <h3
                             className={`font-semibold ${isEarned ? "text-green-800 dark:text-green-200" : "text-gray-900 dark:text-white"}`}
                         >
-                            {achievement.name}
+                            {t(`achievements.items.${achievement.key}.name`, {
+                                defaultValue: achievement.name,
+                            })}
                         </h3>
                         {achievement.tier > 1 && (
                             <span
                                 className={`text-sm font-medium ${getTierColor(achievement.tier)}`}
                             >
-                                Tier {achievement.tier}
+                                {t("achievements.tier", {
+                                    tier: achievement.tier,
+                                })}
                             </span>
                         )}
                     </div>
@@ -118,13 +124,15 @@ function AchievementCard({ achievement, earned, progress, earnedAt }) {
                     <p
                         className={`text-sm mb-3 ${isEarned ? "text-green-700 dark:text-green-300" : "text-gray-600 dark:text-gray-400"}`}
                     >
-                        {achievement.description}
+                        {t(`achievements.items.${achievement.key}.description`, {
+                            defaultValue: achievement.description,
+                        })}
                     </p>
 
                     {!isEarned && (
                         <div className="space-y-1">
                             <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-                                <span>Progress</span>
+                                <span>{t("achievements.progress")}</span>
                                 <span>
                                     {progress.current} / {progress.target}
                                 </span>
@@ -140,7 +148,9 @@ function AchievementCard({ achievement, earned, progress, earnedAt }) {
 
                     {isEarned && earnedAt && (
                         <p className="text-xs text-green-600 dark:text-green-400 mt-2">
-                            Earned {new Date(earnedAt).toLocaleDateString()}
+                            {t("achievements.earned_at", {
+                                date: new Date(earnedAt).toLocaleDateString(),
+                            })}
                         </p>
                     )}
                 </div>
@@ -152,6 +162,7 @@ function AchievementCard({ achievement, earned, progress, earnedAt }) {
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default function Achievements() {
+    const { t } = useTranslation();
     const [achievements, setAchievements] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -166,7 +177,7 @@ export default function Achievements() {
             const data = await apiFetch(route("api.achievements.index"));
             setAchievements(data.achievements || []);
         } catch (err) {
-            setError("Failed to load achievements");
+            setError(t("achievements.failed_load"));
             console.error(err);
         } finally {
             setLoading(false);
@@ -179,7 +190,7 @@ export default function Achievements() {
     if (loading) {
         return (
             <AppLayout>
-                <Head title="Achievements" />
+                <Head title={t("achievements.title")} />
                 <div className="py-12">
                     <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
                         <div className="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg">
@@ -206,7 +217,7 @@ export default function Achievements() {
     if (error) {
         return (
             <AppLayout>
-                <Head title="Achievements" />
+                <Head title={t("achievements.title")} />
                 <div className="py-12">
                     <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
                         <div className="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg">
@@ -218,7 +229,7 @@ export default function Achievements() {
                                     onClick={loadAchievements}
                                     className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 dark:hover:bg-blue-700 transition-colors"
                                 >
-                                    Try Again
+                                    {t("achievements.try_again")}
                                 </button>
                             </div>
                         </div>
@@ -230,7 +241,7 @@ export default function Achievements() {
 
     return (
         <AppLayout>
-            <Head title="Achievements" />
+            <Head title={t("achievements.title")} />
 
             <div className="py-12">
                 <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
@@ -240,11 +251,13 @@ export default function Achievements() {
                                 <Trophy className="w-8 h-8 text-yellow-500" />
                                 <div>
                                     <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50">
-                                        Achievements
+                                        {t("achievements.title")}
                                     </h1>
                                     <p className="text-gray-600 dark:text-slate-400">
-                                        {earnedCount} of {totalCount} badges
-                                        earned
+                                        {t("achievements.badges_earned", {
+                                            earned: earnedCount,
+                                            total: totalCount,
+                                        })}
                                     </p>
                                 </div>
                             </div>

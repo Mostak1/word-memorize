@@ -20,6 +20,7 @@ class UserSettingController extends Controller
             'settings' => [
                 'show_bangla' => $settings->show_bangla,
                 'sound_effects' => $settings->sound_effects,
+                'ui_language' => $settings->ui_language,
             ],
         ]);
     }
@@ -33,6 +34,7 @@ class UserSettingController extends Controller
         $validated = $request->validate([
             'show_bangla' => ['sometimes', 'boolean'],
             'sound_effects' => ['sometimes', 'boolean'],
+            'ui_language' => ['sometimes', 'string', 'in:en,bn'],
         ]);
 
         $settings = UserSetting::forUser($request->user());

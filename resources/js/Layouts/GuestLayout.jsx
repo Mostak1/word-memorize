@@ -1,8 +1,10 @@
 import ApplicationLogo from "@/Components/ApplicationLogo";
 import { Link } from "@inertiajs/react";
 import { BookOpen } from "lucide-react";
+import { useTranslation } from "@/Contexts/LanguageContext";
 
 export default function GuestLayout({ children }) {
+    const { t } = useTranslation();
     return (
         <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-white dark:from-zinc-900 dark:to-zinc-950 px-4 py-8 sm:py-12">
             {/* Logo/Brand Section */}
@@ -19,7 +21,7 @@ export default function GuestLayout({ children }) {
                             VocabPix
                         </h1>
                         <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            Expand your vocabulary effortlessly
+                            {t("dashboard.subtitle")}
                         </p>
                     </div>
                 </Link>

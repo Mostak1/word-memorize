@@ -1,10 +1,13 @@
 import AppLayout from "@/Layouts/AppLayout";
 import { Head } from "@inertiajs/react";
+import { useTranslation } from "@/Contexts/LanguageContext";
 
 export default function LoadingScreen({ loadingProgress }) {
+    const { t } = useTranslation();
+
     return (
         <AppLayout>
-            <Head title="Loading Session..." />
+            <Head title={t("common.loading")} />
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 flex flex-col items-center justify-center px-4">
                 <div className="max-w-md w-full text-center">
                     <div className="flex justify-center mb-8">
@@ -12,10 +15,10 @@ export default function LoadingScreen({ loadingProgress }) {
                     </div>
 
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                        Preparing your session...
+                        {t("exercise.loading.title")}
                     </h1>
                     <p className="text-gray-500 dark:text-gray-400 mb-6">
-                        Loading words &amp; images
+                        {t("exercise.loading.desc")}
                     </p>
 
                     <div className="h-2.5 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden mb-3">

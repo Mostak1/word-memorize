@@ -10,8 +10,10 @@ import { Checkbox } from "@/Components/ui/checkbox";
 import { Alert, AlertDescription } from "@/Components/ui/alert";
 import FlashMessages from "@/Components/FlashMessage";
 import { toast } from "sonner";
+import { useTranslation } from "@/Contexts/LanguageContext";
 
 export default function Login({ status, canResetPassword }) {
+    const { t } = useTranslation();
     const { data, setData, post, processing, errors, reset } = useForm({
         email: "",
         password: "",
@@ -38,17 +40,17 @@ export default function Login({ status, canResetPassword }) {
 
     return (
         <GuestLayout>
-            <Head title="Log in" />
+            <Head title={t("nav.login")} />
             <FlashMessages />
 
             <div className="w-full">
                 {/* Header */}
                 <div className="mb-6">
                     <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-                        Welcome back
+                        {t("auth.welcome_back")}
                     </h2>
                     <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                        Log in to continue your learning journey
+                        {t("auth.sign_in_continue")}
                     </p>
                 </div>
 
@@ -71,7 +73,7 @@ export default function Login({ status, canResetPassword }) {
                     {/* Email Field */}
                     <div className="space-y-2">
                         <Label htmlFor="email" className="text-sm font-medium">
-                            Email
+                            {t("auth.email")}
                         </Label>
                         <div className="relative">
                             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -102,7 +104,7 @@ export default function Login({ status, canResetPassword }) {
                             htmlFor="password"
                             className="text-sm font-medium"
                         >
-                            Password
+                            {t("auth.password")}
                         </Label>
                         <div className="relative">
                             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -152,7 +154,7 @@ export default function Login({ status, canResetPassword }) {
                                 htmlFor="remember"
                                 className="text-sm font-normal text-gray-700 dark:text-gray-300 cursor-pointer"
                             >
-                                Remember me
+                                {t("auth.remember_me")}
                             </Label>
                         </div>
 
@@ -161,7 +163,7 @@ export default function Login({ status, canResetPassword }) {
                                 href={route("password.request")}
                                 className="text-sm font-medium text-[#E5201C] hover:text-red-700 transition-colors"
                             >
-                                Forgot password?
+                                {t("auth.forgot_password")}
                             </Link>
                         )}
                     </div>
@@ -172,7 +174,7 @@ export default function Login({ status, canResetPassword }) {
                         disabled={processing}
                         className="w-full h-12 bg-[#E5201C] hover:bg-red-700 text-white font-semibold rounded-full transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {processing ? "Logging in..." : "Log in"}
+                        {processing ? t("auth.signing_in") : t("auth.log_in")}
                     </Button>
 
                     {/* Google Sign In */}
@@ -208,7 +210,7 @@ export default function Login({ status, canResetPassword }) {
                                     d="M24 48c6.48 0 11.92-2.13 15.89-5.8l-7.24-5.62c-2.02 1.36-4.6 2.17-8.65 2.17-6.59 0-12.14-3.62-14.14-8.98l-7.42 5.8C6.48 42.62 14.61 48 24 48z"
                                 />
                             </svg>
-                            Continue with Google
+                            {t("auth.continue_with_google")}
                         </Button>
                     </a>
                 </form>
@@ -220,7 +222,7 @@ export default function Login({ status, canResetPassword }) {
                     </div>
                     <div className="relative flex justify-center text-sm">
                         <span className="px-2 bg-white dark:bg-zinc-900 text-gray-500 dark:text-gray-400">
-                            Don't have an account?
+                            {t("auth.dont_have_account")}
                         </span>
                     </div>
                 </div>
@@ -232,7 +234,7 @@ export default function Login({ status, canResetPassword }) {
                         variant="outline"
                         className="w-full h-12 border-2 border-gray-300 dark:border-zinc-700 hover:border-[#E5201C] hover:text-[#E5201C] hover:bg-[#E5201C]/5 font-semibold rounded-full transition-all"
                     >
-                        Create an account
+                        {t("auth.create_account")}
                     </Button>
                 </Link>
             </div>

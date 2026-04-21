@@ -59,13 +59,14 @@ class HandleInertiaRequests extends Middleware
             ],
             'userSettings' => function () use ($user) {
                 if (!$user) {
-                    return ['show_bangla' => true, 'sound_effects' => true];
+                    return ['show_bangla' => true, 'sound_effects' => true, 'ui_language' => 'en'];
                 }
                 $settings = UserSetting::forUser($user);   // This creates row automatically if not exists
     
                 return [
                     'show_bangla' => (bool) $settings->show_bangla,
                     'sound_effects' => (bool) $settings->sound_effects,
+                    'ui_language' => $settings->ui_language ?? 'en',
                 ];
             },
             // ✅ Flash messages for Sonner toasts

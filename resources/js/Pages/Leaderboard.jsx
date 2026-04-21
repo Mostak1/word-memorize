@@ -2,8 +2,10 @@ import AppLayout from "@/Layouts/AppLayout";
 import { Head, Link, router, usePage } from "@inertiajs/react";
 import { useState } from "react";
 import { Trophy, Medal, Award, Users, Flame, BookOpen } from "lucide-react";
+import { useTranslation } from "@/Contexts/LanguageContext";
 
 export default function Leaderboard({ users, currentUserRank, sortBy }) {
+    const { t } = useTranslation();
     const { auth } = usePage().props;
     const [currentSort, setCurrentSort] = useState(sortBy);
 
@@ -39,24 +41,30 @@ export default function Leaderboard({ users, currentUserRank, sortBy }) {
         }
     };
 
+    const sortOptions = [
+        { key: "xp", label: t("leaderboard.xp") },
+        { key: "mastered", label: t("leaderboard.mastered_words") },
+        { key: "streak", label: t("leaderboard.current_streak") },
+    ];
+
     return (
         <AppLayout>
-            <Head title="Leaderboard" />
+            <Head title={t("leaderboard.title")} />
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
                 <div className="w-full max-w-2xl mx-auto px-4 py-5">
                     <div className="flex items-center justify-between mb-6">
                         <div>
                             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                                Leaderboard
+                                {t("leaderboard.title")}
                             </h1>
                             <p className="text-gray-500 dark:text-gray-400 text-sm">
-                                Top learners in the community
+                                {t("leaderboard.subtitle")}
                             </p>
                         </div>
                         {currentUserRank && (
                             <div className="text-center">
                                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                                    Your Rank
+                                    {t("leaderboard.your_rank")}
                                 </p>
                                 <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
                                     #{currentUserRank}
@@ -67,11 +75,7 @@ export default function Leaderboard({ users, currentUserRank, sortBy }) {
 
                     {/* Sort Filters */}
                     <div className="flex gap-2 mb-4">
-                        {[
-                            { key: "xp", label: "XP" },
-                            { key: "mastered", label: "Mastered Words" },
-                            { key: "streak", label: "Current Streak" },
-                        ].map(({ key, label }) => (
+                        {sortOptions.map(({ key, label }) => (
                             <button
                                 key={key}
                                 onClick={() => handleSortChange(key)}
@@ -121,7 +125,7 @@ export default function Leaderboard({ users, currentUserRank, sortBy }) {
                                                 </Link>
                                                 {isCurrentUser && (
                                                     <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">
-                                                        You
+                                                        {t("leaderboard.you")}
                                                     </span>
                                                 )}
                                             </div>
@@ -139,7 +143,7 @@ export default function Leaderboard({ users, currentUserRank, sortBy }) {
                                                         {user.xp.toLocaleString()}
                                                     </p>
                                                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                        XP
+                                                        {t("leaderboard.xp")}
                                                     </p>
                                                 </div>
                                             )}
@@ -149,7 +153,7 @@ export default function Leaderboard({ users, currentUserRank, sortBy }) {
                                                         {user.mastered_count}
                                                     </p>
                                                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                        Mastered
+                                                        {t("leaderboard.mastered")}
                                                     </p>
                                                 </div>
                                             )}
@@ -159,7 +163,7 @@ export default function Leaderboard({ users, currentUserRank, sortBy }) {
                                                         {user.current_streak}
                                                     </p>
                                                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                        Day Streak
+                                                        {t("leaderboard.day_streak")}
                                                     </p>
                                                 </div>
                                             )}
@@ -174,7 +178,7 @@ export default function Leaderboard({ users, currentUserRank, sortBy }) {
                         <div className="text-center py-12">
                             <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                             <p className="text-gray-500 dark:text-gray-400">
-                                No users found
+                                {t("leaderboard.no_users")}
                             </p>
                         </div>
                     )}

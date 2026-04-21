@@ -3,6 +3,7 @@ import { Head, router, usePage } from "@inertiajs/react";
 import { useState } from "react";
 import { Languages, ChevronLeft, CheckCircle2, Volume2 } from "lucide-react";
 import { Link } from "@inertiajs/react";
+import { useTranslation } from "@/Contexts/LanguageContext";
 
 // ── Toggle Switch ─────────────────────────────────────────────────────────────
 
@@ -84,11 +85,12 @@ function SectionCard({ title, children }) {
 // ── Toast ─────────────────────────────────────────────────────────────────────
 
 function Toast({ visible }) {
+    const { t } = useTranslation();
     if (!visible) return null;
     return (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-gray-900 dark:bg-slate-700 text-white text-sm font-medium px-4 py-2.5 rounded-xl shadow-lg dark:shadow-2xl animate-fade-in-up">
             <CheckCircle2 className="h-4 w-4 text-green-400 shrink-0" />
-            Settings saved
+            {t("settings.saved")}
         </div>
     );
 }
@@ -96,9 +98,11 @@ function Toast({ visible }) {
 // ── Settings Page ─────────────────────────────────────────────────────────────
 
 export default function Settings({ settings: initialSettings }) {
+    const { t, locale: currentLocale } = useTranslation();
     const [settings, setSettings] = useState({
         show_bangla: initialSettings?.show_bangla ?? true,
         sound_effects: initialSettings?.sound_effects ?? true,
+        ui_language: initialSettings?.ui_language ?? currentLocale ?? "en",
     });
     const [saving, setSaving] = useState(false);
     const [toastVisible, setToastVisible] = useState(false);
@@ -122,9 +126,16 @@ export default function Settings({ settings: initialSettings }) {
         save(updated);
     };
 
+    const handleLanguageToggle = () => {
+        const newLocale = settings.ui_language === "en" ? "bn" : "en";
+        const updated = { ...settings, ui_language: newLocale };
+        setSettings(updated);
+        save(updated);
+    };
+
     return (
         <AppLayout>
-            <Head title="Settings" />
+            <Head title={t("settings.title")} />
 
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
                 <div className="w-full max-w-2xl mx-auto px-4 py-5">
@@ -138,41 +149,58 @@ export default function Settings({ settings: initialSettings }) {
                         </Link>
                         <div>
                             <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100 leading-none">
-                                Settings
+                                {t("settings.title")}
                             </h1>
                             <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                Personalise your learning experience
+                                {t("settings.subtitle")}
                             </p>
                         </div>
                     </div>
 
                     {/* Language Display */}
-                    <SectionCard title="Language Display">
+                    <SectionCard title={t("settings.language_display")}>
                         <SettingRow
                             icon={Languages}
                             iconBg="bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400"
-                            title="Show Bangla"
+                            title={t("settings.show_bangla")}
                             description={
                                 settings.show_bangla
-                                    ? "Bangla meanings & pronunciations are visible in word cards, tables, and exercises."
-                                    : "Bangla columns are hidden. Toggle on to see বাংলা meanings and pronunciations."
+                                    ? t("settings.show_bangla_desc_on")
+                                    : t("settings.show_bangla_desc_off")
                             }
                             checked={settings.show_bangla}
                             onChange={handleToggle("show_bangla")}
                             saving={saving}
                         />
+
+                        {/* UI Language Toggle */}
+                        <div className="border-t border-gray-50 dark:border-slate-800/50">
+                            <SettingRow
+                                icon={Languages}
+                                iconBg="bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400"
+                                title={t("settings.ui_language")}
+                                description={
+                                    settings.ui_language === "bn"
+                                        ? t("settings.ui_language_desc_bn")
+                                        : t("settings.ui_language_desc_en")
+                                }
+                                checked={settings.ui_language === "bn"}
+                                onChange={handleLanguageToggle}
+                                saving={saving}
+                            />
+                        </div>
                     </SectionCard>
 
                     {/* Sound Effects */}
-                    <SectionCard title="Sound Effects">
+                    <SectionCard title={t("settings.sound_effects")}>
                         <SettingRow
                             icon={Volume2}
                             iconBg="bg-pink-100 dark:bg-pink-950/40 text-pink-600 dark:text-pink-400"
-                            title="Sound Effects"
+                            title={t("settings.sound_effects")}
                             description={
                                 settings.sound_effects
-                                    ? "Play sounds for correct, wrong answers and session complete."
-                                    : "Sound effects are disabled. Turn on to hear feedback sounds."
+                                    ? t("settings.sound_effects_desc_on")
+                                    : t("settings.sound_effects_desc_off")
                             }
                             checked={settings.sound_effects}
                             onChange={handleToggle("sound_effects")}
@@ -182,7 +210,7 @@ export default function Settings({ settings: initialSettings }) {
 
                     {/* Helper note */}
                     <p className="text-xs text-gray-400 dark:text-gray-500 text-center mt-4 px-2">
-                        Changes take effect immediately across the whole app.
+                        {t("settings.changes_immediate")}
                     </p>
                 </div>
             </div>

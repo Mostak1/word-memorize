@@ -7,8 +7,11 @@ import {
     Trophy,
     BookOpen,
 } from "lucide-react";
+import { useTranslation } from "@/Contexts/LanguageContext";
 
 export default function MasteredWordsByList({ words, wordlist }) {
+    const { t } = useTranslation();
+
     const speakWord = (word) => {
         if ("speechSynthesis" in window) {
             window.speechSynthesis.speak(
@@ -32,7 +35,7 @@ export default function MasteredWordsByList({ words, wordlist }) {
 
     return (
         <AppLayout>
-            <Head title={`Mastered — ${wordlist?.title ?? "Word List"}`} />
+            <Head title={t("mastered.head_title", { title: wordlist?.title ?? "Word List" })} />
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 pb-20">
                 <div className="max-w-xl mx-auto px-4 pt-5">
                     {/* Header */}
@@ -51,13 +54,12 @@ export default function MasteredWordsByList({ words, wordlist }) {
                                 </span>
                             </h1>
                             <p className="text-xs text-gray-400 mt-0.5">
-                                {words.total} word{words.total !== 1 ? "s" : ""}{" "}
-                                mastered
+                                {t("mastered.list_item_mastered", { count: words.total })}
                                 {wordlist?.difficulty && (
                                     <span
                                         className={`ml-2 inline-block text-xs font-medium px-2 py-0.5 rounded-full border ${getDifficultyBadge(wordlist.difficulty)}`}
                                     >
-                                        {wordlist.difficulty}
+                                        {t(`common.difficulties.${wordlist.difficulty.toLowerCase()}`, { defaultValue: wordlist.difficulty })}
                                     </span>
                                 )}
                             </p>
@@ -94,7 +96,7 @@ export default function MasteredWordsByList({ words, wordlist }) {
                                                         </h3>
                                                         <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400">
                                                             <Trophy className="h-3 w-3" />
-                                                            Mastered
+                                                            {t("mastered.title")}
                                                         </span>
                                                     </div>
 
@@ -113,7 +115,7 @@ export default function MasteredWordsByList({ words, wordlist }) {
                                                     )}
 
                                                     <p className="text-xs text-[#E5201C] font-semibold mt-2">
-                                                        View full details →
+                                                        {t("mastered.view_full_details")}
                                                     </p>
                                                 </div>
 
@@ -148,10 +150,10 @@ export default function MasteredWordsByList({ words, wordlist }) {
                                         className="flex items-center gap-1 bg-white dark:bg-slate-900 px-4 py-2 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 shadow-sm hover:shadow-md dark:border dark:border-slate-700 disabled:opacity-40 transition"
                                     >
                                         <ChevronLeft className="h-4 w-4" />{" "}
-                                        Previous
+                                        {t("common.previous")}
                                     </button>
                                     <span className="text-sm text-gray-400 dark:text-gray-500">
-                                        {words.current_page} / {words.last_page}
+                                        {t("common.page_info", { current: words.current_page, total: words.last_page })}
                                     </span>
                                     <button
                                         disabled={!words.next_page_url}
@@ -164,7 +166,7 @@ export default function MasteredWordsByList({ words, wordlist }) {
                                         }
                                         className="flex items-center gap-1 bg-white dark:bg-slate-900 px-4 py-2 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 shadow-sm hover:shadow-md dark:border dark:border-slate-700 disabled:opacity-40 transition"
                                     >
-                                        Next{" "}
+                                        {t("common.next")}{" "}
                                         <ChevronRight className="h-4 w-4" />
                                     </button>
                                 </div>
@@ -176,18 +178,17 @@ export default function MasteredWordsByList({ words, wordlist }) {
                                 <Trophy className="h-10 w-10 text-green-300 dark:text-green-600" />
                             </div>
                             <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50 mb-2">
-                                No Mastered Words in This List
+                                {t("mastered.empty_list_title")}
                             </h3>
                             <p className="text-gray-500 dark:text-slate-400 text-sm mb-5">
-                                Press "Check" on a word during exercise to mark
-                                it as mastered.
+                                {t("mastered.empty_list_desc")}
                             </p>
                             <Link
                                 href={route("wordlist.start", wordlist?.id)}
                                 className="inline-flex items-center gap-2 bg-[#E5201C] text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-red-700 transition"
                             >
                                 <BookOpen className="h-4 w-4" />
-                                Practice This List
+                                {t("mastered.practice_button")}
                             </Link>
                         </div>
                     )}

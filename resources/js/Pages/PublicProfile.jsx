@@ -2,6 +2,7 @@ import AppLayout from "@/Layouts/AppLayout";
 import { Head, Link, usePage, router } from "@inertiajs/react";
 import { ArrowLeft, Users, Trophy, Heart } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "@/Contexts/LanguageContext";
 
 export default function PublicProfile({
     user,
@@ -9,6 +10,7 @@ export default function PublicProfile({
     isFollowing,
     canFollow,
 }) {
+    const { t } = useTranslation();
     const { auth } = usePage().props;
     const [following, setFollowing] = useState(isFollowing);
     const [loading, setLoading] = useState(false);
@@ -44,7 +46,7 @@ export default function PublicProfile({
 
     return (
         <AppLayout>
-            <Head title={`${user.name} • Profile`} />
+            <Head title={t("profile.title", { name: user.name })} />
 
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
                 <div className="w-full max-w-3xl mx-auto px-4 py-6">
@@ -53,8 +55,7 @@ export default function PublicProfile({
                             href={route("leaderboard")}
                             className="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
                         >
-                            <ArrowLeft className="h-4 w-4" /> Back to
-                            leaderboard
+                            <ArrowLeft className="h-4 w-4" /> {t("profile.back_to_leaderboard")}
                         </Link>
 
                         {canFollow && (
@@ -72,8 +73,8 @@ export default function PublicProfile({
                                 {loading
                                     ? "..."
                                     : following
-                                      ? "Following"
-                                      : "Follow"}
+                                      ? t("profile.following")
+                                      : t("profile.follow")}
                             </button>
                         )}
                     </div>
@@ -107,7 +108,7 @@ export default function PublicProfile({
                             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                                 <div className="rounded-2xl bg-slate-50 dark:bg-slate-800 p-4 text-center">
                                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                                        XP
+                                        {t("profile.xp")}
                                     </p>
                                     <p className="text-lg font-bold text-gray-900 dark:text-white">
                                         {user.xp.toLocaleString()}
@@ -115,7 +116,7 @@ export default function PublicProfile({
                                 </div>
                                 <div className="rounded-2xl bg-slate-50 dark:bg-slate-800 p-4 text-center">
                                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                                        Mastered
+                                        {t("profile.mastered")}
                                     </p>
                                     <p className="text-lg font-bold text-gray-900 dark:text-white">
                                         {user.mastered_count}
@@ -123,7 +124,7 @@ export default function PublicProfile({
                                 </div>
                                 <div className="rounded-2xl bg-slate-50 dark:bg-slate-800 p-4 text-center">
                                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                                        Followers
+                                        {t("profile.followers")}
                                     </p>
                                     <p className="text-lg font-bold text-gray-900 dark:text-white">
                                         {followerCount}
@@ -131,7 +132,7 @@ export default function PublicProfile({
                                 </div>
                                 <div className="rounded-2xl bg-slate-50 dark:bg-slate-800 p-4 text-center">
                                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                                        Streak
+                                        {t("profile.streak")}
                                     </p>
                                     <p className="text-lg font-bold text-gray-900 dark:text-white">
                                         {user.current_streak}
@@ -165,12 +166,12 @@ export default function PublicProfile({
                             <div className="flex items-center gap-3 mb-4">
                                 <Users className="h-5 w-5 text-blue-600" />
                                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                                    Community
+                                    {t("profile.community")}
                                 </h2>
                             </div>
                             <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
-                                <p>Following {followingCount}</p>
-                                <p>Followers {followerCount}</p>
+                                <p>{t("profile.following_count", { count: followingCount })}</p>
+                                <p>{t("profile.followers_count", { count: followerCount })}</p>
                             </div>
                         </div>
 
@@ -178,7 +179,7 @@ export default function PublicProfile({
                             <div className="flex items-center gap-3 mb-4">
                                 <Trophy className="h-5 w-5 text-amber-500" />
                                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                                    Achievements
+                                    {t("profile.achievements")}
                                 </h2>
                             </div>
                             {achievements.length > 0 ? (
@@ -191,16 +192,14 @@ export default function PublicProfile({
                                             <div className="flex items-center justify-between gap-3">
                                                 <div>
                                                     <p className="font-medium text-gray-900 dark:text-white">
-                                                        {achievement.name}
+                                                        {t(`achievements.items.${achievement.key}.name`, { defaultValue: achievement.name })}
                                                     </p>
                                                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                        {
-                                                            achievement.description
-                                                        }
+                                                        {t(`achievements.items.${achievement.key}.description`, { defaultValue: achievement.description })}
                                                     </p>
                                                 </div>
                                                 <span className="text-sm text-blue-600 dark:text-blue-300">
-                                                    {achievement.tier}
+                                                    {t("achievements.tier", { tier: achievement.tier })}
                                                 </span>
                                             </div>
                                         </div>
@@ -208,7 +207,7 @@ export default function PublicProfile({
                                 </div>
                             ) : (
                                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                                    No achievements yet.
+                                    {t("profile.no_achievements")}
                                 </p>
                             )}
                         </div>

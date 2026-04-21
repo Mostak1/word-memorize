@@ -1,11 +1,14 @@
 import { Head, Link } from "@inertiajs/react";
 import AppLayout from "@/Layouts/AppLayout";
 import { BookOpen } from "lucide-react";
+import { useTranslation } from "@/Contexts/LanguageContext";
 
 export default function WordListCategoryIndex({ wordListCategories }) {
+    const { t } = useTranslation();
+
     return (
         <AppLayout>
-            <Head title="Word Lists" />
+            <Head title={t("wordlists.breadcrumb_categories")} />
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
                 <main className="max-w-2xl mx-auto px-4 py-5 pb-20">
                     {wordListCategories && wordListCategories.length > 0 ? (
@@ -59,8 +62,8 @@ export default function WordListCategoryIndex({ wordListCategories }) {
                                                     {category.wordlists_count}{" "}
                                                     {category.wordlists_count ===
                                                     1
-                                                        ? "Word List"
-                                                        : "Word Lists"}
+                                                        ? t("shop.word_list")
+                                                        : t("shop.word_lists")}
                                                 </span>
                                             </div>
                                         </div>
@@ -74,16 +77,16 @@ export default function WordListCategoryIndex({ wordListCategories }) {
                                 <BookOpen className="h-10 w-10 text-gray-400 dark:text-slate-600" />
                             </div>
                             <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50 mb-2">
-                                No Word List Categories Available
+                                {t("wordlists.empty.title_categories")}
                             </h3>
                             <p className="text-gray-500 dark:text-slate-400 text-sm mb-5">
-                                There are no word list categories created yet.
+                                {t("wordlists.empty.desc_categories")}
                             </p>
                             <Link
                                 href={route("home")}
                                 className="inline-flex items-center gap-2 bg-[#E5201C] text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-red-700 transition"
                             >
-                                Go Back Home
+                                {t("wordlists.empty.go_home")}
                             </Link>
                         </div>
                     )}

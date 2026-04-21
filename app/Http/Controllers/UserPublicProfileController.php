@@ -23,6 +23,7 @@ class UserPublicProfileController extends Controller
       ->map(function ($userAchievement) {
         return [
           'id' => $userAchievement->achievement->id,
+          'key' => $userAchievement->achievement->key,
           'name' => $userAchievement->achievement->name,
           'description' => $userAchievement->achievement->description,
           'icon' => $userAchievement->achievement->icon,

@@ -4,6 +4,7 @@ import Lottie from "lottie-react";
 import { Bookmark, ChevronLeft, Zap } from "lucide-react";
 import { CONFETTI } from "./constants";
 import { useEffect } from "react";
+import { useTranslation } from "@/Contexts/LanguageContext";
 
 export function StreakPop({ fireAnim, streakCount, onComplete }) {
     useEffect(() => {
@@ -54,11 +55,12 @@ export default function SessionCompleteScreen({
     fireAnim,
     auth,
 }) {
+    const { t } = useTranslation();
     const retries = dontKnowCount;
 
     return (
         <AppLayout>
-            <Head title="Session Complete" />
+            <Head title={t("exercise.complete.title")} />
 
             {/* StreakPop overlay — only on streak increase */}
             {showStreakEffect && streakChange === "up" && (
@@ -102,7 +104,7 @@ export default function SessionCompleteScreen({
                     </div>
 
                     <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 mb-1">
-                        Session Complete!
+                        {t("exercise.complete.title")}
                     </h1>
                     <p className="text-gray-400 dark:text-gray-500 text-sm mb-6">
                         {subcategory ? subcategory.name : wordList.title}
@@ -118,7 +120,7 @@ export default function SessionCompleteScreen({
                                 {promotedCount}
                             </p>
                             <p className="text-xs text-green-600 dark:text-green-400 mt-0.5 font-medium">
-                                Cleared ✅
+                                {t("exercise.complete.cleared")}
                             </p>
                         </div>
                         <div
@@ -129,7 +131,7 @@ export default function SessionCompleteScreen({
                                 {retries}
                             </p>
                             <p className="text-xs text-red-500 dark:text-red-400 mt-0.5 font-medium">
-                                Retries
+                                {t("exercise.complete.retries")}
                             </p>
                         </div>
                         <div
@@ -140,7 +142,7 @@ export default function SessionCompleteScreen({
                                 {promotedCount + retries}
                             </p>
                             <p className="text-xs text-blue-500 dark:text-blue-400 mt-0.5 font-medium">
-                                Total Reps 💪
+                                {t("exercise.complete.total_reps")}
                             </p>
                         </div>
                     </div>
@@ -156,7 +158,7 @@ export default function SessionCompleteScreen({
                                 <Zap className="h-6 w-6 text-yellow-500" />
                             </div>
                             <p className="text-sm font-medium text-yellow-700 dark:text-yellow-300">
-                                Experience Points Earned
+                                {t("exercise.complete.xp_earned")}
                             </p>
                         </div>
                     )}
@@ -167,7 +169,7 @@ export default function SessionCompleteScreen({
                             <div className="flex items-center justify-center gap-2">
                                 <Zap className="h-4 w-4 text-gray-400" />
                                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                                    XP is not awarded for custom word lists
+                                    {t("exercise.complete.xp_custom_list")}
                                 </p>
                             </div>
                         </div>
@@ -177,11 +179,13 @@ export default function SessionCompleteScreen({
                     {streak && streakChange === "up" && (
                         <div className="rounded-2xl py-4 px-4 mb-6 border bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800 animate-bounce-in">
                             <p className="text-lg font-bold mb-1 text-orange-600 dark:text-orange-400">
-                                🔥 Current Streak: {streak.current_streak}{" "}
-                                day{streak.current_streak !== 1 ? "s" : ""}
+                                {t("exercise.complete.streak", {
+                                    count: streak.current_streak,
+                                    plural: streak.current_streak !== 1 ? "s" : "",
+                                })}
                             </p>
                             <p className="text-sm text-orange-700 dark:text-orange-300">
-                                ✨ Amazing! You're on fire! Keep this momentum going! 🎉
+                                {t("exercise.complete.streak_message")}
                             </p>
                         </div>
                     )}
@@ -190,11 +194,11 @@ export default function SessionCompleteScreen({
                     {totalWordsInList > 0 && (
                         <div className="mb-8">
                             <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500 mb-1.5">
-                                <span>List Progress</span>
+                                <span>{t("exercise.complete.progress_label")}</span>
                                 <span>
-                                    {Math.round(
-                                        (promotedCount / totalWordsInList) * 100,
-                                    )}%
+                                    {t("exercise.complete.progress_percentage", {
+                                        pct: Math.round((promotedCount / totalWordsInList) * 100),
+                                    })}
                                 </span>
                             </div>
                             <div className="h-2.5 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden">
@@ -209,7 +213,10 @@ export default function SessionCompleteScreen({
                                 />
                             </div>
                             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5 text-center">
-                                {promotedCount} of {totalWordsInList} words in this session's queue
+                                {t("exercise.complete.progress_detail", {
+                                    count: promotedCount,
+                                    total: totalWordsInList,
+                                })}
                             </p>
                         </div>
                     )}
@@ -220,7 +227,7 @@ export default function SessionCompleteScreen({
                             href={route("wordlist.start", wordList.id)}
                             className="w-full py-3.5 bg-[#E5201C] text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-red-700 transition"
                         >
-                            New Session
+                            {t("exercise.complete.new_session")}
                         </Link>
                         {auth?.user && (
                             <Link
@@ -231,14 +238,14 @@ export default function SessionCompleteScreen({
                                     className="h-4 w-4 fill-yellow-400 text-yellow-400"
                                     strokeWidth={1.8}
                                 />
-                                View Bookmarks
+                                {t("exercise.complete.view_bookmarks")}
                             </Link>
                         )}
                         <Link
                             href={backHref}
                             className="w-full py-3.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 font-semibold rounded-2xl flex items-center justify-center gap-2 hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-slate-900 transition"
                         >
-                            <ChevronLeft className="h-4 w-4" /> Back to List
+                            <ChevronLeft className="h-4 w-4" /> {t("exercise.complete.back_to_list")}
                         </Link>
                     </div>
                 </div>

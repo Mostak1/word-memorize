@@ -11,6 +11,7 @@ import {
     Play,
     BookOpen,
 } from "lucide-react";
+import { useTranslation } from "@/Contexts/LanguageContext";
 
 const FILTER_META = {
     all: {
@@ -39,8 +40,12 @@ const FILTER_META = {
 };
 
 export default function ReviseWordsList({ words, filter, title }) {
+    const { t } = useTranslation();
     const meta = FILTER_META[filter] || FILTER_META.all;
     const Icon = meta.icon;
+
+    // Use translated title if possible
+    const pageTitle = t(`revise.filters.${filter}.label`, { defaultValue: title });
 
     const speakWord = (word) => {
         if ("speechSynthesis" in window) {
@@ -65,7 +70,7 @@ export default function ReviseWordsList({ words, filter, title }) {
 
     return (
         <AppLayout>
-            <Head title={title} />
+            <Head title={pageTitle} />
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 pb-20">
                 <div className="max-w-xl mx-auto px-4 pt-5">
                     {/* Header */}
@@ -81,20 +86,15 @@ export default function ReviseWordsList({ words, filter, title }) {
                                 <Icon
                                     className={`h-5 w-5 ${meta.iconColor} shrink-0`}
                                 />
-                                {title}
+                                {pageTitle}
                             </h1>
                             <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                {words.total} word{words.total !== 1 ? "s" : ""}{" "}
-                                in this group
+                                {t("revise.group_info", { 
+                                    count: words.total,
+                                    plural: words.total !== 1 ? "s" : ""
+                                })}
                             </p>
                         </div>
-                        {/* <Link
-                            href={route('words.revise.session') + `?filter=${filter}`}
-                            className="flex items-center gap-2 bg-[#E5201C] text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm hover:bg-red-700 transition"
-                        >
-                            <Play className="h-4 w-4 fill-current" />
-                            Practice
-                        </Link> */}
                     </div>
 
                     {/* Word list */}
@@ -130,11 +130,8 @@ export default function ReviseWordsList({ words, filter, title }) {
                                                         >
                                                             <Icon className="h-3 w-3" />
                                                             {filter === "all"
-                                                                ? "In Progress"
-                                                                : title.replace(
-                                                                      " Words",
-                                                                      "",
-                                                                  )}
+                                                                ? t("revise.filters.all.badge")
+                                                                : pageTitle.replace(" Words", "")}
                                                         </span>
                                                     </div>
 
@@ -157,11 +154,9 @@ export default function ReviseWordsList({ words, filter, title }) {
                                                             <span
                                                                 className={`text-xs font-medium px-2.5 py-0.5 rounded-full border ${getDifficultyBadge(word.word_list.difficulty)}`}
                                                             >
-                                                                {
-                                                                    word
-                                                                        .word_list
-                                                                        .difficulty
-                                                                }
+                                                                {t(`common.difficulties.${word.word_list.difficulty.toLowerCase()}`, {
+                                                                    defaultValue: word.word_list.difficulty
+                                                                })}
                                                             </span>
                                                             <span className="text-xs text-gray-400">
                                                                 {
@@ -174,7 +169,7 @@ export default function ReviseWordsList({ words, filter, title }) {
                                                     )}
 
                                                     <p className="text-xs text-[#E5201C] font-semibold mt-2">
-                                                        View full details →
+                                                        {t("revise.view_details")}
                                                     </p>
                                                 </div>
 
@@ -209,7 +204,7 @@ export default function ReviseWordsList({ words, filter, title }) {
                                         className="flex items-center gap-1 bg-white dark:bg-slate-900 px-4 py-2 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 shadow-sm hover:shadow-md dark:border dark:border-slate-700 disabled:opacity-40 transition"
                                     >
                                         <ChevronLeft className="h-4 w-4" />{" "}
-                                        Previous
+                                        {t("revise.previous")}
                                     </button>
                                     <span className="text-sm text-gray-400 dark:text-gray-500">
                                         {words.current_page} / {words.last_page}
@@ -225,7 +220,7 @@ export default function ReviseWordsList({ words, filter, title }) {
                                         }
                                         className="flex items-center gap-1 bg-white dark:bg-slate-900 px-4 py-2 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 shadow-sm hover:shadow-md dark:border dark:border-slate-700 disabled:opacity-40 transition"
                                     >
-                                        Next{" "}
+                                        {t("revise.next")}{" "}
                                         <ChevronRight className="h-4 w-4" />
                                     </button>
                                 </div>
@@ -241,18 +236,17 @@ export default function ReviseWordsList({ words, filter, title }) {
                                 />
                             </div>
                             <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50 mb-2">
-                                No Words Found
+                                {t("revise.not_found")}
                             </h3>
                             <p className="text-gray-500 dark:text-slate-400 text-sm mb-5">
-                                Keep learning to add more words to your revision
-                                categories.
+                                {t("revise.keep_learning")}
                             </p>
                             <Link
                                 href={route("wordlistcategory.index")}
                                 className="inline-flex items-center gap-2 bg-[#E5201C] text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-red-700 transition"
                             >
                                 <BookOpen className="h-4 w-4" />
-                                Browse Word Lists
+                                {t("revise.browse_lists")}
                             </Link>
                         </div>
                     )}

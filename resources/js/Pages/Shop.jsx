@@ -1,7 +1,7 @@
 import AppLayout from "@/Layouts/AppLayout";
 import { Head, router } from "@inertiajs/react";
 import { toast } from "sonner";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
     Zap,
     Snowflake,
@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import PurchaseOrderDialog from "@/Components/PurchaseOrderDialog";
 import { playXpPurchase } from "@/Utils/sounds";
+import { useTranslation } from "@/Contexts/LanguageContext";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -44,9 +45,10 @@ async function apiFetch(url, options = {}) {
 // ── Tab Bar ───────────────────────────────────────────────────────────────────
 
 function TabBar({ active, onChange }) {
+    const { t } = useTranslation();
     const tabs = [
-        { id: "shop", label: "Shop", icon: ShoppingBag },
-        { id: "xp", label: "XP Shop", icon: Zap },
+        { id: "shop", label: t("shop.tabs.shop"), icon: ShoppingBag },
+        { id: "xp", label: t("shop.tabs.xp"), icon: Zap },
     ];
 
     return (
@@ -74,6 +76,7 @@ function TabBar({ active, onChange }) {
 // ── Word List Category Card ───────────────────────────────────────────────────
 
 function CategoryCard({ category, index, onClick, categoryStatus }) {
+    const { t } = useTranslation();
     const isPending = categoryStatus === "pending";
     const isOwned = categoryStatus === "owned";
     const isBlocked = isPending || isOwned;
@@ -114,13 +117,13 @@ function CategoryCard({ category, index, onClick, categoryStatus }) {
                     <div className="absolute top-2 right-2 bg-green-600 rounded-lg px-2 py-1 flex items-center gap-1">
                         <CheckCircle2 className="h-3 w-3 text-white" />
                         <span className="text-white text-[10px] font-bold">
-                            Owned
+                            {t("shop.status.owned")}
                         </span>
                     </div>
                 ) : isPending ? (
                     <div className="absolute top-2 right-2 bg-yellow-500 rounded-lg px-2 py-1 flex items-center gap-1">
                         <span className="text-white text-[10px] font-bold">
-                            Pending
+                            {t("shop.status.pending")}
                         </span>
                     </div>
                 ) : category.is_locked ? (
@@ -145,8 +148,8 @@ function CategoryCard({ category, index, onClick, categoryStatus }) {
                     <span>
                         {category.wordlists_count}{" "}
                         {category.wordlists_count === 1
-                            ? "Word List"
-                            : "Word Lists"}
+                            ? t("shop.word_list")
+                            : t("shop.word_lists")}
                     </span>
                 </div>
             </div>
@@ -161,6 +164,7 @@ function ShopTab({
     pendingCategoryIds = [],
     accessCategoryIds = [],
 }) {
+    const { t } = useTranslation();
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -187,11 +191,10 @@ function ShopTab({
                     <BookOpen className="h-10 w-10 text-gray-400 dark:text-slate-600" />
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
-                    No Word List Categories Available
+                    {t("shop.no_categories")}
                 </h3>
                 <p className="text-gray-500 dark:text-gray-400 text-sm">
-                    There are no word list categories available for purchase
-                    yet.
+                    {t("shop.no_categories_desc")}
                 </p>
             </div>
         );
@@ -224,6 +227,7 @@ function ShopTab({
 // ── XP Shop Sub-components ────────────────────────────────────────────────────
 
 function XpBalanceCard({ balance }) {
+    const { t } = useTranslation();
     return (
         <div className="bg-gradient-to-br from-yellow-400 to-orange-400 rounded-2xl p-5 text-white shadow-lg flex items-center gap-4">
             <div className="bg-white/20 rounded-xl p-3">
@@ -231,12 +235,12 @@ function XpBalanceCard({ balance }) {
             </div>
             <div>
                 <p className="text-sm font-medium text-white/80">
-                    Your XP Balance
+                    {t("shop.xp_balance")}
                 </p>
                 <p className="text-4xl font-black tracking-tight">
                     {balance.toLocaleString()}
                     <span className="text-lg font-semibold ml-1 text-white/80">
-                        XP
+                        {t("shop.xp")}
                     </span>
                 </p>
             </div>
@@ -245,6 +249,7 @@ function XpBalanceCard({ balance }) {
 }
 
 function StreakStatusCard({ streak }) {
+    const { t } = useTranslation();
     if (!streak) return null;
 
     const {
@@ -258,26 +263,26 @@ function StreakStatusCard({ streak }) {
 
     const state = active_today
         ? {
-              label: "Active today ✅",
+              label: t("shop.streak_status.active_today"),
               color: "text-green-600 bg-green-50 border-green-200",
           }
         : at_risk
           ? {
-                label: "At risk — study today! ⚠️",
+                label: t("shop.streak_status.at_risk"),
                 color: "text-orange-600 bg-orange-50 border-orange-200",
             }
           : is_frozen
             ? {
-                  label: "Frozen — you still have a chance 🧊",
+                  label: t("shop.streak_status.frozen"),
                   color: "text-blue-600 bg-blue-50 border-blue-200",
               }
             : is_broken
               ? {
-                    label: "Streak lost 💀",
+                    label: t("shop.streak_status.lost"),
                     color: "text-red-600 bg-red-50 border-red-200",
                 }
               : {
-                    label: "No streak yet",
+                    label: t("shop.streak_status.none"),
                     color: "text-gray-500 bg-gray-50 border-gray-200",
                 };
 
@@ -288,12 +293,12 @@ function StreakStatusCard({ streak }) {
             </div>
             <div className="flex-1 min-w-0">
                 <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-                    Current Streak
+                    {t("streak.current")}
                 </p>
                 <p className="text-2xl font-black text-gray-800 dark:text-gray-100">
                     {current_streak}{" "}
                     <span className="text-base font-medium text-gray-500 dark:text-gray-400">
-                        days
+                        {t("streak.days")}
                     </span>
                 </p>
                 <span
@@ -303,7 +308,7 @@ function StreakStatusCard({ streak }) {
                 </span>
             </div>
             <div className="text-right shrink-0">
-                <p className="text-xs text-gray-400 mb-1">Freezes owned</p>
+                <p className="text-xs text-gray-400 mb-1">{t("shop.freezes_owned")}</p>
                 <div className="flex items-center gap-1 justify-end">
                     <Snowflake className="h-4 w-4 text-blue-400" />
                     <span className="text-lg font-bold text-blue-500">
@@ -343,7 +348,9 @@ function ShopItemCard({
     canAfford,
     purchasing,
     onBuy,
+    footer,
 }) {
+    const { t } = useTranslation();
     return (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
             <div className={`${iconBg} p-6 flex items-center gap-4`}>
@@ -359,7 +366,7 @@ function ShopItemCard({
                 <div className="flex items-center justify-between mb-4">
                     <div>
                         <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-0.5">
-                            Cost
+                            {t("shop.actions.cost")}
                         </p>
                         <div className="flex items-center gap-1.5">
                             <Zap className="h-5 w-5 text-yellow-400" />
@@ -367,14 +374,14 @@ function ShopItemCard({
                                 {cost.toLocaleString()}
                             </span>
                             <span className="text-sm text-gray-400 font-medium">
-                                XP
+                                {t("shop.xp")}
                             </span>
                         </div>
                     </div>
                     {!canAfford && (
                         <div className="text-right">
                             <p className="text-xs text-red-400 font-medium">
-                                Not enough XP
+                                {t("shop.actions.not_enough_xp")}
                             </p>
                         </div>
                     )}
@@ -409,43 +416,43 @@ function ShopItemCard({
                                     d="M4 12a8 8 0 018-8v8z"
                                 />
                             </svg>
-                            Purchasing…
+                            {t("shop.actions.purchasing")}
                         </span>
                     ) : canAfford ? (
-                        "Buy Now"
+                        t("shop.actions.buy_now")
                     ) : (
-                        "Insufficient XP"
+                        t("shop.actions.insufficient_xp")
                     )}
                 </button>
                 <p className="text-xs text-gray-400 text-center mt-3">
-                    {title === "Streak Freeze"
-                        ? "Protects your streak for one missed day"
-                        : "Theme will be available everywhere once unlocked"}
+                    {footer}
                 </p>
             </div>
         </div>
     );
 }
 
-const XP_SOURCES = [
-    { label: "Complete a session", xp: "+100 XP", note: "up to 2× per day" },
-    { label: "Pass a quiz", xp: "+150 XP", note: "score 70% or more" },
-    { label: "Perfect quiz", xp: "+200 XP", note: "score 100%" },
-    { label: "Master a word", xp: "+10 XP", note: "per word" },
-    { label: "Complete a word list", xp: "+50 XP", note: "one-time bonus" },
-    { label: "7-day streak", xp: "+50 XP", note: "milestone reward" },
-    { label: "14-day streak", xp: "+100 XP", note: "milestone reward" },
-    { label: "30-day streak", xp: "+200 XP", note: "milestone reward" },
-];
-
 function HowXpWorks() {
+    const { t } = useTranslation();
+    
+    const xpSources = useMemo(() => [
+        { label: t("shop.sources.complete_session"), xp: "+100 XP", note: t("shop.notes.session") },
+        { label: t("shop.sources.pass_quiz"), xp: "+150 XP", note: t("shop.notes.pass") },
+        { label: t("shop.sources.perfect_quiz"), xp: "+200 XP", note: t("shop.notes.perfect") },
+        { label: t("shop.sources.master_word"), xp: "+10 XP", note: t("shop.notes.word") },
+        { label: t("shop.sources.complete_list"), xp: "+50 XP", note: t("shop.notes.list") },
+        { label: t("shop.sources.streak_7"), xp: "+50 XP", note: t("shop.notes.milestone") },
+        { label: t("shop.sources.streak_14"), xp: "+100 XP", note: t("shop.notes.milestone") },
+        { label: t("shop.sources.streak_30"), xp: "+200 XP", note: t("shop.notes.milestone") },
+    ], [t]);
+
     return (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-5">
             <h3 className="text-base font-bold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
-                <Zap className="h-4 w-4 text-yellow-400" /> How to earn XP
+                <Zap className="h-4 w-4 text-yellow-400" /> {t("shop.how_to_earn")}
             </h3>
             <ul className="space-y-2.5">
-                {XP_SOURCES.map((src) => (
+                {xpSources.map((src) => (
                     <li
                         key={src.label}
                         className="flex items-center justify-between text-sm"
@@ -471,6 +478,7 @@ function HowXpWorks() {
 // ── XP Shop Tab ───────────────────────────────────────────────────────────────
 
 function XpShopTab() {
+    const { t } = useTranslation();
     const [status, setStatus] = useState(null);
     const [loading, setLoading] = useState(true);
     const [purchasing, setPurchasing] = useState(false);
@@ -486,11 +494,11 @@ function XpShopTab() {
             const data = await apiFetch(route("api.xp-shop.status"));
             setStatus(data);
         } catch {
-            showToast("Failed to load shop data.", "error");
+            showToast(t("shop.toasts.failed_load"), "error");
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [t]);
 
     useEffect(() => {
         fetchStatus();
@@ -508,13 +516,13 @@ function XpShopTab() {
                     streak: data.streak,
                     dark_mode_unlocked: data.dark_mode_unlocked,
                 });
-                showToast("Streak freeze purchased! 🧊");
+                showToast(t("shop.toasts.freeze_success"));
                 playXpPurchase();
             } else {
-                showToast(data.error ?? "Purchase failed.", "error");
+                showToast(data.error ?? t("shop.toasts.purchase_failed"), "error");
             }
         } catch {
-            showToast("Something went wrong.", "error");
+            showToast(t("shop.toasts.error"), "error");
         } finally {
             setPurchasing(false);
         }
@@ -546,12 +554,12 @@ function XpShopTab() {
                 });
 
                 // ThemeProvider will automatically detect localStorage change and enable dark mode by itself
-                showToast("Dark Mode unlocked! 🌙");
+                showToast(t("shop.toasts.dark_mode_success"));
             } else {
-                showToast(data.error ?? "Purchase failed.", "error");
+                showToast(data.error ?? t("shop.toasts.purchase_failed"), "error");
             }
         } catch {
-            showToast("Something went wrong.", "error");
+            showToast(t("shop.toasts.error"), "error");
         } finally {
             setPurchasing(false);
         }
@@ -588,47 +596,49 @@ function XpShopTab() {
             <XpBalanceCard balance={status?.xp?.balance ?? 0} />
             <StreakStatusCard streak={status?.streak} />
 
-            <div>
-                <h2 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
-                    Available items
+            <div className="space-y-3">
+                <h2 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                    {t("shop.available_items")}
                 </h2>
                 <div className="grid gap-3">
                     <ShopItemCard
-                        title="Streak Freeze"
-                        description="Skip one missed day without losing your streak."
+                        title={t("shop.items.freeze_title")}
+                        description={t("shop.items.freeze_desc")}
                         icon={ShieldCheck}
                         iconBg="bg-gradient-to-br from-blue-500 to-indigo-600"
                         cost={status?.xp?.next_freeze_cost ?? 1000}
                         canAfford={status?.xp?.can_afford_freeze ?? false}
                         purchasing={purchasing}
                         onBuy={handleBuyFreeze}
+                        footer={t("shop.items.freeze_footer")}
                     />
 
                     {!status?.dark_mode_unlocked && (
                         <ShopItemCard
-                            title="Dark Mode"
-                            description="Unlock dark theme for the entire app."
+                            title={t("shop.items.dark_mode_title")}
+                            description={t("shop.items.dark_mode_desc")}
                             icon={SunMoon}
                             iconBg="bg-gradient-to-br from-slate-700 to-slate-900"
                             cost={6000}
                             canAfford={(status?.xp?.balance ?? 0) >= 6000}
                             purchasing={purchasing}
                             onBuy={handleBuyDarkMode}
+                            footer={t("shop.items.dark_mode_footer")}
                         />
                     )}
 
                     {status?.dark_mode_unlocked && (
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-5">
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-5 transition-all">
                             <div className="flex items-center gap-4">
                                 <div className="bg-gradient-to-br from-slate-700 to-slate-900 rounded-xl p-3">
                                     <SunMoon className="h-8 w-8 text-white" />
                                 </div>
                                 <div>
                                     <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">
-                                        Dark Mode
+                                        {t("shop.items.dark_mode_title")}
                                     </h3>
-                                    <p className="text-sm text-green-600 font-medium">
-                                        ✓ Unlocked permanently
+                                    <p className="text-sm text-green-600 font-medium font-bengali">
+                                        {t("shop.items.unlocked")}
                                     </p>
                                 </div>
                             </div>
@@ -652,6 +662,8 @@ export default function Shop({
     accessCategoryIds = [],
     defaultTab = "shop",
 }) {
+    const { t } = useTranslation();
+    
     // Determine initial tab: from props, or from URL query parameter, or default to "shop"
     const getInitialTab = () => {
         // Check URL parameters first
@@ -672,19 +684,19 @@ export default function Shop({
 
     return (
         <AppLayout>
-            <Head title="Shop" />
+            <Head title={activeTab === "shop" ? t("shop.title") : t("shop.xp_shop_title")} />
 
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
                 <main className="max-w-2xl mx-auto px-4 py-5 pb-20 space-y-5">
                     {/* Page header */}
-                    <div>
+                    <div style={{ animation: "fadeInUp 0.3s ease-out" }}>
                         <h1 className="text-2xl font-black text-gray-900 dark:text-gray-100">
-                            {activeTab === "shop" ? "Shop" : "XP Shop"}
+                            {activeTab === "shop" ? t("shop.title") : t("shop.xp_shop_title")}
                         </h1>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                             {activeTab === "shop"
-                                ? "Browse and unlock premium word list categories."
-                                : "Spend your earned XP to protect your learning streak."}
+                                ? t("shop.subtitle_shop")
+                                : t("shop.subtitle_xp")}
                         </p>
                     </div>
 
@@ -692,15 +704,17 @@ export default function Shop({
                     <TabBar active={activeTab} onChange={setActiveTab} />
 
                     {/* Tab content */}
-                    {activeTab === "shop" ? (
-                        <ShopTab
-                            wordListCategories={wordListCategories}
-                            pendingCategoryIds={pendingCategoryIds}
-                            accessCategoryIds={accessCategoryIds}
-                        />
-                    ) : (
-                        <XpShopTab />
-                    )}
+                    <div className="space-y-5">
+                        {activeTab === "shop" ? (
+                            <ShopTab
+                                wordListCategories={wordListCategories}
+                                pendingCategoryIds={pendingCategoryIds}
+                                accessCategoryIds={accessCategoryIds}
+                            />
+                        ) : (
+                            <XpShopTab />
+                        )}
+                    </div>
                 </main>
 
                 <style>{`

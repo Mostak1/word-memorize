@@ -1,104 +1,109 @@
+import { CheckCircle2, ChevronRight, GraduationCap, XCircle } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "@/Contexts/LanguageContext";
 
 export default function QuizPanel({ question, onAnswer }) {
+    const { t } = useTranslation();
     const [selected, setSelected] = useState(null);
-    const [revealed, setRevealed] = useState(false);
+    const [status, setStatus] = useState("idle"); // 'idle', 'correct', 'wrong'
 
-    const handleSelect = (option) => {
-        if (revealed) return;
+    if (!question) return null;
+
+    const handleOptionSelect = (option) => {
+        if (status !== "idle") return;
         setSelected(option);
-        setRevealed(true);
         const isCorrect = option === question.correct;
-        // Auto-advance after 1.4s so the user can see the feedback
-        setTimeout(() => onAnswer(isCorrect), 1400);
-    };
+        setStatus(isCorrect ? "correct" : "wrong");
 
-    const optionStyle = (option) => {
-        const base =
-            "w-full text-left px-4 py-3.5 rounded-2xl border-2 font-semibold text-[15px] transition-all duration-200 ";
-        if (!revealed)
-            return (
-                base +
-                "border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-100 hover:border-[#E5201C] hover:bg-red-50 dark:hover:bg-red-950/30 active:scale-95"
-            );
-        if (option === question.correct)
-            return (
-                base +
-                "border-green-500 bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 scale-[1.02]"
-            );
-        if (option === selected)
-            return (
-                base +
-                "border-red-400 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400"
-            );
-        return base + "border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-800 text-gray-400 dark:text-gray-500 opacity-60";
-    };
-
-    const isCorrect = revealed && selected === question.correct;
-
-    const TYPE_ICON = {
-        fill_blank: "✏️",
-        synonym: "🔁",
-        antonym: "↔️",
-        translation: "🌐",
-    };
-    const TYPE_LABEL = {
-        fill_blank: "Fill in the Blank",
-        synonym: "Synonym",
-        antonym: "Antonym",
-        translation: "Translation",
+        setTimeout(() => {
+            onAnswer(isCorrect);
+            setSelected(null);
+            setStatus("idle");
+        }, 1200);
     };
 
     return (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-md dark:shadow-xl dark:shadow-slate-950 overflow-hidden animate-bounce-in">
+        <div className="bg-white dark:bg-slate-900 rounded-[32px] overflow-hidden shadow-xl shadow-indigo-100/50 dark:shadow-slate-950/50 border border-indigo-50 dark:border-indigo-900/40 animate-in zoom-in-95 duration-300">
             {/* Header */}
-            <div className="px-5 pt-5 pb-3 border-b border-gray-100 dark:border-slate-800">
-                <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xl">
-                        {TYPE_ICON[question.type] ?? "🎯"}
-                    </span>
-                    <span className="text-xs font-bold uppercase tracking-widest text-[#E5201C]">
-                        {TYPE_LABEL[question.type] ?? "Quick Quiz"}
+            <div className="bg-indigo-600 px-6 py-4 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                    <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md">
+                        <GraduationCap className="h-5 w-5 text-white" />
+                    </div>
+                    <span className="text-sm font-black text-white uppercase tracking-wider">
+                        {t("exercise.quiz.title")}
                     </span>
                 </div>
-                <p className={`leading-snug ${
-                    question.type === "fill_blank"
-                        ? "text-[15px] font-mono text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-slate-800 rounded-xl px-3 py-2"
-                        : "text-[15px] font-semibold text-gray-800 dark:text-gray-100"
-                }`}>
-                    {question.prompt}
-                </p>
             </div>
 
-            {/* Options */}
-            <div className="px-5 py-4 flex flex-col gap-2.5">
-                {question.options.map((opt, i) => (
-                    <button
-                        key={i}
-                        onClick={() => handleSelect(opt)}
-                        disabled={revealed}
-                        className={optionStyle(opt)}
-                    >
-                        <span className="mr-2 opacity-50">{["A", "B", "C", "D"][i]})</span>
-                        {opt}
-                    </button>
-                ))}
-            </div>
-
-            {/* Feedback bar */}
-            {revealed && (
-                <div
-                    className={`mx-5 mb-5 rounded-2xl px-4 py-3 text-center font-bold text-sm ${
-                        isCorrect
-                            ? "bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-300"
-                            : "bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400"
-                    }`}
-                >
-                    {isCorrect
-                        ? "✅ Correct! Marked as I Know"
-                        : `❌ Oops! The answer was: ${question.correct}`}
+            <div className="p-6">
+                {/* Prompt */}
+                <div className="mb-8 p-6 bg-indigo-50 dark:bg-indigo-950/30 rounded-3xl border border-indigo-100 dark:border-indigo-900/40">
+                    <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 text-center leading-relaxed">
+                        {t(`exercise.quiz.prompts.${question.type}`, {
+                            word: question.targetWordWord ?? "",
+                        })}
+                    </h3>
                 </div>
-            )}
+
+                {/* Options */}
+                <div className="grid grid-cols-1 gap-3">
+                    {question.options.map((opt, i) => {
+                        const isCorrectOpt = opt === question.correct;
+                        const isSelectedOpt = opt === selected;
+
+                        let style =
+                            "border-gray-100 dark:border-slate-800 hover:border-indigo-300 dark:hover:border-indigo-700 bg-gray-50/50 dark:bg-slate-800/50 text-gray-700 dark:text-gray-300";
+                        if (status !== "idle") {
+                            if (isCorrectOpt)
+                                style =
+                                    "border-green-500 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 scale-[1.02] shadow-lg shadow-green-100 dark:shadow-green-950/50";
+                            else if (isSelectedOpt)
+                                style = "border-red-400 bg-red-50 dark:bg-red-950/30 text-red-500 dark:text-red-400 opacity-60";
+                            else style = "opacity-30 border-gray-100 dark:border-slate-800";
+                        }
+
+                        return (
+                            <button
+                                key={i}
+                                onClick={() => handleOptionSelect(opt)}
+                                disabled={status !== "idle"}
+                                className={`group relative w-full p-4 md:p-5 rounded-2xl border-2 font-bold text-base md:text-lg text-left transition-all duration-200 flex items-center justify-between ${style}`}
+                            >
+                                <span className="flex-1 pr-6">{opt}</span>
+                                {status !== "idle" && isCorrectOpt && (
+                                    <CheckCircle2 className="h-6 w-6 text-green-500 shrink-0" />
+                                )}
+                                {status !== "idle" &&
+                                    isSelectedOpt &&
+                                    !isCorrectOpt && (
+                                        <XCircle className="h-6 w-6 text-red-400 shrink-0" />
+                                    )}
+                                {status === "idle" && (
+                                    <ChevronRight className="h-5 w-5 text-gray-300 group-hover:text-indigo-400 transition-colors" />
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* Status Indicator */}
+                {status !== "idle" && (
+                    <div className="mt-6 flex justify-center animate-in fade-in zoom-in-90 fill-mode-both">
+                        <span
+                            className={`px-6 py-2.5 rounded-full text-base font-black uppercase tracking-widest shadow-lg ${
+                                status === "correct"
+                                    ? "bg-green-500 text-white shadow-green-200 dark:shadow-none"
+                                    : "bg-red-500 text-white shadow-red-200 dark:shadow-none"
+                            }`}
+                        >
+                            {status === "correct"
+                                ? t("exercise.quiz.correct")
+                                : t("exercise.quiz.incorrect")}
+                        </span>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

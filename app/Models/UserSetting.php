@@ -13,6 +13,7 @@ class UserSetting extends Model
         'user_id',
         'show_bangla',
         'sound_effects',
+        'ui_language',
         'dark_mode_unlocked',
     ];
 

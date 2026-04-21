@@ -8,6 +8,7 @@ import { Toaster, toast } from "sonner";
 import { ThemeProvider, useTheme } from "@/Components/ThemeProvider";
 import PageLoadingState from "@/Components/PageLoadingState";
 import { registerSW } from "virtual:pwa-register";
+import { LanguageProvider } from "@/Contexts/LanguageContext";
 
 const appName = import.meta.env.VITE_APP_NAME || "Laravel";
 
@@ -61,13 +62,18 @@ createInertiaApp({
         const isAdmin =
             props.initialPage.props.auth?.user?.role === "admin" || false;
 
+        const initialLocale =
+            props.initialPage.props.userSettings?.ui_language || "en";
+            
         root.render(
             <ThemeProvider
                 defaultTheme="light"
                 storageKey="admin-theme"
                 isAdmin={isAdmin}
             >
-                <App {...props} />
+                <LanguageProvider initialLocale={initialLocale}>
+                    <App {...props} />
+                </LanguageProvider>
                 <ThemedToaster />
             </ThemeProvider>,
         );

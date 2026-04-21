@@ -1,5 +1,6 @@
 import { Link } from "@inertiajs/react";
 import { ChevronLeft, Bookmark } from "lucide-react";
+import { useTranslation } from "@/Contexts/LanguageContext";
 
 export default function SessionProgressBar({
     backHref,
@@ -8,12 +9,15 @@ export default function SessionProgressBar({
     initialQueueSize,
     auth,
 }) {
+    const { t } = useTranslation();
+
     return (
         <div className="max-w-lg mx-auto px-3 pb-2">
             <div className="flex items-center gap-2.5">
                 <Link
                     href={backHref}
                     className="flex-none p-1.5 rounded-lg text-gray-400 dark:text-gray-600 hover:text-gray-600 dark:hover:text-gray-400 transition"
+                    aria-label={t("exercise.exit")}
                 >
                     <ChevronLeft className="h-5 w-5" />
                 </Link>
@@ -25,14 +29,16 @@ export default function SessionProgressBar({
                 </div>
                 {/* Queue remaining badge */}
                 <span className="shrink-0 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-full px-2.5 py-0.5 shadow-sm dark:shadow-lg">
-                    {Math.max(0, initialQueueSize - answeredCount)} left
+                    {t("exercise.left", {
+                        count: Math.max(0, initialQueueSize - answeredCount),
+                    })}
                 </span>
                 {/* Bookmarks shortcut */}
                 {auth?.user && (
                     <Link
                         href={route("words.bookmarked")}
                         className="flex-none p-1.5 rounded-lg text-gray-400 dark:text-gray-600 hover:text-yellow-500 dark:hover:text-yellow-400 transition"
-                        aria-label="View bookmarked words"
+                        aria-label={t("exercise.complete.view_bookmarks")}
                     >
                         <Bookmark className="h-5 w-5" strokeWidth={1.8} />
                     </Link>

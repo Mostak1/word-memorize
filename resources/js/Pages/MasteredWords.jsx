@@ -8,8 +8,11 @@ import {
     Layers,
     Star,
 } from "lucide-react";
+import { useTranslation } from "@/Contexts/LanguageContext";
 
 export default function MasteredWords({ wordlists, totalMastered }) {
+    const { t } = useTranslation();
+
     const getDifficultyConfig = (difficulty) => {
         const d = difficulty?.toLowerCase();
         if (d === "easy" || d === "beginner")
@@ -37,9 +40,19 @@ export default function MasteredWords({ wordlists, totalMastered }) {
         };
     };
 
+    const listsCount = wordlists?.length ?? 0;
+    
+    // Determine the subtitle key based on singular/plural
+    const getSubtitle = () => {
+        if (totalMastered === 1 && listsCount === 1) return t("mastered.subtitle_both_singular");
+        if (totalMastered === 1) return t("mastered.subtitle_singular_word", { lists: listsCount });
+        if (listsCount === 1) return t("mastered.subtitle_singular_list", { total: totalMastered });
+        return t("mastered.subtitle", { total: totalMastered, lists: listsCount });
+    };
+
     return (
         <AppLayout>
-            <Head title="Mastered Words" />
+            <Head title={t("mastered.title")} />
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 pb-20">
                 <div className="max-w-xl mx-auto px-4 pt-5">
                     {/* Header */}
@@ -53,13 +66,10 @@ export default function MasteredWords({ wordlists, totalMastered }) {
                         <div className="flex-1 min-w-0">
                             <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2 leading-tight">
                                 <Trophy className="h-5 w-5 text-green-600 shrink-0" />
-                                Mastered Words
+                                {t("mastered.title")}
                             </h1>
                             <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                {totalMastered} word
-                                {totalMastered !== 1 ? "s" : ""} mastered across{" "}
-                                {wordlists?.length ?? 0} list
-                                {(wordlists?.length ?? 0) !== 1 ? "s" : ""}
+                                {getSubtitle()}
                             </p>
                         </div>
                     </div>
@@ -72,10 +82,10 @@ export default function MasteredWords({ wordlists, totalMastered }) {
                             </div>
                             <div>
                                 <p className="text-white font-bold text-lg leading-tight">
-                                    {totalMastered} Words Mastered
+                                    {t("mastered.banner_title", { count: totalMastered })}
                                 </p>
                                 <p className="text-green-100 text-xs mt-0.5">
-                                    Keep going — you're doing great!
+                                    {t("mastered.banner_subtitle")}
                                 </p>
                             </div>
                             <Star className="h-5 w-5 text-yellow-300 ml-auto shrink-0 fill-yellow-300" />
@@ -119,17 +129,12 @@ export default function MasteredWords({ wordlists, totalMastered }) {
                                                                 <span
                                                                     className={`text-xs font-medium px-2 py-0.5 rounded-full border ${cfg.badge}`}
                                                                 >
-                                                                    {
-                                                                        wl.difficulty
-                                                                    }
+                                                                    {t(`common.difficulties.${wl.difficulty.toLowerCase()}`, { defaultValue: wl.difficulty })}
                                                                 </span>
                                                             )}
                                                             <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 dark:text-green-400">
                                                                 <Trophy className="h-3 w-3" />
-                                                                {
-                                                                    wl.mastered_count
-                                                                }{" "}
-                                                                mastered
+                                                                {t("mastered.list_item_mastered", { count: wl.mastered_count })}
                                                             </span>
                                                         </div>
                                                     </div>
@@ -142,9 +147,7 @@ export default function MasteredWords({ wordlists, totalMastered }) {
                                                 <div className="mt-3">
                                                     <div className="flex justify-between text-xs text-gray-400 dark:text-slate-500 mb-1">
                                                         <span>
-                                                            {wl.mastered_count}{" "}
-                                                            / {wl.total_words}{" "}
-                                                            words
+                                                            {t("mastered.progress_words", { count: wl.mastered_count, total: wl.total_words })}
                                                         </span>
                                                         <span>
                                                             {Math.round(
@@ -176,18 +179,17 @@ export default function MasteredWords({ wordlists, totalMastered }) {
                                 <Trophy className="h-10 w-10 text-green-300 dark:text-green-600" />
                             </div>
                             <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50 mb-2">
-                                No Mastered Words Yet
+                                {t("mastered.empty_title")}
                             </h3>
                             <p className="text-gray-500 dark:text-slate-400 text-sm mb-5">
-                                Press "I know" on a word during exercise to mark
-                                it as mastered.
+                                {t("mastered.empty_desc")}
                             </p>
                             <Link
                                 href={route("wordlistcategory.index")}
                                 className="inline-flex items-center gap-2 bg-[#E5201C] text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-red-700 transition"
                             >
                                 <BookOpen className="h-4 w-4" />
-                                Start Exercising
+                                {t("mastered.start_button")}
                             </Link>
                         </div>
                     )}

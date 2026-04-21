@@ -8,14 +8,13 @@ import {
     ChevronRight,
     Play,
 } from "lucide-react";
+import { useTranslation } from "@/Contexts/LanguageContext";
 
 // ── Filter config ─────────────────────────────────────────────────────────────
 
 const FILTERS = [
     {
         key: "all",
-        label: "All Words",
-        description: "Every word still in progress",
         icon: RotateCcw,
         iconColor: "text-indigo-500",
         iconBg: "bg-indigo-100 dark:bg-indigo-950/40",
@@ -25,8 +24,6 @@ const FILTERS = [
     },
     {
         key: "learning",
-        label: "Learning",
-        description: "Words you've seen once — getting familiar",
         icon: Brain,
         iconColor: "text-cyan-500",
         iconBg: "bg-cyan-100 dark:bg-cyan-950/40",
@@ -36,8 +33,6 @@ const FILTERS = [
     },
     {
         key: "reviewing",
-        label: "Reviewing",
-        description: "Words you're getting solid on",
         icon: RefreshCw,
         iconColor: "text-orange-500",
         iconBg: "bg-orange-100 dark:bg-orange-950/40",
@@ -47,8 +42,6 @@ const FILTERS = [
     },
     {
         key: "more_practice",
-        label: "More Practice Needed",
-        description: 'Marked "I don\'t know" 2 or more times',
         icon: AlertTriangle,
         iconColor: "text-red-500",
         iconBg: "bg-red-100 dark:bg-red-950/40",
@@ -61,22 +54,23 @@ const FILTERS = [
 // ── Revise Page ───────────────────────────────────────────────────────────────
 
 export default function Revise({ reviseCounts = {} }) {
+    const { t } = useTranslation();
     const totalAll = reviseCounts.all ?? 0;
 
     return (
         <AppLayout>
-            <Head title="Revise" />
+            <Head title={t("revise.title")} />
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
                 <div className="w-full max-w-2xl mx-auto px-4 py-5">
                     {/* ── Header ── */}
                     <div className="mb-5">
                         <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">
-                            Revise
+                            {t("revise.title")}
                         </h1>
                         <p className="text-sm text-gray-400 dark:text-slate-400 mt-0.5">
                             {totalAll > 0
-                                ? `You have ${totalAll} word${totalAll !== 1 ? "s" : ""} to practise. Pick a focus below.`
-                                : "Choose a filter and start practising."}
+                                ? t("revise.subtitle", { count: totalAll })
+                                : t("revise.subtitle_empty")}
                         </p>
                     </div>
 
@@ -106,10 +100,10 @@ export default function Revise({ reviseCounts = {} }) {
                                     {/* Text */}
                                     <div className="flex-1 min-w-0">
                                         <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
-                                            {f.label}
+                                            {t(`revise.filters.${f.key}.label`)}
                                         </p>
                                         <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                            {f.description}
+                                            {t(`revise.filters.${f.key}.description`)}
                                         </p>
                                     </div>
 
@@ -134,17 +128,16 @@ export default function Revise({ reviseCounts = {} }) {
                                 <Play className="h-7 w-7 text-indigo-400" />
                             </div>
                             <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                                Nothing to revise yet
+                                {t("revise.empty_title")}
                             </p>
                             <p className="text-xs text-gray-400 dark:text-slate-500 mt-1 mb-4">
-                                Start a word list exercise to add words to your
-                                revision queue.
+                                {t("revise.empty_desc")}
                             </p>
                             <Link
                                 href={route("wordlistcategory.index")}
                                 className="inline-block px-5 py-2.5 rounded-xl bg-indigo-500 text-white text-sm font-semibold hover:bg-indigo-600 dark:hover:bg-indigo-700 transition-colors"
                             >
-                                Browse Word Lists
+                                {t("revise.browse_lists")}
                             </Link>
                         </div>
                     )}

@@ -24,8 +24,10 @@ import {
     BreadcrumbPage,
     BreadcrumbSeparator,
 } from "@/Components/ui/breadcrumb";
+import { useTranslation } from "@/Contexts/LanguageContext";
 
 function Pagination({ links, meta }) {
+    const { t } = useTranslation();
     if (!meta || meta.last_page <= 1) return null;
 
     const { current_page, last_page, from, to, total } = meta;
@@ -62,7 +64,7 @@ function Pagination({ links, meta }) {
     return (
         <div className="flex flex-col items-center gap-3 mt-6">
             <p className="text-xs text-gray-400 dark:text-gray-500">
-                Showing {from}–{to} of {total} lists
+                {t("wordlists.pagination.showing", { from, to, total })}
             </p>
 
             <div className="flex items-center gap-1">
@@ -70,7 +72,7 @@ function Pagination({ links, meta }) {
                     onClick={() => goTo(prevLink)}
                     disabled={!prevLink}
                     className="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-500 dark:text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-slate-800 hover:border-gray-300 dark:hover:border-slate-600 transition-all shadow-sm"
-                    aria-label="Previous page"
+                    aria-label={t("wordlists.pagination.previous")}
                 >
                     <ChevronLeft className="h-4 w-4" />
                 </button>
@@ -107,7 +109,7 @@ function Pagination({ links, meta }) {
                     onClick={() => goTo(nextLink)}
                     disabled={!nextLink}
                     className="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-500 dark:text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-slate-800 hover:border-gray-300 dark:hover:border-slate-600 transition-all shadow-sm"
-                    aria-label="Next page"
+                    aria-label={t("wordlists.pagination.next")}
                 >
                     <ChevronRight className="h-4 w-4" />
                 </button>
@@ -117,6 +119,7 @@ function Pagination({ links, meta }) {
 }
 
 function MasteredProgress({ mastered, total }) {
+    const { t } = useTranslation();
     if (!total) return null;
 
     const remaining = total - mastered;
@@ -135,15 +138,15 @@ function MasteredProgress({ mastered, total }) {
             <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 dark:text-green-400">
                     <Trophy className="h-3 w-3" />
-                    {mastered} mastered
+                    {t("wordlists.mastered_count", { count: mastered })}
                 </span>
                 {allDone ? (
                     <span className="text-xs font-bold text-green-600 dark:text-green-400">
-                        ✓ Complete!
+                        {t("wordlists.complete")}
                     </span>
                 ) : (
                     <span className="text-xs text-gray-400 dark:text-gray-500">
-                        {remaining} remaining
+                        {t("wordlists.remaining_count", { count: remaining })}
                     </span>
                 )}
             </div>
@@ -159,6 +162,7 @@ function CategoryLockBanner({
     user,
     onPurchase,
 }) {
+    const { t } = useTranslation();
     const orderStatus = categoryOrder?.status ?? null;
 
     if (!category?.is_locked) return null;
@@ -174,23 +178,22 @@ function CategoryLockBanner({
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-amber-800 dark:text-amber-300 mb-0.5">
-                            This category is locked
+                            {t("wordlists.category_locked.title")}
                         </p>
 
                         {orderStatus === "pending" ? (
                             <div className="flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-400">
                                 <Clock className="h-3.5 w-3.5 shrink-0" />
-                                Your order is under review. We'll notify you
-                                once approved.
+                                {t("wordlists.category_locked.pending")}
                             </div>
                         ) : orderStatus === "rejected" ? (
                             <div>
                                 <div className="flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400 mb-2">
                                     <XCircle className="h-3.5 w-3.5 shrink-0" />
-                                    Your order was rejected.
+                                    {t("wordlists.category_locked.rejected")}
                                     {categoryOrder?.admin_note && (
                                         <span className="ml-1">
-                                            Reason: {categoryOrder.admin_note}
+                                            {t("wordlists.category_locked.reason", { reason: categoryOrder.admin_note })}
                                         </span>
                                     )}
                                 </div>
@@ -205,7 +208,7 @@ function CategoryLockBanner({
                                         className="flex items-center gap-1.5 text-xs font-semibold text-[#E5201C] hover:underline"
                                     >
                                         <ShoppingCart className="h-3.5 w-3.5" />
-                                        Try Again
+                                        {t("wordlists.category_locked.try_again")}
                                     </button>
                                 )}
                             </div>
@@ -213,8 +216,8 @@ function CategoryLockBanner({
                             <div className="flex items-center justify-between mt-1 flex-wrap gap-2">
                                 <p className="text-xs text-amber-700 dark:text-amber-400">
                                     {category.price > 0
-                                        ? `Purchase access for ৳${category.price} to unlock all word lists.`
-                                        : "Purchase access to unlock all word lists."}
+                                        ? t("wordlists.category_locked.purchase_desc", { price: category.price })
+                                        : t("wordlists.category_locked.purchase_desc_free")}
                                 </p>
                                 {user ? (
                                     <button
@@ -222,7 +225,7 @@ function CategoryLockBanner({
                                         className="flex items-center gap-1.5 bg-[#E5201C] hover:bg-red-700 text-white text-xs font-semibold px-3 py-1.5 rounded-xl transition shrink-0"
                                     >
                                         <ShoppingCart className="h-3.5 w-3.5" />
-                                        Purchase Access
+                                        {t("wordlists.category_locked.purchase_button")}
                                         {category.price > 0 && (
                                             <span className="ml-0.5">
                                                 · ৳{category.price}
@@ -234,7 +237,7 @@ function CategoryLockBanner({
                                         href={route("login")}
                                         className="text-xs font-semibold text-[#E5201C] hover:underline"
                                     >
-                                        Login to Purchase
+                                        {t("wordlists.category_locked.login_to_purchase")}
                                     </Link>
                                 )}
                             </div>
@@ -256,6 +259,7 @@ function QuizLockedCard({
     user,
     index,
 }) {
+    const { t } = useTranslation();
     const total = wordList.words_count ?? 0;
 
     return (
@@ -283,11 +287,11 @@ function QuizLockedCard({
                 <span
                     className={`text-xs font-medium px-2.5 py-0.5 rounded-full border ${color} opacity-70`}
                 >
-                    {star} {wordList.difficulty}
+                    {star} {t(`common.difficulties.${wordList.difficulty?.toLowerCase()}`)}
                 </span>
                 {total > 0 && (
                     <span className="text-xs font-medium px-2.5 py-0.5 rounded-full border border-gray-200 bg-gray-50 dark:bg-slate-800 dark:border-slate-700 text-gray-400">
-                        {total} words
+                        {t("wordlists.words_count", { count: total })}
                     </span>
                 )}
             </div>
@@ -295,7 +299,7 @@ function QuizLockedCard({
             {/* Lock notice + CTA */}
             <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-slate-800">
                 <p className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">
-                    Pass the previous quiz to unlock
+                    {t("wordlists.quiz_locked.pass_previous")}
                 </p>
 
                 {isTakeable ? (
@@ -305,19 +309,19 @@ function QuizLockedCard({
                             className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-1.5 rounded-xl transition"
                         >
                             <GraduationCap className="h-3.5 w-3.5" />
-                            Take Quiz
+                            {t("wordlists.quiz_locked.take_quiz")}
                         </a>
                     ) : (
                         <Link
                             href={route("login")}
                             className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
                         >
-                            Login to take quiz
+                            {t("wordlists.quiz_locked.login_to_take")}
                         </Link>
                     )
                 ) : (
                     <span className="text-xs text-gray-400 dark:text-gray-500 italic">
-                        Unlock previous first
+                        {t("wordlists.quiz_locked.unlock_previous")}
                     </span>
                 )}
             </div>
@@ -340,6 +344,7 @@ export default function Wordlist({
     quizTakeableIds = [], // locked wordlists whose previous wordlist is accessible
     bkashNumber = "01825236112",
 }) {
+    const { t } = useTranslation();
     const { auth } = usePage().props;
     const user = auth?.user ?? null;
 
@@ -377,7 +382,7 @@ export default function Wordlist({
 
     return (
         <AppLayout>
-            <Head title="Exercises" />
+            <Head title={t("wordlists.title")} />
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
                 <main className="max-w-2xl mx-auto px-4 py-5 pb-20">
                     {(currentCategory || currentDifficulty) && (
@@ -388,7 +393,7 @@ export default function Wordlist({
                                         asChild
                                         className="hover:text-[#e70013] hover:underline transition-colors duration-200"
                                     >
-                                        <Link href={route("home")}>Home</Link>
+                                        <Link href={route("home")}>{t("wordlists.breadcrumb_home")}</Link>
                                     </BreadcrumbLink>
                                 </BreadcrumbItem>
                                 <BreadcrumbSeparator />
@@ -402,7 +407,7 @@ export default function Wordlist({
                                                 "wordlistcategory.index",
                                             )}
                                         >
-                                            Wordlist Categories
+                                            {t("wordlists.breadcrumb_categories")}
                                         </Link>
                                     </BreadcrumbLink>
                                 </BreadcrumbItem>
@@ -463,13 +468,11 @@ export default function Wordlist({
                                                             className={`text-xs font-medium px-2.5 py-0.5 rounded-full border ${color} opacity-50`}
                                                         >
                                                             {star}{" "}
-                                                            {
-                                                                wordList.difficulty
-                                                            }
+                                                            {t(`common.difficulties.${wordList.difficulty?.toLowerCase()}`)}
                                                         </span>
                                                         {total > 0 && (
                                                             <span className="text-xs font-medium px-2.5 py-0.5 rounded-full border border-gray-200 bg-gray-50 dark:bg-slate-800 dark:border-slate-700 text-gray-400">
-                                                                {total} words
+                                                                {t("wordlists.words_count", { count: total })}
                                                             </span>
                                                         )}
                                                     </div>
@@ -556,11 +559,11 @@ export default function Wordlist({
                                                         className={`text-xs font-medium px-2.5 py-0.5 rounded-full border ${color}`}
                                                     >
                                                         {star}{" "}
-                                                        {wordList.difficulty}
+                                                        {t(`common.difficulties.${wordList.difficulty?.toLowerCase()}`)}
                                                     </span>
                                                     {total > 0 && (
                                                         <span className="text-xs font-medium px-2.5 py-0.5 rounded-full border border-blue-200 bg-blue-50 text-blue-700">
-                                                            {total} words
+                                                            {t("wordlists.words_count", { count: total })}
                                                         </span>
                                                     )}
                                                 </div>
@@ -589,23 +592,22 @@ export default function Wordlist({
                                                                 }
                                                             >
                                                                 <GraduationCap className="h-3.5 w-3.5" />
-                                                                Take a Quiz
+                                                                {t("wordlists.take_a_quiz")}
                                                             </Link>
                                                         ) : user ? (
                                                             <span className="text-xs text-gray-400 dark:text-gray-500">
-                                                                Learn 20 words
-                                                                to unlock quiz
+                                                                {t("wordlists.learn_to_unlock", { count: 20 })}
                                                             </span>
                                                         ) : null}
                                                     </div>
                                                     <span className={`${canExercise ? "text-[#E5201C]" : "text-gray-400"} text-sm font-semibold flex items-center gap-1`}>
                                                         {!canExercise 
-                                                            ? "Needs 10 words"
+                                                            ? t("wordlists.needs_words", { count: 10 })
                                                             : (mastered !== null &&
                                                                mastered >= total &&
                                                                total > 0
-                                                                ? "Completed"
-                                                                : "Start Exercise")}
+                                                                ? t("wordlists.completed_status")
+                                                                : t("wordlists.start_exercise"))}
                                                         {canExercise && <Play className="h-3.5 w-3.5 fill-[#E5201C]" />}
                                                     </span>
                                                 </div>
@@ -626,16 +628,16 @@ export default function Wordlist({
                                 <BookOpen className="h-10 w-10 text-gray-400 dark:text-slate-600" />
                             </div>
                             <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
-                                No Word Lists Available
+                                {t("wordlists.empty.title_lists")}
                             </h3>
                             <p className="text-gray-500 dark:text-gray-400 text-sm mb-5">
-                                There are no word lists created yet.
+                                {t("wordlists.empty.desc_lists")}
                             </p>
                             <Link
                                 href={route("home")}
                                 className="inline-flex items-center gap-2 bg-[#E5201C] text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-red-700 transition"
                             >
-                                Go Back Home
+                                {t("wordlists.empty.go_home")}
                             </Link>
                         </div>
                     )}

@@ -26,19 +26,17 @@ export const initSounds = () => {
 
     SOUND_PATHS = {
         sessionComplete: getAssetUrl(
-            "/sounds/freesound_community-success-fanfare-trumpets-6185.mp3.mpeg"
+            "/sounds/freesound_community-success-fanfare-trumpets-6185.mp3.mpeg",
         ),
-        correct: getAssetUrl(
-            "/sounds/universfield-new-notification.mp3.mpeg"
-        ),
+        correct: getAssetUrl("/sounds/universfield-new-notification.mp3.mpeg"),
         incorrect: getAssetUrl(
-            "/sounds/lesiakower-error-mistake-sound-effect-incorrect-answer.mp3.mpeg"
+            "/sounds/lesiakower-error-mistake-sound-effect-incorrect-answer.mp3.mpeg",
         ),
         xpPurchase: getAssetUrl(
-            "/sounds/freesound_crunchpixstudio-purchase-success.mp3.mpeg"
+            "/sounds/freesound_crunchpixstudio-purchase-success.mp3.mpeg",
         ),
         mastered: getAssetUrl(
-            "/sounds/freesound_crunchpixstudio-great-success-384935.mp3.mpeg"
+            "/sounds/freesound_crunchpixstudio-great-success-384935.mp3.mpeg",
         ),
     };
 
@@ -75,18 +73,23 @@ const playSound = (key, userSettings, duration = null) => {
         const playPromise = audio.play();
 
         if (playPromise !== undefined) {
-            playPromise.then(() => {
-                if (duration) {
-                    setTimeout(() => {
-                        audio.pause();
-                        audio.currentTime = 0;
-                    }, duration);
-                }
-            }).catch((error) => {
-                if (error.name !== "NotAllowedError") {
-                    console.warn(`Sound playback failed for ${key}:`, error);
-                }
-            });
+            playPromise
+                .then(() => {
+                    if (duration) {
+                        setTimeout(() => {
+                            audio.pause();
+                            audio.currentTime = 0;
+                        }, duration);
+                    }
+                })
+                .catch((error) => {
+                    if (error.name !== "NotAllowedError") {
+                        console.warn(
+                            `Sound playback failed for ${key}:`,
+                            error,
+                        );
+                    }
+                });
         }
     } catch (e) {
         console.warn(`Sound error ${key}:`, e);
@@ -97,8 +100,7 @@ const playSound = (key, userSettings, duration = null) => {
 export const playSessionComplete = (userSettings) =>
     playSound("sessionComplete", userSettings);
 
-export const playCorrect = (userSettings) =>
-    playSound("correct", userSettings);
+export const playCorrect = (userSettings) => playSound("correct", userSettings);
 
 export const playIncorrect = (userSettings) =>
     playSound("incorrect", userSettings);
@@ -107,7 +109,7 @@ export const playXpPurchase = (userSettings) =>
     playSound("xpPurchase", userSettings);
 
 export const playMastered = (userSettings) =>
-    playSound("mastered", userSettings, 1000);
+    playSound("mastered", userSettings, 1900);
 
 // 🔹 Global controls
 export const disableSoundsGlobally = () => {
