@@ -23,6 +23,7 @@ import {
     Check,
     Zap,
 } from "lucide-react";
+import QuizPanel from "@/Pages/ExerciseSession/QuizPanel";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import FlashMessages from "@/Components/FlashMessage";
 import { usePage } from "@inertiajs/react";
@@ -220,6 +221,7 @@ export default function ExerciseSession({
     const [promotedCount, setPromotedCount] = useState(0); // words answered "I Know"
     const [dontKnowCount, setDontKnowCount] = useState(0); // total "I Don't Know" taps
     const [sessionXpAwarded, setSessionXpAwarded] = useState(0); // XP earned this session
+    const [quizAnsweredCount, setQuizAnsweredCount] = useState(0);
 
     const [sessionResults, setSessionResults] = useState([]);
     const [showLeaveDialog, setShowLeaveDialog] = useState(false);
@@ -227,7 +229,7 @@ export default function ExerciseSession({
     const allowNavigation = useRef(false);
 
     // NEW: Total cards processed in this session (used for progress bar)
-    const answeredCount = promotedCount + dontKnowCount;
+    const answeredCount = promotedCount + dontKnowCount + quizAnsweredCount;
 
     // ── UI state ──────────────────────────────────────────────────────────────
     const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -243,7 +245,6 @@ export default function ExerciseSession({
     const exitDir = useRef("left");
     const [cardKey, setCardKey] = useState(0);
     const [exiting, setExiting] = useState(false);
-
 
     // ── Gamification state ────────────────────────────────────────────────────
     // masteryEventKey increments on every mastery so each event gets its own
@@ -460,53 +461,83 @@ export default function ExerciseSession({
         useEffect(() => {
             const timer = setTimeout(() => {
                 onComplete?.();
-            }, 2400); // Slightly longer for better Lottie + number feel
+            }, 3000); // Extended slightly for the full drama
             return () => clearTimeout(timer);
         }, [onComplete]);
 
         return (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none bg-black/40">
-                <div className="relative flex flex-col items-center">
+            <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none bg-black/60 backdrop-blur-sm transition-all duration-500">
+                <style>{`
+                    @keyframes shimmerPill {
+                        0% { transform: translateX(-100%) skewX(-15deg); }
+                        100% { transform: translateX(200%) skewX(-15deg); }
+                    }
+                    @keyframes scaleInPop {
+                        0% {
+                            opacity: 0;
+                            transform: scale(0.5) translateY(40px);
+                            filter: blur(10px);
+                        }
+                        50% {
+                            transform: scale(1.1) translateY(-10px);
+                            filter: blur(0px);
+                        }
+                        100% {
+                            opacity: 1;
+                            transform: scale(1) translateY(0);
+                        }
+                    }
+                `}</style>
+
+                <div className="relative flex flex-col items-center animate-[scaleInPop_0.6s_cubic-bezier(0.34,1.56,0.64,1)_forwards]">
+                    {/* Glowing background aura */}
+                    <div className="absolute inset-0 bg-orange-500/40 blur-[80px] rounded-full scale-[1.5] z-0" />
+
                     {/* Fire Streak Lottie */}
-                    {/* <Player
-                        autoplay
-                        loop={false}
-                        keepLastFrame={false}
-                        src={fireStreakAnimation}
-                        style={{ width: 340, height: 340 }}
-                    /> */}
-
-                    {/* {fireStreakAnimation && (
-                        <Lottie
-                            animationData={fireStreakAnimation}
-                            loop={false}
-                            style={{ width: 340, height: 340 }}
-                        />
-                    )} */}
-
-                    {fireAnim && (
-                        <Lottie
-                            animationData={fireAnim}
-                            loop={false}
-                            style={{ width: 340, height: 340 }}
-                        />
-                    )}
-
-                    {/* Dynamic Number */}
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-                        <div
-                            className="text-2xl font-black text-white tracking-[-6px] drop-shadow-[0_0_50px_#FF9500] animate-[streakPop_0.75s_cubic-bezier(0.34,1.56,0.64,1)_forwards]"
-                            style={{
-                                textShadow: "0 20px 50px rgba(255, 0, 0, 0.95)",
-                            }}
-                        >
-                            +{streakCount}
-                        </div>
+                    <div
+                        className="relative z-10"
+                        style={{ transform: "scale(1.2)" }}
+                    >
+                        {fireAnim && (
+                            <Lottie
+                                animationData={fireAnim}
+                                loop={true}
+                                style={{ width: 340, height: 340 }}
+                            />
+                        )}
                     </div>
 
-                    {/* STREAK Text */}
-                    <div className="absolute bottom-16 text-orange-600 font-bold text-2xl tracking-[4px] animate-pulse">
-                        STREAK
+                    {/* Dynamic Content Overlay */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center z-20 pt-[60px]">
+                        <div
+                            className="text-8xl font-black text-white tracking-tighter"
+                            style={{
+                                textShadow:
+                                    "0 8px 30px rgba(255, 69, 0, 0.9), 0 0 60px rgba(255, 165, 0, 0.8)",
+                                WebkitTextStroke:
+                                    "3px rgba(255, 255, 255, 0.9)",
+                            }}
+                        >
+                            {streakCount}
+                        </div>
+                        <div
+                            className="text-white text-2xl font-bold uppercase tracking-[0.2em] mt-3"
+                            style={{
+                                textShadow: "0 4px 15px rgba(255, 69, 0, 0.9)",
+                            }}
+                        >
+                            Day Streak
+                        </div>
+
+                        {/* Encouraging subtext pill */}
+                        <div className="mt-8 px-6 py-2.5 bg-gradient-to-r from-orange-600/90 to-red-600/90 backdrop-blur-md rounded-full border border-white/30 shadow-[0_10px_30px_rgba(255,69,0,0.5)] overflow-hidden relative">
+                            <div className="absolute inset-0 bg-white/30 w-1/2 animate-[shimmerPill_2s_infinite]" />
+                            <span className="text-white font-bold tracking-wide text-sm relative z-10 drop-shadow-md">
+                                {streakCount === 1
+                                    ? "GREAT START!"
+                                    : "YOU'RE ON FIRE!"}
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -791,6 +822,15 @@ export default function ExerciseSession({
                   wordList.word_list_category_id,
               )
             : route("wordlist.show", wordList?.id));
+
+    const handleQuizAnswer = (isCorrect) => {
+        setQuizAnsweredCount((c) => c + 1);
+        if (isCorrect) {
+            handleKnow();
+        } else {
+            handleDontKnow();
+        }
+    };
 
     // ── Loading Screen ─────────────────────────────────────────────────────
     if (isPreloading) {
@@ -1101,6 +1141,14 @@ export default function ExerciseSession({
                 <MasteryOverlay key={masteryEventKey} word={word?.word} />
             )}
 
+            {/* ── Streak animation ── */}
+            {showStreakEffect && (
+                <StreakPop
+                    streakCount={streak?.current_streak ?? 1}
+                    onComplete={() => setShowStreakEffect(false)}
+                />
+            )}
+
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 pb-10 pt-1 mt-3">
                 {/* ── Session progress bar ─────────────────────────────────── */}
                 <div className="max-w-lg mx-auto px-3 pb-2">
@@ -1118,9 +1166,20 @@ export default function ExerciseSession({
                             />
                         </div>
                         {/* Queue remaining badge */}
-                        <span className="shrink-0 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-full px-2.5 py-0.5 shadow-sm dark:shadow-lg">
-                            {queue.length} left
-                        </span>
+                        <div className="flex items-center gap-2">
+                            {/* <button
+                                onClick={() => {
+                                    setStreakChange("up");
+                                    setShowStreakEffect(true);
+                                }}
+                                className="shrink-0 text-[10px] font-bold text-orange-500 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900/50 rounded-full px-2 py-0.5 shadow-sm hover:scale-105 active:scale-95 transition-all"
+                            >
+                                Test Streak
+                            </button> */}
+                            <span className="shrink-0 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-full px-2.5 py-0.5 shadow-sm dark:shadow-lg">
+                                {queue.length} left
+                            </span>
+                        </div>
                         {/* Bookmarks shortcut */}
                         {auth?.user && (
                             <Link
@@ -1140,189 +1199,221 @@ export default function ExerciseSession({
                 {/* ── Card area ────────────────────────────────────────────── */}
                 <div className="flex items-start justify-center w-full">
                     <main className="max-w-lg w-full px-3">
-                        {/* Swipeable / animating card */}
-                        <div
-                            key={cardKey}
-                            className={`bg-white dark:bg-slate-900 rounded-3xl shadow-md dark:shadow-xl dark:shadow-slate-950 overflow-hidden select-none ${
-                                exiting
-                                    ? exitDir.current === "left"
-                                        ? "card-exit-left"
-                                        : "card-exit-right"
-                                    : exitDir.current === "left"
-                                      ? "card-enter-right"
-                                      : "card-enter-left"
-                            }`}
-                        >
-                            {/* Exercise group label */}
-                            <div className="px-4">
-                                <div className="h-px bg-gray-100 dark:bg-slate-800 mb-3" />
-                                <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
-                                    Part of Exercise:{" "}
-                                    {subcategory
-                                        ? `${wordList.title} › ${subcategory.name}`
-                                        : wordList.title}
-                                </p>
+                        {word?.is_quiz ? (
+                            <div
+                                key={cardKey}
+                                className={`py-4 ${
+                                    exiting
+                                        ? exitDir.current === "left"
+                                            ? "card-exit-left"
+                                            : "card-exit-right"
+                                        : exitDir.current === "left"
+                                          ? "card-enter-right"
+                                          : "card-enter-left"
+                                }`}
+                            >
+                                <QuizPanel
+                                    question={word}
+                                    onAnswer={handleQuizAnswer}
+                                />
                             </div>
-                            {/* Top row: bookmark | word | speaker */}
-                            <div className="flex items-center px-5 pt-5 pb-2">
-                                <div className="flex-none w-8 flex justify-start">
-                                    <button
-                                        onClick={() => handleBookmark(word.id)}
-                                        className="p-1 transition-colors"
-                                        aria-label={
-                                            bookmarks[word.id]
-                                                ? "Remove bookmark"
-                                                : "Bookmark word"
-                                        }
-                                    >
-                                        <Bookmark
-                                            className={`h-6 w-6 transition-colors ${
-                                                bookmarks[word.id]
-                                                    ? "fill-yellow-400 text-yellow-400"
-                                                    : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                                            }`}
-                                            strokeWidth={1.8}
-                                        />
-                                    </button>
-                                </div>
-
-                                <div className="flex-1 flex flex-col items-center text-center px-2">
-                                    <h1
-                                        className={`${wordFontSize(word.word)} font-extrabold text-gray-900 dark:text-gray-100 tracking-tight leading-tight break-words w-full`}
-                                    >
-                                        {word.word}
-                                        {word.parts_of_speech_variations && (
-                                            <span className="bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 text-sm font-medium px-3 py-0.5 rounded-md ml-2">
-                                                {
-                                                    word.parts_of_speech_variations
-                                                }
-                                            </span>
-                                        )}
-                                    </h1>
-                                </div>
-                                <div className="flex-none w-8 flex justify-end">
-                                    <button
-                                        onClick={() => speakWord(word.word)}
-                                        className="p-1 text-gray-500 hover:text-gray-700 transition"
-                                    >
-                                        <Volume2
-                                            className="h-6 w-6"
-                                            strokeWidth={1.8}
-                                        />
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* ── 4-dot level badge ──────────────────────────── */}
-                            {auth?.user && (
-                                <div className="flex justify-center pb-1">
-                                    <div
-                                        className="flex items-center gap-1.5"
-                                        style={{
-                                            transform: levelUpPulse
-                                                ? "scale(1.25)"
-                                                : "scale(1)",
-                                            transition:
-                                                "transform 0.3s cubic-bezier(0.34,1.56,0.64,1)",
-                                        }}
-                                    >
-                                        {[1, 2, 3, 4].map((box) => (
-                                            <div
-                                                key={box}
-                                                className={`rounded-full w-2 h-2 transition-all duration-200 ${
-                                                    box <= currentBox
-                                                        ? (LEVEL_META[box]
-                                                              ?.dot ??
-                                                          "bg-gray-400")
-                                                        : "bg-gray-200 dark:bg-slate-700"
-                                                }`}
-                                            />
-                                        ))}
-                                        <span
-                                            className={`text-xs font-semibold px-2 py-0.5 rounded-full ml-1 ${meta.color}`}
-                                        >
-                                            {meta.label}
-                                        </span>
+                        ) : (
+                            <>
+                                {/* Swipeable / animating card */}
+                                <div
+                                    key={cardKey}
+                                    className={`bg-white dark:bg-slate-900 rounded-3xl shadow-md dark:shadow-xl dark:shadow-slate-950 overflow-hidden select-none ${
+                                        exiting
+                                            ? exitDir.current === "left"
+                                                ? "card-exit-left"
+                                                : "card-exit-right"
+                                            : exitDir.current === "left"
+                                              ? "card-enter-right"
+                                              : "card-enter-left"
+                                    }`}
+                                >
+                                    {/* Exercise group label */}
+                                    <div className="px-4">
+                                        <div className="h-px bg-gray-100 dark:bg-slate-800 mb-3" />
+                                        <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
+                                            Part of Exercise:{" "}
+                                            {subcategory
+                                                ? `${wordList.title} › ${subcategory.name}`
+                                                : wordList.title}
+                                        </p>
                                     </div>
-                                </div>
-                            )}
+                                    {/* Top row: bookmark | word | speaker */}
+                                    <div className="flex items-center px-5 pt-5 pb-2">
+                                        <div className="flex-none w-8 flex justify-start">
+                                            <button
+                                                onClick={() =>
+                                                    handleBookmark(word.id)
+                                                }
+                                                className="p-1 transition-colors"
+                                                aria-label={
+                                                    bookmarks[word.id]
+                                                        ? "Remove bookmark"
+                                                        : "Bookmark word"
+                                                }
+                                            >
+                                                <Bookmark
+                                                    className={`h-6 w-6 transition-colors ${
+                                                        bookmarks[word.id]
+                                                            ? "fill-yellow-400 text-yellow-400"
+                                                            : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                                    }`}
+                                                    strokeWidth={1.8}
+                                                />
+                                            </button>
+                                        </div>
 
-                            {/* Pronunciation */}
-                            <div className="px-5 pb-4 text-center">
-                                {word.pronunciation && (
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 font-mono mt-1">
-                                        <span className="text-blue-600 dark:text-blue-400">
-                                            {word.pronunciation}{" "}
-                                        </span>
-                                        <span className="text-black">|</span>{" "}
-                                        <span className="text-teal-600 dark:text-teal-400">
-                                            {formatIPA(word.ipa)}{" "}
-                                        </span>
-                                        {userSettings?.show_bangla}
-                                        {/* Show Bangla only if user setting allows it */}
-                                        {userSettings?.show_bangla &&
-                                            word.bangla_pronunciation && (
-                                                <>
-                                                    {" "}
-                                                    <span className="text-black">
-                                                        |
-                                                    </span>{" "}
-                                                    <span className="text-orange-600 dark:text-orange-400">
+                                        <div className="flex-1 flex flex-col items-center text-center px-2">
+                                            <h1
+                                                className={`${wordFontSize(word.word)} font-extrabold text-gray-900 dark:text-gray-100 tracking-tight leading-tight break-words w-full`}
+                                            >
+                                                {word.word}
+                                                {word.parts_of_speech_variations && (
+                                                    <span className="bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 text-sm font-medium px-3 py-0.5 rounded-md ml-2">
                                                         {
-                                                            word.bangla_pronunciation
+                                                            word.parts_of_speech_variations
                                                         }
                                                     </span>
-                                                </>
-                                            )}
-                                    </p>
-                                )}
-                            </div>
+                                                )}
+                                            </h1>
+                                        </div>
+                                        <div className="flex-none w-8 flex justify-end">
+                                            <button
+                                                onClick={() =>
+                                                    speakWord(word.word)
+                                                }
+                                                className="p-1 text-gray-500 hover:text-gray-700 transition"
+                                            >
+                                                <Volume2
+                                                    className="h-6 w-6"
+                                                    strokeWidth={1.8}
+                                                />
+                                            </button>
+                                        </div>
+                                    </div>
 
-                            {/* Image */}
-                            {images.length > 0 && (
-                                <div className="px-4 pb-3">
-                                    <div className="relative rounded-2xl overflow-hidden bg-[#EEF6F5] dark:bg-slate-800">
-                                        <img
-                                            src={activeImage?.image_url_full}
-                                            alt={
-                                                activeImage?.caption ||
-                                                word.word
-                                            }
-                                            className="w-full h-auto object-contain"
-                                            style={{
-                                                maxHeight: "300px",
-                                            }}
-                                        />
-                                        {currentBox >= MASTERED_BOX && (
-                                            <div className="absolute top-2 right-2">
-                                                <span className="bg-green-500 dark:bg-green-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md dark:shadow-lg">
-                                                    ✨ Mastered
+                                    {/* ── 4-dot level badge ──────────────────────────── */}
+                                    {auth?.user && (
+                                        <div className="flex justify-center pb-1">
+                                            <div
+                                                className="flex items-center gap-1.5"
+                                                style={{
+                                                    transform: levelUpPulse
+                                                        ? "scale(1.25)"
+                                                        : "scale(1)",
+                                                    transition:
+                                                        "transform 0.3s cubic-bezier(0.34,1.56,0.64,1)",
+                                                }}
+                                            >
+                                                {[1, 2, 3, 4].map((box) => (
+                                                    <div
+                                                        key={box}
+                                                        className={`rounded-full w-2 h-2 transition-all duration-200 ${
+                                                            box <= currentBox
+                                                                ? (LEVEL_META[
+                                                                      box
+                                                                  ]?.dot ??
+                                                                  "bg-gray-400")
+                                                                : "bg-gray-200 dark:bg-slate-700"
+                                                        }`}
+                                                    />
+                                                ))}
+                                                <span
+                                                    className={`text-xs font-semibold px-2 py-0.5 rounded-full ml-1 ${meta.color}`}
+                                                >
+                                                    {meta.label}
                                                 </span>
                                             </div>
-                                        )}
-                                    </div>
-                                    {images.length > 1 && (
-                                        <div className="flex justify-center gap-1.5 mt-2">
-                                            {images.map((_, idx) => (
-                                                <button
-                                                    key={idx}
-                                                    onClick={() =>
-                                                        setActiveImageIndex(idx)
-                                                    }
-                                                    className={`rounded-full transition-all ${
-                                                        idx === activeImageIndex
-                                                            ? "w-5 h-2 bg-gray-500 dark:bg-gray-400"
-                                                            : "w-2 h-2 bg-gray-300 dark:bg-slate-700"
-                                                    }`}
-                                                />
-                                            ))}
                                         </div>
                                     )}
-                                </div>
-                            )}
 
-                            {/* Example sentence */}
-                            {/* {(word.image_related_sentence ||
+                                    {/* Pronunciation */}
+                                    <div className="px-5 pb-4 text-center">
+                                        {word.pronunciation && (
+                                            <p className="text-sm text-gray-500 dark:text-gray-400 font-mono mt-1">
+                                                <span className="text-blue-600 dark:text-blue-400">
+                                                    {word.pronunciation}{" "}
+                                                </span>
+                                                <span className="text-black">
+                                                    |
+                                                </span>{" "}
+                                                <span className="text-teal-600 dark:text-teal-400">
+                                                    {formatIPA(word.ipa)}{" "}
+                                                </span>
+                                                {userSettings?.show_bangla}
+                                                {/* Show Bangla only if user setting allows it */}
+                                                {userSettings?.show_bangla &&
+                                                    word.bangla_pronunciation && (
+                                                        <>
+                                                            {" "}
+                                                            <span className="text-black">
+                                                                |
+                                                            </span>{" "}
+                                                            <span className="text-orange-600 dark:text-orange-400">
+                                                                {
+                                                                    word.bangla_pronunciation
+                                                                }
+                                                            </span>
+                                                        </>
+                                                    )}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* Image */}
+                                    {images.length > 0 && (
+                                        <div className="px-4 pb-3">
+                                            <div className="relative rounded-2xl overflow-hidden bg-[#EEF6F5] dark:bg-slate-800">
+                                                <img
+                                                    src={
+                                                        activeImage?.image_url_full
+                                                    }
+                                                    alt={
+                                                        activeImage?.caption ||
+                                                        word.word
+                                                    }
+                                                    className="w-full h-auto object-contain"
+                                                    style={{
+                                                        maxHeight: "300px",
+                                                    }}
+                                                />
+                                                {currentBox >= MASTERED_BOX && (
+                                                    <div className="absolute top-2 right-2">
+                                                        <span className="bg-green-500 dark:bg-green-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md dark:shadow-lg">
+                                                            ✨ Mastered
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {images.length > 1 && (
+                                                <div className="flex justify-center gap-1.5 mt-2">
+                                                    {images.map((_, idx) => (
+                                                        <button
+                                                            key={idx}
+                                                            onClick={() =>
+                                                                setActiveImageIndex(
+                                                                    idx,
+                                                                )
+                                                            }
+                                                            className={`rounded-full transition-all ${
+                                                                idx ===
+                                                                activeImageIndex
+                                                                    ? "w-5 h-2 bg-gray-500 dark:bg-gray-400"
+                                                                    : "w-2 h-2 bg-gray-300 dark:bg-slate-700"
+                                                            }`}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Example sentence */}
+                                    {/* {(word.image_related_sentence ||
                                 word.example_sentences) && (
                                 <div className="mx-4 mb-4 border-l-4 border-green-400 dark:border-green-600 pl-3 py-1">
                                     <p className="text-base text-gray-800 dark:text-gray-200 leading-snug">
@@ -1335,126 +1426,133 @@ export default function ExerciseSession({
                                 </div>
                             )} */}
 
-                            {/* Example sentence */}
-                            {word.show_example_sentences &&
-                                (word.image_related_sentence ||
-                                    word.example_sentences) && (
-                                    <div className="mx-4 mb-4 border-l-4 border-green-400 dark:border-green-600 pl-3 py-1">
-                                        <p className="text-base text-gray-800 dark:text-gray-200 leading-snug">
-                                            {highlightWord(
-                                                // Priority: image_related_sentence > first example sentence
-                                                word.image_related_sentence
-                                                    ? word.image_related_sentence
-                                                    : word.example_sentences
-                                                          ?.split(".")
-                                                          .map((s) => s.trim())
-                                                          .filter(Boolean)[0] +
-                                                          ".",
-                                                word.word,
-                                            )}
-                                        </p>
-                                    </div>
-                                )}
-
-                            {/* Tap to see meaning */}
-                            <div className="px-4 pb-3">
-                                <button
-                                    onClick={() =>
-                                        setShowMeaning((prev) => !prev)
-                                    }
-                                    className="w-full flex items-center justify-center gap-2 py-2.5 border border-dashed border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-slate-600 transition"
-                                >
-                                    {showMeaning ? (
-                                        <>
-                                            <svg
-                                                className="w-4 h-4"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
-                                                />
-                                            </svg>
-                                            Hide Meaning
-                                        </>
-                                    ) : (
-                                        <>
-                                            <svg
-                                                className="w-4 h-4"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                                />
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                                                />
-                                            </svg>
-                                            Tap to see meaning
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-                        {/* end main card */}
-
-                        {/* ── Meaning card ─────────────────────────────────────── */}
-                        <div
-                            ref={meaningCardRef}
-                            className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                                showMeaning ? "opacity-100" : "opacity-0"
-                            }`}
-                            style={{
-                                maxHeight: showMeaning ? "1600px" : "0px", // lowered from 2000px
-                                marginTop: showMeaning ? "12px" : "0px",
-                            }}
-                        >
-                            <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-md dark:shadow-xl dark:shadow-slate-950 overflow-hidden pb-2">
-                                <div className="mx-4 mt-4 mb-3">
-                                    <p
-                                        className={`text-center text-lg font-bold text-gray-500 underline dark:text-gray-600 tracking-tight`}
-                                    >
-                                        {word.word}
-                                    </p>
-                                </div>
-
-                                {word.definition && (
-                                    <div className="mx-4 mt-4 mb-4">
-                                        <div className="border-l-4 border-[#E5201C] dark:border-red-600 pl-3 py-1">
-                                            <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">
-                                                Definition
-                                            </p>
-                                            <p className="text-sm text-gray-900 dark:text-gray-200 leading-snug">
-                                                {word.definition}
-
-                                                {userSettings?.show_bangla &&
-                                                    word.bangla_meaning && (
-                                                        <span className="text-gray-500 dark:text-gray-400 font-medium ml-1">
-                                                            (
-                                                            {
-                                                                word.bangla_meaning
-                                                            }
-                                                            )
-                                                        </span>
+                                    {/* Example sentence */}
+                                    {word.show_example_sentences &&
+                                        (word.image_related_sentence ||
+                                            word.example_sentences) && (
+                                            <div className="mx-4 mb-4 border-l-4 border-green-400 dark:border-green-600 pl-3 py-1">
+                                                <p className="text-base text-gray-800 dark:text-gray-200 leading-snug">
+                                                    {highlightWord(
+                                                        // Priority: image_related_sentence > first example sentence
+                                                        word.image_related_sentence
+                                                            ? word.image_related_sentence
+                                                            : word.example_sentences
+                                                                  ?.split(".")
+                                                                  .map((s) =>
+                                                                      s.trim(),
+                                                                  )
+                                                                  .filter(
+                                                                      Boolean,
+                                                                  )[0] + ".",
+                                                        word.word,
                                                     )}
+                                                </p>
+                                            </div>
+                                        )}
+
+                                    {/* Tap to see meaning */}
+                                    <div className="px-4 pb-3">
+                                        <button
+                                            onClick={() =>
+                                                setShowMeaning((prev) => !prev)
+                                            }
+                                            className="w-full flex items-center justify-center gap-2 py-2.5 border border-dashed border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-slate-600 transition"
+                                        >
+                                            {showMeaning ? (
+                                                <>
+                                                    <svg
+                                                        className="w-4 h-4"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                    >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth={2}
+                                                            d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+                                                        />
+                                                    </svg>
+                                                    Hide Meaning
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <svg
+                                                        className="w-4 h-4"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                    >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth={2}
+                                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                                        />
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth={2}
+                                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                                        />
+                                                    </svg>
+                                                    Tap to see meaning
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+                                {/* end main card */}
+
+                                {/* ── Meaning card ─────────────────────────────────────── */}
+                                <div
+                                    ref={meaningCardRef}
+                                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                                        showMeaning
+                                            ? "opacity-100"
+                                            : "opacity-0"
+                                    }`}
+                                    style={{
+                                        maxHeight: showMeaning
+                                            ? "1600px"
+                                            : "0px", // lowered from 2000px
+                                        marginTop: showMeaning ? "12px" : "0px",
+                                    }}
+                                >
+                                    <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-md dark:shadow-xl dark:shadow-slate-950 overflow-hidden pb-2">
+                                        <div className="mx-4 mt-4 mb-3">
+                                            <p
+                                                className={`text-center text-lg font-bold text-gray-500 underline dark:text-gray-600 tracking-tight`}
+                                            >
+                                                {word.word}
                                             </p>
                                         </div>
-                                    </div>
-                                )}
 
-                                {/* {collocationList.length > 0 && (
+                                        {word.definition && (
+                                            <div className="mx-4 mt-4 mb-4">
+                                                <div className="border-l-4 border-[#E5201C] dark:border-red-600 pl-3 py-1">
+                                                    <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">
+                                                        Definition
+                                                    </p>
+                                                    <p className="text-sm text-gray-900 dark:text-gray-200 leading-snug">
+                                                        {word.definition}
+
+                                                        {userSettings?.show_bangla &&
+                                                            word.bangla_meaning && (
+                                                                <span className="text-gray-500 dark:text-gray-400 font-medium ml-1">
+                                                                    (
+                                                                    {
+                                                                        word.bangla_meaning
+                                                                    }
+                                                                    )
+                                                                </span>
+                                                            )}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* {collocationList.length > 0 && (
                                     <div className="px-4 pb-4">
                                         <div className="h-px bg-gray-100 mb-3" />
                                         <p className="text-sm font-semibold text-gray-600 mb-2">
@@ -1473,101 +1571,110 @@ export default function ExerciseSession({
                                     </div>
                                 )} */}
 
-                                {collocationList.length > 0 && (
-                                    <div className="px-4 pb-4">
-                                        <div className="h-px bg-gray-100 dark:bg-slate-800 mb-3" />
-                                        <p className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-3">
-                                            Common Collocations
-                                        </p>
-                                        <div className="flex flex-col gap-3">
-                                            {collocationList
-                                                .slice(0, 3)
-                                                .map((col, i) => {
-                                                    const colorClass =
-                                                        collocationColors[
-                                                            i %
-                                                                collocationColors.length
-                                                        ];
+                                        {collocationList.length > 0 && (
+                                            <div className="px-4 pb-4">
+                                                <div className="h-px bg-gray-100 dark:bg-slate-800 mb-3" />
+                                                <p className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-3">
+                                                    Common Collocations
+                                                </p>
+                                                <div className="flex flex-col gap-3">
+                                                    {collocationList
+                                                        .slice(0, 3)
+                                                        .map((col, i) => {
+                                                            const colorClass =
+                                                                collocationColors[
+                                                                    i %
+                                                                        collocationColors.length
+                                                                ];
 
-                                                    // Highlight the collocation phrase inside the example sentence
-                                                    const renderHighlighted = (
-                                                        sentence,
-                                                        phrase,
-                                                    ) => {
-                                                        if (
-                                                            !sentence ||
-                                                            !phrase
-                                                        )
-                                                            return sentence;
-                                                        const regex =
-                                                            new RegExp(
-                                                                `(${phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
-                                                                "gi",
-                                                            );
-                                                        return sentence
-                                                            .split(regex)
-                                                            .map((part, idx) =>
-                                                                regex.test(
-                                                                    part,
-                                                                ) ? (
-                                                                    <mark
-                                                                        key={
-                                                                            idx
-                                                                        }
-                                                                        className="font-bold bg-transparent underline underline-offset-2 decoration-2 not-italic dark:text-white"
-                                                                        style={{
-                                                                            textDecorationColor:
-                                                                                "currentColor",
-                                                                        }}
-                                                                    >
-                                                                        {part}
-                                                                    </mark>
-                                                                ) : (
-                                                                    part
-                                                                ),
-                                                            );
-                                                    };
-
-                                                    return (
-                                                        <div
-                                                            key={i}
-                                                            className={`rounded-xl border px-3 py-2.5 ${colorClass}`}
-                                                        >
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="flex-1">
-                                                                    {col.example_sentence ? (
-                                                                        <p className="text-sm leading-snug dark:text-gray-400">
-                                                                            {renderHighlighted(
-                                                                                col.example_sentence,
-                                                                                col.phrase,
-                                                                            )}
-                                                                        </p>
-                                                                    ) : (
-                                                                        <p className="text-xs font-bold uppercase tracking-wide opacity-75 dark:text-gray-100">
-                                                                            {
-                                                                                col.phrase
-                                                                            }
-                                                                        </p>
-                                                                    )}
-                                                                </div>
-                                                                <button
-                                                                    onClick={() =>
-                                                                        speakWord(
-                                                                            col.example_sentence ||
-                                                                                col.phrase,
+                                                            // Highlight the collocation phrase inside the example sentence
+                                                            const renderHighlighted =
+                                                                (
+                                                                    sentence,
+                                                                    phrase,
+                                                                ) => {
+                                                                    if (
+                                                                        !sentence ||
+                                                                        !phrase
+                                                                    )
+                                                                        return sentence;
+                                                                    const regex =
+                                                                        new RegExp(
+                                                                            `(${phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+                                                                            "gi",
+                                                                        );
+                                                                    return sentence
+                                                                        .split(
+                                                                            regex,
                                                                         )
-                                                                    }
-                                                                    className="flex-none p-1.5 rounded-full opacity-50 hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/10 transition-all"
-                                                                    aria-label="Listen to collocation"
+                                                                        .map(
+                                                                            (
+                                                                                part,
+                                                                                idx,
+                                                                            ) =>
+                                                                                regex.test(
+                                                                                    part,
+                                                                                ) ? (
+                                                                                    <mark
+                                                                                        key={
+                                                                                            idx
+                                                                                        }
+                                                                                        className="font-bold bg-transparent underline underline-offset-2 decoration-2 not-italic dark:text-white"
+                                                                                        style={{
+                                                                                            textDecorationColor:
+                                                                                                "currentColor",
+                                                                                        }}
+                                                                                    >
+                                                                                        {
+                                                                                            part
+                                                                                        }
+                                                                                    </mark>
+                                                                                ) : (
+                                                                                    part
+                                                                                ),
+                                                                        );
+                                                                };
+
+                                                            return (
+                                                                <div
+                                                                    key={i}
+                                                                    className={`rounded-xl border px-3 py-2.5 ${colorClass}`}
                                                                 >
-                                                                    <Volume2 className="h-4 w-4" />
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                        </div>
-                                        {/* {collocationList.length > 3 && (
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div className="flex-1">
+                                                                            {col.example_sentence ? (
+                                                                                <p className="text-sm leading-snug dark:text-gray-400">
+                                                                                    {renderHighlighted(
+                                                                                        col.example_sentence,
+                                                                                        col.phrase,
+                                                                                    )}
+                                                                                </p>
+                                                                            ) : (
+                                                                                <p className="text-xs font-bold uppercase tracking-wide opacity-75 dark:text-gray-100">
+                                                                                    {
+                                                                                        col.phrase
+                                                                                    }
+                                                                                </p>
+                                                                            )}
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() =>
+                                                                                speakWord(
+                                                                                    col.example_sentence ||
+                                                                                        col.phrase,
+                                                                                )
+                                                                            }
+                                                                            className="flex-none p-1.5 rounded-full opacity-50 hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/10 transition-all"
+                                                                            aria-label="Listen to collocation"
+                                                                        >
+                                                                            <Volume2 className="h-4 w-4" />
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                </div>
+                                                {/* {collocationList.length > 3 && (
                                             <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">
                                                 +{collocationList.length - 3}{" "}
                                                 more collocation
@@ -1576,125 +1683,132 @@ export default function ExerciseSession({
                                                     : ""}
                                             </p>
                                         )} */}
-                                    </div>
-                                )}
-
-                                {(word.synonym ||
-                                    word.antonym ||
-                                    word.bangla_synonym ||
-                                    word.bangla_antonym) && (
-                                    <div className="pb-4">
-                                        <div className="h-px bg-gray-100 dark:bg-slate-800 mx-4 mb-4" />
-                                        {(word.synonym || word.antonym) && (
-                                            <div className="grid grid-cols-2 gap-0 mx-4 mb-4">
-                                                {word.synonym ? (
-                                                    <div className="border-l-4 border-[#E5201C] dark:border-red-600 pl-3 pr-2 py-1">
-                                                        <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
-                                                            Synonyms
-                                                        </p>
-                                                        <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug">
-                                                            {word.synonym}
-                                                        </p>
-                                                    </div>
-                                                ) : (
-                                                    <div />
-                                                )}
-                                                {word.antonym ? (
-                                                    <div className="border-l-4 border-blue-400 dark:border-blue-600 pl-3 pr-2 py-1">
-                                                        <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
-                                                            Antonyms
-                                                        </p>
-                                                        <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug">
-                                                            {word.antonym}
-                                                        </p>
-                                                    </div>
-                                                ) : (
-                                                    <div />
-                                                )}
                                             </div>
                                         )}
-                                        {(word.bangla_synonym ||
+
+                                        {(word.synonym ||
+                                            word.antonym ||
+                                            word.bangla_synonym ||
                                             word.bangla_antonym) && (
-                                            <div className="grid grid-cols-2 gap-0 mx-4">
-                                                {word.bangla_synonym ? (
-                                                    <div className="border-l-4 border-[#E5201C] dark:border-red-600 pl-3 pr-2 py-1">
-                                                        <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
-                                                            প্রতিশব্দ
-                                                        </p>
-                                                        <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug font-medium">
-                                                            {
-                                                                word.bangla_synonym
-                                                            }
-                                                        </p>
+                                            <div className="pb-4">
+                                                <div className="h-px bg-gray-100 dark:bg-slate-800 mx-4 mb-4" />
+                                                {(word.synonym ||
+                                                    word.antonym) && (
+                                                    <div className="grid grid-cols-2 gap-0 mx-4 mb-4">
+                                                        {word.synonym ? (
+                                                            <div className="border-l-4 border-[#E5201C] dark:border-red-600 pl-3 pr-2 py-1">
+                                                                <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
+                                                                    Synonyms
+                                                                </p>
+                                                                <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug">
+                                                                    {
+                                                                        word.synonym
+                                                                    }
+                                                                </p>
+                                                            </div>
+                                                        ) : (
+                                                            <div />
+                                                        )}
+                                                        {word.antonym ? (
+                                                            <div className="border-l-4 border-blue-400 dark:border-blue-600 pl-3 pr-2 py-1">
+                                                                <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
+                                                                    Antonyms
+                                                                </p>
+                                                                <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug">
+                                                                    {
+                                                                        word.antonym
+                                                                    }
+                                                                </p>
+                                                            </div>
+                                                        ) : (
+                                                            <div />
+                                                        )}
                                                     </div>
-                                                ) : (
-                                                    <div />
                                                 )}
-                                                {word.bangla_antonym ? (
-                                                    <div className="border-l-4 border-blue-400 dark:border-blue-600 pl-3 pr-2 py-1">
-                                                        <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
-                                                            বিপরীত শব্দ
-                                                        </p>
-                                                        <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug font-medium">
-                                                            {
-                                                                word.bangla_antonym
-                                                            }
-                                                        </p>
+                                                {(word.bangla_synonym ||
+                                                    word.bangla_antonym) && (
+                                                    <div className="grid grid-cols-2 gap-0 mx-4">
+                                                        {word.bangla_synonym ? (
+                                                            <div className="border-l-4 border-[#E5201C] dark:border-red-600 pl-3 pr-2 py-1">
+                                                                <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
+                                                                    প্রতিশব্দ
+                                                                </p>
+                                                                <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug font-medium">
+                                                                    {
+                                                                        word.bangla_synonym
+                                                                    }
+                                                                </p>
+                                                            </div>
+                                                        ) : (
+                                                            <div />
+                                                        )}
+                                                        {word.bangla_antonym ? (
+                                                            <div className="border-l-4 border-blue-400 dark:border-blue-600 pl-3 pr-2 py-1">
+                                                                <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
+                                                                    বিপরীত শব্দ
+                                                                </p>
+                                                                <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug font-medium">
+                                                                    {
+                                                                        word.bangla_antonym
+                                                                    }
+                                                                </p>
+                                                            </div>
+                                                        ) : (
+                                                            <div />
+                                                        )}
                                                     </div>
-                                                ) : (
-                                                    <div />
                                                 )}
                                             </div>
                                         )}
-                                    </div>
-                                )}
 
-                                {/* ── I Don't Know / I Know buttons ─────────── */}
-                                <div
-                                    ref={buttonsRef}
-                                    className="px-4 pt-4 pb-5"
-                                >
-                                    <div className="h-px bg-gray-100 dark:bg-slate-800 mb-4" />
-                                    <div className="flex gap-3">
-                                        <button
-                                            onClick={handleDontKnow}
-                                            disabled={isSubmitting}
-                                            className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl border-2 border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 font-bold text-[15px] hover:bg-red-100 dark:hover:bg-red-950/50 active:scale-95 disabled:opacity-50 transition-all shadow-sm dark:shadow-md"
+                                        {/* ── I Don't Know / I Know buttons ─────────── */}
+                                        <div
+                                            ref={buttonsRef}
+                                            className="px-4 pt-4 pb-5"
                                         >
-                                            <X
-                                                className="h-5 w-5"
-                                                strokeWidth={2.5}
-                                            />
-                                            I Don't Know
-                                        </button>
-                                        <button
-                                            onClick={handleKnow}
-                                            disabled={isSubmitting}
-                                            className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl bg-green-600 text-white font-bold text-[15px] hover:bg-green-700 active:scale-95 disabled:opacity-50 transition-all shadow-lg shadow-green-100 dark:shadow-green-900/30"
-                                        >
-                                            <Check
-                                                className="h-5 w-5"
-                                                strokeWidth={2.5}
-                                            />
-                                            I Know
-                                        </button>
+                                            <div className="h-px bg-gray-100 dark:bg-slate-800 mb-4" />
+                                            <div className="flex gap-3">
+                                                <button
+                                                    onClick={handleDontKnow}
+                                                    disabled={isSubmitting}
+                                                    className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl border-2 border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 font-bold text-[15px] hover:bg-red-100 dark:hover:bg-red-950/50 active:scale-95 disabled:opacity-50 transition-all shadow-sm dark:shadow-md"
+                                                >
+                                                    <X
+                                                        className="h-5 w-5"
+                                                        strokeWidth={2.5}
+                                                    />
+                                                    I Don't Know
+                                                </button>
+                                                <button
+                                                    onClick={handleKnow}
+                                                    disabled={isSubmitting}
+                                                    className="flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl bg-green-600 text-white font-bold text-[15px] hover:bg-green-700 active:scale-95 disabled:opacity-50 transition-all shadow-lg shadow-green-100 dark:shadow-green-900/30"
+                                                >
+                                                    <Check
+                                                        className="h-5 w-5"
+                                                        strokeWidth={2.5}
+                                                    />
+                                                    I Know
+                                                </button>
+                                            </div>
+                                            {/* Context hint */}
+                                            {auth?.user && (
+                                                <p className="text-center text-[11px] text-gray-400 dark:text-gray-500 mt-2">
+                                                    {currentBox <= 1
+                                                        ? "New word — master it today in another session ✨"
+                                                        : currentBox === 2
+                                                          ? "Learning — keep going, one more session!"
+                                                          : currentBox === 3
+                                                            ? "Reviewing — final push to mastery!"
+                                                            : "✨ Already mastered — just confirming!"}
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
-                                    {/* Context hint */}
-                                    {auth?.user && (
-                                        <p className="text-center text-[11px] text-gray-400 dark:text-gray-500 mt-2">
-                                            {currentBox <= 1
-                                                ? "New word — master it today in another session ✨"
-                                                : currentBox === 2
-                                                  ? "Learning — keep going, one more session!"
-                                                  : currentBox === 3
-                                                    ? "Reviewing — final push to mastery!"
-                                                    : "✨ Already mastered — just confirming!"}
-                                        </p>
-                                    )}
                                 </div>
-                            </div>
-                        </div>
-                        {/* end meaning card */}
+                                {/* end meaning card */}
+                            </>
+                        )}
                     </main>
                 </div>
             </div>

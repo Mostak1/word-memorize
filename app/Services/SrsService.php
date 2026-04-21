@@ -22,6 +22,10 @@ class SrsService
 
   /** Max overdue L2/L3 review words to pull per session. */
   const REVIEW_LIMIT = 20;
+  
+  /** Mini-quiz frequency (3-4 cards) */
+  const QUIZ_MIN_INTERVAL = 3;
+  const QUIZ_MAX_INTERVAL = 4;
 
   // ── Core answer handlers ──────────────────────────────────────────────────
 
@@ -212,7 +216,101 @@ class SrsService
         ->map(fn($w) => $this->attachSrsMeta($w, null));
     }
 
-    return $reviewWords->concat($extraPracticeWords)->concat($newWords);
+    $words = $reviewWords->concat($extraPracticeWords)->concat($newWords);
+    
+    return $this->injectQuizzes($words);
+  }
+
+  private function injectQuizzes(Collection $words): Collection
+  {
+    if ($words->isEmpty()) return $words;
+
+    $finalQueue = collect();
+    $counter = 0;
+    $nextQuizAt = rand(self::QUIZ_MIN_INTERVAL, self::QUIZ_MAX_INTERVAL);
+
+    foreach ($words as $word) {
+      if ($finalQueue->count() >= self::QUEUE_SIZE) {
+        break;
+      }
+
+      $finalQueue->push($word);
+      $counter++;
+
+      if ($counter >= $nextQuizAt && $finalQueue->count() < self::QUEUE_SIZE) {
+        $quiz = $this->generateQuizQuestion($word);
+        if ($quiz) {
+          $finalQueue->push($quiz);
+        }
+        $counter = 0;
+        $nextQuizAt = rand(self::QUIZ_MIN_INTERVAL, self::QUIZ_MAX_INTERVAL);
+      }
+    }
+
+    return $finalQueue;
+  }
+
+  /**
+   * Generates a basic multiple choice quiz for a word. 
+   * returns a 'fake' word object with is_quiz = true.
+   */
+  private function generateQuizQuestion(Word $word): ?array
+  {
+    // Try synonym first
+    $options = [];
+    $type = 'definition';
+    $correct = '';
+
+    if (!empty($word->synonym)) {
+       $synonyms = array_filter(array_map('trim', explode(',', $word->synonym)));
+       if (!empty($synonyms)) {
+          $type = 'synonym';
+          $correct = $synonyms[array_rand($synonyms)];
+       }
+    }
+
+    if (!$correct && !empty($word->definition)) {
+      $type = 'definition';
+      $correct = $word->definition;
+    }
+
+    if (!$correct && !empty($word->bangla_meaning)) {
+      $type = 'translation';
+      $correct = $word->bangla_meaning;
+    }
+
+    if (!$correct) return null;
+
+    // Distractors
+    $distractors = Word::where('id', '!=', $word->id)
+      ->inRandomOrder()
+      ->limit(3)
+      ->get();
+
+    foreach ($distractors as $d) {
+       if ($type === 'synonym') {
+          $options[] = $d->word; // In synonym quizzes, we usually show other words
+       } elseif ($type === 'translation') {
+          $options[] = $d->bangla_meaning;
+       } else {
+          $options[] = $d->definition;
+       }
+    }
+    
+    $options[] = $correct;
+    shuffle($options);
+
+    return [
+      'id' => $word->id,
+      'is_quiz' => true,
+      'type' => $type,
+      'targetWordWord' => $word->word,
+      'options' => array_filter($options),
+      'correct' => $correct,
+      'srs_box' => $word->srs_box,
+      'srs_label' => $word->srs_label,
+      'srs_color' => $word->srs_color,
+    ];
   }
 
   /**
