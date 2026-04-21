@@ -181,6 +181,7 @@ export default function WordFormDialog({
         ai_prompt: word?.ai_prompt || "",
         synonym: word?.synonym || "",
         antonym: word?.antonym || "",
+        image_related_sentence: word?.image_related_sentence || "",
         is_public: word?.is_public ?? true,
     });
 
@@ -639,6 +640,24 @@ export default function WordFormDialog({
                             onChange={(e) => setData("antonym", e.target.value)}
                             placeholder="e.g., fail, abandon"
                         />
+                    </div>
+
+                    {/* Image Related Sentence */}
+                    <div className="space-y-2">
+                        <Label>
+                            Featured Example Sentence (Image Related)
+                        </Label>
+                        <Input
+                            value={data.image_related_sentence}
+                            onChange={(e) =>
+                                setData("image_related_sentence", e.target.value)
+                            }
+                            placeholder="A specific example sentence for this word (often shown with images)"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                            This sentence is prioritized in exercise sessions
+                            over general example sentences.
+                        </p>
                     </div>
 
                     {/* Visibility */}

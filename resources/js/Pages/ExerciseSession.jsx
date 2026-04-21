@@ -361,7 +361,7 @@ export default function ExerciseSession({
             .then((response) => response.json())
             .then((data) => {
                 // Check if any new achievements were earned during this session
-                window.dispatchEvent(new Event("check-achievements"));
+                window.dispatchEvent(new CustomEvent("check-achievements"));
 
                 if (data.xp_awarded && xp_enabled) {
                     setSessionXpAwarded(data.xp_awarded);
@@ -1172,7 +1172,7 @@ export default function ExerciseSession({
                         </div>
                         {/* Queue remaining badge */}
                         <div className="flex items-center gap-2">
-                            <button
+                            {/* <button
                                 onClick={() => {
                                     setStreakChange("up");
                                     setShowStreakEffect(true);
@@ -1180,7 +1180,7 @@ export default function ExerciseSession({
                                 className="shrink-0 text-[10px] font-bold text-orange-500 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900/50 rounded-full px-2 py-0.5 shadow-sm hover:scale-105 active:scale-95 transition-all"
                             >
                                 Test Streak
-                            </button>
+                            </button> */}
                             <span className="shrink-0 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-full px-2.5 py-0.5 shadow-sm dark:shadow-lg">
                                 {queue.length} left
                             </span>

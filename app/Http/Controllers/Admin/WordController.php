@@ -27,6 +27,7 @@ class WordController extends Controller
             'ai_prompt' => 'nullable|string',
             'synonym' => 'nullable|string',
             'antonym' => 'nullable|string',
+            'image_related_sentence' => 'nullable|string',
             'is_public' => 'boolean',
         ];
     }

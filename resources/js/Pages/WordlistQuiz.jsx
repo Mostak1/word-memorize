@@ -688,6 +688,9 @@ export default function WordlistQuiz({
                     setStreakCount(data.streak?.current_streak ?? 0);
                     setShowStreakEffect(true);
                 }
+
+                // Trigger achievement check
+                window.dispatchEvent(new CustomEvent("check-achievements"));
             } catch (e) {
                 console.error(e);
             }

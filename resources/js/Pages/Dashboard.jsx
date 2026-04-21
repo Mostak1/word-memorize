@@ -1,3 +1,4 @@
+import React, { useEffect } from "react";
 import AppLayout from "@/Layouts/AppLayout";
 import { Head, Link } from "@inertiajs/react";
 import {
@@ -185,6 +186,12 @@ export default function Dashboard({
     reviseCounts = {},
 }) {
     const { t } = useTranslation();
+
+    useEffect(() => {
+        // Check for unseen achievements when landing on the dashboard
+        window.dispatchEvent(new CustomEvent("check-achievements"));
+    }, []);
+
     return (
         <AppLayout>
             <Head title={t("dashboard.title")} />
