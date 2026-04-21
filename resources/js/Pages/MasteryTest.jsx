@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useTranslation } from "@/Contexts/LanguageContext";
+import StreakPop from "@/Components/StreakPop";
 
 // ── Type metadata ─────────────────────────────────────────────────────────────
 
@@ -289,7 +290,7 @@ function MatchPairsQuestion({ q, onSubmit }) {
             return base + (correct ? "bg-green-50 dark:bg-green-950/30 border-green-500 text-green-700 dark:text-green-400" : "bg-red-50 dark:bg-red-950/30 border-red-400 text-red-700 dark:text-red-400");
         }
         if (takenByWord)
-            return base + "bg-amber-50 dark:bg-amber-950/30 border-amber-400 text-amber-700 dark:text-amber-400";
+            return base + "bg-amber-50 dark:amber-950/30 border-amber-400 text-amber-700 dark:text-amber-400";
         return base + "bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 hover:border-[#E5201C] hover:bg-red-50 dark:hover:bg-red-950/20 cursor-pointer";
     };
 
@@ -348,6 +349,8 @@ export default function MasteryTest({
     const [matchCorrectCount, setMatchCorrectCount] = useState(null);
     const [showNoWordsDialog, setShowNoWordsDialog] = useState(noMasteredWords || noUsableSentences);
     const [showAnimation, setShowAnimation] = useState(true);
+    const [showStreakEffect, setShowStreakEffect] = useState(false);
+    const [streakCount, setStreakCount] = useState(0);
 
     const uniqueTypes = useMemo(() => {
         const seen = new Set();
@@ -393,12 +396,24 @@ export default function MasteryTest({
             try {
                 const body = wordlistId ? { wordlist_id: wordlistId, correct_count: score, total_questions: total } : {};
                 const csrfToken = document.cookie.split("; ").find((r) => r.startsWith("XSRF-TOKEN="))?.split("=")[1];
-                await fetch(route("mastery-test.finish"), {
+                const res = await fetch(route("mastery-test.finish"), {
                     method: "POST",
-                    headers: { "Content-Type": "application/json", "X-XSRF-TOKEN": decodeURIComponent(csrfToken || ""), Accept: "application/json" },
+                    headers: { 
+                        "Content-Type": "application/json", 
+                        "X-XSRF-TOKEN": decodeURIComponent(csrfToken || ""), 
+                        Accept: "application/json" 
+                    },
                     body: JSON.stringify(body),
                 });
-            } catch (e) { console.error(e); }
+                const result = await res.json();
+                
+                if (result.streak_increased) {
+                    setStreakCount(result.streak?.current_streak ?? 0);
+                    setShowStreakEffect(true);
+                }
+            } catch (e) {
+                console.error(e);
+            }
             setDone(true);
             playSessionComplete(userSettings);
         } else {
@@ -411,7 +426,14 @@ export default function MasteryTest({
     };
 
     const handleRestart = () => {
-        setCurrent(0); setSelected(null); setAnswered(false); setIsCorrect(false); setScore(0); setDone(false); setMatchCorrectCount(null);
+        setCurrent(0); 
+        setSelected(null); 
+        setAnswered(false); 
+        setIsCorrect(false); 
+        setScore(0); 
+        setDone(false); 
+        setMatchCorrectCount(null);
+        setShowAnimation(true);
     };
 
     if (showIntro && !noMasteredWords && !noUsableSentences) {
@@ -474,10 +496,16 @@ export default function MasteryTest({
         return (
             <AppLayout>
                 <Head title={t("quiz.results_title")} />
-                {showAnimation && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-                        <Lottie animationData={doneAnimation} loop={false} autoplay style={{ height: "100%", width: "100%" }} onComplete={() => setShowAnimation(false)} />
+                {done && showAnimation && !showStreakEffect && (
+                    <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center">
+                        <Lottie animationData={doneAnimation} loop={false} style={{ width: 600, height: 600 }} onComplete={() => setShowAnimation(false)} />
                     </div>
+                )}
+                {showStreakEffect && (
+                    <StreakPop
+                        streakCount={streakCount}
+                        onComplete={() => setShowStreakEffect(false)}
+                    />
                 )}
                 <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 flex justify-center px-4 pt-6">
                     <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-md w-full max-w-md p-8 text-center h-fit">

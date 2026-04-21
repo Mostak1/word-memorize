@@ -1,17 +1,9 @@
 import AppLayout from "@/Layouts/AppLayout";
 import { Head } from "@inertiajs/react";
 import { useState, useEffect } from "react";
-import {
-    Trophy,
-    Lock,
-    CheckCircle,
-    Target,
-    Flame,
-    Coins,
-    Sunrise,
-    Award,
-} from "lucide-react";
+import { Trophy, Target, Flame, Coins, Sunrise, Award } from "lucide-react";
 import { useTranslation } from "@/Contexts/LanguageContext";
+import { BadgeSVG } from "@/Components/AchievementBadges";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -48,15 +40,15 @@ function AchievementCard({ achievement, earned, progress, earnedAt }) {
     const getCategoryIcon = (category) => {
         switch (category) {
             case "streak":
-                return <Flame className="w-6 h-6" />;
+                return <Flame className="w-5 h-5" />;
             case "xp":
-                return <Coins className="w-6 h-6" />;
+                return <Coins className="w-5 h-5" />;
             case "morning":
-                return <Sunrise className="w-6 h-6" />;
+                return <Sunrise className="w-5 h-5" />;
             case "perfect":
-                return <Target className="w-6 h-6" />;
+                return <Target className="w-5 h-5" />;
             default:
-                return <Award className="w-6 h-6" />;
+                return <Award className="w-5 h-5" />;
         }
     };
 
@@ -85,22 +77,14 @@ function AchievementCard({ achievement, earned, progress, earnedAt }) {
                     : "border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
             }`}
         >
-            <div className="flex items-start gap-3">
-                <div
-                    className={`p-2 rounded-full ${
-                        isEarned
-                            ? "bg-green-100 dark:bg-green-800"
-                            : "bg-gray-100 dark:bg-gray-700"
-                    }`}
-                >
-                    {isEarned ? (
-                        <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
-                    ) : (
-                        <Lock className="w-6 h-6 text-gray-400" />
-                    )}
+            <div className="flex items-start gap-4">
+                {/* ── Badge SVG ── */}
+                <div className="shrink-0">
+                    <BadgeSVG badge={achievement} earned={isEarned} size={64} />
                 </div>
 
-                <div className="flex-1">
+                {/* ── Text content ── */}
+                <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                         {getCategoryIcon(achievement.category)}
                         <h3
@@ -124,9 +108,12 @@ function AchievementCard({ achievement, earned, progress, earnedAt }) {
                     <p
                         className={`text-sm mb-3 ${isEarned ? "text-green-700 dark:text-green-300" : "text-gray-600 dark:text-gray-400"}`}
                     >
-                        {t(`achievements.items.${achievement.key}.description`, {
-                            defaultValue: achievement.description,
-                        })}
+                        {t(
+                            `achievements.items.${achievement.key}.description`,
+                            {
+                                defaultValue: achievement.description,
+                            },
+                        )}
                     </p>
 
                     {!isEarned && (
@@ -191,7 +178,7 @@ export default function Achievements() {
         return (
             <AppLayout>
                 <Head title={t("achievements.title")} />
-                <div className="py-12">
+                <div className="py-1">
                     <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
                         <div className="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg">
                             <div className="p-6">
@@ -218,7 +205,7 @@ export default function Achievements() {
         return (
             <AppLayout>
                 <Head title={t("achievements.title")} />
-                <div className="py-12">
+                <div className="py-1">
                     <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
                         <div className="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg">
                             <div className="p-6 text-center">
@@ -243,7 +230,7 @@ export default function Achievements() {
         <AppLayout>
             <Head title={t("achievements.title")} />
 
-            <div className="py-12">
+            <div className="py-1">
                 <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
                     <div className="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6">

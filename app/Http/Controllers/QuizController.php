@@ -100,7 +100,7 @@ class QuizController extends Controller
 
         $pool = [];
 
-        foreach ($fillBlankWords->filter(fn($w) => !in_array($w->id, $usedIds))->take(4) as $word) {
+        foreach ($fillBlankWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(10) as $word) {
             $blank = '___________';
             $pattern = '/\b' . preg_quote($word->word, '/') . '\b/i';
             $sentence = $this->pickSentenceWithBlank($word->example_sentences, $pattern, $blank);
@@ -113,7 +113,7 @@ class QuizController extends Controller
             $pool[] = ['type' => 'fill_blank', 'word' => $word->word, 'sentence' => $sentence, 'options' => $options, 'correct' => $word->word];
         }
 
-        foreach ($synonymWords->filter(fn($w) => !in_array($w->id, $usedIds))->take(3) as $word) {
+        foreach ($synonymWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(8) as $word) {
             $list = $this->splitWordList($word->synonym);
             if (empty($list)) {
                 continue;
@@ -125,7 +125,7 @@ class QuizController extends Controller
             $pool[] = ['type' => 'synonym', 'word' => $word->word, 'options' => $options, 'correct' => $correct];
         }
 
-        foreach ($antonymWords->filter(fn($w) => !in_array($w->id, $usedIds))->take(3) as $word) {
+        foreach ($antonymWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(8) as $word) {
             $list = $this->splitWordList($word->antonym);
             if (empty($list)) {
                 continue;
@@ -139,7 +139,7 @@ class QuizController extends Controller
 
         // Only generate translation questions if user has Bangla translation enabled
         if ($userId && UserSetting::forUser(User::find($userId))->show_bangla) {
-            foreach ($translationWords->filter(fn($w) => !in_array($w->id, $usedIds))->take(4) as $word) {
+            foreach ($translationWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(10) as $word) {
                 $distractors = $translationWords
                     ->filter(fn($w2) => $w2->id !== $word->id && !empty(trim($w2->bangla_meaning ?? '')))
                     ->shuffle()->take(3)->pluck('bangla_meaning')->toArray();
@@ -153,6 +153,7 @@ class QuizController extends Controller
         }
 
         $remaining = self::MAX_QUESTIONS - $questions->count();
+        shuffle($pool);
         foreach (array_slice($pool, 0, $remaining) as $q) {
             $questions->push($q);
         }
@@ -166,7 +167,7 @@ class QuizController extends Controller
         }
 
         return Inertia::render('MasteryTest', [
-            'questions' => $questions,
+            'questions' => $questions->shuffle()->values(),
             'noMasteredWords' => false,
             'noUsableSentences' => false,
             'matchPassThreshold' => self::MATCH_PASS_THRESHOLD,
@@ -342,7 +343,8 @@ class QuizController extends Controller
         ]);
 
         // Record streak activity on any quiz submission
-        $this->streakService->recordActivity($request->user());
+        $wasActiveToday = $request->user()->streak?->last_activity_date?->isToday() ?? false;
+        $streak = $this->streakService->recordActivity($request->user());
 
         // Award XP for passing quiz
         $xpAwarded = $this->xpService->awardQuizXp($request->user(), $score);
@@ -355,6 +357,15 @@ class QuizController extends Controller
             'score' => $score,
             'next_attempt_at' => $nextAttemptAt?->toIso8601String(),
             'xp_awarded' => $xpAwarded,
+            'streak' => [
+                'current_streak' => $streak->current_streak,
+                'longest_streak' => $streak->longest_streak,
+                'freeze_count' => $streak->freeze_count,
+                'active_today' => $streak->isActiveToday(),
+                'at_risk' => $streak->isAtRisk(),
+                'is_broken' => $streak->isBroken(),
+            ],
+            'streak_increased' => !$wasActiveToday && $streak->isActiveToday(),
         ]);
     }
 
@@ -416,6 +427,7 @@ class QuizController extends Controller
             ]);
         }
 
+        $wasActiveToday = $request->user()->streak?->last_activity_date?->isToday() ?? false;
         $streak = $this->streakService->recordActivity($request->user());
 
         $xpAwarded = $this->xpService->awardQuizXp($request->user(), $score);
@@ -435,6 +447,7 @@ class QuizController extends Controller
                 'at_risk' => $streak->isAtRisk(),
                 'is_broken' => $streak->isBroken(),
             ],
+            'streak_increased' => !$wasActiveToday && $streak->isActiveToday(),
         ]);
     }
 

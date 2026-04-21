@@ -1,21 +1,20 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { Head, Link, router } from "@inertiajs/react";
 import AppLayout from "@/Layouts/AppLayout";
 import {
     ChevronLeft,
-    Trophy,
+    AlertCircle,
+    Brain,
     Check,
     X,
-    Lock,
-    Unlock,
-    Clock,
-    GraduationCap,
-    AlertCircle,
-    CheckSquare,
-    Square,
-    ArrowRight,
-    RotateCcw,
+    Volume2,
+    Bookmark,
 } from "lucide-react";
+import Lottie from "lottie-react";
+import confetti from "canvas-confetti";
+import doneAnimation from "../../../public/lottie/Done.json";
+import StreakPop from "@/Components/StreakPop";
+import FlashMessages from "@/Components/FlashMessage";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -593,6 +592,8 @@ export default function WordlistQuiz({
     const [finalPassed, setFinalPassed] = useState(false);
     const [nextAttemptAt, setNextAttemptAt] = useState(null);
     const [submitting, setSubmitting] = useState(false);
+    const [showStreakEffect, setShowStreakEffect] = useState(false);
+    const [streakCount, setStreakCount] = useState(0);
 
     const q = questions[current] ?? null;
 
@@ -682,6 +683,11 @@ export default function WordlistQuiz({
                 const data = await res.json();
                 setFinalPassed(data.passed);
                 setNextAttemptAt(data.next_attempt_at ?? null);
+
+                if (data.streak_increased) {
+                    setStreakCount(data.streak?.current_streak ?? 0);
+                    setShowStreakEffect(true);
+                }
             } catch (e) {
                 console.error(e);
             }
@@ -746,6 +752,12 @@ export default function WordlistQuiz({
         return (
             <AppLayout>
                 <Head title="Quiz Results" />
+                {showStreakEffect && (
+                    <StreakPop
+                        streakCount={streakCount}
+                        onComplete={() => setShowStreakEffect(false)}
+                    />
+                )}
                 <ResultsScreen
                     quiz={quiz}
                     wordList={wordList}

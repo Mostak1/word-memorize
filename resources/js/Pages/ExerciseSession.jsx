@@ -24,6 +24,7 @@ import {
     Zap,
 } from "lucide-react";
 import QuizPanel from "@/Pages/ExerciseSession/QuizPanel";
+import StreakPop from "@/Components/StreakPop";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import FlashMessages from "@/Components/FlashMessage";
 import { usePage } from "@inertiajs/react";
@@ -303,6 +304,10 @@ export default function ExerciseSession({
 
         const handleBefore = (event) => {
             if (!isDoneRef.current && !allowNavigation.current) {
+                // Ignore bookmark actions as they don't leave the page
+                if (event.detail.visit.url.toString().includes("/bookmark"))
+                    return;
+
                 event.preventDefault();
                 setPendingVisit(event.detail.visit);
                 setShowLeaveDialog(true);
@@ -1167,7 +1172,7 @@ export default function ExerciseSession({
                         </div>
                         {/* Queue remaining badge */}
                         <div className="flex items-center gap-2">
-                            {/* <button
+                            <button
                                 onClick={() => {
                                     setStreakChange("up");
                                     setShowStreakEffect(true);
@@ -1175,13 +1180,13 @@ export default function ExerciseSession({
                                 className="shrink-0 text-[10px] font-bold text-orange-500 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900/50 rounded-full px-2 py-0.5 shadow-sm hover:scale-105 active:scale-95 transition-all"
                             >
                                 Test Streak
-                            </button> */}
+                            </button>
                             <span className="shrink-0 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-full px-2.5 py-0.5 shadow-sm dark:shadow-lg">
                                 {queue.length} left
                             </span>
                         </div>
                         {/* Bookmarks shortcut */}
-                        {auth?.user && (
+                        {/* {auth?.user && (
                             <Link
                                 href={route("words.bookmarked")}
                                 className="flex-none p-1.5 rounded-lg text-gray-400 dark:text-gray-600 hover:text-yellow-500 dark:hover:text-yellow-400 transition"
@@ -1192,7 +1197,7 @@ export default function ExerciseSession({
                                     strokeWidth={1.8}
                                 />
                             </Link>
-                        )}
+                        )} */}
                     </div>
                 </div>
 
@@ -1815,22 +1820,6 @@ export default function ExerciseSession({
 
             {/* Card animations + confetti keyframes */}
             <style>{`
-                @keyframes streakPop {
-                    0% {
-                        opacity: 0;
-                        transform: scale(0.2) translateY(60px);
-                    }
-                    40% {
-                        transform: scale(1.25) translateY(-15px);
-                    }
-                    70% {
-                        transform: scale(0.95) translateY(5px);
-                    }
-                    100% {
-                        opacity: 1;
-                        transform: scale(1) translateY(0);
-                    }
-                }
                 @keyframes cardEnterRight {
                     from { opacity: 0; transform: translateX(60px)  scale(0.96); }
                     to   { opacity: 1; transform: translateX(0)      scale(1);    }

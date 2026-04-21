@@ -1,1 +1,0 @@
-const o=Array.from({length:36},(r,e)=>({id:e,left:`${e*2.85%100}%`,delay:`${e*.055%.5}s`,duration:`${1.5+e%5*.18}s`,color:["#E5201C","#22c55e","#3b82f6","#f59e0b","#8b5cf6","#ec4899","#14b8a6"][e%7],size:6+e%5*2,borderRadius:e%3===0?"50%":"2px"}));export{o as C};
