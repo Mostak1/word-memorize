@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VocabPix — Learn Vocabulary Scientifically</title>
     <link
-        href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Hind+Siliguri:wght@400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Anek+Bangla:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
     <style>
         * {
@@ -35,7 +35,7 @@
         }
 
         body {
-            font-family: 'Nunito', sans-serif;
+            font-family: 'Plus Jakarta Sans', 'Anek Bangla', sans-serif;
             color: var(--body);
             background: var(--bg);
             overflow-x: hidden;
@@ -61,7 +61,7 @@
         }
 
         body.lang-bn {
-            font-family: 'Hind Siliguri', 'Nunito', sans-serif;
+            font-family: 'Anek Bangla', 'Plus Jakarta Sans', sans-serif;
         }
 
         /* ── Topbar ── */
@@ -791,7 +791,7 @@
             border: 1px solid rgba(255, 255, 255, .15);
             border-radius: 20px;
             padding: 28px;
-            font-family: 'Hind Siliguri', sans-serif;
+            font-family: 'Anek Bangla', sans-serif;
         }
 
         .bangla-word {
@@ -805,7 +805,7 @@
             font-size: 1rem;
             color: rgba(255, 255, 255, .6);
             margin-bottom: 16px;
-            font-family: 'Nunito', sans-serif;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
         .bangla-def-label {
@@ -839,7 +839,7 @@
             padding: 3px 10px;
             font-size: .78rem;
             color: rgba(255, 255, 255, .7);
-            font-family: 'Nunito', sans-serif;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
         .bangla-perks {
@@ -1102,7 +1102,7 @@
             background: #F9FAFB;
             color: var(--muted);
             transition: all .2s;
-            font-family: 'Nunito', sans-serif;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
         .form-tab.active {
@@ -1137,7 +1137,7 @@
             border-radius: 10px;
             padding: 13px 14px;
             font-size: .95rem;
-            font-family: 'Nunito', sans-serif;
+            font-family: 'Plus Jakarta Sans', sans-serif;
             outline: none;
             transition: border-color .2s;
             color: var(--dark);
@@ -1171,7 +1171,7 @@
             cursor: pointer;
             text-align: center;
             transition: all .2s;
-            font-family: 'Nunito', sans-serif;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
         .goal-chip.active,
@@ -1188,7 +1188,7 @@
             background: var(--red);
             color: #fff;
             border: none;
-            font-family: 'Nunito', sans-serif;
+            font-family: 'Plus Jakarta Sans', sans-serif;
             font-size: 1rem;
             font-weight: 900;
             cursor: pointer;
@@ -1257,7 +1257,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-family: 'Nunito', sans-serif;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
         .faq-icon {

@@ -11,6 +11,7 @@ import {
     CardDescription,
 } from "@/Components/ui/card";
 import { User, Lock, AlertTriangle, Users } from "lucide-react";
+import { useTranslation } from "@/Contexts/LanguageContext";
 
 export default function Edit({
     mustVerifyEmail,
@@ -18,9 +19,11 @@ export default function Edit({
     followerCount,
     followingCount,
 }) {
+    const { t } = useTranslation();
+
     return (
         <AppLayout>
-            <Head title="Profile" />
+            <Head title={t("profile_edit.title")} />
 
             <div className="py-6 sm:py-12">
                 <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 space-y-6">
@@ -35,7 +38,7 @@ export default function Edit({
                                     <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                                     <div>
                                         <p className="text-sm text-gray-500 dark:text-slate-400">
-                                            Followers
+                                            {t("profile_edit.followers")}
                                         </p>
                                         <p className="text-2xl font-bold text-gray-900 dark:text-white">
                                             {followerCount}
@@ -54,7 +57,7 @@ export default function Edit({
                                     <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                                     <div>
                                         <p className="text-sm text-gray-500 dark:text-slate-400">
-                                            Following
+                                            {t("profile_edit.following")}
                                         </p>
                                         <p className="text-2xl font-bold text-gray-900 dark:text-white">
                                             {followingCount}
@@ -76,11 +79,10 @@ export default function Edit({
                                     </div>
                                     <div>
                                         <CardTitle className="text-lg sm:text-xl dark:text-white">
-                                            Profile Information
+                                            {t("profile_edit.profile_info_title")}
                                         </CardTitle>
                                         <CardDescription className="text-sm mt-1 dark:text-slate-400">
-                                            Update your account's profile
-                                            information and email address
+                                            {t("profile_edit.profile_info_desc")}
                                         </CardDescription>
                                     </div>
                                 </div>
@@ -103,11 +105,10 @@ export default function Edit({
                                     </div>
                                     <div>
                                         <CardTitle className="text-lg sm:text-xl dark:text-white">
-                                            Update Password
+                                            {t("profile_edit.password_title")}
                                         </CardTitle>
                                         <CardDescription className="text-sm mt-1 dark:text-slate-400">
-                                            Ensure your account is using a
-                                            strong password
+                                            {t("profile_edit.password_desc")}
                                         </CardDescription>
                                     </div>
                                 </div>
@@ -126,11 +127,10 @@ export default function Edit({
                                     </div>
                                     <div>
                                         <CardTitle className="text-lg sm:text-xl text-red-900 dark:text-red-200">
-                                            Delete Account
+                                            {t("profile_edit.delete_account_title")}
                                         </CardTitle>
                                         <CardDescription className="text-sm mt-1 text-red-700 dark:text-red-300">
-                                            Permanently delete your account and
-                                            all data
+                                            {t("profile_edit.delete_account_desc")}
                                         </CardDescription>
                                     </div>
                                 </div>

@@ -40,13 +40,21 @@ class QuizController extends Controller
             ->where('box', '>=', WordProgress::MASTERED_BOX)
             ->get()
             ->map(function ($progress) {
-                $interactions = $progress->correct_count + $progress->incorrect_count;
-                $days = $progress->last_reviewed_at ? now()->diffInDays($progress->last_reviewed_at) : 365;
-                $progress->priority_score = $interactions * $days;
+                $progress->interactions = $progress->correct_count + $progress->incorrect_count;
+                $progress->days = $progress->last_reviewed_at ? now()->diffInDays($progress->last_reviewed_at) : 365;
 
                 return $progress;
             })
-            ->sortByDesc('priority_score');
+            ->sort(function ($a, $b) {
+                if ($a->days != $b->days) {
+                    return $b->days <=> $a->days;
+                }
+                if ($a->incorrect_count != $b->incorrect_count) {
+                    return $b->incorrect_count <=> $a->incorrect_count;
+                }
+
+                return $b->interactions <=> $a->interactions;
+            });
 
         $words = $progresses->pluck('word')->values();
         $masteredWordIds = $progresses->pluck('word_id')->toArray();
@@ -381,6 +389,8 @@ class QuizController extends Controller
             'wordlist_id' => ['sometimes', 'nullable', 'integer', 'exists:wordlists,id'],
             'correct_count' => ['sometimes', 'integer', 'min:0'],
             'total_questions' => ['sometimes', 'integer', 'min:1'],
+            'word_ids' => ['sometimes', 'array'],
+            'word_ids.*' => ['integer', 'exists:words,id'],
         ]);
 
         $passed = false;
@@ -427,6 +437,13 @@ class QuizController extends Controller
                     ? now()->addDay()->startOfDay()
                     : null,
             ]);
+        }
+
+        // Update last_reviewed_at for all words included in the test
+        if (!empty($data['word_ids'])) {
+            WordProgress::where('user_id', Auth::id())
+                ->whereIn('word_id', $data['word_ids'])
+                ->update(['last_reviewed_at' => now()]);
         }
 
         $wasActiveToday = $request->user()->streak?->last_activity_date?->isToday() ?? false;

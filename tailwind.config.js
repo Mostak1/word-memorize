@@ -15,11 +15,12 @@ export default {
     	extend: {
     		fontFamily: {
     			sans: [
-    				'Nunito',
+    				'Plus Jakarta Sans',
+                    'Anek Bangla',
                     ...defaultTheme.fontFamily.sans
                 ],
-                hind: [
-                    'Hind Siliguri',
+                bengali: [
+                    'Anek Bangla',
                     ...defaultTheme.fontFamily.sans
                 ]
     		},

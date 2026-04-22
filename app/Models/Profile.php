@@ -65,7 +65,7 @@ class Profile extends Model
       return null;
     if (str_starts_with($this->profile_image, 'http'))
       return $this->profile_image;
-    return asset('storage' . $this->profile_image);
+    return asset('storage/' . ltrim($this->profile_image, '/'));
   }
 
   public function getCoverImageFullAttribute(): ?string
@@ -74,7 +74,7 @@ class Profile extends Model
       return null;
     if (str_starts_with($this->cover_image, 'http'))
       return $this->cover_image;
-    return asset('storage' . $this->cover_image);
+    return asset('storage/' . ltrim($this->cover_image, '/'));
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────

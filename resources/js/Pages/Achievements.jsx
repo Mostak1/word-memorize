@@ -1,7 +1,7 @@
 import AppLayout from "@/Layouts/AppLayout";
 import { Head } from "@inertiajs/react";
 import { useState, useEffect } from "react";
-import { Trophy, Target, Flame, Coins, Sunrise, Award } from "lucide-react";
+import { Trophy, Target, Flame, Coins, Sunrise, Award, BookOpen, Clock, Moon, GraduationCap, Calendar } from "lucide-react";
 import { useTranslation } from "@/Contexts/LanguageContext";
 import { BadgeSVG } from "@/Components/AchievementBadges";
 
@@ -47,6 +47,16 @@ function AchievementCard({ achievement, earned, progress, earnedAt }) {
                 return <Sunrise className="w-5 h-5" />;
             case "perfect":
                 return <Target className="w-5 h-5" />;
+            case "words":
+                return <BookOpen className="w-5 h-5" />;
+            case "sessions":
+                return <Clock className="w-5 h-5" />;
+            case "night":
+                return <Moon className="w-5 h-5" />;
+            case "mastery":
+                return <GraduationCap className="w-5 h-5" />;
+            case "dedication":
+                return <Calendar className="w-5 h-5" />;
             default:
                 return <Award className="w-5 h-5" />;
         }

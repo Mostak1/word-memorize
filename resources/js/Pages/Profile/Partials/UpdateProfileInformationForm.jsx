@@ -11,6 +11,7 @@ import {
 } from "@/Components/ui/select";
 import { Transition } from "@headlessui/react";
 import { Link, useForm, usePage } from "@inertiajs/react";
+import { useTranslation } from "@/Contexts/LanguageContext";
 
 export default function UpdateProfileInformation({
     mustVerifyEmail,
@@ -18,6 +19,7 @@ export default function UpdateProfileInformation({
     className = "",
 }) {
     const user = usePage().props.auth.user;
+    const { t } = useTranslation();
 
     const { data, setData, patch, errors, processing, recentlySuccessful } =
         useForm({
@@ -38,17 +40,17 @@ export default function UpdateProfileInformation({
         <section className={className}>
             <header>
                 <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-                    Profile Information
+                    {t("profile_edit.profile_info_title")}
                 </h2>
                 <p className="mt-1 text-sm text-gray-600 dark:text-slate-400">
-                    Update your account's profile information and email address.
+                    {t("profile_edit.profile_info_desc")}
                 </p>
             </header>
 
             <form onSubmit={submit} className="mt-6 space-y-6">
                 {/* Name */}
                 <div>
-                    <InputLabel htmlFor="name" value="Name" />
+                    <InputLabel htmlFor="name" value={t("profile_edit.name")} />
                     <TextInput
                         id="name"
                         className="mt-1 block w-full dark:bg-slate-900 dark:border-slate-700 dark:text-gray-100"
@@ -63,7 +65,7 @@ export default function UpdateProfileInformation({
 
                 {/* Email */}
                 <div>
-                    <InputLabel htmlFor="email" value="Email" />
+                    <InputLabel htmlFor="email" value={t("profile_edit.email")} />
                     <TextInput
                         id="email"
                         type="email"
@@ -78,7 +80,7 @@ export default function UpdateProfileInformation({
 
                 {/* Phone Number */}
                 <div>
-                    <InputLabel htmlFor="phone_number" value="Phone Number" />
+                    <InputLabel htmlFor="phone_number" value={t("profile_edit.phone_number")} />
                     <TextInput
                         id="phone_number"
                         type="tel"
@@ -88,7 +90,7 @@ export default function UpdateProfileInformation({
                             setData("phone_number", e.target.value)
                         }
                         autoComplete="tel"
-                        placeholder="e.g. 01XXXXXXXXX"
+                        placeholder={t("profile_edit.phone_placeholder")}
                     />
                     <InputError
                         className="mt-2"
@@ -98,13 +100,13 @@ export default function UpdateProfileInformation({
 
                 {/* Location */}
                 <div>
-                    <InputLabel htmlFor="location" value="Location" />
+                    <InputLabel htmlFor="location" value={t("profile_edit.location")} />
                     <TextInput
                         id="location"
                         className="mt-1 block w-full dark:bg-slate-900 dark:border-slate-700 dark:text-gray-100"
                         value={data.location}
                         onChange={(e) => setData("location", e.target.value)}
-                        placeholder="e.g. Dhaka, Bangladesh"
+                        placeholder={t("profile_edit.location_placeholder")}
                     />
                     <InputError className="mt-2" message={errors.location} />
                 </div>
@@ -113,7 +115,7 @@ export default function UpdateProfileInformation({
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                     {/* Gender */}
                     <div>
-                        <InputLabel htmlFor="gender" value="Gender" />
+                        <InputLabel htmlFor="gender" value={t("profile_edit.gender")} />
                         <Select
                             value={data.gender}
                             onValueChange={(val) => setData("gender", val)}
@@ -122,15 +124,21 @@ export default function UpdateProfileInformation({
                                 id="gender"
                                 className="mt-1 w-full dark:bg-slate-900 dark:border-slate-700 dark:text-gray-100"
                             >
-                                <SelectValue placeholder="Select gender" />
+                                <SelectValue placeholder={t("profile_edit.gender_placeholder")} />
                             </SelectTrigger>
                             <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
                                 <SelectItem value="prefer_not_to_say">
-                                    Prefer not to say
+                                    {t("profile_edit.gender_options.prefer_not_to_say")}
                                 </SelectItem>
-                                <SelectItem value="male">Male</SelectItem>
-                                <SelectItem value="female">Female</SelectItem>
-                                <SelectItem value="other">Other</SelectItem>
+                                <SelectItem value="male">
+                                    {t("profile_edit.gender_options.male")}
+                                </SelectItem>
+                                <SelectItem value="female">
+                                    {t("profile_edit.gender_options.female")}
+                                </SelectItem>
+                                <SelectItem value="other">
+                                    {t("profile_edit.gender_options.other")}
+                                </SelectItem>
                             </SelectContent>
                         </Select>
                         <InputError className="mt-2" message={errors.gender} />
@@ -138,7 +146,7 @@ export default function UpdateProfileInformation({
 
                     {/* Profession */}
                     <div>
-                        <InputLabel htmlFor="profession" value="Profession" />
+                        <InputLabel htmlFor="profession" value={t("profile_edit.profession")} />
                         <Select
                             value={data.profession}
                             onValueChange={(val) => setData("profession", val)}
@@ -147,15 +155,17 @@ export default function UpdateProfileInformation({
                                 id="profession"
                                 className="mt-1 w-full dark:bg-slate-900 dark:border-slate-700 dark:text-gray-100"
                             >
-                                <SelectValue placeholder="Select profession" />
+                                <SelectValue placeholder={t("profile_edit.profession_placeholder")} />
                             </SelectTrigger>
                             <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
-                                <SelectItem value="Student">Student</SelectItem>
+                                <SelectItem value="Student">
+                                    {t("profile_edit.profession_options.student")}
+                                </SelectItem>
                                 <SelectItem value="Job Holder">
-                                    Job Holder
+                                    {t("profile_edit.profession_options.job_holder")}
                                 </SelectItem>
                                 <SelectItem value="Housewife">
-                                    Housewife
+                                    {t("profile_edit.profession_options.housewife")}
                                 </SelectItem>
                             </SelectContent>
                         </Select>
@@ -170,28 +180,27 @@ export default function UpdateProfileInformation({
                 {mustVerifyEmail && user.email_verified_at === null && (
                     <div>
                         <p className="mt-2 text-sm text-gray-800 dark:text-gray-200">
-                            Your email address is unverified.{" "}
+                            {t("profile_edit.unverified_email")}{" "}
                             <Link
                                 href={route("verification.send")}
                                 method="post"
                                 as="button"
                                 className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:text-gray-400 dark:hover:text-gray-100"
                             >
-                                Click here to re-send the verification email.
+                                {t("profile_edit.resend_verification")}
                             </Link>
                         </p>
 
                         {status === "verification-link-sent" && (
                             <div className="mt-2 text-sm font-medium text-green-600 dark:text-green-400">
-                                A new verification link has been sent to your
-                                email address.
+                                {t("profile_edit.verification_link_sent")}
                             </div>
                         )}
                     </div>
                 )}
 
                 <div className="flex items-center gap-4">
-                    <PrimaryButton disabled={processing}>Save</PrimaryButton>
+                    <PrimaryButton disabled={processing}>{t("profile_edit.save")}</PrimaryButton>
 
                     <Transition
                         show={recentlySuccessful}
@@ -201,7 +210,7 @@ export default function UpdateProfileInformation({
                         leaveTo="opacity-0"
                     >
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                            Saved.
+                            {t("profile_edit.saved")}
                         </p>
                     </Transition>
                 </div>
@@ -209,3 +218,4 @@ export default function UpdateProfileInformation({
         </section>
     );
 }
+

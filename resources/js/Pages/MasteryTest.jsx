@@ -527,13 +527,21 @@ export default function MasteryTest({
     const handleNext = async () => {
         if (current + 1 >= total) {
             try {
-                const body = wordlistId
-                    ? {
-                          wordlist_id: wordlistId,
-                          correct_count: score,
-                          total_questions: total,
-                      }
-                    : {};
+                const wordIds = questions
+                    .flatMap((q) => {
+                        if (q.type === "match_pairs") {
+                            return q.pairs.map((p) => p.id);
+                        }
+                        return [q.id];
+                    })
+                    .filter((id) => !!id);
+
+                const body = {
+                    correct_count: score,
+                    total_questions: total,
+                    word_ids: wordIds,
+                    ...(wordlistId ? { wordlist_id: wordlistId } : {}),
+                };
                 const csrfToken = document.cookie
                     .split("; ")
                     .find((r) => r.startsWith("XSRF-TOKEN="))
@@ -874,7 +882,7 @@ export default function MasteryTest({
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            <button
+                            {/* <button
                                 onClick={() => {
                                     setStreakCount(5);
                                     setShowStreakEffect(true);
@@ -882,7 +890,7 @@ export default function MasteryTest({
                                 className="shrink-0 text-[10px] font-bold text-orange-500 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900/50 rounded-full px-2 py-0.5 shadow-sm hover:scale-105 active:scale-95 transition-all"
                             >
                                 Test Streak
-                            </button>
+                            </button> */}
                             <span className="text-xs font-bold text-gray-400 dark:text-gray-500 tabular-nums shrink-0">
                                 {current + 1} / {total}
                             </span>

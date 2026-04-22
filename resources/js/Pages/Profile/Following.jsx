@@ -1,15 +1,18 @@
 import AppLayout from "@/Layouts/AppLayout";
 import { Head, Link } from "@inertiajs/react";
 import { Users, ArrowLeft } from "lucide-react";
+import { useTranslation } from "@/Contexts/LanguageContext";
 
 export default function Following({
     following,
     followerCount,
     followingCount,
 }) {
+    const { t } = useTranslation();
+
     return (
         <AppLayout>
-            <Head title="Following" />
+            <Head title={t("profile_edit.following")} />
 
             <div className="py-6 sm:py-12">
                 <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
@@ -18,7 +21,7 @@ export default function Following({
                             href={route("profile.edit")}
                             className="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
                         >
-                            <ArrowLeft className="h-4 w-4" /> Back to Profile
+                            <ArrowLeft className="h-4 w-4" /> {t("profile_edit.back_to_profile")}
                         </Link>
                     </div>
 
@@ -33,7 +36,7 @@ export default function Following({
                                     <Users className="h-5 w-5 text-blue-600" />
                                     <div>
                                         <p className="text-sm text-gray-500 dark:text-gray-400">
-                                            Followers
+                                            {t("profile_edit.followers")}
                                         </p>
                                         <p className="text-2xl font-bold text-gray-900 dark:text-white">
                                             {followerCount}
@@ -48,7 +51,7 @@ export default function Following({
                                 <Users className="h-5 w-5 text-purple-600" />
                                 <div>
                                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                                        Following
+                                        {t("profile_edit.following")}
                                     </p>
                                     <p className="text-2xl font-bold text-gray-900 dark:text-white">
                                         {followingCount}
@@ -61,7 +64,7 @@ export default function Following({
                     {/* Following List */}
                     <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm p-6">
                         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-                            You are Following
+                            {t("profile_edit.you_are_following")}
                         </h1>
 
                         {following.data.length > 0 ? (
@@ -109,7 +112,7 @@ export default function Following({
                             <div className="text-center py-12">
                                 <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                                 <p className="text-gray-500 dark:text-gray-400">
-                                    You are not following anyone yet
+                                    {t("profile_edit.not_following_yet")}
                                 </p>
                             </div>
                         )}

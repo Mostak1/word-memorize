@@ -108,7 +108,7 @@ export default function ImageUploadCard({
                 <input
                     ref={fileRef}
                     type="file"
-                    accept="image/*"
+                    accept="image/*,.webp"
                     className="hidden"
                     onChange={handleFileChange}
                 />

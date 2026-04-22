@@ -86,6 +86,137 @@ const BADGES = [
         tier: 3,
         desc: "50 perfect lessons",
     },
+    // Words Mastered
+    {
+        key: "words_seedling",
+        name: "Seedling",
+        category: "words",
+        tier: 1,
+        desc: "10 words mastered",
+    },
+    {
+        key: "words_bloom",
+        name: "Bloom",
+        category: "words",
+        tier: 2,
+        desc: "50 words mastered",
+    },
+    {
+        key: "words_scholar",
+        name: "Word Scholar",
+        category: "words",
+        tier: 3,
+        desc: "200 words mastered",
+    },
+    {
+        key: "words_lexicon",
+        name: "Lexicon",
+        category: "words",
+        tier: 4,
+        desc: "500 words mastered",
+    },
+    {
+        key: "words_polymath",
+        name: "Polymath",
+        category: "words",
+        tier: 5,
+        desc: "1,000 words mastered",
+    },
+    // Sessions
+    {
+        key: "sessions_rookie",
+        name: "Rookie",
+        category: "sessions",
+        tier: 1,
+        desc: "First session",
+    },
+    {
+        key: "sessions_veteran",
+        name: "Veteran",
+        category: "sessions",
+        tier: 2,
+        desc: "50 sessions",
+    },
+    {
+        key: "sessions_legend",
+        name: "Legend",
+        category: "sessions",
+        tier: 3,
+        desc: "200 sessions",
+    },
+    // Night
+    {
+        key: "night_owl",
+        name: "Night Owl",
+        category: "night",
+        tier: 1,
+        desc: "XP after 10 PM",
+    },
+    // Mastery Tests
+    {
+        key: "mastery_initiate",
+        name: "Initiate",
+        category: "mastery",
+        tier: 1,
+        desc: "1 mastery test passed",
+    },
+    {
+        key: "mastery_veteran",
+        name: "Mastery Veteran",
+        category: "mastery",
+        tier: 2,
+        desc: "10 mastery tests",
+    },
+    {
+        key: "mastery_champion",
+        name: "Champion",
+        category: "mastery",
+        tier: 3,
+        desc: "25 mastery tests",
+    },
+    {
+        key: "mastery_flawless",
+        name: "Flawless",
+        category: "mastery",
+        tier: 1,
+        desc: "100% on mastery test",
+    },
+    // Dedication
+    {
+        key: "dedication_weekend_warrior",
+        name: "Weekend Warrior",
+        category: "dedication",
+        tier: 1,
+        desc: "Study both weekend days",
+    },
+    {
+        key: "dedication_comeback_kid",
+        name: "Comeback Kid",
+        category: "dedication",
+        tier: 1,
+        desc: "Return after 7-day break",
+    },
+    {
+        key: "dedication_30_days",
+        name: "Monthly Devotee",
+        category: "dedication",
+        tier: 2,
+        desc: "30 unique study days",
+    },
+    {
+        key: "dedication_100_days",
+        name: "Century Club",
+        category: "dedication",
+        tier: 3,
+        desc: "100 unique study days",
+    },
+    {
+        key: "dedication_list_finisher",
+        name: "List Finisher",
+        category: "dedication",
+        tier: 2,
+        desc: "Complete a word list",
+    },
 ];
 
 // ─── Tier Palettes (enhanced with gradient data) ─────────────────────────────
@@ -154,6 +285,11 @@ const CATS = {
     xp: { color: "#38BFFF", name: "XP" },
     morning: { color: "#FFC107", name: "Explorer" },
     perfect: { color: "#FF4757", name: "Perfect" },
+    words: { color: "#4ADE80", name: "Words" },
+    sessions: { color: "#38BDF8", name: "Sessions" },
+    night: { color: "#818CF8", name: "Night" },
+    mastery: { color: "#FBBF24", name: "Mastery" },
+    dedication: { color: "#FB923C", name: "Dedication" },
 };
 
 // ─── Hex Geometry ────────────────────────────────────────────────────────────
@@ -332,11 +468,961 @@ const TargetIcon = ({ c }) => (
     </g>
 );
 
+// ── Streak: Two Flames (Silver) ──────────────────────────────────────────────
+const TwoFlameIcon = ({ c }) => (
+    <g>
+        {[
+            [-7, 1],
+            [7, 1],
+        ].map(([tx, ty], i) => (
+            <g key={i} transform={`translate(${tx},${ty}) scale(0.63)`}>
+                <path
+                    d="M0-14 C2-9 10-3 8 5 C12 1 11-6 9-11 C14-1 14 7 9 13 C12 11 11 7 9 8 C11 14 6 18 0 18 C-6 18-11 14-9 8 C-11 7-12 11-9 13 C-14 7-14-1-9-11 C-11-6-12 1-8 5 C-10-3 0-14 0-14Z"
+                    fill={c}
+                />
+                <path
+                    d="M0-3 C1.2 0 5.5 4 4.5 8.5 C6.5 6.5 6.5 2 4.5 0 C5.5 3.5 5.5 8.5 3.5 10.5 C1.5 11.5-1.5 11.5-3.5 10.5 C-5.5 8.5-5.5 3.5-4.5 0 C-6.5 2-6.5 6.5-4.5 8.5 C-3.5 4 0-3 0-3Z"
+                    fill="rgba(255,240,160,0.80)"
+                />
+            </g>
+        ))}
+    </g>
+);
+
+// ── Streak: Three Flames (Gold) ───────────────────────────────────────────────
+// Centre flame taller, flanking ones smaller & offset down
+const ThreeFlameIcon = ({ c }) => (
+    <g>
+        {/* Left flame – smaller, slightly lower */}
+        <g transform="translate(-9,3) scale(0.52)">
+            <path
+                d="M0-14 C2-9 10-3 8 5 C12 1 11-6 9-11 C14-1 14 7 9 13 C12 11 11 7 9 8 C11 14 6 18 0 18 C-6 18-11 14-9 8 C-11 7-12 11-9 13 C-14 7-14-1-9-11 C-11-6-12 1-8 5 C-10-3 0-14 0-14Z"
+                fill={c}
+                opacity="0.85"
+            />
+            <path
+                d="M0-3 C1.2 0 5.5 4 4.5 8.5 C6.5 6.5 6.5 2 4.5 0 C5.5 3.5 5.5 8.5 3.5 10.5 C1.5 11.5-1.5 11.5-3.5 10.5 C-5.5 8.5-5.5 3.5-4.5 0 C-6.5 2-6.5 6.5-4.5 8.5 C-3.5 4 0-3 0-3Z"
+                fill="rgba(255,240,160,0.70)"
+            />
+        </g>
+        {/* Centre flame – tallest */}
+        <g transform="translate(0,-1) scale(0.65)">
+            <path
+                d="M0-14 C2-9 10-3 8 5 C12 1 11-6 9-11 C14-1 14 7 9 13 C12 11 11 7 9 8 C11 14 6 18 0 18 C-6 18-11 14-9 8 C-11 7-12 11-9 13 C-14 7-14-1-9-11 C-11-6-12 1-8 5 C-10-3 0-14 0-14Z"
+                fill={c}
+            />
+            <path
+                d="M0-3 C1.2 0 5.5 4 4.5 8.5 C6.5 6.5 6.5 2 4.5 0 C5.5 3.5 5.5 8.5 3.5 10.5 C1.5 11.5-1.5 11.5-3.5 10.5 C-5.5 8.5-5.5 3.5-4.5 0 C-6.5 2-6.5 6.5-4.5 8.5 C-3.5 4 0-3 0-3Z"
+                fill="rgba(255,240,160,0.80)"
+            />
+            <ellipse
+                cx="0"
+                cy="-6"
+                rx="1.5"
+                ry="3"
+                fill="rgba(255,255,220,0.5)"
+            />
+        </g>
+        {/* Right flame – smaller, slightly lower */}
+        <g transform="translate(9,3) scale(0.52)">
+            <path
+                d="M0-14 C2-9 10-3 8 5 C12 1 11-6 9-11 C14-1 14 7 9 13 C12 11 11 7 9 8 C11 14 6 18 0 18 C-6 18-11 14-9 8 C-11 7-12 11-9 13 C-14 7-14-1-9-11 C-11-6-12 1-8 5 C-10-3 0-14 0-14Z"
+                fill={c}
+                opacity="0.85"
+            />
+            <path
+                d="M0-3 C1.2 0 5.5 4 4.5 8.5 C6.5 6.5 6.5 2 4.5 0 C5.5 3.5 5.5 8.5 3.5 10.5 C1.5 11.5-1.5 11.5-3.5 10.5 C-5.5 8.5-5.5 3.5-4.5 0 C-6.5 2-6.5 6.5-4.5 8.5 C-3.5 4 0-3 0-3Z"
+                fill="rgba(255,240,160,0.70)"
+            />
+        </g>
+    </g>
+);
+
+// ── Streak: Four Flames in 2×2 grid (Platinum) ───────────────────────────────
+const FourFlameIcon = ({ c }) => (
+    <g>
+        {[
+            [-7, -7],
+            [7, -7],
+            [-7, 7],
+            [7, 7],
+        ].map(([tx, ty], i) => (
+            <g key={i} transform={`translate(${tx},${ty}) scale(0.49)`}>
+                <path
+                    d="M0-14 C2-9 10-3 8 5 C12 1 11-6 9-11 C14-1 14 7 9 13 C12 11 11 7 9 8 C11 14 6 18 0 18 C-6 18-11 14-9 8 C-11 7-12 11-9 13 C-14 7-14-1-9-11 C-11-6-12 1-8 5 C-10-3 0-14 0-14Z"
+                    fill={c}
+                    opacity={i >= 2 ? 0.78 : 1}
+                />
+                <path
+                    d="M0-3 C1.2 0 5.5 4 4.5 8.5 C6.5 6.5 6.5 2 4.5 0 C5.5 3.5 5.5 8.5 3.5 10.5 C1.5 11.5-1.5 11.5-3.5 10.5 C-5.5 8.5-5.5 3.5-4.5 0 C-6.5 2-6.5 6.5-4.5 8.5 C-3.5 4 0-3 0-3Z"
+                    fill="rgba(255,240,160,0.75)"
+                />
+            </g>
+        ))}
+        {/* Central glint */}
+        <circle cx="0" cy="0" r="2.5" fill="rgba(255,220,120,0.55)" />
+    </g>
+);
+
+// ── Streak: Crown-of-Flames (Diamond) ────────────────────────────────────────
+// Large central inferno + 4 satellite micro-flames arranged in an arc
+const DiamondFlameIcon = ({ c }) => (
+    <g>
+        {/* Orbital micro-flames */}
+        {[
+            [-12, 4, -18],
+            [12, 4, 18],
+            [-7, -10, -10],
+            [7, -10, 10],
+        ].map(([tx, ty, rot], i) => (
+            <g
+                key={i}
+                transform={`translate(${tx},${ty}) rotate(${rot}) scale(0.35)`}
+                opacity="0.75"
+            >
+                <path
+                    d="M0-14 C2-9 10-3 8 5 C12 1 11-6 9-11 C14-1 14 7 9 13 C12 11 11 7 9 8 C11 14 6 18 0 18 C-6 18-11 14-9 8 C-11 7-12 11-9 13 C-14 7-14-1-9-11 C-11-6-12 1-8 5 C-10-3 0-14 0-14Z"
+                    fill={c}
+                />
+                <path
+                    d="M0-3 C1.2 0 5.5 4 4.5 8.5 C6.5 6.5 6.5 2 4.5 0 C5.5 3.5 5.5 8.5 3.5 10.5 C1.5 11.5-1.5 11.5-3.5 10.5 C-5.5 8.5-5.5 3.5-4.5 0 C-6.5 2-6.5 6.5-4.5 8.5 C-3.5 4 0-3 0-3Z"
+                    fill="rgba(255,240,160,0.80)"
+                />
+            </g>
+        ))}
+        {/* Large central flame */}
+        <g transform="translate(0,1) scale(0.78)">
+            <path
+                d="M0-14 C2-9 10-3 8 5 C12 1 11-6 9-11 C14-1 14 7 9 13 C12 11 11 7 9 8 C11 14 6 18 0 18 C-6 18-11 14-9 8 C-11 7-12 11-9 13 C-14 7-14-1-9-11 C-11-6-12 1-8 5 C-10-3 0-14 0-14Z"
+                fill={c}
+            />
+            <path
+                d="M0-3 C1.2 0 5.5 4 4.5 8.5 C6.5 6.5 6.5 2 4.5 0 C5.5 3.5 5.5 8.5 3.5 10.5 C1.5 11.5-1.5 11.5-3.5 10.5 C-5.5 8.5-5.5 3.5-4.5 0 C-6.5 2-6.5 6.5-4.5 8.5 C-3.5 4 0-3 0-3Z"
+                fill="rgba(255,240,160,0.85)"
+            />
+            <ellipse
+                cx="0"
+                cy="-6"
+                rx="1.8"
+                ry="3.5"
+                fill="rgba(255,255,220,0.6)"
+            />
+        </g>
+    </g>
+);
+
+// ── XP: Two Bolts (Scholar) ───────────────────────────────────────────────────
+const TwoLightningIcon = ({ c }) => (
+    <g>
+        {[
+            [-7, 0],
+            [7, 0],
+        ].map(([tx, ty], i) => (
+            <g key={i} transform={`translate(${tx},${ty}) scale(0.65)`}>
+                <path
+                    d="M5-14 L-7 2 L2 2 L-5 14 L11 0 L2 0 Z"
+                    fill="rgba(0,0,0,0.35)"
+                    transform="translate(1.5,1.5)"
+                />
+                <path d="M5-14 L-7 2 L2 2 L-5 14 L11 0 L2 0 Z" fill={c} />
+                <path
+                    d="M5-14 L-7 2 L-2 2"
+                    fill="none"
+                    stroke="rgba(255,255,255,0.6)"
+                    strokeWidth="1.3"
+                    strokeLinecap="round"
+                />
+                <circle cx="3" cy="-11" r="1.5" fill="rgba(255,255,255,0.35)" />
+            </g>
+        ))}
+    </g>
+);
+
+// ── XP: Three Bolts in fan (Wizard) ──────────────────────────────────────────
+// Left & right bolts are slightly rotated outward; centre bolt is full-size
+const ThreeLightningIcon = ({ c }) => (
+    <g>
+        {/* Left bolt – rotated outward */}
+        <g transform="translate(-9,0) rotate(-14) scale(0.56)">
+            <path
+                d="M5-14 L-7 2 L2 2 L-5 14 L11 0 L2 0 Z"
+                fill="rgba(0,0,0,0.30)"
+                transform="translate(1.5,1.5)"
+            />
+            <path
+                d="M5-14 L-7 2 L2 2 L-5 14 L11 0 L2 0 Z"
+                fill={c}
+                opacity="0.85"
+            />
+        </g>
+        {/* Centre bolt – upright & largest */}
+        <g transform="translate(0,0) scale(0.68)">
+            <path
+                d="M5-14 L-7 2 L2 2 L-5 14 L11 0 L2 0 Z"
+                fill="rgba(0,0,0,0.35)"
+                transform="translate(1.5,1.5)"
+            />
+            <path d="M5-14 L-7 2 L2 2 L-5 14 L11 0 L2 0 Z" fill={c} />
+            <path
+                d="M5-14 L-7 2 L-2 2"
+                fill="none"
+                stroke="rgba(255,255,255,0.6)"
+                strokeWidth="1.3"
+                strokeLinecap="round"
+            />
+            <circle cx="3" cy="-11" r="1.5" fill="rgba(255,255,255,0.45)" />
+        </g>
+        {/* Right bolt – rotated outward */}
+        <g transform="translate(9,0) rotate(14) scale(0.56)">
+            <path
+                d="M5-14 L-7 2 L2 2 L-5 14 L11 0 L2 0 Z"
+                fill="rgba(0,0,0,0.30)"
+                transform="translate(1.5,1.5)"
+            />
+            <path
+                d="M5-14 L-7 2 L2 2 L-5 14 L11 0 L2 0 Z"
+                fill={c}
+                opacity="0.85"
+            />
+        </g>
+    </g>
+);
+
+// ── Perfect: Target + embedded arrow (Conqueror) ──────────────────────────────
+const ConquerorTargetIcon = ({ c }) => (
+    <g>
+        <circle
+            r="14"
+            fill="none"
+            stroke={c}
+            strokeWidth="1.1"
+            opacity="0.35"
+        />
+        <circle r="10" fill="none" stroke={c} strokeWidth="1.7" />
+        <circle r="5.5" fill="none" stroke={c} strokeWidth="1.4" />
+        <circle r="2.5" fill={c} />
+        <circle r="1" fill="rgba(255,255,255,0.55)" />
+        {/* Arrow shaft from upper-right toward centre */}
+        <line
+            x1="13"
+            y1="-13"
+            x2="3.5"
+            y2="-3.5"
+            stroke={c}
+            strokeWidth="2.2"
+            strokeLinecap="round"
+        />
+        {/* Arrowhead */}
+        <polygon points="13,-13 7,-14 14,-7" fill={c} />
+        {/* Arrow nock (tail feathers) */}
+        <line
+            x1="13"
+            y1="-13"
+            x2="16"
+            y2="-16"
+            stroke={c}
+            strokeWidth="1.4"
+            strokeLinecap="round"
+        />
+        <line
+            x1="13"
+            y1="-13"
+            x2="16"
+            y2="-10"
+            stroke={c}
+            strokeWidth="1.4"
+            strokeLinecap="round"
+        />
+    </g>
+);
+
+// ── Perfect: Target + crown (Regal) ──────────────────────────────────────────
+const RegalTargetIcon = ({ c }) => (
+    <g>
+        <circle
+            r="12.5"
+            fill="none"
+            stroke={c}
+            strokeWidth="1.1"
+            opacity="0.35"
+        />
+        <circle r="8.5" fill="none" stroke={c} strokeWidth="1.7" />
+        <circle r="4.5" fill="none" stroke={c} strokeWidth="1.4" />
+        <circle r="2" fill={c} />
+        <circle r="0.85" fill="rgba(255,255,255,0.55)" />
+        {/* Crown base band */}
+        <rect
+            x="-7"
+            y="-18.5"
+            width="14"
+            height="2.5"
+            rx="0.8"
+            fill={c}
+            opacity="0.75"
+        />
+        {/* Crown points: left, centre, right */}
+        <polyline
+            points="-7,-16 -7,-23 -3.5,-19.5 0,-24 3.5,-19.5 7,-23 7,-16"
+            fill={c}
+            stroke={c}
+            strokeWidth="0.5"
+            strokeLinejoin="round"
+        />
+        {/* Crown gem highlights */}
+        <circle cx="-3.5" cy="-20.5" r="1" fill="rgba(255,255,255,0.65)" />
+        <circle cx="0" cy="-22" r="1.1" fill="rgba(255,255,255,0.75)" />
+        <circle cx="3.5" cy="-20.5" r="1" fill="rgba(255,255,255,0.65)" />
+    </g>
+);
+
+// ─── Category & per-badge Icons ───────────────────────────────────────────────
+
+// ── Words: Seedling — stem + two offset leaves ────────────────────────────────
+const SeedlingIcon = ({ c }) => (
+    <g>
+        <line
+            x1="0"
+            y1="15"
+            x2="0"
+            y2="-2"
+            stroke={c}
+            strokeWidth="2.5"
+            strokeLinecap="round"
+        />
+        {/* Left leaf */}
+        <path d="M0 3 C-10-3 -13-13 -4-15 C3-11 0 3 0 3Z" fill={c} />
+        {/* Right leaf */}
+        <path
+            d="M0-1 C10-7 13-17 4-19 C-3-15 0-1 0-1Z"
+            fill={c}
+            opacity="0.78"
+        />
+        <path
+            d="M-2 1 C-6-3 -7-9 -4-12"
+            fill="none"
+            stroke="rgba(255,255,255,0.38)"
+            strokeWidth="1"
+            strokeLinecap="round"
+        />
+    </g>
+);
+
+// ── Words: Bloom — 5-petal flower ────────────────────────────────────────────
+const BloomIcon = ({ c }) => (
+    <g>
+        {[0, 72, 144, 216, 288].map((deg, i) => (
+            <g key={i} transform={`rotate(${deg})`}>
+                <ellipse cx="0" cy="-9" rx="4" ry="7" fill={c} opacity="0.82" />
+            </g>
+        ))}
+        <circle r="5.5" fill={c} />
+        <circle r="2.2" fill="rgba(255,255,200,0.72)" />
+    </g>
+);
+
+// ── Words: Open Book (Word Scholar) ──────────────────────────────────────────
+const OpenBookIcon = ({ c }) => (
+    <g>
+        <path d="M0-11 L-14-7 L-14 13 L0 11 Z" fill={c} opacity="0.68" />
+        <path d="M0-11 L14-7 L14 13 L0 11 Z" fill={c} />
+        <line
+            x1="0"
+            y1="-11"
+            x2="0"
+            y2="11"
+            stroke="rgba(255,255,255,0.38)"
+            strokeWidth="1.5"
+        />
+        {/* Text lines on right page */}
+        {[-3, 1, 5, 9].map((y, i) => (
+            <line
+                key={i}
+                x1="3"
+                y1={y}
+                x2={i === 3 ? 10 : 13}
+                y2={y}
+                stroke="rgba(0,0,0,0.28)"
+                strokeWidth="1.3"
+            />
+        ))}
+    </g>
+);
+
+// ── Words: Stacked Books (Lexicon) ────────────────────────────────────────────
+const StackedBooksIcon = ({ c }) => (
+    <g>
+        <rect
+            x="-13"
+            y="5"
+            width="26"
+            height="9"
+            rx="1.5"
+            fill={c}
+            opacity="0.55"
+        />
+        <rect
+            x="-11"
+            y="-5"
+            width="22"
+            height="9"
+            rx="1.5"
+            fill={c}
+            opacity="0.75"
+        />
+        <rect x="-9" y="-14" width="18" height="9" rx="1.5" fill={c} />
+        {/* Spine lines */}
+        <line
+            x1="-6"
+            y1="-14"
+            x2="-6"
+            y2="-5"
+            stroke="rgba(0,0,0,0.22)"
+            strokeWidth="1.5"
+        />
+        <line
+            x1="-7"
+            y1="-5"
+            x2="-7"
+            y2="5"
+            stroke="rgba(0,0,0,0.22)"
+            strokeWidth="1.5"
+        />
+        <line
+            x1="-9"
+            y1="5"
+            x2="-9"
+            y2="14"
+            stroke="rgba(0,0,0,0.22)"
+            strokeWidth="1.5"
+        />
+        {/* Highlight on top book */}
+        <rect
+            x="-9"
+            y="-14"
+            width="18"
+            height="3"
+            rx="1.5"
+            fill="rgba(255,255,255,0.18)"
+        />
+    </g>
+);
+
+// ── Words: Book + starburst (Polymath) ────────────────────────────────────────
+const PolymathIcon = ({ c }) => (
+    <g>
+        {/* Radiating lines behind book */}
+        {[0, 45, 90, 135, 180, 225, 270, 315].map((deg, i) => (
+            <g key={i} transform={`rotate(${deg})`}>
+                <line
+                    x1="0"
+                    y1="-7"
+                    x2="0"
+                    y2={i % 2 === 0 ? -17 : -13}
+                    stroke={c}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    opacity="0.6"
+                />
+            </g>
+        ))}
+        {/* Book */}
+        <path d="M0-9 L-10-6 L-10 10 L0 9 Z" fill={c} opacity="0.7" />
+        <path d="M0-9 L10-6 L10 10 L0 9 Z" fill={c} />
+        <line
+            x1="0"
+            y1="-9"
+            x2="0"
+            y2="9"
+            stroke="rgba(255,255,255,0.32)"
+            strokeWidth="1.2"
+        />
+        <circle cx="0" cy="1" r="3" fill="rgba(255,255,200,0.5)" />
+    </g>
+);
+
+// ── Sessions: Rookie — single bold checkmark in circle ───────────────────────
+const CheckmarkIcon = ({ c }) => (
+    <g>
+        <circle r="14" fill="none" stroke={c} strokeWidth="2.2" opacity="0.5" />
+        <path
+            d="M-7 0 L-2 6.5 L8-7"
+            fill="none"
+            stroke={c}
+            strokeWidth="3.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+    </g>
+);
+
+// ── Sessions: Veteran — shield with star ─────────────────────────────────────
+const ShieldStarIcon = ({ c }) => (
+    <g>
+        <path
+            d="M0-15 L13-8 L13 4 C13 12 7 18 0 20 C-7 18-13 12-13 4 L-13-8 Z"
+            fill={c}
+            opacity="0.88"
+        />
+        {/* 5-point star */}
+        <path
+            d="M0-8 L2-2 L8-2 L3 2 L5 8 L0 4 L-5 8 L-3 2 L-8-2 L-2-2 Z"
+            fill="rgba(255,255,200,0.82)"
+        />
+        {/* Edge highlight */}
+        <path d="M0-15 L13-8 L9-6" fill="rgba(255,255,255,0.2)" />
+    </g>
+);
+
+// ── Sessions: Legend — trophy ─────────────────────────────────────────────────
+const TrophyIcon = ({ c }) => (
+    <g>
+        {/* Cup body */}
+        <path d="M-9-13 L-9 5 C-9 12 9 12 9 5 L9-13 Z" fill={c} />
+        {/* Handles */}
+        <path
+            d="M-9-5 C-17-5 -17 5 -9 5"
+            fill="none"
+            stroke={c}
+            strokeWidth="2.8"
+            strokeLinecap="round"
+        />
+        <path
+            d="M9-5 C17-5 17 5 9 5"
+            fill="none"
+            stroke={c}
+            strokeWidth="2.8"
+            strokeLinecap="round"
+        />
+        {/* Stem + base */}
+        <rect x="-3" y="12" width="6" height="5" fill={c} />
+        <rect x="-8" y="17" width="16" height="2.5" rx="1.2" fill={c} />
+        {/* Star on cup */}
+        <path
+            d="M0-6 L1.5-1 L6.5-1 L2.5 2 L4 7.5 L0 4.5 L-4 7.5 L-2.5 2 L-6.5-1 L-1.5-1 Z"
+            fill="rgba(255,255,200,0.72)"
+        />
+        {/* Cup highlight */}
+        <path d="M-9-13 L9-13 L9-8" fill="rgba(255,255,255,0.18)" />
+    </g>
+);
+
+// ── Night: Crescent moon + stars ─────────────────────────────────────────────
+const MoonIcon = ({ c }) => (
+    <g>
+        {/* Crescent: big circle minus offset circle */}
+        <path d="M6-14 A15 15 0 1 0 6 14 A11 11 0 1 1 6-14Z" fill={c} />
+        {/* Stars */}
+        {[
+            [13, -10, 1.8],
+            [15, 1, 1.2],
+            [11, 11, 1.6],
+        ].map(([x, y, r], i) => (
+            <g key={i}>
+                <circle cx={x} cy={y} r={r} fill={c} opacity="0.75" />
+                <circle
+                    cx={x}
+                    cy={y}
+                    r={r * 0.45}
+                    fill="rgba(255,255,255,0.6)"
+                />
+            </g>
+        ))}
+        {/* Moon surface glint */}
+        <ellipse
+            cx="-3"
+            cy="-8"
+            rx="2.5"
+            ry="1.2"
+            fill="rgba(255,255,255,0.22)"
+            transform="rotate(-30 -3 -8)"
+        />
+    </g>
+);
+
+// ── Mastery: Initiate — graduation cap ───────────────────────────────────────
+const GradCapIcon = ({ c }) => (
+    <g>
+        <polygon points="0,-15 17,-5 0,5 -17,-5" fill={c} />
+        <polygon points="0,-15 17,-5 8,-1" fill="rgba(255,255,255,0.18)" />
+        <rect
+            x="-8"
+            y="5"
+            width="16"
+            height="10"
+            rx="1.2"
+            fill={c}
+            opacity="0.82"
+        />
+        <line
+            x1="17"
+            y1="-5"
+            x2="17"
+            y2="7"
+            stroke={c}
+            strokeWidth="2.2"
+            strokeLinecap="round"
+        />
+        <circle cx="17" cy="9" r="2.8" fill={c} />
+    </g>
+);
+
+// ── Mastery: Veteran — cap + ribbon medal ─────────────────────────────────────
+const GradCapRibbonIcon = ({ c }) => (
+    <g>
+        <polygon points="0,-14 15,-5 0,4 -15,-5" fill={c} />
+        <rect
+            x="-7"
+            y="4"
+            width="14"
+            height="8"
+            rx="1.2"
+            fill={c}
+            opacity="0.8"
+        />
+        <line
+            x1="15"
+            y1="-5"
+            x2="15"
+            y2="5"
+            stroke={c}
+            strokeWidth="2"
+            strokeLinecap="round"
+        />
+        <circle cx="15" cy="7" r="2.5" fill={c} />
+        {/* Ribbon below cap */}
+        <path
+            d="M-6 13 L0 10 L6 13 L3 18 L0 15 L-3 18 Z"
+            fill={c}
+            opacity="0.85"
+        />
+        <circle cx="0" cy="11" r="3.5" fill={c} />
+        <circle cx="0" cy="11" r="1.8" fill="rgba(255,255,200,0.75)" />
+    </g>
+);
+
+// ── Mastery: Champion — cap + starburst crown ─────────────────────────────────
+const GradCapStarIcon = ({ c }) => (
+    <g>
+        {/* Star burst above cap */}
+        {[0, 60, 120, 180, 240, 300].map((deg, i) => (
+            <g key={i} transform={`rotate(${deg})`}>
+                <line
+                    x1="0"
+                    y1="-16"
+                    x2="0"
+                    y2={i % 2 === 0 ? -22 : -19}
+                    stroke={c}
+                    strokeWidth={i % 2 === 0 ? 2.2 : 1.4}
+                    strokeLinecap="round"
+                    opacity="0.8"
+                />
+            </g>
+        ))}
+        <circle cx="0" cy="0" r="3.5" fill={c} opacity="0.55" />
+        <polygon points="0,-12 14,-4 0,4 -14,-4" fill={c} />
+        <rect
+            x="-7"
+            y="4"
+            width="14"
+            height="9"
+            rx="1.2"
+            fill={c}
+            opacity="0.8"
+        />
+        <line
+            x1="14"
+            y1="-4"
+            x2="14"
+            y2="6"
+            stroke={c}
+            strokeWidth="2"
+            strokeLinecap="round"
+        />
+        <circle cx="14" cy="8" r="2.5" fill={c} />
+    </g>
+);
+
+// ── Mastery: Flawless — 8-pointed radiant star ────────────────────────────────
+const RadiantStarIcon = ({ c }) => (
+    <g>
+        {[0, 45, 90, 135].map((deg, i) => (
+            <g key={i} transform={`rotate(${deg})`}>
+                <line
+                    x1="0"
+                    y1="-6.5"
+                    x2="0"
+                    y2="-17"
+                    stroke={c}
+                    strokeWidth="2.8"
+                    strokeLinecap="round"
+                />
+                <line
+                    x1="0"
+                    y1="6.5"
+                    x2="0"
+                    y2="17"
+                    stroke={c}
+                    strokeWidth="2.8"
+                    strokeLinecap="round"
+                />
+            </g>
+        ))}
+        {[22.5, 67.5, 112.5, 157.5].map((deg, i) => (
+            <g key={i} transform={`rotate(${deg})`}>
+                <line
+                    x1="0"
+                    y1="-6"
+                    x2="0"
+                    y2="-13"
+                    stroke={c}
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    opacity="0.7"
+                />
+                <line
+                    x1="0"
+                    y1="6"
+                    x2="0"
+                    y2="13"
+                    stroke={c}
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    opacity="0.7"
+                />
+            </g>
+        ))}
+        <circle r="6" fill={c} />
+        <circle r="2.8" fill="rgba(255,255,220,0.82)" />
+    </g>
+);
+
+// ── Dedication: Weekend Warrior — shield with sun+moon halves ─────────────────
+const WeekendWarriorIcon = ({ c }) => (
+    <g>
+        <path
+            d="M0-15 L13-8 L13 4 C13 12 7 18 0 20 C-7 18-13 12-13 4 L-13-8 Z"
+            fill={c}
+            opacity="0.85"
+        />
+        {/* Divider line */}
+        <line
+            x1="0"
+            y1="-12"
+            x2="0"
+            y2="18"
+            stroke="rgba(255,255,255,0.25)"
+            strokeWidth="1.2"
+        />
+        {/* Sun (left half) */}
+        <circle cx="-4.5" cy="3" r="4" fill="rgba(255,220,60,0.88)" />
+        {[0, 60, 120, 180, 240, 300].map((deg, i) => (
+            <g key={i} transform={`rotate(${deg}) translate(-4.5,3)`}>
+                <line
+                    x1="0"
+                    y1="5"
+                    x2="0"
+                    y2="7.5"
+                    stroke="rgba(255,220,60,0.9)"
+                    strokeWidth="1.2"
+                    strokeLinecap="round"
+                />
+            </g>
+        ))}
+        {/* Moon (right half) */}
+        <path
+            d="M5.5-1 A5 5 0 1 0 5.5 8 A3.5 3.5 0 1 1 5.5-1Z"
+            fill="rgba(180,200,255,0.9)"
+        />
+    </g>
+);
+
+// ── Dedication: Comeback Kid — circular return arrow ─────────────────────────
+const ComebackIcon = ({ c }) => (
+    <g>
+        <path
+            d="M10-12 A14 14 0 1 0 14 3"
+            fill="none"
+            stroke={c}
+            strokeWidth="3.5"
+            strokeLinecap="round"
+        />
+        {/* Arrowhead */}
+        <polygon points="14,3 7,-4 21,0" fill={c} />
+        {/* Central spark */}
+        <circle cx="0" cy="1" r="4.5" fill={c} opacity="0.55" />
+        <circle cx="0" cy="1" r="2" fill="rgba(255,255,200,0.75)" />
+    </g>
+);
+
+// ── Dedication: Monthly Devotee — calendar with check ────────────────────────
+const CalendarIcon = ({ c }) => (
+    <g>
+        <rect
+            x="-13"
+            y="-13"
+            width="26"
+            height="26"
+            rx="2.5"
+            fill={c}
+            opacity="0.82"
+        />
+        {/* Header band */}
+        <rect x="-13" y="-13" width="26" height="7.5" rx="2.5" fill={c} />
+        {/* Binding rings */}
+        <rect x="-6" y="-16" width="2.8" height="6.5" rx="1.4" fill={c} />
+        <rect x="3.2" y="-16" width="2.8" height="6.5" rx="1.4" fill={c} />
+        {/* Day dots grid */}
+        {[
+            [-7, -2],
+            [0, -2],
+            [7, -2],
+            [-7, 4],
+            [0, 4],
+            [7, 4],
+        ].map(([x, y], i) => (
+            <circle
+                key={i}
+                cx={x}
+                cy={y}
+                r="2.2"
+                fill="rgba(255,255,255,0.58)"
+            />
+        ))}
+        {/* Checkmark across bottom row */}
+        <path
+            d="M-5 9 L-1 13 L6 6"
+            fill="none"
+            stroke="rgba(255,255,255,0.92)"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+    </g>
+);
+
+// ── Dedication: Century Club — milestone flag ─────────────────────────────────
+const MilestoneFlagIcon = ({ c }) => (
+    <g>
+        <line
+            x1="-3"
+            y1="15"
+            x2="-3"
+            y2="-14"
+            stroke={c}
+            strokeWidth="2.5"
+            strokeLinecap="round"
+        />
+        <path d="M-3-14 L16-7 L-3 0 Z" fill={c} />
+        {/* Stars on flag */}
+        <circle cx="5" cy="-10" r="1.8" fill="rgba(255,255,255,0.72)" />
+        <circle cx="11" cy="-7" r="1.2" fill="rgba(255,255,255,0.5)" />
+        <circle cx="5" cy="-4" r="1.5" fill="rgba(255,255,255,0.58)" />
+        {/* Base */}
+        <rect
+            x="-9"
+            y="13"
+            width="12"
+            height="3"
+            rx="1.5"
+            fill={c}
+            opacity="0.7"
+        />
+    </g>
+);
+
+// ── Dedication: List Finisher — checkered flag ────────────────────────────────
+const CheckeredFlagIcon = ({ c }) => {
+    const cols = 3,
+        rows = 3,
+        fw = 20,
+        fh = 15;
+    const cw = fw / cols,
+        ch = fh / rows;
+    return (
+        <g>
+            <line
+                x1="-4"
+                y1="15"
+                x2="-4"
+                y2="-14"
+                stroke={c}
+                strokeWidth="2.2"
+                strokeLinecap="round"
+            />
+            <rect
+                x="-4"
+                y="-14"
+                width={fw}
+                height={fh}
+                rx="1"
+                fill="rgba(0,0,0,0.18)"
+            />
+            {Array.from({ length: rows }).flatMap((_, r) =>
+                Array.from({ length: cols }).map((__, col) => (
+                    <rect
+                        key={`${r}-${col}`}
+                        x={-4 + col * cw}
+                        y={-14 + r * ch}
+                        width={cw}
+                        height={ch}
+                        fill={(r + col) % 2 === 0 ? c : "rgba(0,0,0,0.38)"}
+                    />
+                )),
+            )}
+            <rect
+                x="-9"
+                y="13"
+                width="12"
+                height="3"
+                rx="1.5"
+                fill={c}
+                opacity="0.7"
+            />
+        </g>
+    );
+};
 const ICONS = {
+    // Category fallbacks
     streak: FlameIcon,
     xp: LightningIcon,
     morning: SunriseIcon,
     perfect: TargetIcon,
+    words: OpenBookIcon,
+    sessions: CheckmarkIcon,
+    night: MoonIcon,
+    mastery: GradCapIcon,
+    dedication: CalendarIcon,
+    // Per-badge unique icons
+    streak_bronze: FlameIcon,
+    streak_silver: TwoFlameIcon,
+    streak_gold: ThreeFlameIcon,
+    streak_platinum: FourFlameIcon,
+    streak_diamond: DiamondFlameIcon,
+    xp_learner: LightningIcon,
+    xp_scholar: TwoLightningIcon,
+    xp_wizard: ThreeLightningIcon,
+    explorer: SunriseIcon,
+    perfect_sharpshooter: TargetIcon,
+    perfect_conqueror: ConquerorTargetIcon,
+    perfect_regal: RegalTargetIcon,
+    words_seedling: SeedlingIcon,
+    words_bloom: BloomIcon,
+    words_scholar: OpenBookIcon,
+    words_lexicon: StackedBooksIcon,
+    words_polymath: PolymathIcon,
+    sessions_rookie: CheckmarkIcon,
+    sessions_veteran: ShieldStarIcon,
+    sessions_legend: TrophyIcon,
+    night_owl: MoonIcon,
+    mastery_initiate: GradCapIcon,
+    mastery_veteran: GradCapRibbonIcon,
+    mastery_champion: GradCapStarIcon,
+    mastery_flawless: RadiantStarIcon,
+    dedication_weekend_warrior: WeekendWarriorIcon,
+    dedication_comeback_kid: ComebackIcon,
+    dedication_30_days: CalendarIcon,
+    dedication_100_days: MilestoneFlagIcon,
+    dedication_list_finisher: CheckeredFlagIcon,
 };
 
 // ─── Tier Indicators (escalating gem/star shapes) ────────────────────────────
@@ -495,6 +1581,85 @@ function CategoryBg({ category, color }) {
                     />
                 </g>
             );
+        case "words":
+            // Diagonal book-page lines
+            return (
+                <g opacity={op}>
+                    {[-8, 0, 8].map((ox, i) => (
+                        <line
+                            key={i}
+                            x1={40 + ox}
+                            y1="22"
+                            x2={40 + ox}
+                            y2="66"
+                            stroke={color}
+                            strokeWidth="9"
+                            strokeLinecap="round"
+                        />
+                    ))}
+                </g>
+            );
+        case "sessions":
+            // Large bold checkmark
+            return (
+                <g opacity={op}>
+                    <path
+                        d="M22 52 L34 64 L58 30"
+                        stroke={color}
+                        strokeWidth="12"
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    />
+                </g>
+            );
+        case "night":
+            // Crescent moon silhouette
+            return (
+                <g opacity={op}>
+                    <circle cx="40" cy="44" r="18" fill={color} />
+                    <circle cx="48" cy="38" r="14" fill="black" opacity="0.9" />
+                </g>
+            );
+        case "mastery":
+            // Graduation cap brim
+            return (
+                <g opacity={op}>
+                    <polygon points="40,26 62,37 40,48 18,37" fill={color} />
+                    <rect
+                        x="30"
+                        y="48"
+                        width="20"
+                        height="12"
+                        fill={color}
+                        opacity="0.65"
+                    />
+                </g>
+            );
+        case "dedication":
+            // Calendar grid squares
+            return (
+                <g opacity={op}>
+                    {[
+                        [0, 0],
+                        [1, 0],
+                        [2, 0],
+                        [0, 1],
+                        [1, 1],
+                        [2, 1],
+                    ].map(([col, row], i) => (
+                        <rect
+                            key={i}
+                            x={22 + col * 10}
+                            y={34 + row * 10}
+                            width="8"
+                            height="8"
+                            rx="1.5"
+                            fill={color}
+                        />
+                    ))}
+                </g>
+            );
         default:
             return null;
     }
@@ -577,7 +1742,7 @@ function DiamondFacets({ color }) {
 export function BadgeSVG({ badge, earned, size = 80 }) {
     const tier = TIERS[badge.tier];
     const cat = CATS[badge.category];
-    const Icon = ICONS[badge.category];
+    const Icon = ICONS[badge.key] || ICONS[badge.category];
     const uid = badge.key; // unique prefix so gradient IDs don't clash
 
     const iconColor = earned ? cat.color : "#545454";
@@ -849,6 +2014,11 @@ const SECTIONS = [
     { key: "xp", label: "XP", icon: "⚡" },
     { key: "morning", label: "Explorer", icon: "🌅" },
     { key: "perfect", label: "Perfect", icon: "🎯" },
+    { key: "words", label: "Words", icon: "📖" },
+    { key: "sessions", label: "Sessions", icon: "✅" },
+    { key: "night", label: "Night", icon: "🌙" },
+    { key: "mastery", label: "Mastery", icon: "🎓" },
+    { key: "dedication", label: "Dedication", icon: "📅" },
 ];
 
 const DEFAULT_EARNED = {
@@ -856,6 +2026,11 @@ const DEFAULT_EARNED = {
     xp_scholar: true,
     xp_wizard: true,
     explorer: true,
+    words_seedling: true,
+    sessions_rookie: true,
+    mastery_initiate: true,
+    mastery_flawless: true,
+    dedication_comeback_kid: true,
 };
 
 // ─── Main Gallery ────────────────────────────────────────────────────────────

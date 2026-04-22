@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 
 import UserWordFormDialog from "./UserWordFormDialog";
+import { useTranslation } from "@/Contexts/LanguageContext";
 
 // ── Word card ─────────────────────────────────────────────────────────────────
 
@@ -159,6 +160,7 @@ function WordListGroup({
 
 export default function Index({ words, category, wordLists = [] }) {
     const { flash } = usePage().props;
+    const { t } = useTranslation();
 
     // Dialog state
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -214,7 +216,7 @@ export default function Index({ words, category, wordLists = [] }) {
 
         filtered.forEach((w) => {
             const id = w.wordlist_id ?? "uncategorized";
-            const title = w.word_list?.title ?? "Uncategorized";
+            const title = w.word_list?.title ?? t("user_words.uncategorized");
             if (!map.has(id)) map.set(id, { id, title, words: [] });
             map.get(id).words.push(w);
         });
@@ -229,13 +231,13 @@ export default function Index({ words, category, wordLists = [] }) {
             if (bi === -1) return -1;
             return ai - bi;
         });
-    }, [words.data, search, wordLists]);
+    }, [words.data, search, wordLists, t]);
 
     const totalDisplayed = grouped.reduce((s, g) => s + g.words.length, 0);
 
     return (
         <AppLayout>
-            <Head title="My Words" />
+            <Head title={t("user_words.title")} />
 
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
                 {/* ── Sticky top bar ── */}
@@ -252,17 +254,19 @@ export default function Index({ words, category, wordLists = [] }) {
                         </Link>
                         <div className="flex-1">
                             <h1 className="font-semibold text-gray-900 dark:text-gray-100 text-base">
-                                My Words
+                                {t("user_words.title")}
                             </h1>
                             <p className="text-xs text-gray-400 dark:text-slate-400">
                                 {words.total ?? 0}{" "}
-                                {words.total === 1 ? "word" : "words"}
+                                {words.total === 1
+                                    ? t("user_words.word")
+                                    : t("user_words.words")}
                                 {wordLists.length > 0 && (
                                     <span className="ml-1 text-gray-300 dark:text-slate-500">
                                         · {wordLists.length}{" "}
                                         {wordLists.length === 1
-                                            ? "list"
-                                            : "lists"}
+                                            ? t("user_words.list")
+                                            : t("user_words.lists")}
                                     </span>
                                 )}
                             </p>
@@ -273,7 +277,7 @@ export default function Index({ words, category, wordLists = [] }) {
                             className="bg-[#E5201C] hover:bg-red-700 text-white rounded-full px-4 text-xs font-semibold gap-1"
                         >
                             <Plus className="h-3.5 w-3.5" />
-                            Add Word
+                            {t("user_words.add_word")}
                         </Button>
                     </div>
                 </div>
@@ -293,7 +297,7 @@ export default function Index({ words, category, wordLists = [] }) {
                             <Input
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Search words…"
+                                placeholder={t("user_words.search_placeholder")}
                                 className="pl-9 rounded-xl border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
                             />
                         </div>
@@ -324,12 +328,14 @@ export default function Index({ words, category, wordLists = [] }) {
                                 <BookOpen className="h-7 w-7 text-[#E5201C]" />
                             </div>
                             <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm">
-                                {search ? "No matching words" : "No words yet"}
+                                {search
+                                    ? t("user_words.no_matching_words")
+                                    : t("user_words.no_words_yet")}
                             </p>
                             <p className="text-xs text-gray-400 dark:text-slate-400 mt-1 mb-5">
                                 {search
-                                    ? "Try a different search term"
-                                    : "Start building your personal vocabulary list"}
+                                    ? t("user_words.try_different_search")
+                                    : t("user_words.start_building")}
                             </p>
                             {!search && (
                                 <Button
@@ -337,7 +343,7 @@ export default function Index({ words, category, wordLists = [] }) {
                                     className="bg-[#E5201C] hover:bg-red-700 text-white rounded-full px-6 text-sm font-semibold gap-1.5"
                                 >
                                     <Plus className="h-4 w-4" />
-                                    Add your first word
+                                    {t("user_words.add_first_word")}
                                 </Button>
                             )}
                         </div>
@@ -383,23 +389,24 @@ export default function Index({ words, category, wordLists = [] }) {
             >
                 <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-sm sm:w-full rounded-2xl">
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Delete this word?</AlertDialogTitle>
+                        <AlertDialogTitle>
+                            {t("user_words.delete_confirm_title")}
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
-                            <span className="font-semibold text-gray-800">
-                                "{deleteTarget?.word}"
-                            </span>{" "}
-                            will be permanently removed. This cannot be undone.
+                            {t("user_words.delete_confirm_desc", {
+                                word: deleteTarget?.word,
+                            })}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="gap-2">
                         <AlertDialogCancel className="rounded-xl flex-1">
-                            Cancel
+                            {t("user_words.cancel")}
                         </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleDelete}
                             className="rounded-xl flex-1 bg-[#E5201C] hover:bg-red-700 text-white"
                         >
-                            Delete
+                            {t("user_words.delete")}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -407,3 +414,4 @@ export default function Index({ words, category, wordLists = [] }) {
         </AppLayout>
     );
 }
+

@@ -6,11 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Click;
 use App\Models\Link;
 use App\Models\Profile;
+use App\Traits\HandlesImageUploads;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class LinkTreeLinkController extends Controller
 {
+  use HandlesImageUploads;
   // ── Store ─────────────────────────────────────────────────────────────────
 
   public function store(Request $request)
@@ -102,8 +104,8 @@ class LinkTreeLinkController extends Controller
       Storage::disk('public')->delete(ltrim($link->thumbnail, '/'));
     }
 
-    $path = $request->file('thumbnail')->store('linktree/thumbnails', 'public');
-    $link->update(['thumbnail' => $path]);
+    $path = $this->processAndStoreImage($request->file('thumbnail'), 'linktree/thumbnails');
+    $link->update(['thumbnail' => '/' . $path]);
 
     return back()->with('success', 'Thumbnail updated.');
   }

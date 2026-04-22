@@ -59,6 +59,16 @@ class AchievementService
         return $this->checkMorningAchievement($user, $achievement);
       case 'perfect':
         return $this->checkPerfectAchievement($user, $achievement);
+      case 'words':
+        return $this->checkWordsAchievement($user, $achievement);
+      case 'sessions':
+        return $this->checkSessionsAchievement($user, $achievement);
+      case 'night':
+        return $this->checkNightAchievement($user, $achievement);
+      case 'mastery':
+        return $this->checkMasteryAchievement($user, $achievement);
+      case 'dedication':
+        return $this->checkDedicationAchievement($user, $achievement);
       default:
         return false;
     }
@@ -96,7 +106,7 @@ class AchievementService
     // Check if user has ever earned XP before 9 AM
     return \App\Models\UserDailyActivity::where('user_id', $user->id)
       ->where('session_xp_earned', '>', 0)
-      ->whereTime('activity_date', '<', '09:00:00')
+      ->whereTime('created_at', '<', '09:00:00')
       ->exists();
   }
 
@@ -111,6 +121,114 @@ class AchievementService
       ->count();
 
     return $perfectCount >= $achievement->milestone_value;
+  }
+
+  /**
+   * Check words-mastered achievements.
+   */
+  private function checkWordsAchievement(User $user, Achievement $achievement): bool
+  {
+    $masteredCount = \App\Models\WordProgress::where('user_id', $user->id)
+      ->where('box', '>=', \App\Models\WordProgress::MASTERED_BOX)
+      ->count();
+
+    return $masteredCount >= $achievement->milestone_value;
+  }
+
+  /**
+   * Check sessions-completed achievements.
+   */
+  private function checkSessionsAchievement(User $user, Achievement $achievement): bool
+  {
+    $sessionCount = \App\Models\UserDailyActivity::where('user_id', $user->id)
+      ->where('session_xp_earned', '>', 0)
+      ->count();
+
+    return $sessionCount >= $achievement->milestone_value;
+  }
+
+  /**
+   * Check night learning achievement.
+   */
+  private function checkNightAchievement(User $user, Achievement $achievement): bool
+  {
+    // Check if user has ever earned XP after 10 PM
+    return \App\Models\UserDailyActivity::where('user_id', $user->id)
+      ->where('session_xp_earned', '>', 0)
+      ->whereTime('created_at', '>=', '22:00:00')
+      ->exists();
+  }
+
+  /**
+   * Check mastery test achievements.
+   */
+  private function checkMasteryAchievement(User $user, Achievement $achievement): bool
+  {
+    if ($achievement->key === 'mastery_flawless') {
+      return \App\Models\QuizAttempt::where('user_id', $user->id)
+        ->where('score', 100)
+        ->exists();
+    }
+
+    $passedCount = \App\Models\QuizAttempt::where('user_id', $user->id)
+      ->where('passed', true)
+      ->count();
+
+    return $passedCount >= $achievement->milestone_value;
+  }
+
+  /**
+   * Check dedication-based achievements.
+   */
+  private function checkDedicationAchievement(User $user, Achievement $achievement): bool
+  {
+    switch ($achievement->key) {
+      case 'dedication_weekend_warrior':
+        // Study on both Sat and Sun in the same weekend
+        return \App\Models\UserDailyActivity::where('user_id', $user->id)
+          ->whereIn(\DB::raw('DAYOFWEEK(activity_date)'), [1, 7]) // 1=Sun, 7=Sat
+          ->groupBy(\DB::raw('YEARWEEK(activity_date)'))
+          ->havingRaw('COUNT(DISTINCT DAYOFWEEK(activity_date)) = 2')
+          ->exists();
+
+      case 'dedication_comeback_kid':
+        // Return after a 7-day break (gap between activities > 7 days)
+        // This is a bit complex, let's look for any two activities with > 7 day gap
+        $activities = \App\Models\UserDailyActivity::where('user_id', $user->id)
+          ->orderBy('activity_date')
+          ->pluck('activity_date');
+
+        for ($i = 1; $i < count($activities); $i++) {
+          if ($activities[$i]->diffInDays($activities[$i - 1]) >= 7) {
+            return true;
+          }
+        }
+        return false;
+
+      case 'dedication_30_days':
+      case 'dedication_100_days':
+        $daysCount = \App\Models\UserDailyActivity::where('user_id', $user->id)
+          ->count();
+        return $daysCount >= $achievement->milestone_value;
+
+      case 'dedication_list_finisher':
+        // Complete every word in a word list
+        $lists = \App\Models\WordList::withCount('words')->get();
+        foreach ($lists as $list) {
+          $masteredInList = \App\Models\WordProgress::where('user_id', $user->id)
+            ->whereIn('word_id', $list->words->pluck('id'))
+            ->where('box', '>=', \App\Models\WordProgress::MASTERED_BOX)
+            ->count();
+
+          if ($masteredInList > 0 && $masteredInList === $list->words_count) {
+            return true;
+          }
+        }
+        return false;
+
+      default:
+        return false;
+    }
   }
 
   /**
@@ -178,6 +296,62 @@ class AchievementService
           'current' => $current,
           'target' => $achievement->milestone_value,
           'percentage' => min(100, ($current / $achievement->milestone_value) * 100),
+        ];
+
+      case 'words':
+        $current = \App\Models\WordProgress::where('user_id', $user->id)
+          ->where('box', '>=', \App\Models\WordProgress::MASTERED_BOX)
+          ->count();
+        return [
+          'current' => $current,
+          'target' => $achievement->milestone_value,
+          'percentage' => min(100, ($current / $achievement->milestone_value) * 100),
+        ];
+
+      case 'sessions':
+        $current = \App\Models\UserDailyActivity::where('user_id', $user->id)
+          ->where('session_xp_earned', '>', 0)
+          ->count();
+        return [
+          'current' => $current,
+          'target' => $achievement->milestone_value,
+          'percentage' => min(100, ($current / $achievement->milestone_value) * 100),
+        ];
+
+      case 'night':
+        $hasEarned = $this->checkNightAchievement($user, $achievement);
+        return [
+          'current' => $hasEarned ? 1 : 0,
+          'target' => 1,
+          'percentage' => $hasEarned ? 100 : 0,
+        ];
+
+      case 'mastery':
+        if ($achievement->key === 'mastery_flawless') {
+          $hasEarned = \App\Models\QuizAttempt::where('user_id', $user->id)
+            ->where('score', 100)
+            ->exists();
+          return [
+            'current' => $hasEarned ? 1 : 0,
+            'target' => 1,
+            'percentage' => $hasEarned ? 100 : 0,
+          ];
+        }
+        $current = \App\Models\QuizAttempt::where('user_id', $user->id)
+          ->where('passed', true)
+          ->count();
+        return [
+          'current' => $current,
+          'target' => $achievement->milestone_value,
+          'percentage' => min(100, ($current / $achievement->milestone_value) * 100),
+        ];
+
+      case 'dedication':
+        $hasEarned = $this->checkDedicationAchievement($user, $achievement);
+        return [
+          'current' => $hasEarned ? $achievement->milestone_value : 0,
+          'target' => $achievement->milestone_value,
+          'percentage' => $hasEarned ? 100 : 0,
         ];
 
       default:

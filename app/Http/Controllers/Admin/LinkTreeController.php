@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Click;
 use App\Models\Link;
 use App\Models\Profile;
+use App\Traits\HandlesImageUploads;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -13,6 +14,7 @@ use Inertia\Response;
 
 class LinkTreeController extends Controller
 {
+  use HandlesImageUploads;
   // ── Overview / Analytics ──────────────────────────────────────────────────
 
   public function index(): Response
@@ -101,7 +103,7 @@ class LinkTreeController extends Controller
       Storage::disk('public')->delete(ltrim($profile->profile_image, '/'));
     }
 
-    $path = $request->file('profile_image')->store('linktree/profile', 'public');
+    $path = $this->processAndStoreImage($request->file('profile_image'), 'linktree/profile');
     $profile->update(['profile_image' => '/' . $path]);
 
     return back()->with('success', 'Profile image updated.');
@@ -117,8 +119,8 @@ class LinkTreeController extends Controller
       Storage::disk('public')->delete(ltrim($profile->cover_image, '/'));
     }
 
-    $path = $request->file('cover_image')->store('linktree/cover', 'public');
-    $profile->update(['cover_image' => $path]);
+    $path = $this->processAndStoreImage($request->file('cover_image'), 'linktree/cover');
+    $profile->update(['cover_image' => '/' . $path]);
 
     return back()->with('success', 'Cover image updated.');
   }

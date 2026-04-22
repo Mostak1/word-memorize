@@ -23,6 +23,7 @@ import {
 } from "@/Components/ui/select";
 import { Separator } from "@/Components/ui/separator";
 import { BookOpen, ChevronLeft, Plus, Loader2, X } from "lucide-react";
+import { useTranslation } from "@/Contexts/LanguageContext";
 
 // ── Collocation helpers ───────────────────────────────────────────────────────
 
@@ -58,6 +59,8 @@ const emptyCollocation = () => ({ phrase: "", example_sentence: "" });
 // ── Sub-component: single collocation row ─────────────────────────────────────
 
 function CollocationRow({ index, item, onChange, onRemove, isOnly }) {
+    const { t } = useTranslation();
+
     return (
         <div className="relative rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50/60 dark:bg-slate-800/40 p-3 space-y-2.5">
             {/* Row header */}
@@ -70,7 +73,7 @@ function CollocationRow({ index, item, onChange, onRemove, isOnly }) {
                     onClick={onRemove}
                     disabled={isOnly}
                     className="h-5 w-5 rounded flex items-center justify-center text-gray-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                    title="Remove"
+                    title={t("user_words.form.buttons.remove") || "Remove"}
                 >
                     <X className="h-3.5 w-3.5" />
                 </button>
@@ -79,12 +82,12 @@ function CollocationRow({ index, item, onChange, onRemove, isOnly }) {
             {/* Phrase */}
             <div className="space-y-1">
                 <Label className="text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
-                    Phrase
+                    {t("user_words.form.labels.phrase")}
                 </Label>
                 <Input
                     value={item.phrase}
                     onChange={(e) => onChange("phrase", e.target.value)}
-                    placeholder='e.g. "critically analyse"'
+                    placeholder={t("user_words.form.placeholders.phrase")}
                     className="rounded-lg border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-gray-100 h-8 text-sm"
                 />
             </div>
@@ -92,14 +95,16 @@ function CollocationRow({ index, item, onChange, onRemove, isOnly }) {
             {/* Example sentence */}
             <div className="space-y-1">
                 <Label className="text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
-                    Example Sentence
+                    {t("user_words.form.labels.example_sentence")}
                 </Label>
                 <Input
                     value={item.example_sentence}
                     onChange={(e) =>
                         onChange("example_sentence", e.target.value)
                     }
-                    placeholder="e.g. Students must critically analyse the evidence."
+                    placeholder={t(
+                        "user_words.form.placeholders.example_sentence",
+                    )}
                     className="rounded-lg border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-gray-100 h-8 text-sm"
                 />
             </div>
@@ -110,6 +115,8 @@ function CollocationRow({ index, item, onChange, onRemove, isOnly }) {
 // ── Tiny field wrapper ────────────────────────────────────────────────────────
 
 function Field({ label, optional = true, error, children }) {
+    const { t } = useTranslation();
+
     return (
         <div className="space-y-1.5 [&_input::placeholder]:text-gray-300 dark:[&_input::placeholder]:text-slate-500 [&_textarea::placeholder]:text-gray-300 dark:[&_textarea::placeholder]:text-slate-500">
             <Label className="text-xs font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wide">
@@ -119,7 +126,7 @@ function Field({ label, optional = true, error, children }) {
                 )}
                 {optional && (
                     <span className="ml-1 normal-case font-normal text-gray-400 dark:text-slate-500 tracking-normal">
-                        (optional)
+                        ({t("common.optional")})
                     </span>
                 )}
             </Label>
@@ -163,6 +170,7 @@ export default function UserWordFormDialog({
     category = null,
 }) {
     const isEditing = !!word;
+    const { t } = useTranslation();
     const [showNewList, setShowNewList] = useState(false);
     const [tab, setTab] = useState("basic");
 
@@ -251,16 +259,24 @@ export default function UserWordFormDialog({
 
         // ── Client-side validation for required fields ──────────────────────
         const clientErrors = {};
-        if (!data.word.trim()) clientErrors.word = "Word is required.";
+        if (!data.word.trim())
+            clientErrors.word = t("user_words.form.messages.word_required");
         if (!data.definition.trim())
-            clientErrors.definition = "English definition is required.";
+            clientErrors.definition = t(
+                "user_words.form.messages.definition_required",
+            );
         if (!data.parts_of_speech_variations.trim())
-            clientErrors.parts_of_speech_variations =
-                "Part of speech is required.";
+            clientErrors.parts_of_speech_variations = t(
+                "user_words.form.messages.pos_required",
+            );
         if (!showNewList && !data.wordlist_id)
-            clientErrors.wordlist_id = "Please select or create a word list.";
+            clientErrors.wordlist_id = t(
+                "user_words.form.messages.list_required",
+            );
         if (showNewList && !data.new_wordlist_title.trim())
-            clientErrors.new_wordlist_title = "List name is required.";
+            clientErrors.new_wordlist_title = t(
+                "user_words.form.messages.list_name_required",
+            );
 
         if (Object.keys(clientErrors).length > 0) {
             // Surface errors via Inertia's setError and jump to the first
@@ -340,11 +356,13 @@ export default function UserWordFormDialog({
                         <span className="w-7 h-7 rounded-full bg-[#E5201C]/10 dark:bg-[#E5201C]/20 flex items-center justify-center shrink-0">
                             <BookOpen className="h-3.5 w-3.5 text-[#E5201C]" />
                         </span>
-                        {isEditing ? "Edit Word" : "Add New Word"}
+                        {isEditing
+                            ? t("user_words.form.edit_title")
+                            : t("user_words.form.add_title")}
                     </DialogTitle>
                     {category && (
                         <DialogDescription className="text-xs text-gray-400 dark:text-slate-400 pl-9">
-                            Saving to{" "}
+                            {t("user_words.form.saving_to")}{" "}
                             <span className="font-medium text-gray-600 dark:text-slate-300">
                                 {category.name}
                             </span>
@@ -365,7 +383,7 @@ export default function UserWordFormDialog({
                         {[
                             {
                                 value: "basic",
-                                label: "Basic",
+                                label: t("user_words.form.tabs.basic"),
                                 fields: basicFields,
                             },
                             // {
@@ -375,12 +393,12 @@ export default function UserWordFormDialog({
                             // },
                             {
                                 value: "usage",
-                                label: "Usage",
+                                label: t("user_words.form.tabs.usage"),
                                 fields: usageFields,
                             },
                             {
                                 value: "synonyms",
-                                label: "Syn/Ant",
+                                label: t("user_words.form.tabs.syn_ant"),
                                 fields: synonymFields,
                             },
                         ].map(({ value, label, fields }) => (
@@ -404,13 +422,15 @@ export default function UserWordFormDialog({
                             {/* Word list selector */}
                             <div className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-3.5 space-y-3 border border-gray-100 dark:border-slate-700">
                                 <p className="text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
-                                    Word List
+                                    {t("user_words.form.labels.word_list")}
                                 </p>
 
                                 {!showNewList ? (
                                     <>
                                         <Field
-                                            label="Choose a list"
+                                            label={t(
+                                                "user_words.form.labels.choose_list",
+                                            )}
                                             optional={false}
                                             error={errors.wordlist_id}
                                         >
@@ -422,7 +442,11 @@ export default function UserWordFormDialog({
                                                 }}
                                             >
                                                 <SelectTrigger className="rounded-lg border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-gray-100 h-9 text-sm">
-                                                    <SelectValue placeholder="Select a list…" />
+                                                    <SelectValue
+                                                        placeholder={t(
+                                                            "user_words.form.placeholders.select_list",
+                                                        )}
+                                                    />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     {wordLists.map((l) => (
@@ -445,14 +469,18 @@ export default function UserWordFormDialog({
                                             }}
                                             className="flex items-center gap-1 text-[#E5201C] text-xs font-semibold hover:underline"
                                         >
-                                            <Plus className="h-3 w-3" /> Create
-                                            new list
+                                            <Plus className="h-3 w-3" />{" "}
+                                            {t(
+                                                "user_words.form.buttons.create_list",
+                                            )}
                                         </button>
                                     </>
                                 ) : (
                                     <>
                                         <Field
-                                            label="New list name"
+                                            label={t(
+                                                "user_words.form.labels.new_list_name",
+                                            )}
                                             optional={false}
                                             error={errors.new_wordlist_title}
                                         >
@@ -465,7 +493,9 @@ export default function UserWordFormDialog({
                                                         e.target.value,
                                                     )
                                                 }
-                                                placeholder="e.g. GRE Vocab, Daily Words…"
+                                                placeholder={t(
+                                                    "user_words.form.placeholders.new_list",
+                                                )}
                                                 className="rounded-lg border-gray-200 bg-white h-9 text-sm"
                                             />
                                         </Field>
@@ -482,7 +512,9 @@ export default function UserWordFormDialog({
                                                 className="flex items-center gap-1 text-gray-400 text-xs font-medium hover:underline"
                                             >
                                                 <ChevronLeft className="h-3 w-3" />
-                                                Pick existing list
+                                                {t(
+                                                    "user_words.form.buttons.pick_list",
+                                                )}
                                             </button>
                                         )}
                                     </>
@@ -491,7 +523,7 @@ export default function UserWordFormDialog({
 
                             {/* Core fields */}
                             <Field
-                                label="Word"
+                                label={t("user_words.form.labels.word")}
                                 optional={false}
                                 error={errors.word}
                             >
@@ -500,14 +532,18 @@ export default function UserWordFormDialog({
                                     onChange={(e) =>
                                         setData("word", e.target.value)
                                     }
-                                    placeholder="e.g. ephemeral"
+                                    placeholder={t(
+                                        "user_words.form.placeholders.word",
+                                    )}
                                     className="rounded-lg border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-gray-100 h-10 font-semibold text-[15px]"
                                 />
                             </Field>
 
                             <div className="grid grid-cols-2 gap-3">
                                 <Field
-                                    label="Part of speech"
+                                    label={t(
+                                        "user_words.form.labels.part_of_speech",
+                                    )}
                                     optional={false}
                                     error={errors.parts_of_speech_variations}
                                 >
@@ -519,12 +555,16 @@ export default function UserWordFormDialog({
                                                 e.target.value,
                                             )
                                         }
-                                        placeholder="adjective, noun…"
+                                        placeholder={t(
+                                            "user_words.form.placeholders.pos",
+                                        )}
                                         className="rounded-lg border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-gray-100 h-9 text-sm"
                                     />
                                 </Field>
                                 <Field
-                                    label="Pronunciation"
+                                    label={t(
+                                        "user_words.form.labels.pronunciation",
+                                    )}
                                     optional={true}
                                     error={errors.pronunciation}
                                 >
@@ -536,14 +576,16 @@ export default function UserWordFormDialog({
                                                 e.target.value,
                                             )
                                         }
-                                        placeholder="e-FEM-er-ul"
+                                        placeholder={t(
+                                            "user_words.form.placeholders.pronunciation",
+                                        )}
                                         className="rounded-lg border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-gray-100 h-9 text-sm"
                                     />
                                 </Field>
                             </div>
 
                             <Field
-                                label="English Definition"
+                                label={t("user_words.form.labels.definition")}
                                 optional={false}
                                 error={errors.definition}
                             >
@@ -552,7 +594,9 @@ export default function UserWordFormDialog({
                                     onChange={(e) =>
                                         setData("definition", e.target.value)
                                     }
-                                    placeholder="Lasting for only a short time; transitory…"
+                                    placeholder={t(
+                                        "user_words.form.placeholders.definition",
+                                    )}
                                     className="rounded-lg border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-gray-100 resize-none text-sm"
                                     rows={5}
                                 />
@@ -622,7 +666,9 @@ export default function UserWordFormDialog({
                             className="mt-3 space-y-4 outline-none"
                         >
                             <Field
-                                label="Example Sentences"
+                                label={t(
+                                    "user_words.form.labels.example_sentences",
+                                )}
                                 error={errors.example_sentences}
                             >
                                 <Textarea
@@ -633,7 +679,9 @@ export default function UserWordFormDialog({
                                             e.target.value,
                                         )
                                     }
-                                    placeholder="The ephemeral beauty of cherry blossoms makes them precious."
+                                    placeholder={t(
+                                        "user_words.form.placeholders.examples",
+                                    )}
                                     className="rounded-lg border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-gray-100 resize-none text-sm"
                                     rows={5}
                                 />
@@ -643,9 +691,9 @@ export default function UserWordFormDialog({
                             <div className="space-y-2.5">
                                 <div className="flex items-center justify-between">
                                     <Label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                                        Collocations
+                                        {t("user_words.form.labels.collocations")}
                                         <span className="ml-1 normal-case font-normal text-gray-400 tracking-normal">
-                                            (optional)
+                                            ({t("common.optional")})
                                         </span>
                                         {filledCollocationCount > 0 && (
                                             <span className="ml-2 inline-flex items-center justify-center h-4 min-w-4 rounded-full bg-[#E5201C]/10 text-[#E5201C] text-[10px] font-bold px-1">
@@ -658,7 +706,8 @@ export default function UserWordFormDialog({
                                         onClick={addCollocation}
                                         className="flex items-center gap-1 text-[#E5201C] text-xs font-semibold hover:underline"
                                     >
-                                        <Plus className="h-3 w-3" /> Add
+                                        <Plus className="h-3 w-3" />{" "}
+                                        {t("user_words.form.buttons.add")}
                                     </button>
                                 </div>
 
@@ -684,9 +733,7 @@ export default function UserWordFormDialog({
                                 </div>
 
                                 <p className="text-[10px] text-gray-400 dark:text-slate-500">
-                                    Each entry is saved as structured JSON.
-                                    Leave all fields empty to store no
-                                    collocations.
+                                    {t("user_words.form.messages.collocation_hint")}
                                 </p>
 
                                 {errors.collocations && (
@@ -702,24 +749,34 @@ export default function UserWordFormDialog({
                             value="synonyms"
                             className="mt-3 space-y-4 outline-none"
                         >
-                            <Field label="Synonyms" error={errors.synonym}>
+                            <Field
+                                label={t("user_words.form.labels.synonyms")}
+                                error={errors.synonym}
+                            >
                                 <Textarea
                                     value={data.synonym}
                                     onChange={(e) =>
                                         setData("synonym", e.target.value)
                                     }
-                                    placeholder="transient, fleeting, momentary, short-lived…"
+                                    placeholder={t(
+                                        "user_words.form.placeholders.synonyms",
+                                    )}
                                     className="rounded-lg border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-gray-100 resize-none text-sm"
                                     rows={5}
                                 />
                             </Field>
-                            <Field label="Antonyms" error={errors.antonym}>
+                            <Field
+                                label={t("user_words.form.labels.antonyms")}
+                                error={errors.antonym}
+                            >
                                 <Textarea
                                     value={data.antonym}
                                     onChange={(e) =>
                                         setData("antonym", e.target.value)
                                     }
-                                    placeholder="permanent, eternal, lasting, enduring…"
+                                    placeholder={t(
+                                        "user_words.form.placeholders.antonyms",
+                                    )}
                                     className="rounded-lg border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-gray-100 resize-none text-sm"
                                     rows={5}
                                 />
@@ -739,7 +796,7 @@ export default function UserWordFormDialog({
                         disabled={processing}
                         className="flex-1 rounded-xl h-10 text-sm font-semibold dark:bg-slate-800 dark:border-slate-700 dark:text-gray-100 dark:hover:bg-slate-700"
                     >
-                        Cancel
+                        {t("user_words.cancel")}
                     </Button>
                     <Button
                         type="button"
@@ -752,14 +809,15 @@ export default function UserWordFormDialog({
                         )}
                         {processing
                             ? isEditing
-                                ? "Updating…"
-                                : "Saving…"
+                                ? t("user_words.form.buttons.updating")
+                                : t("user_words.form.buttons.saving")
                             : isEditing
-                              ? "Update Word"
-                              : "Add Word"}
+                              ? t("user_words.form.buttons.update_word")
+                              : t("user_words.form.buttons.add_word")}
                     </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
     );
 }
+

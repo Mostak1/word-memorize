@@ -197,7 +197,7 @@ export default function VocabPixLanding() {
             <Head>
                 <title>{text.pageTitle}</title>
                 <link
-                    href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Hind+Siliguri:wght@400;500;600;700&display=swap"
+                    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Anek+Bangla:wght@400;500;600;700;800&display=swap"
                     rel="stylesheet"
                 />
             </Head>
@@ -219,7 +219,7 @@ export default function VocabPixLanding() {
                     --blue: #2563EB;
                     --border: #E5E7EB;
                 }
-                body { font-family: 'Nunito', sans-serif; color: var(--body); background: var(--bg); overflow-x: hidden; }
+                body { font-family: 'Plus Jakarta Sans', 'Anek Bangla', sans-serif; color: var(--body); background: var(--bg); overflow-x: hidden; }
                 .topbar { background: var(--red); color: #fff; text-align: center; padding: 9px 16px; font-size: 13px; font-weight: 700; letter-spacing: .02em; }
                 .topbar span { background: rgba(255,255,255,.25); padding: 2px 10px; border-radius: 20px; margin-left: 8px; font-size: 12px; }
                 nav { position: sticky; top: 0; z-index: 200; background: #fff; border-bottom: 1.5px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 48px; height: 64px; }
@@ -322,13 +322,13 @@ export default function VocabPixLanding() {
                 .bangla-section .section-eyebrow { color: #FF8A94; }
                 .bangla-section .section-title { color: #fff; }
                 .bangla-section .section-sub { color: rgba(255,255,255,.55); }
-                .bangla-card { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.15); border-radius: 20px; padding: 28px; font-family: 'Hind Siliguri', sans-serif; }
+                .bangla-card { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.15); border-radius: 20px; padding: 28px; font-family: 'Anek Bangla', sans-serif; }
                 .bangla-word { font-size: 1.8rem; font-weight: 700; color: #fff; margin-bottom: 6px; }
-                .bangla-eng { font-size: 1rem; color: rgba(255,255,255,.6); margin-bottom: 16px; font-family: 'Nunito', sans-serif; }
+                .bangla-eng { font-size: 1rem; color: rgba(255,255,255,.6); margin-bottom: 16px; font-family: 'Plus Jakarta Sans', sans-serif; }
                 .bangla-def-label { font-size: .72rem; font-weight: 600; color: #FF8A94; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
                 .bangla-def { font-size: .95rem; color: rgba(255,255,255,.8); line-height: 1.7; background: rgba(255,255,255,.05); border-radius: 10px; padding: 12px; margin-bottom: 16px; }
                 .bangla-syn { display: flex; flex-wrap: wrap; gap: 6px; }
-                .bangla-syn span { background: rgba(255,255,255,.1); border-radius: 6px; padding: 3px 10px; font-size: .78rem; color: rgba(255,255,255,.7); font-family: 'Nunito', sans-serif; }
+                .bangla-syn span { background: rgba(255,255,255,.1); border-radius: 6px; padding: 3px 10px; font-size: .78rem; color: rgba(255,255,255,.7); font-family: 'Plus Jakarta Sans', sans-serif; }
                 .bangla-perks { display: flex; flex-direction: column; gap: 14px; margin-top: 32px; }
                 .bangla-perk { display: flex; align-items: flex-start; gap: 14px; }
                 .perk-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--red); margin-top: 6px; flex-shrink: 0; }
@@ -370,18 +370,18 @@ export default function VocabPixLanding() {
                 .enroll-sub { color: rgba(255,255,255,.75); text-align: center; font-size: 1rem; line-height: 1.7; margin-bottom: 40px; }
                 .enroll-form { background: #fff; border-radius: 24px; padding: 40px; }
                 .form-tabs { display: flex; gap: 0; margin-bottom: 28px; border-radius: 10px; overflow: hidden; border: 1.5px solid var(--border); }
-                .form-tab { flex: 1; padding: 10px; text-align: center; font-weight: 800; font-size: .85rem; cursor: pointer; border: none; background: #F9FAFB; color: var(--muted); transition: all .2s; font-family: 'Nunito', sans-serif; }
+                .form-tab { flex: 1; padding: 10px; text-align: center; font-weight: 800; font-size: .85rem; cursor: pointer; border: none; background: #F9FAFB; color: var(--muted); transition: all .2s; font-family: 'Plus Jakarta Sans', sans-serif; }
                 .form-tab.active { background: var(--red); color: #fff; }
                 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
                 .fg { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
                 .fg label { font-size: .75rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
-                .fg input, .fg select { border: 1.5px solid var(--border); border-radius: 10px; padding: 13px 14px; font-size: .95rem; font-family: 'Nunito', sans-serif; outline: none; transition: border-color .2s; color: var(--dark); background: #fff; -webkit-appearance: none; }
+                .fg input, .fg select { border: 1.5px solid var(--border); border-radius: 10px; padding: 13px 14px; font-size: .95rem; font-family: 'Plus Jakarta Sans', sans-serif; outline: none; transition: border-color .2s; color: var(--dark); background: #fff; -webkit-appearance: none; }
                 .fg input:focus, .fg select:focus { border-color: var(--red); }
                 .fg input::placeholder { color: #CBD5E1; }
                 .goal-chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-                .goal-chip { padding: 9px 6px; border-radius: 9px; border: 1.5px solid var(--border); background: #F9FAFB; color: var(--muted); font-size: .75rem; font-weight: 700; cursor: pointer; text-align: center; transition: all .2s; font-family: 'Nunito', sans-serif; }
+                .goal-chip { padding: 9px 6px; border-radius: 9px; border: 1.5px solid var(--border); background: #F9FAFB; color: var(--muted); font-size: .75rem; font-weight: 700; cursor: pointer; text-align: center; transition: all .2s; font-family: 'Plus Jakarta Sans', sans-serif; }
                 .goal-chip.active, .goal-chip:hover { border-color: var(--red); background: #FFF0F1; color: var(--red); }
-                .form-submit { width: 100%; padding: 16px; border-radius: 12px; background: var(--red); color: #fff; border: none; font-family: 'Nunito', sans-serif; font-size: 1rem; font-weight: 900; cursor: pointer; margin-top: 8px; transition: all .2s; box-shadow: 0 4px 20px rgba(232,25,44,.3); }
+                .form-submit { width: 100%; padding: 16px; border-radius: 12px; background: var(--red); color: #fff; border: none; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1rem; font-weight: 900; cursor: pointer; margin-top: 8px; transition: all .2s; box-shadow: 0 4px 20px rgba(232,25,44,.3); }
                 .form-submit:hover { background: var(--red2); transform: translateY(-1px); }
                 .form-note { text-align: center; font-size: .75rem; color: var(--muted); margin-top: 12px; }
                 .success-msg { text-align: center; padding: 24px 0; }
@@ -415,7 +415,7 @@ export default function VocabPixLanding() {
                 /* ── end App Screenshots ── */
                 .faq-section { max-width: 760px; margin: 0 auto; padding: 80px 24px; }
                 .faq-item { border-bottom: 1.5px solid var(--border); }
-                .faq-q { width: 100%; text-align: left; padding: 20px 0; font-weight: 800; font-size: .95rem; color: var(--dark); background: none; border: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-family: 'Nunito', sans-serif; }
+                .faq-q { width: 100%; text-align: left; padding: 20px 0; font-weight: 800; font-size: .95rem; color: var(--dark); background: none; border: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-family: 'Plus Jakarta Sans', sans-serif; }
                 .faq-icon { color: var(--red); font-size: 1.3rem; font-weight: 900; transition: transform .2s; }
                 .faq-icon.open { transform: rotate(45deg); }
                 .faq-a { display: none; padding: 0 0 20px; font-size: .9rem; color: var(--muted); line-height: 1.75; }
