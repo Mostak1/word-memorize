@@ -362,11 +362,26 @@ class QuizController extends Controller
         // Check for achievements (especially perfect scores)
         $this->achievementService->checkAndAwardAchievements($request->user());
 
+        $unlockedWordlistTitle = null;
+        if ($passed) {
+            $currentWordlist = $quiz->wordList;
+            $nextWordlist = WordList::where('word_list_category_id', $currentWordlist->word_list_category_id)
+                ->where('status', true)
+                ->where('id', '>', $currentWordlist->id)
+                ->orderBy('id', 'asc')
+                ->first();
+
+            if ($nextWordlist) {
+                $unlockedWordlistTitle = $nextWordlist->title;
+            }
+        }
+
         return response()->json([
             'passed' => $passed,
             'score' => $score,
             'next_attempt_at' => $nextAttemptAt?->toIso8601String(),
             'xp_awarded' => $xpAwarded,
+            'unlocked_wordlist' => $unlockedWordlistTitle,
             'streak' => [
                 'current_streak' => $streak->current_streak,
                 'longest_streak' => $streak->longest_streak,
@@ -454,10 +469,29 @@ class QuizController extends Controller
         // Check for achievements
         $this->achievementService->checkAndAwardAchievements($request->user());
 
+        $unlockedWordlistTitle = null;
+        if ($passed && !empty($data['wordlist_id'])) {
+            $currentWordlistId = (int) $data['wordlist_id'];
+            $currentWordlist = WordList::find($currentWordlistId);
+            
+            if ($currentWordlist) {
+                $nextWordlist = WordList::where('word_list_category_id', $currentWordlist->word_list_category_id)
+                    ->where('status', true)
+                    ->where('id', '>', $currentWordlist->id)
+                    ->orderBy('id', 'asc')
+                    ->first();
+
+                if ($nextWordlist) {
+                    $unlockedWordlistTitle = $nextWordlist->title;
+                }
+            }
+        }
+
         return response()->json([
             'passed' => $passed,
             'score' => $score,
             'xp_awarded' => $xpAwarded,
+            'unlocked_wordlist' => $unlockedWordlistTitle,
             'streak' => [
                 'current_streak' => $streak->current_streak,
                 'longest_streak' => $streak->longest_streak,

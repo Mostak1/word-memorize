@@ -35,11 +35,12 @@ export default function MasteryOverlay() {
                         style={{
                             position: "absolute",
                             left: p.left,
-                            top: "-12px",
+                            top: "-40px",
                             width: `${p.size}px`,
                             height: `${p.size}px`,
                             backgroundColor: p.color,
                             borderRadius: p.borderRadius,
+                            opacity: 0,
                             animation: `confettiFall ${p.duration} ${p.delay} ease-in forwards`,
                         }}
                     />

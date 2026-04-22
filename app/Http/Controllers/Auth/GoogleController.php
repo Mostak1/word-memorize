@@ -3,7 +3,6 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Services\DeviceSessionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Facades\Socialite;
@@ -56,16 +55,6 @@ class GoogleController extends Controller
         Auth::login($user, true);
 
         $request->session()->regenerate();
-
-        $deviceService = app(DeviceSessionService::class);
-        $fingerprint = $deviceService->fingerprint($request);
-        $deviceService->revokeConflictingSessions($user, $fingerprint);
-        $deviceService->touchCurrentDevice(
-            $user,
-            $fingerprint,
-            $request->session()->getId(),
-            $request
-        );
 
         $userName = $user->name;
 

@@ -17,6 +17,7 @@ import {
     CheckSquare,
 } from "lucide-react";
 import StreakPop from "@/Components/StreakPop";
+import WordlistUnlockedOverlay from "@/Components/WordlistUnlockedOverlay";
 import FlashMessages from "@/Components/FlashMessage";
 import { toast, Toaster } from "sonner";
 
@@ -663,6 +664,8 @@ export default function WordlistQuiz({
     const [incorrectQuestions, setIncorrectQuestions] = useState([]);
     const [showMistakes, setShowMistakes] = useState(false);
     const [bookmarks, setBookmarks] = useState({});
+    const [unlockedListName, setUnlockedListName] = useState(null);
+    const [showUnlockedOverlay, setShowUnlockedOverlay] = useState(false);
 
     const triggerAchievements = () => {
         window.dispatchEvent(new CustomEvent("check-achievements"));
@@ -819,9 +822,21 @@ export default function WordlistQuiz({
                 setFinalPassed(data.passed);
                 setNextAttemptAt(data.next_attempt_at ?? null);
 
-                if (data.streak_increased) {
+                const today = new Date().toDateString();
+                const lastShown = localStorage.getItem("lastSessionDay");
+
+                if (data.streak_increased && lastShown !== today) {
                     setStreakCount(data.streak?.current_streak ?? 0);
                     setShowStreakEffect(true);
+                    localStorage.setItem("lastSessionDay", today);
+                    
+                    // If wordlist also unlocked, store it but wait for streak to finish
+                    if (data.unlocked_wordlist) {
+                        setUnlockedListName(data.unlocked_wordlist);
+                    }
+                } else if (data.unlocked_wordlist) {
+                    setUnlockedListName(data.unlocked_wordlist);
+                    setShowUnlockedOverlay(true);
                 } else {
                     triggerAchievements();
                 }
@@ -894,6 +909,20 @@ export default function WordlistQuiz({
                         streakCount={streakCount}
                         onComplete={() => {
                             setShowStreakEffect(false);
+                            if (unlockedListName) {
+                                setShowUnlockedOverlay(true);
+                            } else {
+                                triggerAchievements();
+                            }
+                        }}
+                    />
+                )}
+
+                {showUnlockedOverlay && (
+                    <WordlistUnlockedOverlay
+                        listName={unlockedListName}
+                        onDismiss={() => {
+                            setShowUnlockedOverlay(false);
                             triggerAchievements();
                         }}
                     />

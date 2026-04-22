@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import QuizPanel from "@/Pages/ExerciseSession/QuizPanel";
 import StreakPop from "@/Components/StreakPop";
+import ListCompletedOverlay from "@/Components/ListCompletedOverlay";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import FlashMessages from "@/Components/FlashMessage";
 import { usePage } from "@inertiajs/react";
@@ -61,11 +62,11 @@ const LEVEL_META = {
 };
 
 // Confetti pieces — stable (generated once outside component)
-const CONFETTI = Array.from({ length: 36 }, (_, i) => ({
+const CONFETTI = Array.from({ length: 60 }, (_, i) => ({
     id: i,
-    left: `${(i * 2.85) % 100}%`,
-    delay: `${(i * 0.055) % 0.5}s`,
-    duration: `${1.5 + (i % 5) * 0.18}s`,
+    left: `${(i * 1.66) % 100}%`,
+    delay: `${(i * 0.06) % 0.8}s`,
+    duration: `${2 + (i % 7) * 0.3}s`,
     color: [
         "#E5201C",
         "#22c55e",
@@ -75,7 +76,7 @@ const CONFETTI = Array.from({ length: 36 }, (_, i) => ({
         "#ec4899",
         "#14b8a6",
     ][i % 7],
-    size: 6 + (i % 5) * 2,
+    size: 7 + (i % 6) * 2,
     borderRadius: i % 3 === 0 ? "50%" : "2px",
 }));
 
@@ -159,11 +160,12 @@ function MasteryOverlay({ word }) {
                         style={{
                             position: "absolute",
                             left: p.left,
-                            top: "-12px",
+                            top: "-40px",
                             width: `${p.size}px`,
                             height: `${p.size}px`,
                             backgroundColor: p.color,
                             borderRadius: p.borderRadius,
+                            opacity: 0,
                             animation: `confettiFall ${p.duration} ${p.delay} ease-in forwards`,
                         }}
                     />
@@ -172,7 +174,8 @@ function MasteryOverlay({ word }) {
                     <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl dark:shadow-2xl dark:shadow-slate-900 px-8 py-4 text-center animate-bounce-in border border-green-100 dark:border-green-900">
                         <p className="text-3xl mb-1">🌟</p>
                         <p className="text-lg font-extrabold text-green-600 dark:text-green-400">
-                            {word}!
+                            {/* {word}! */}
+                            Mastered!
                         </p>
                         <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                             Word added to your Mastery Garden
@@ -203,13 +206,16 @@ export default function ExerciseSession({
 
     const previousStreak = useRef(initialStreak?.current_streak ?? 0);
 
+    const [listCompletionData, setListCompletionData] = useState(null);
+    const [showListOverlay, setShowListOverlay] = useState(false);
+
     const approvedAnim = approvedAnimation;
 
     // const [streakValue, setStreakValue] = useState(1);
     // ── Queue state ───────────────────────────────────────────────────────────
     // The Active Queue: queue[0] is always the current word.
     // "I Know"       → remove from front (word leaves session).
-    // "I Don't Know" → move from front to back (word stays in session).
+    // "I Don't Know" → remove from front (word leaves session).
     const [queue, setQueue] = useState(() =>
         initialWords.map((w) => ({ ...w })),
     );
@@ -219,15 +225,14 @@ export default function ExerciseSession({
     const [promotedCount, setPromotedCount] = useState(0); // words answered "I Know"
     const [dontKnowCount, setDontKnowCount] = useState(0); // total "I Don't Know" taps
     const [sessionXpAwarded, setSessionXpAwarded] = useState(0); // XP earned this session
-    const [quizAnsweredCount, setQuizAnsweredCount] = useState(0);
 
     const [sessionResults, setSessionResults] = useState([]);
     const [showLeaveDialog, setShowLeaveDialog] = useState(false);
     const [pendingVisit, setPendingVisit] = useState(null);
     const allowNavigation = useRef(false);
 
-    // NEW: Total cards processed in this session (used for progress bar)
-    const answeredCount = promotedCount + dontKnowCount + quizAnsweredCount;
+    // Total cards processed in this session (used for progress bar)
+    const answeredCount = promotedCount + dontKnowCount;
 
     // ── UI state ──────────────────────────────────────────────────────────────
     const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -402,6 +407,10 @@ export default function ExerciseSession({
                     setStreak(data.streak);
                 }
 
+                if (data.list_completed) {
+                    setListCompletionData({ name: data.list_name });
+                }
+
                 // If streak increased, StreakPop will handle the achievement check onComplete
                 if (!streakIncreased) {
                     triggerAchievements();
@@ -409,6 +418,23 @@ export default function ExerciseSession({
             })
             .catch(() => {});
     }, [isDone, auth?.user]);
+
+    useEffect(() => {
+        const handleAchievementsDismissed = () => {
+            if (listCompletionData) {
+                setShowListOverlay(true);
+            }
+        };
+        window.addEventListener(
+            "achievements-dismissed",
+            handleAchievementsDismissed,
+        );
+        return () =>
+            window.removeEventListener(
+                "achievements-dismissed",
+                handleAchievementsDismissed,
+            );
+    }, [listCompletionData]);
 
     // Background preload next few words (fixed)
     useEffect(() => {
@@ -748,7 +774,6 @@ export default function ExerciseSession({
             : route("wordlist.show", wordList?.id));
 
     const handleQuizAnswer = (isCorrect) => {
-        setQuizAnsweredCount((c) => c + 1);
         if (isCorrect) {
             handleKnow();
         } else {
@@ -858,19 +883,27 @@ export default function ExerciseSession({
                     />
                 )}
 
+                {showListOverlay && (
+                    <ListCompletedOverlay
+                        listName={listCompletionData?.name}
+                        onDismiss={() => setShowListOverlay(false)}
+                    />
+                )}
+
                 {/* Global confetti celebration for EVERY completed session */}
-                <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+                <div key="complete-confetti" className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
                     {CONFETTI.map((p) => (
                         <div
                             key={p.id}
                             style={{
                                 position: "absolute",
                                 left: p.left,
-                                top: "-12px",
+                                top: "-40px",
                                 width: `${p.size}px`,
                                 height: `${p.size}px`,
                                 backgroundColor: p.color,
                                 borderRadius: p.borderRadius,
+                                opacity: 0,
                                 animation: `confettiFall ${p.duration} ${p.delay} ease-in forwards`,
                             }}
                         />
@@ -881,7 +914,6 @@ export default function ExerciseSession({
                     <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-md dark:shadow-xl dark:shadow-slate-950 w-full max-w-md p-8 text-center">
                         {/* Lottie celebration animation */}
                         <div className="flex justify-center -mt-2 -mb-2">
-
                             {approvedAnim && (
                                 <Lottie
                                     animationData={approvedAnim}
@@ -1761,8 +1793,8 @@ export default function ExerciseSession({
                 .card-exit-right  { animation: cardExitRight  0.18s ease-in forwards; pointer-events: none; }
 
                 @keyframes confettiFall {
-                    0%   { transform: translateY(-20px) rotate(0deg);   opacity: 1; }
-                    100% { transform: translateY(110vh)  rotate(720deg); opacity: 0; }
+                    0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+                    100% { transform: translateY(115vh) rotate(720deg); opacity: 0; }
                 }
                 @keyframes bounceIn {
                     0%   { opacity: 0; transform: scale(0.5) translateY(-20px); }

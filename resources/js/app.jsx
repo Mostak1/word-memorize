@@ -84,6 +84,21 @@ createInertiaApp({
             splash.classList.add("opacity-0", "pointer-events-none");
             setTimeout(() => splash.remove(), 500);
         }
+
+        // Online/Offline status listeners
+        window.addEventListener("online", () => {
+            toast.success("You are back online!", {
+                id: "connection-status",
+                duration: 4000,
+            });
+        });
+
+        window.addEventListener("offline", () => {
+            toast.error("No internet connection. Some features may be limited.", {
+                id: "connection-status",
+                duration: Infinity,
+            });
+        });
     },
     progress: {
         color: "#e70013",

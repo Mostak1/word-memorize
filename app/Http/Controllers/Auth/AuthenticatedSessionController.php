@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
-use App\Services\DeviceSessionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -43,15 +42,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        $deviceService = app(DeviceSessionService::class);
-        $fingerprint = $deviceService->fingerprint($request);
-        $deviceService->revokeConflictingSessions($request->user(), $fingerprint);
-        $deviceService->touchCurrentDevice(
-            $request->user(),
-            $fingerprint,
-            $request->session()->getId(),
-            $request
-        );
+        // Add success toast message
 
         // Add success toast message
         $userName = $request->user()->name;
@@ -82,11 +73,6 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
-        if ($request->user()) {
-            $deviceService = app(DeviceSessionService::class);
-            $deviceService->clearDevice($request->user(), $request->session()->getId());
-        }
-
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();

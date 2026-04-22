@@ -19,7 +19,10 @@ export default function AchievementToaster() {
                     "Accept": "application/json",
                 },
             });
-            if (!res.ok) return;
+            if (!res.ok) {
+                window.dispatchEvent(new CustomEvent("achievements-dismissed"));
+                return;
+            }
             const data = await res.json();
 
             if (data.unseen && data.unseen.length > 0) {
@@ -27,9 +30,12 @@ export default function AchievementToaster() {
                 setQueue((prev) => [...prev, ...data.unseen]);
                 // If nothing was showing, start showing from the first new one added
                 // (activeIdx will be handled by the relative index in the queue)
+            } else {
+                window.dispatchEvent(new CustomEvent("achievements-dismissed"));
             }
         } catch (err) {
             console.error("Failed to fetch unseen achievements", err);
+            window.dispatchEvent(new CustomEvent("achievements-dismissed"));
         }
     };
 
@@ -40,6 +46,7 @@ export default function AchievementToaster() {
             // All cleared
             setQueue([]);
             setActiveIdx(0);
+            window.dispatchEvent(new CustomEvent("achievements-dismissed"));
         }
     };
 

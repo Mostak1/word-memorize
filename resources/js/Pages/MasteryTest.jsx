@@ -36,6 +36,7 @@ import {
 import { useState, useMemo } from "react";
 import { useTranslation } from "@/Contexts/LanguageContext";
 import StreakPop from "@/Components/StreakPop";
+import WordlistUnlockedOverlay from "@/Components/WordlistUnlockedOverlay";
 
 // ── Type metadata ─────────────────────────────────────────────────────────────
 
@@ -411,6 +412,8 @@ export default function MasteryTest({
     const [incorrectQuestions, setIncorrectQuestions] = useState([]);
     const [showMistakes, setShowMistakes] = useState(false);
     const [bookmarks, setBookmarks] = useState({});
+    const [unlockedListName, setUnlockedListName] = useState(null);
+    const [showUnlockedOverlay, setShowUnlockedOverlay] = useState(false);
 
     const triggerAchievements = () => {
         window.dispatchEvent(new CustomEvent("check-achievements"));
@@ -561,9 +564,23 @@ export default function MasteryTest({
                 });
                 const result = await res.json();
 
-                if (result.streak_increased) {
+                const today = new Date().toDateString();
+                const lastShown = localStorage.getItem("lastSessionDay");
+
+                if (result.streak_increased && lastShown !== today) {
                     setStreakCount(result.streak?.current_streak ?? 0);
                     setShowStreakEffect(true);
+                    localStorage.setItem("lastSessionDay", today);
+
+                    if (result.unlocked_wordlist) {
+                        setUnlockedListName(result.unlocked_wordlist);
+                    }
+                } else if (result.unlocked_wordlist) {
+                    setUnlockedListName(result.unlocked_wordlist);
+                    // We don't trigger it immediately if streak is not shown because 
+                    // we want it to show after the Done Lottie animation or results screen.
+                } else {
+                    // Achievements will be triggered after Lottie/Streak
                 }
             } catch (e) {
                 console.error(e);
@@ -689,7 +706,13 @@ export default function MasteryTest({
                             style={{ width: 600, height: 600 }}
                             onComplete={() => {
                                 setShowAnimation(false);
-                                triggerAchievements();
+                                if (!showStreakEffect) {
+                                    if (unlockedListName) {
+                                        setShowUnlockedOverlay(true);
+                                    } else {
+                                        triggerAchievements();
+                                    }
+                                }
                             }}
                         />
                     </div>
@@ -697,7 +720,24 @@ export default function MasteryTest({
                 {showStreakEffect && (
                     <StreakPop
                         streakCount={streakCount}
-                        onComplete={() => setShowStreakEffect(false)}
+                        onComplete={() => {
+                            setShowStreakEffect(false);
+                            if (unlockedListName) {
+                                setShowUnlockedOverlay(true);
+                            } else {
+                                triggerAchievements();
+                            }
+                        }}
+                    />
+                )}
+
+                {showUnlockedOverlay && (
+                    <WordlistUnlockedOverlay
+                        listName={unlockedListName}
+                        onDismiss={() => {
+                            setShowUnlockedOverlay(false);
+                            triggerAchievements();
+                        }}
                     />
                 )}
                 <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 flex justify-center px-4 pt-6">

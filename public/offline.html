@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - VocabPix</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #e70013;
+            --bg-light: #F0F2F5;
+            --card-light: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --slate-200: #e2e8f0;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-light: #020617;
+                --card-light: #0f172a;
+                --text-main: #f8fafc;
+                --text-muted: #94a3b8;
+                --slate-200: #1e293b;
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-light);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Dashboard-like Header */
+        header {
+            height: 64px;
+            background: var(--card-light);
+            border-bottom: 1px solid var(--slate-200);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 16px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .logo {
+            font-weight: 800;
+            color: var(--primary);
+            font-size: 20px;
+            letter-spacing: -0.5px;
+        }
+
+        main {
+            flex: 1;
+            width: 100%;
+            max-width: 672px;
+            margin: 0 auto;
+            padding: 24px 16px;
+        }
+
+        .offline-badge {
+            background: rgba(231, 0, 19, 0.1);
+            color: var(--primary);
+            padding: 8px 16px;
+            border-radius: 99px;
+            font-size: 13px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .offline-badge::before {
+            content: '';
+            display: block;
+            width: 8px;
+            height: 8px;
+            background: var(--primary);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(231, 0, 19, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(231, 0, 19, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(231, 0, 19, 0); }
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .description {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 32px;
+            line-height: 1.5;
+        }
+
+        /* Dashboard Skeleton Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 32px;
+            opacity: 0.5;
+            pointer-events: none;
+            filter: grayscale(1);
+        }
+
+        .card-skeleton {
+            background: var(--card-light);
+            border-radius: 16px;
+            padding: 20px;
+            min-height: 160px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            border: 1px solid var(--slate-200);
+        }
+
+        .icon-skeleton {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--slate-200);
+        }
+
+        .text-skeleton {
+            height: 12px;
+            background: var(--slate-200);
+            border-radius: 4px;
+            width: 80px;
+        }
+
+        .text-skeleton.short { width: 50px; }
+
+        /* Error Box */
+        .error-container {
+            background: var(--card-light);
+            border: 1px solid var(--slate-200);
+            border-radius: 20px;
+            padding: 40px 24px;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        .error-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .btn-retry {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 14px;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-block;
+            margin-top: 16px;
+        }
+
+        .btn-retry:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-retry:active {
+            transform: translateY(0);
+        }
+
+        footer {
+            padding: 24px;
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">VocabPix</div>
+    </header>
+
+    <main>
+        <div class="offline-badge">Currently Offline</div>
+        
+        <div class="error-container">
+            <div class="error-icon">🌐</div>
+            <h1>Connection Lost</h1>
+            <p class="description">It looks like you're not connected to the internet. VocabPix needs a connection to load new content or your progress.</p>
+            
+            <button class="btn-retry" onclick="window.location.reload()">Try Again</button>
+        </div>
+
+        <div style="margin-top: 40px; margin-bottom: 16px;">
+            <p style="font-size: 13px; font-weight: 700; color: var(--text-muted);">Preview (App Dashboard)</p>
+        </div>
+
+        <div class="grid">
+            <div class="card-skeleton">
+                <div class="icon-skeleton"></div>
+                <div class="text-skeleton"></div>
+                <div class="text-skeleton short"></div>
+            </div>
+            <div class="card-skeleton">
+                <div class="icon-skeleton"></div>
+                <div class="text-skeleton"></div>
+                <div class="text-skeleton short"></div>
+            </div>
+            <div class="card-skeleton">
+                <div class="icon-skeleton"></div>
+                <div class="text-skeleton"></div>
+                <div class="text-skeleton short"></div>
+            </div>
+            <div class="card-skeleton">
+                <div class="icon-skeleton"></div>
+                <div class="text-skeleton"></div>
+                <div class="text-skeleton short"></div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        &copy; 2024 VocabPix. All rights reserved.
+    </footer>
+</body>
+</html>

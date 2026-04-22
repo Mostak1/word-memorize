@@ -98,10 +98,30 @@ class ReviewWordController extends Controller
         $this->streakService->recordActivity($user);
         $xpAwarded = $this->xpService->awardSessionXp($user);
 
+        // Check if the entire wordlist is now completed (all words mastered)
+        $listCompleted = false;
+        $listName = '';
+        if ($wordlistId) {
+            $wordList = \App\Models\WordList::withCount('words')->find($wordlistId);
+            if ($wordList && $wordList->words_count > 0) {
+                $listName = $wordList->title;
+                $masteredCount = \App\Models\WordProgress::where('user_id', $user->id)
+                    ->whereIn('word_id', $wordList->words()->pluck('id'))
+                    ->where('box', '>=', \App\Models\WordProgress::MASTERED_BOX)
+                    ->count();
+
+                if ($masteredCount === $wordList->words_count) {
+                    $listCompleted = true;
+                }
+            }
+        }
+
         return response()->json([
             'status' => 'ok',
             'xp_awarded' => $xpAwarded,
             'streak' => $this->streakService->getSummary($user),
+            'list_completed' => $listCompleted,
+            'list_name' => $listName,
         ]);
     }
 

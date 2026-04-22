@@ -168,7 +168,7 @@ Route::get('/wordlist/{wordListId}/subcategory/{subcategoryId}/start', [WordList
 Route::get('/word/{id}', [WordListController::class, 'showWord'])->name('word.show');
 
 // ── Auth-protected routes ──────────────────────────────────────────────────────
-Route::middleware(['auth', 'active.device'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::get('/profile/followers', [ProfileController::class, 'followers'])->name('profile.followers');
     Route::get('/profile/following', [ProfileController::class, 'following'])->name('profile.following');
