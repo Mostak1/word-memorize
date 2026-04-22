@@ -1,9 +1,18 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import laravel from "laravel-vite-plugin";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+    const env = loadEnv(mode, process.cwd(), "");
+    const assetUrl = env.ASSET_URL || "";
+    // If we have an ASSET_URL, we use it as the base for the build
+    const base = assetUrl
+        ? (assetUrl.endsWith("/") ? assetUrl : assetUrl + "/") + "build/"
+        : "/build/";
+
+    return {
+        base: mode === "production" ? base : "/build/",
     plugins: [
         laravel({
             input: ["resources/css/app.css", "resources/js/app.jsx"],
@@ -28,8 +37,8 @@ export default defineConfig({
                 background_color: "#ffffff",
                 display: "standalone",
                 display_override: ["window-controls-overlay", "standalone", "minimal-ui", "browser"],
-                start_url: "/",
-                scope: "/",
+                start_url: assetUrl ? assetUrl : "/",
+                scope: assetUrl ? assetUrl : "/",
                 orientation: "portrait",
                 categories: ["education", "productivity"],
                 icons: [
@@ -89,10 +98,11 @@ export default defineConfig({
             },
         }),
     ],
-    resolve: {
-        alias: {
-            "@": "/resources/js",
-            "lottie-web": "lottie-web/build/player/lottie_light.js",
+        resolve: {
+            alias: {
+                "@": "/resources/js",
+                "lottie-web": "lottie-web/build/player/lottie_light.js",
+            },
         },
-    },
+    };
 });
