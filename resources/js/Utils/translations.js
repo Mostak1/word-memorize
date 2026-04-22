@@ -258,10 +258,8 @@ export const translations = {
             subtitle_wordlist: 'Let\'s see how well you know "{title}"',
             stats: {
                 questions: "Questions",
-                types: "Types",
                 max_pts: "Max Points",
             },
-            whats_included: "What's included",
             quick_tip: "Quick tip:",
             tip_msg:
                 "Read each question carefully. You only get one shot per question!",
@@ -833,10 +831,8 @@ export const translations = {
             subtitle_wordlist: 'দেখা যাক আপনি "{title}" সম্পর্কে কতটা জানেন',
             stats: {
                 questions: "প্রশ্ন",
-                types: "ধরণ",
                 max_pts: "সর্বোচ্চ পয়েন্ট",
             },
-            whats_included: "যা যা অন্তর্ভুক্ত আছে",
             quick_tip: "দ্রুত পরামর্শ:",
             tip_msg:
                 "প্রতিটি প্রশ্ন মনোযোগ সহকারে পড়ুন। প্রতিটি প্রশ্নের জন্য আপনি একটি মাত্র সুযোগ পাবেন!",

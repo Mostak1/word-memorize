@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { X, Share2, Facebook, MessageCircle, Send, Instagram, Check, Copy } from "lucide-react";
+import { X, Share2, Facebook, MessageCircle, Send, Instagram, ArrowRight } from "lucide-react";
+import { Link } from "@inertiajs/react";
 import { BadgeSVG } from "@/Components/AchievementBadges";
 
 export default function AchievementOverlay({ achievementData, onDismiss }) {
@@ -83,7 +84,7 @@ export default function AchievementOverlay({ achievementData, onDismiss }) {
                         Badge Trophy
                     </span>
                     <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
-                        Trophy<br />Unlocked
+                        {achievement.name}
                     </h2>
                 </div>
 
@@ -103,10 +104,20 @@ export default function AchievementOverlay({ achievementData, onDismiss }) {
                 </div>
 
                 {/* ── Content ── */}
-                <div className="px-10 pb-8 pt-4 text-center">
+                <div className="px-10 pb-6 text-center">
                     <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed font-medium">
-                        You've won a trophy for your achievement. Keep shining and reach even higher!
+                        {achievement.description || achievement.desc || "You've won a trophy for your achievement. Keep shining and reach even higher!"}
                     </p>
+
+                    <div className="mt-4">
+                        <Link 
+                            href={route('achievements')}
+                            className="inline-flex items-center gap-1 text-xs font-bold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
+                        >
+                            View All Achievements
+                            <ArrowRight className="w-3 h-3" />
+                        </Link>
+                    </div>
                 </div>
 
                 {/* ── Footer Button ── */}

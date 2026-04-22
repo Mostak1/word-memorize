@@ -10,77 +10,31 @@ import fireAnim from "../../../public/lottie/FireStreakOrange.json";
 export default function StreakPop({ streakCount, onComplete }) {
     useEffect(() => {
         const timer = setTimeout(() => {
-            if (onComplete) onComplete();
-        }, 2800); // Slightly longer for better effect
+            onComplete?.();
+        }, 3000); // Extended slightly for the full drama
         return () => clearTimeout(timer);
     }, [onComplete]);
 
     return (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center pointer-events-none backdrop-blur-[2px] bg-black/40 animate-[fadeIn_0.3s_ease-out]">
-            <div className="relative flex flex-col items-center">
-                {/* Fire Animation */}
-                <div className="relative scale-110">
-                    {/* Background Glow */}
-                    <div className="absolute inset-0 flex items-center justify-center -z-10">
-                        <div className="absolute w-[260px] h-[260px] bg-orange-600 rounded-full blur-[80px] opacity-60 animate-pulse" />
-                        <div className="absolute w-[180px] h-[180px] bg-red-600 rounded-full blur-[60px] opacity-50 animate-pulse" style={{ animationDelay: '1s' }} />
-                    </div>
-
-                    <Lottie
-                        animationData={fireAnim}
-                        loop={false}
-                        style={{ width: 340, height: 340 }}
-                    />
-                    
-                    {/* Streak Count Container (Centered in Flame) */}
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center mt-2">
-                        <div
-                            className="text-7xl font-black text-white tracking-tight animate-[streakPop_0.75s_cubic-bezier(0.34,1.56,0.64,1)_forwards]"
-                            style={{ 
-                                textShadow: "0 0 50px rgba(255, 149, 0, 0.9), 0 20px 60px rgba(255, 0, 0, 0.6), 0 0 100px rgba(255, 255, 255, 0.2)" 
-                            }}
-                        >
-                            {streakCount}
-                        </div>
-                        <div className="text-white font-extrabold text-xl tracking-[4px] mt-1 drop-shadow-lg opacity-0 animate-[fadeInUp_0.5s_ease-out_0.3s_forwards]">
-                            DAY STREAK
-                        </div>
-                    </div>
-                </div>
-
-                {/* Bottom Badge */}
-                <div className="mt-2 opacity-0 animate-[fadeInUp_0.5s_ease-out_0.6s_forwards]">
-                    <div className="px-6 py-3 rounded-full bg-gradient-to-r from-orange-600 to-red-500 text-white font-black text-sm tracking-wide shadow-[0_10px_20px_rgba(234,88,12,0.4)] border border-orange-400/30">
-                        YOU'RE ON FIRE!
-                    </div>
-                </div>
-            </div>
-
+        <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none bg-black/60 backdrop-blur-sm animate-[fadeIn_0.3s_ease-out]">
             <style>{`
-                @keyframes streakPop {
+                @keyframes shimmerPill {
+                    0% { transform: translateX(-100%) skewX(-15deg); }
+                    100% { transform: translateX(200%) skewX(-15deg); }
+                }
+                @keyframes scaleInPop {
                     0% {
                         opacity: 0;
-                        transform: scale(0.2) translateY(60px);
+                        transform: scale(0.5) translateY(40px);
+                        filter: blur(10px);
                     }
-                    40% {
-                        transform: scale(1.15) translateY(-10px);
-                    }
-                    70% {
-                        transform: scale(0.98) translateY(5px);
+                    50% {
+                        transform: scale(1.1) translateY(-10px);
+                        filter: blur(0px);
                     }
                     100% {
                         opacity: 1;
                         transform: scale(1) translateY(0);
-                    }
-                }
-                @keyframes fadeInUp {
-                    from {
-                        opacity: 0;
-                        transform: translateY(20px);
-                    }
-                    to {
-                        opacity: 1;
-                        transform: translateY(0);
                     }
                 }
                 @keyframes fadeIn {
@@ -88,6 +42,56 @@ export default function StreakPop({ streakCount, onComplete }) {
                     to { opacity: 1; }
                 }
             `}</style>
+
+            <div className="relative flex flex-col items-center animate-[scaleInPop_0.6s_cubic-bezier(0.34,1.56,0.64,1)_forwards]">
+                {/* Glowing background aura */}
+                <div className="absolute inset-0 bg-orange-500/40 blur-[80px] rounded-full scale-[1.5] z-0" />
+
+                {/* Fire Streak Lottie */}
+                <div
+                    className="relative z-10"
+                    style={{ transform: "scale(1.2)" }}
+                >
+                    <Lottie
+                        animationData={fireAnim}
+                        loop={true}
+                        style={{ width: 340, height: 340 }}
+                    />
+                </div>
+
+                {/* Dynamic Content Overlay */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 pt-[60px]">
+                    <div
+                        className="text-8xl font-black text-white tracking-tighter"
+                        style={{
+                            textShadow:
+                                "0 8px 30px rgba(255, 69, 0, 0.9), 0 0 60px rgba(255, 165, 0, 0.8)",
+                            WebkitTextStroke:
+                                "3px rgba(255, 255, 255, 0.9)",
+                        }}
+                    >
+                        {streakCount}
+                    </div>
+                    <div
+                        className="text-white text-2xl font-bold uppercase tracking-[0.2em] mt-3"
+                        style={{
+                            textShadow: "0 4px 15px rgba(255, 69, 0, 0.9)",
+                        }}
+                    >
+                        Day Streak
+                    </div>
+
+                    {/* Encouraging subtext pill */}
+                    <div className="mt-8 px-6 py-2.5 bg-gradient-to-r from-orange-600/90 to-red-600/90 backdrop-blur-md rounded-full border border-white/30 shadow-[0_10px_30px_rgba(255,69,0,0.5)] overflow-hidden relative">
+                        <div className="absolute inset-0 bg-white/30 w-1/2 animate-[shimmerPill_2s_infinite]" />
+                        <span className="text-white font-bold tracking-wide text-sm relative z-10 drop-shadow-md">
+                            {streakCount === 1
+                                ? "GREAT START!"
+                                : "YOU'RE ON FIRE!"}
+                        </span>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }

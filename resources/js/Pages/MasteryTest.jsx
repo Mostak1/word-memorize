@@ -30,7 +30,6 @@ import {
     Zap,
     Brain,
     Target,
-    Star,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useTranslation } from "@/Contexts/LanguageContext";
@@ -83,7 +82,9 @@ function TypeBadge({ type }) {
             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${meta.color}`}
         >
             <Icon className="h-3 w-3" />
-            {localizedLabel !== `quiz.${type.replace("_en_bn", "")}` ? localizedLabel : meta.label}
+            {localizedLabel !== `quiz.${type.replace("_en_bn", "")}`
+                ? localizedLabel
+                : meta.label}
         </span>
     );
 }
@@ -270,10 +271,19 @@ function MatchPairsQuestion({ q, onSubmit }) {
             );
         }
         if (selectedWord === wordIndex)
-            return base + "bg-blue-50 dark:bg-blue-950/30 border-blue-500 text-blue-800 dark:text-blue-400";
+            return (
+                base +
+                "bg-blue-50 dark:bg-blue-950/30 border-blue-500 text-blue-800 dark:text-blue-400"
+            );
         if (wordToMeaning[wordIndex] !== undefined)
-            return base + "bg-amber-50 dark:bg-amber-950/30 border-amber-400 text-amber-800 dark:text-amber-400";
-        return base + "bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 text-gray-800 dark:text-gray-200 hover:border-[#E5201C] hover:bg-red-50 dark:hover:bg-red-950/20 cursor-pointer";
+            return (
+                base +
+                "bg-amber-50 dark:bg-amber-950/30 border-amber-400 text-amber-800 dark:text-amber-400"
+            );
+        return (
+            base +
+            "bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 text-gray-800 dark:text-gray-200 hover:border-[#E5201C] hover:bg-red-50 dark:hover:bg-red-950/20 cursor-pointer"
+        );
     };
 
     const meaningClass = (displayPos) => {
@@ -284,41 +294,84 @@ function MatchPairsQuestion({ q, onSubmit }) {
         );
         if (submitted) {
             if (!takenByWord)
-                return base + "bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-300 dark:text-gray-500";
+                return (
+                    base +
+                    "bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-300 dark:text-gray-500"
+                );
             const wordIndex = Number(takenByWord[0]);
             const correct = shuffledIndices[displayPos] === wordIndex;
-            return base + (correct ? "bg-green-50 dark:bg-green-950/30 border-green-500 text-green-700 dark:text-green-400" : "bg-red-50 dark:bg-red-950/30 border-red-400 text-red-700 dark:text-red-400");
+            return (
+                base +
+                (correct
+                    ? "bg-green-50 dark:bg-green-950/30 border-green-500 text-green-700 dark:text-green-400"
+                    : "bg-red-50 dark:bg-red-950/30 border-red-400 text-red-700 dark:text-red-400")
+            );
         }
         if (takenByWord)
-            return base + "bg-amber-50 dark:amber-950/30 border-amber-400 text-amber-700 dark:text-amber-400";
-        return base + "bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 hover:border-[#E5201C] hover:bg-red-50 dark:hover:bg-red-950/20 cursor-pointer";
+            return (
+                base +
+                "bg-amber-50 dark:amber-950/30 border-amber-400 text-amber-700 dark:text-amber-400"
+            );
+        return (
+            base +
+            "bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 hover:border-[#E5201C] hover:bg-red-50 dark:hover:bg-red-950/20 cursor-pointer"
+        );
     };
 
     return (
         <div>
             <div className="bg-white dark:bg-slate-900 rounded-2xl px-4 py-4 shadow-sm mb-4">
                 <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-4">
-                    {submitted ? t("quiz.match_results") : selectedWord !== null ? t("quiz.tap_meaning") : t("quiz.tap_word")}
+                    {submitted
+                        ? t("quiz.match_results")
+                        : selectedWord !== null
+                          ? t("quiz.tap_meaning")
+                          : t("quiz.tap_word")}
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                        <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-center mb-1">{t("quiz.words")}</p>
+                        <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-center mb-1">
+                            {t("quiz.words")}
+                        </p>
                         {q.pairs.map((pair, wordIndex) => (
-                            <button key={wordIndex} className={wordClass(wordIndex)} onClick={() => handleWordClick(wordIndex)} disabled={submitted}>{pair.word}</button>
+                            <button
+                                key={wordIndex}
+                                className={wordClass(wordIndex)}
+                                onClick={() => handleWordClick(wordIndex)}
+                                disabled={submitted}
+                            >
+                                {pair.word}
+                            </button>
                         ))}
                     </div>
                     <div className="space-y-2">
-                        <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-center mb-1">{t("quiz.meanings")}</p>
+                        <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-center mb-1">
+                            {t("quiz.meanings")}
+                        </p>
                         {shuffledIndices.map((pairIndex, displayPos) => (
-                            <button key={displayPos} className={meaningClass(displayPos)} onClick={() => handleMeaningClick(displayPos)} disabled={submitted} style={{ minHeight: "3rem" }}>
-                                {q.pairs[pairIndex].meaning.length > 55 ? q.pairs[pairIndex].meaning.substring(0, 52) + "…" : q.pairs[pairIndex].meaning}
+                            <button
+                                key={displayPos}
+                                className={meaningClass(displayPos)}
+                                onClick={() => handleMeaningClick(displayPos)}
+                                disabled={submitted}
+                                style={{ minHeight: "3rem" }}
+                            >
+                                {q.pairs[pairIndex].meaning.length > 55
+                                    ? q.pairs[pairIndex].meaning.substring(
+                                          0,
+                                          52,
+                                      ) + "…"
+                                    : q.pairs[pairIndex].meaning}
                             </button>
                         ))}
                     </div>
                 </div>
             </div>
             {!submitted && allMatched && (
-                <button onClick={handleCheckAnswers} className="w-full bg-[#E5201C] hover:bg-red-700 text-white font-bold py-4 rounded-2xl transition-all shadow-md">
+                <button
+                    onClick={handleCheckAnswers}
+                    className="w-full bg-[#E5201C] hover:bg-red-700 text-white font-bold py-4 rounded-2xl transition-all shadow-md"
+                >
                     {t("quiz.check_answers")}
                 </button>
             )}
@@ -347,16 +400,13 @@ export default function MasteryTest({
     const [score, setScore] = useState(0);
     const [done, setDone] = useState(false);
     const [matchCorrectCount, setMatchCorrectCount] = useState(null);
-    const [showNoWordsDialog, setShowNoWordsDialog] = useState(noMasteredWords || noUsableSentences);
+    const [showNoWordsDialog, setShowNoWordsDialog] = useState(
+        noMasteredWords || noUsableSentences,
+    );
     const [showAnimation, setShowAnimation] = useState(true);
     const [showStreakEffect, setShowStreakEffect] = useState(false);
     const [streakCount, setStreakCount] = useState(0);
 
-    const uniqueTypes = useMemo(() => {
-        const seen = new Set();
-        questions.forEach((q) => seen.add(q.type));
-        return [...seen];
-    }, [questions]);
 
     const q = questions[current] ?? null;
     const total = questions.length;
@@ -384,29 +434,50 @@ export default function MasteryTest({
         if (passed) setScore((s) => s + 1);
         if (passed) {
             playCorrect(userSettings);
-            toast.success(t("quiz.match_passed", { correct: correctCount, total: q.pairs.length }), { duration: 2500, icon: "✓" });
+            toast.success(
+                t("quiz.match_passed", {
+                    correct: correctCount,
+                    total: q.pairs.length,
+                }),
+                { duration: 2500, icon: "✓" },
+            );
         } else {
             playIncorrect(userSettings);
-            toast.error(t("quiz.match_failed", { correct: correctCount, total: q.pairs.length }), { duration: 2500, icon: "✗" });
+            toast.error(
+                t("quiz.match_failed", {
+                    correct: correctCount,
+                    total: q.pairs.length,
+                }),
+                { duration: 2500, icon: "✗" },
+            );
         }
     };
 
     const handleNext = async () => {
         if (current + 1 >= total) {
             try {
-                const body = wordlistId ? { wordlist_id: wordlistId, correct_count: score, total_questions: total } : {};
-                const csrfToken = document.cookie.split("; ").find((r) => r.startsWith("XSRF-TOKEN="))?.split("=")[1];
+                const body = wordlistId
+                    ? {
+                          wordlist_id: wordlistId,
+                          correct_count: score,
+                          total_questions: total,
+                      }
+                    : {};
+                const csrfToken = document.cookie
+                    .split("; ")
+                    .find((r) => r.startsWith("XSRF-TOKEN="))
+                    ?.split("=")[1];
                 const res = await fetch(route("mastery-test.finish"), {
                     method: "POST",
-                    headers: { 
-                        "Content-Type": "application/json", 
-                        "X-XSRF-TOKEN": decodeURIComponent(csrfToken || ""), 
-                        Accept: "application/json" 
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-XSRF-TOKEN": decodeURIComponent(csrfToken || ""),
+                        Accept: "application/json",
                     },
                     body: JSON.stringify(body),
                 });
                 const result = await res.json();
-                
+
                 if (result.streak_increased) {
                     setStreakCount(result.streak?.current_streak ?? 0);
                     setShowStreakEffect(true);
@@ -429,12 +500,12 @@ export default function MasteryTest({
     };
 
     const handleRestart = () => {
-        setCurrent(0); 
-        setSelected(null); 
-        setAnswered(false); 
-        setIsCorrect(false); 
-        setScore(0); 
-        setDone(false); 
+        setCurrent(0);
+        setSelected(null);
+        setAnswered(false);
+        setIsCorrect(false);
+        setScore(0);
+        setDone(false);
         setMatchCorrectCount(null);
         setShowAnimation(true);
     };
@@ -444,47 +515,79 @@ export default function MasteryTest({
             <AppLayout>
                 <Head title={t("quiz.title")} />
                 <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 flex justify-center px-4 pt-4">
-                    <div className="w-full max-w-md mb-4" style={{ animation: "fadeInUp 0.4s ease-out" }}>
-                        <Link href={categoryId ? route("wordlistcategory.wordlists", { category: categoryId }) : route("dashboard")} className="inline-flex items-center gap-1.5 text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 mb-5 transition-colors">
+                    <div
+                        className="w-full max-w-md mb-4"
+                        style={{ animation: "fadeInUp 0.4s ease-out" }}
+                    >
+                        <Link
+                            href={
+                                categoryId
+                                    ? route("wordlistcategory.wordlists", {
+                                          category: categoryId,
+                                      })
+                                    : route("dashboard")
+                            }
+                            className="inline-flex items-center gap-1.5 text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 mb-5 transition-colors"
+                        >
                             <ChevronLeft className="h-4 w-4" /> {t("quiz.back")}
                         </Link>
                         <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-md overflow-hidden mb-4">
                             <div className="bg-gradient-to-br from-[#E5201C] to-rose-600 px-6 pt-8 pb-10 text-white text-center relative">
-                                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 20% 80%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)", backgroundSize: "30px 30px" }} />
-                                <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-2xl mb-4 backdrop-blur-sm"><Brain className="h-8 w-8 text-white" /></div>
-                                <h1 className="text-2xl font-extrabold mb-1">{t("quiz.subtitle")}</h1>
-                                <p className="text-white/80 text-sm">{wordListTitle ? t("quiz.subtitle_wordlist", { title: wordListTitle }) : t("quiz.subtitle_desc")}</p>
+                                <div
+                                    className="absolute inset-0 opacity-10"
+                                    style={{
+                                        backgroundImage:
+                                            "radial-gradient(circle at 20% 80%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)",
+                                        backgroundSize: "30px 30px",
+                                    }}
+                                />
+                                <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-2xl mb-4 backdrop-blur-sm">
+                                    <Brain className="h-8 w-8 text-white" />
+                                </div>
+                                <h1 className="text-2xl font-extrabold mb-1">
+                                    {t("quiz.subtitle")}
+                                </h1>
+                                <p className="text-white/80 text-sm">
+                                    {wordListTitle
+                                        ? t("quiz.subtitle_wordlist", {
+                                              title: wordListTitle,
+                                          })
+                                        : t("quiz.subtitle_desc")}
+                                </p>
                             </div>
-                            <div className="grid grid-cols-3 divide-x divide-gray-100 dark:divide-slate-800 border-b border-gray-100 dark:border-slate-800">
-                                <div className="py-4 text-center"><p className="text-xl font-extrabold text-gray-900 dark:text-gray-100">{total}</p><p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wide mt-0.5">{t("quiz.stats.questions")}</p></div>
-                                <div className="py-4 text-center"><p className="text-xl font-extrabold text-gray-900 dark:text-gray-100">{uniqueTypes.length}</p><p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wide mt-0.5">{t("quiz.stats.types")}</p></div>
-                                <div className="py-4 text-center"><p className="text-xl font-extrabold text-[#E5201C]">+{total}</p><p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wide mt-0.5">{t("quiz.stats.max_pts")}</p></div>
-                            </div>
-                            <div className="px-6 py-5">
-                                <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">{t("quiz.whats_included")}</p>
-                                <div className="space-y-2">
-                                    {uniqueTypes.map((type) => {
-                                        const meta = TYPE_META[type] || { label: type, color: "bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-300" };
-                                        const Icon = meta.icon || BookOpen;
-                                        const cleanType = type.replace("_en_bn", "");
-                                        const localizedType = t(`quiz.${cleanType}`);
-                                        return (
-                                            <div key={type} className="flex items-center gap-3">
-                                                <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg ${meta.color} shrink-0`}><Icon className="h-3.5 w-3.5" /></span>
-                                                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                                                    {localizedType !== `quiz.${cleanType}` ? localizedType : meta.label}
-                                                </span>
-                                                <Star className="h-3 w-3 text-amber-400 ml-auto" />
-                                            </div>
-                                        );
-                                    })}
+                            <div className="grid grid-cols-2 divide-x divide-gray-100 dark:divide-slate-800 border-b border-gray-100 dark:border-slate-800">
+                                <div className="py-4 text-center">
+                                    <p className="text-xl font-extrabold text-gray-900 dark:text-gray-100">
+                                        {total}
+                                    </p>
+                                    <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wide mt-0.5">
+                                        {t("quiz.stats.questions")}
+                                    </p>
+                                </div>
+                                <div className="py-4 text-center">
+                                    <p className="text-xl font-extrabold text-[#E5201C]">
+                                        +{total}
+                                    </p>
+                                    <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wide mt-0.5">
+                                        {t("quiz.stats.max_pts")}
+                                    </p>
                                 </div>
                             </div>
+
                         </div>
                         <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 rounded-2xl px-4 py-3.5 mb-5 flex items-start gap-3">
-                            <Zap className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" /><p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed"><span className="font-bold">{t("quiz.quick_tip")}</span> {t("quiz.tip_msg")}</p>
+                            <Zap className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                            <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+                                <span className="font-bold">
+                                    {t("quiz.quick_tip")}
+                                </span>{" "}
+                                {t("quiz.tip_msg")}
+                            </p>
                         </div>
-                        <button onClick={() => setShowIntro(false)} className="w-full py-4 bg-[#E5201C] hover:bg-red-700 active:scale-[0.98] text-white font-bold text-base rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2">
+                        <button
+                            onClick={() => setShowIntro(false)}
+                            className="w-full py-4 bg-[#E5201C] hover:bg-red-700 active:scale-[0.98] text-white font-bold text-base rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2"
+                        >
                             <Target className="h-5 w-5" /> {t("quiz.lets_go")}
                         </button>
                     </div>
@@ -501,7 +604,12 @@ export default function MasteryTest({
                 <Head title={t("quiz.results_title")} />
                 {done && showAnimation && !showStreakEffect && (
                     <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center">
-                        <Lottie animationData={doneAnimation} loop={false} style={{ width: 600, height: 600 }} onComplete={() => setShowAnimation(false)} />
+                        <Lottie
+                            animationData={doneAnimation}
+                            loop={false}
+                            style={{ width: 600, height: 600 }}
+                            onComplete={() => setShowAnimation(false)}
+                        />
                     </div>
                 )}
                 {showStreakEffect && (
@@ -513,23 +621,89 @@ export default function MasteryTest({
                 <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 flex justify-center px-4 pt-6">
                     <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-md w-full max-w-md p-8 text-center h-fit">
                         <div className="text-6xl mb-4">{emoji}</div>
-                        <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 mb-1">{t("quiz.test_complete")}</h1>
-                        <p className="text-gray-400 dark:text-gray-500 text-sm mb-6">{t("quiz.answered_info", { score, total })}</p>
+                        <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 mb-1">
+                            {t("quiz.test_complete")}
+                        </h1>
+                        <p className="text-gray-400 dark:text-gray-500 text-sm mb-6">
+                            {t("quiz.answered_info", { score, total })}
+                        </p>
                         <div className="relative w-32 h-32 mx-auto mb-6">
-                            <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-                                <circle cx="18" cy="18" r="15.9" fill="none" stroke="currentColor" strokeWidth="3" className="dark:stroke-slate-700 stroke-[#F0F2F5]" />
-                                <circle cx="18" cy="18" r="15.9" fill="none" stroke={pct >= 80 ? "#16a34a" : pct >= 50 ? "#f59e0b" : "#E5201C"} strokeWidth="3" strokeDasharray={`${pct} ${100 - pct}`} strokeLinecap="round" />
+                            <svg
+                                viewBox="0 0 36 36"
+                                className="w-full h-full -rotate-90"
+                            >
+                                <circle
+                                    cx="18"
+                                    cy="18"
+                                    r="15.9"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="3"
+                                    className="dark:stroke-slate-700 stroke-[#F0F2F5]"
+                                />
+                                <circle
+                                    cx="18"
+                                    cy="18"
+                                    r="15.9"
+                                    fill="none"
+                                    stroke={
+                                        pct >= 80
+                                            ? "#16a34a"
+                                            : pct >= 50
+                                              ? "#f59e0b"
+                                              : "#E5201C"
+                                    }
+                                    strokeWidth="3"
+                                    strokeDasharray={`${pct} ${100 - pct}`}
+                                    strokeLinecap="round"
+                                />
                             </svg>
-                            <div className="absolute inset-0 flex flex-col items-center justify-center"><span className="text-3xl font-extrabold text-gray-900">{pct}%</span></div>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                <span className="text-3xl font-extrabold text-gray-900">
+                                    {pct}%
+                                </span>
+                            </div>
                         </div>
                         <div className="grid grid-cols-2 gap-3 mb-8">
-                            <div className="bg-green-50 dark:bg-green-950/30 rounded-2xl py-4"><p className="text-2xl font-extrabold text-green-600 dark:text-green-400">{score}</p><p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{t("quiz.correct")}</p></div>
-                            <div className="bg-red-50 dark:bg-red-950/30 rounded-2xl py-4"><p className="text-2xl font-extrabold text-[#E5201C] dark:text-red-400">{total - score}</p><p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{t("quiz.wrong")}</p></div>
+                            <div className="bg-green-50 dark:bg-green-950/30 rounded-2xl py-4">
+                                <p className="text-2xl font-extrabold text-green-600 dark:text-green-400">
+                                    {score}
+                                </p>
+                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                                    {t("quiz.correct")}
+                                </p>
+                            </div>
+                            <div className="bg-red-50 dark:bg-red-950/30 rounded-2xl py-4">
+                                <p className="text-2xl font-extrabold text-[#E5201C] dark:text-red-400">
+                                    {total - score}
+                                </p>
+                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                                    {t("quiz.wrong")}
+                                </p>
+                            </div>
                         </div>
                         <div className="flex flex-col gap-3">
-                            <button onClick={handleRestart} className="w-full py-3.5 bg-[#E5201C] dark:bg-red-700 text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-red-700 dark:hover:bg-red-800 transition"><RotateCcw className="h-4 w-4" /> {t("quiz.try_again")}</button>
-                            <Link href={categoryId ? route("wordlistcategory.wordlists", { category: categoryId }) : route("dashboard")} className="w-full py-3.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 font-semibold rounded-2xl flex items-center justify-center gap-2 hover:shadow-md dark:hover:shadow-md transition">
-                                <ChevronLeft className="h-4 w-4" /> {categoryId ? t("quiz.back_to_wordlist") : t("quiz.back_to_dashboard")}
+                            <button
+                                onClick={handleRestart}
+                                className="w-full py-3.5 bg-[#E5201C] dark:bg-red-700 text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-red-700 dark:hover:bg-red-800 transition"
+                            >
+                                <RotateCcw className="h-4 w-4" />{" "}
+                                {t("quiz.try_again")}
+                            </button>
+                            <Link
+                                href={
+                                    categoryId
+                                        ? route("wordlistcategory.wordlists", {
+                                              category: categoryId,
+                                          })
+                                        : route("dashboard")
+                                }
+                                className="w-full py-3.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 font-semibold rounded-2xl flex items-center justify-center gap-2 hover:shadow-md dark:hover:shadow-md transition"
+                            >
+                                <ChevronLeft className="h-4 w-4" />{" "}
+                                {categoryId
+                                    ? t("quiz.back_to_wordlist")
+                                    : t("quiz.back_to_dashboard")}
                             </Link>
                         </div>
                     </div>
@@ -542,29 +716,85 @@ export default function MasteryTest({
         <AppLayout>
             <Head title={q?.word ? `${q.word} - Quiz` : t("quiz.title")} />
             <Toaster position="top-center" expand={false} richColors />
+            {showStreakEffect && (
+                <StreakPop
+                    streakCount={streakCount}
+                    onComplete={() => setShowStreakEffect(false)}
+                />
+            )}
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 px-4 py-8">
                 <div className="max-w-md mx-auto">
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex-1 mr-4">
                             <div className="h-2 bg-gray-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                                <div className="h-full bg-[#E5201C] transition-all duration-500" style={{ width: `${((current + 1) / total) * 100}%` }} />
+                                <div
+                                    className="h-full bg-[#E5201C] transition-all duration-500"
+                                    style={{
+                                        width: `${((current + 1) / total) * 100}%`,
+                                    }}
+                                />
                             </div>
                         </div>
-                        <span className="text-xs font-bold text-gray-400 dark:text-gray-500 tabular-nums">{current + 1} / {total}</span>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => {
+                                    setStreakCount(5);
+                                    setShowStreakEffect(true);
+                                }}
+                                className="shrink-0 text-[10px] font-bold text-orange-500 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900/50 rounded-full px-2 py-0.5 shadow-sm hover:scale-105 active:scale-95 transition-all"
+                            >
+                                Test Streak
+                            </button>
+                            <span className="text-xs font-bold text-gray-400 dark:text-gray-500 tabular-nums shrink-0">
+                                {current + 1} / {total}
+                            </span>
+                        </div>
                     </div>
                     <div className="mb-6 flex justify-between items-center">
                         <TypeBadge type={q.type} />
                         <div className="flex items-center gap-1.5 text-xs font-bold text-gray-500 dark:text-gray-400">
-                            <Trophy className="h-3.5 w-3.5 text-amber-500" /> {score} pts
+                            <Trophy className="h-3.5 w-3.5 text-amber-500" />{" "}
+                            {score} pts
                         </div>
                     </div>
-                    <div key={current} style={{ animation: "fadeInUp 0.3s ease-out" }}>
-                        {q.type === "fill_blank" && (<FillBlankQuestion q={q} answered={answered} selected={selected} isCorrect={isCorrect} onAnswer={handleMCQAnswer} />)}
-                        {q.type === "match_pairs" && (<MatchPairsQuestion q={q} onSubmit={handleMatchSubmit} />)}
-                        {(q.type === "synonym" || q.type === "antonym" || q.type === "translation_en_bn") && (<SimpleQuestion q={q} answered={answered} selected={selected} isCorrect={isCorrect} onAnswer={handleMCQAnswer} />)}
+                    <div
+                        key={current}
+                        style={{ animation: "fadeInUp 0.3s ease-out" }}
+                    >
+                        {q.type === "fill_blank" && (
+                            <FillBlankQuestion
+                                q={q}
+                                answered={answered}
+                                selected={selected}
+                                isCorrect={isCorrect}
+                                onAnswer={handleMCQAnswer}
+                            />
+                        )}
+                        {q.type === "match_pairs" && (
+                            <MatchPairsQuestion
+                                q={q}
+                                onSubmit={handleMatchSubmit}
+                            />
+                        )}
+                        {(q.type === "synonym" ||
+                            q.type === "antonym" ||
+                            q.type === "translation_en_bn") && (
+                            <SimpleQuestion
+                                q={q}
+                                answered={answered}
+                                selected={selected}
+                                isCorrect={isCorrect}
+                                onAnswer={handleMCQAnswer}
+                            />
+                        )}
                         {answered && (
-                            <button onClick={handleNext} className="w-full mt-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold py-4 rounded-2xl shadow-lg transition active:scale-[0.98]">
-                                {current + 1 === total ? t("quiz.finish_test") : t("quiz.next_question")}
+                            <button
+                                onClick={handleNext}
+                                className="w-full mt-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold py-4 rounded-2xl shadow-lg transition active:scale-[0.98]"
+                            >
+                                {current + 1 === total
+                                    ? t("quiz.finish_test")
+                                    : t("quiz.next_question")}
                             </button>
                         )}
                     </div>
@@ -574,14 +804,34 @@ export default function MasteryTest({
             <AlertDialog open={showNoWordsDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>{t("quiz.no_words_title")}</AlertDialogTitle>
+                        <AlertDialogTitle>
+                            {t("quiz.no_words_title")}
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
-                            {noUsableSentences ? t("quiz.no_words_desc_sentences") : t("quiz.no_words_desc_mastery")}
+                            {noUsableSentences
+                                ? t("quiz.no_words_desc_sentences")
+                                : t("quiz.no_words_desc_mastery")}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="flex-col gap-2">
-                        <AlertDialogAction onClick={() => (window.location.href = route("wordlistcategory.index"))} className="w-full bg-[#E5201C] hover:bg-red-700">{t("quiz.start_exercising")}</AlertDialogAction>
-                        <AlertDialogAction onClick={() => (window.location.href = route("dashboard"))} className="w-full bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 shadow-none">{t("quiz.go_back")}</AlertDialogAction>
+                        <AlertDialogAction
+                            onClick={() =>
+                                (window.location.href = route(
+                                    "wordlistcategory.index",
+                                ))
+                            }
+                            className="w-full bg-[#E5201C] hover:bg-red-700"
+                        >
+                            {t("quiz.start_exercising")}
+                        </AlertDialogAction>
+                        <AlertDialogAction
+                            onClick={() =>
+                                (window.location.href = route("dashboard"))
+                            }
+                            className="w-full bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 shadow-none"
+                        >
+                            {t("quiz.go_back")}
+                        </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
