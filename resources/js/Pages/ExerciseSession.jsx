@@ -3,7 +3,6 @@ import Lottie from "lottie-react";
 import CryptoJS from "crypto-js";
 import AppLayout from "@/Layouts/AppLayout";
 import approvedAnimation from "../../../public/lottie/Approved.json";
-import fireStreakAnimation from "../../../public/lottie/FireStreakOrange.json";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -204,8 +203,6 @@ export default function ExerciseSession({
 
     const previousStreak = useRef(initialStreak?.current_streak ?? 0);
 
-    // Lottie JSON is already a JS object via Vite's JSON import — use directly.
-    const fireAnim = fireStreakAnimation;
     const approvedAnim = approvedAnimation;
 
     // const [streakValue, setStreakValue] = useState(1);
@@ -253,6 +250,10 @@ export default function ExerciseSession({
     // play their full animation without cancelling the previous one.
     const [masteryEventKey, setMasteryEventKey] = useState(0);
     const [levelUpPulse, setLevelUpPulse] = useState(false);
+
+    const triggerAchievements = () => {
+        window.dispatchEvent(new CustomEvent("check-achievements"));
+    };
 
     // Current word is always the front of the queue
     const word = queue[0] ?? null;
@@ -360,8 +361,7 @@ export default function ExerciseSession({
         })
             .then((response) => response.json())
             .then((data) => {
-                // Check if any new achievements were earned during this session
-                window.dispatchEvent(new CustomEvent("check-achievements"));
+                let streakIncreased = false;
 
                 if (data.xp_awarded && xp_enabled) {
                     setSessionXpAwarded(data.xp_awarded);
@@ -385,6 +385,7 @@ export default function ExerciseSession({
                             lastSessionDay !== today &&
                             newStreak > 0)
                     ) {
+                        streakIncreased = true;
                         setStreakChange("up");
                         // Show Fire Streak Animation with the NEW streak count
                         setShowStreakEffect(true);
@@ -399,6 +400,11 @@ export default function ExerciseSession({
 
                     previousStreak.current = newStreak;
                     setStreak(data.streak);
+                }
+
+                // If streak increased, StreakPop will handle the achievement check onComplete
+                if (!streakIncreased) {
+                    triggerAchievements();
                 }
             })
             .catch(() => {});
@@ -845,7 +851,10 @@ export default function ExerciseSession({
                 {showStreakEffect && streakChange === "up" && (
                     <StreakPop
                         streakCount={streak?.current_streak ?? 1}
-                        onComplete={() => setShowStreakEffect(false)}
+                        onComplete={() => {
+                            setShowStreakEffect(false);
+                            triggerAchievements();
+                        }}
                     />
                 )}
 
@@ -872,13 +881,7 @@ export default function ExerciseSession({
                     <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-md dark:shadow-xl dark:shadow-slate-950 w-full max-w-md p-8 text-center">
                         {/* Lottie celebration animation */}
                         <div className="flex justify-center -mt-2 -mb-2">
-                            {/* {approvedAnimation && (
-                                <Lottie
-                                    animationData={approvedAnimation}
-                                    loop={false}
-                                    style={{ height: 160, width: 160 }}
-                                />
-                            )} */}
+
                             {approvedAnim && (
                                 <Lottie
                                     animationData={approvedAnim}
@@ -1063,7 +1066,10 @@ export default function ExerciseSession({
             {showStreakEffect && (
                 <StreakPop
                     streakCount={streak?.current_streak ?? 1}
-                    onComplete={() => setShowStreakEffect(false)}
+                    onComplete={() => {
+                        setShowStreakEffect(false);
+                        triggerAchievements();
+                    }}
                 />
             )}
 

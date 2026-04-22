@@ -92,6 +92,7 @@ export default defineConfig({
     resolve: {
         alias: {
             "@": "/resources/js",
+            "lottie-web": "lottie-web/build/player/lottie_light.js",
         },
     },
 });

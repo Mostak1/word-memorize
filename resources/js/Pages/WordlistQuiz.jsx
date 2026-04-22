@@ -16,9 +16,6 @@ import {
     Square,
     CheckSquare,
 } from "lucide-react";
-import Lottie from "lottie-react";
-import confetti from "canvas-confetti";
-import doneAnimation from "../../../public/lottie/Done.json";
 import StreakPop from "@/Components/StreakPop";
 import FlashMessages from "@/Components/FlashMessage";
 import { toast, Toaster } from "sonner";
@@ -667,6 +664,10 @@ export default function WordlistQuiz({
     const [showMistakes, setShowMistakes] = useState(false);
     const [bookmarks, setBookmarks] = useState({});
 
+    const triggerAchievements = () => {
+        window.dispatchEvent(new CustomEvent("check-achievements"));
+    };
+
     const uniqueIncorrectWords = useMemo(() => {
         const wordMap = new Map();
         incorrectQuestions.forEach((iq) => {
@@ -821,10 +822,9 @@ export default function WordlistQuiz({
                 if (data.streak_increased) {
                     setStreakCount(data.streak?.current_streak ?? 0);
                     setShowStreakEffect(true);
+                } else {
+                    triggerAchievements();
                 }
-
-                // Trigger achievement check
-                window.dispatchEvent(new CustomEvent("check-achievements"));
             } catch (e) {
                 console.error(e);
             }
@@ -892,7 +892,10 @@ export default function WordlistQuiz({
                 {showStreakEffect && (
                     <StreakPop
                         streakCount={streakCount}
-                        onComplete={() => setShowStreakEffect(false)}
+                        onComplete={() => {
+                            setShowStreakEffect(false);
+                            triggerAchievements();
+                        }}
                     />
                 )}
                 <Toaster position="top-center" expand={false} richColors />

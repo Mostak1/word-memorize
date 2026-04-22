@@ -412,6 +412,10 @@ export default function MasteryTest({
     const [showMistakes, setShowMistakes] = useState(false);
     const [bookmarks, setBookmarks] = useState({});
 
+    const triggerAchievements = () => {
+        window.dispatchEvent(new CustomEvent("check-achievements"));
+    };
+
     const uniqueIncorrectWords = useMemo(() => {
         const wordMap = new Map();
         incorrectQuestions.forEach((iq) => {
@@ -561,9 +565,6 @@ export default function MasteryTest({
                     setStreakCount(result.streak?.current_streak ?? 0);
                     setShowStreakEffect(true);
                 }
-
-                // Trigger achievement check
-                window.dispatchEvent(new CustomEvent("check-achievements"));
             } catch (e) {
                 console.error(e);
             }
@@ -686,7 +687,10 @@ export default function MasteryTest({
                             animationData={doneAnimation}
                             loop={false}
                             style={{ width: 600, height: 600 }}
-                            onComplete={() => setShowAnimation(false)}
+                            onComplete={() => {
+                                setShowAnimation(false);
+                                triggerAchievements();
+                            }}
                         />
                     </div>
                 )}
