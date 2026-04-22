@@ -1,6 +1,6 @@
 import Lottie from "lottie-react";
 import doneAnimation from "../../../public/lottie/Done.json";
-import { Head, Link, usePage } from "@inertiajs/react";
+import { Head, Link, usePage, router } from "@inertiajs/react";
 import {
     playCorrect,
     playIncorrect,
@@ -19,6 +19,7 @@ import {
 import { Toaster, toast } from "sonner";
 import {
     ChevronLeft,
+    ArrowLeft,
     Trophy,
     Check,
     X,
@@ -30,6 +31,7 @@ import {
     Zap,
     Brain,
     Target,
+    Bookmark,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useTranslation } from "@/Contexts/LanguageContext";
@@ -406,7 +408,44 @@ export default function MasteryTest({
     const [showAnimation, setShowAnimation] = useState(true);
     const [showStreakEffect, setShowStreakEffect] = useState(false);
     const [streakCount, setStreakCount] = useState(0);
+    const [incorrectQuestions, setIncorrectQuestions] = useState([]);
+    const [showMistakes, setShowMistakes] = useState(false);
+    const [bookmarks, setBookmarks] = useState({});
 
+    const uniqueIncorrectWords = useMemo(() => {
+        const wordMap = new Map();
+        incorrectQuestions.forEach((iq) => {
+            // Case 1: Matching pairs (MasteryTest uses iq.pairs, WordlistQuiz uses iq.matching_pairs)
+            const pairs = iq.pairs || iq.matching_pairs;
+            if (
+                (iq.type === "match_pairs" || iq.type === "matching") &&
+                pairs
+            ) {
+                pairs.forEach((p) => {
+                    const id = p.id || p.word_id;
+                    const word = p.word || p.left;
+                    if (id && word && !wordMap.has(id)) {
+                        wordMap.set(id, { id, word });
+                    }
+                });
+            } else {
+                // Case 2: Regular questions (MCQ, synonym, antonym, etc.)
+                const id = iq.word_id || iq.id;
+                const word =
+                    iq.word ||
+                    iq.question_text ||
+                    iq.label ||
+                    iq.targetWordWord ||
+                    iq.correct;
+
+                // Only add if we have both an ID and a word string
+                if (id && word && !wordMap.has(id)) {
+                    wordMap.set(id, { id, word });
+                }
+            }
+        });
+        return Array.from(wordMap.values());
+    }, [incorrectQuestions]);
 
     const q = questions[current] ?? null;
     const total = questions.length;
@@ -424,6 +463,7 @@ export default function MasteryTest({
         } else {
             playIncorrect(userSettings);
             toast.error(t("quiz.mcq_wrong"), { duration: 2000, icon: "✗" });
+            setIncorrectQuestions((prev) => [...prev, q]);
         }
     };
 
@@ -431,8 +471,8 @@ export default function MasteryTest({
         setMatchCorrectCount(correctCount);
         setAnswered(true);
         const passed = correctCount >= matchPassThreshold;
-        if (passed) setScore((s) => s + 1);
         if (passed) {
+            setScore((s) => s + 1);
             playCorrect(userSettings);
             toast.success(
                 t("quiz.match_passed", {
@@ -443,6 +483,7 @@ export default function MasteryTest({
             );
         } else {
             playIncorrect(userSettings);
+            setIncorrectQuestions((prev) => [...prev, q]);
             toast.error(
                 t("quiz.match_failed", {
                     correct: correctCount,
@@ -451,6 +492,36 @@ export default function MasteryTest({
                 { duration: 2500, icon: "✗" },
             );
         }
+    };
+
+    const handleBookmark = (wordId) => {
+        setBookmarks((prev) => ({ ...prev, [wordId]: !prev[wordId] }));
+        router.post(
+            route("word.bookmark", wordId),
+            {},
+            { preserveScroll: true },
+        );
+    };
+
+    const handleDemote = (wordId) => {
+        toast.promise(
+            new Promise((resolve, reject) => {
+                router.post(
+                    route("word.demote-from-mastery", wordId),
+                    {},
+                    {
+                        preserveScroll: true,
+                        onSuccess: resolve,
+                        onError: reject,
+                    },
+                );
+            }),
+            {
+                loading: "Moving back to learning...",
+                success: "Word moved back to learning phase!",
+                error: "Failed to move word.",
+            },
+        );
     };
 
     const handleNext = async () => {
@@ -573,7 +644,6 @@ export default function MasteryTest({
                                     </p>
                                 </div>
                             </div>
-
                         </div>
                         <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 rounded-2xl px-4 py-3.5 mb-5 flex items-start gap-3">
                             <Zap className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
@@ -619,7 +689,7 @@ export default function MasteryTest({
                     />
                 )}
                 <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 flex justify-center px-4 pt-6">
-                    <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-md w-full max-w-md p-8 text-center h-fit">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-md w-full max-w-md p-8 text-center h-fit mb-4">
                         <div className="text-6xl mb-4">{emoji}</div>
                         <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 mb-1">
                             {t("quiz.test_complete")}
@@ -673,21 +743,38 @@ export default function MasteryTest({
                                     {t("quiz.correct")}
                                 </p>
                             </div>
-                            <div className="bg-red-50 dark:bg-red-950/30 rounded-2xl py-4">
-                                <p className="text-2xl font-extrabold text-[#E5201C] dark:text-red-400">
+                            <div
+                                onClick={() => setShowMistakes(!showMistakes)}
+                                className="bg-red-50 dark:bg-red-950/30 rounded-2xl py-4 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all group"
+                            >
+                                <p className="text-2xl font-extrabold text-red-600 dark:text-red-400">
                                     {total - score}
                                 </p>
-                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 group-hover:text-red-500 transition-colors">
                                     {t("quiz.wrong")}
                                 </p>
                             </div>
                         </div>
-                        <div className="flex flex-col gap-3">
+
+                        <div className="space-y-3">
+                            {uniqueIncorrectWords.length > 0 && (
+                                <button
+                                    onClick={() =>
+                                        setShowMistakes(!showMistakes)
+                                    }
+                                    className={`w-full h-14 flex items-center justify-center gap-2 rounded-2xl border-2 transition-all font-bold shadow-sm ${showMistakes ? "bg-orange-600 text-white border-orange-600" : "bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/40"}`}
+                                >
+                                    <Brain className="h-5 w-5" />
+                                    {showMistakes
+                                        ? "Hide Mistakes"
+                                        : `Review Mistakes (${uniqueIncorrectWords.length})`}
+                                </button>
+                            )}
                             <button
-                                onClick={handleRestart}
-                                className="w-full py-3.5 bg-[#E5201C] dark:bg-red-700 text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-red-700 dark:hover:bg-red-800 transition"
+                                onClick={() => window.location.reload()}
+                                className="w-full h-14 flex items-center justify-center gap-2 rounded-2xl bg-[#E5201C] text-white font-bold hover:bg-red-700 transition shadow-lg shadow-red-100 dark:shadow-none"
                             >
-                                <RotateCcw className="h-4 w-4" />{" "}
+                                <RotateCcw className="h-5 w-5" />{" "}
                                 {t("quiz.try_again")}
                             </button>
                             <Link
@@ -698,14 +785,65 @@ export default function MasteryTest({
                                           })
                                         : route("dashboard")
                                 }
-                                className="w-full py-3.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 font-semibold rounded-2xl flex items-center justify-center gap-2 hover:shadow-md dark:hover:shadow-md transition"
+                                className="w-full h-14 flex items-center justify-center gap-2 rounded-2xl bg-white dark:bg-slate-900 border-2 border-gray-100 dark:border-slate-700 text-gray-700 dark:text-gray-200 font-bold hover:bg-gray-50 dark:hover:bg-slate-800 transition"
                             >
-                                <ChevronLeft className="h-4 w-4" />{" "}
+                                <ChevronLeft className="h-5 w-5" />{" "}
                                 {categoryId
                                     ? t("quiz.back_to_wordlist")
                                     : t("quiz.back_to_dashboard")}
                             </Link>
                         </div>
+
+                        {showMistakes && (
+                            <div className="mt-8 space-y-4 text-left border-t border-gray-100 dark:border-slate-800 pt-8">
+                                <div className="flex items-center justify-between mb-4 px-2">
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-1 w-8 bg-red-500 rounded-full" />
+                                        <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
+                                            Incorrect Words
+                                        </h2>
+                                    </div>
+                                    <span className="text-xs font-bold text-gray-400 px-2 py-1 bg-gray-50 dark:bg-slate-800 rounded-lg">
+                                        {uniqueIncorrectWords.length}
+                                    </span>
+                                </div>
+                                {uniqueIncorrectWords.map((wordObj, idx) => (
+                                    <div
+                                        key={wordObj.id || `mistake-${idx}`}
+                                        className=""
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 flex-1 truncate">
+                                                {wordObj.word}
+                                            </h3>
+                                            <div className="flex gap-2 shrink-0">
+                                                <button
+                                                    onClick={() =>
+                                                        handleBookmark(
+                                                            wordObj.id,
+                                                        )
+                                                    }
+                                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all ${bookmarks[wordObj.id] ? "bg-yellow-100 text-yellow-600 border border-yellow-200" : "bg-gray-50 dark:bg-slate-800 text-gray-500 border border-transparent hover:bg-gray-100 dark:hover:bg-slate-700"}`}
+                                                >
+                                                    <Bookmark
+                                                        className={`h-3 w-3 ${bookmarks[wordObj.id] ? "fill-current" : ""}`}
+                                                    />
+                                                </button>
+                                                <button
+                                                    onClick={() =>
+                                                        handleDemote(wordObj.id)
+                                                    }
+                                                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-bold bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30 hover:bg-amber-100 dark:hover:bg-amber-950/40 transition-all"
+                                                >
+                                                    <RotateCcw className="h-3 w-3" />
+                                                    Remove Mastered
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             </AppLayout>

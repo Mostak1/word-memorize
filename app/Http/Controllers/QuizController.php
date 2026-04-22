@@ -93,7 +93,7 @@ class QuizController extends Controller
             $pairs = $pairWords->map(function ($w) {
                 $meaning = !empty(trim($w->definition ?? '')) ? $w->definition : $w->bangla_meaning;
 
-                return ['word' => $w->word, 'meaning' => $meaning];
+                return ['id' => $w->id, 'word' => $w->word, 'meaning' => $meaning];
             })->values()->toArray();
             $questions->push(['type' => 'match_pairs', 'pairs' => $pairs]);
         }
@@ -110,7 +110,7 @@ class QuizController extends Controller
             $wrongOptions = $this->buildWrongOptions($word, $masteredWordIds);
             $options = array_merge([$word->word], $wrongOptions);
             shuffle($options);
-            $pool[] = ['type' => 'fill_blank', 'word' => $word->word, 'sentence' => $sentence, 'options' => $options, 'correct' => $word->word];
+            $pool[] = ['type' => 'fill_blank', 'id' => $word->id, 'word' => $word->word, 'sentence' => $sentence, 'options' => $options, 'correct' => $word->word];
         }
 
         foreach ($synonymWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(8) as $word) {
@@ -122,7 +122,7 @@ class QuizController extends Controller
             $wrongOptions = $this->buildWordDistractors($correct, $word->word, $words, 3);
             $options = array_merge([$correct], $wrongOptions);
             shuffle($options);
-            $pool[] = ['type' => 'synonym', 'word' => $word->word, 'options' => $options, 'correct' => $correct];
+            $pool[] = ['type' => 'synonym', 'id' => $word->id, 'word' => $word->word, 'options' => $options, 'correct' => $correct];
         }
 
         foreach ($antonymWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(8) as $word) {
@@ -134,7 +134,7 @@ class QuizController extends Controller
             $wrongOptions = $this->buildWordDistractors($correct, $word->word, $words, 3);
             $options = array_merge([$correct], $wrongOptions);
             shuffle($options);
-            $pool[] = ['type' => 'antonym', 'word' => $word->word, 'options' => $options, 'correct' => $correct];
+            $pool[] = ['type' => 'antonym', 'id' => $word->id, 'word' => $word->word, 'options' => $options, 'correct' => $correct];
         }
 
         // Only generate translation questions if user has Bangla translation enabled
@@ -148,7 +148,7 @@ class QuizController extends Controller
                 }
                 $options = array_merge([$word->bangla_meaning], $distractors);
                 shuffle($options);
-                $pool[] = ['type' => 'translation_en_bn', 'word' => $word->word, 'options' => $options, 'correct' => $word->bangla_meaning];
+                $pool[] = ['type' => 'translation_en_bn', 'id' => $word->id, 'word' => $word->word, 'options' => $options, 'correct' => $word->bangla_meaning];
             }
         }
 
@@ -225,7 +225,7 @@ class QuizController extends Controller
             $canAttempt = $dbQuiz->canUserAttempt($userId);
 
             // Shape questions for the frontend — correct_answer is always an array
-            $questions = $dbQuiz->questions->map(function ($question) {
+            $questions = $dbQuiz->questions()->with('word')->orderBy('sort_order')->get()->map(function ($question) {
                 $correctAnswer = $question->correct_answer;
 
                 // Normalise: always send array
@@ -238,6 +238,8 @@ class QuizController extends Controller
 
                 return [
                     'id' => $question->id,
+                    'word_id' => $question->word_id,
+                    'word' => $question->word?->word,
                     'type' => $question->type,
                     'question' => $question->question,
                     'options' => $question->options ?? [],
@@ -476,7 +478,7 @@ class QuizController extends Controller
             $pairs = $pairWords->map(function ($w) {
                 $meaning = !empty(trim($w->definition ?? '')) ? $w->definition : $w->bangla_meaning;
 
-                return ['word' => $w->word, 'meaning' => $meaning];
+                return ['id' => $w->id, 'word' => $w->word, 'meaning' => $meaning];
             })->values()->toArray();
             $questions->push(['type' => 'match_pairs', 'pairs' => $pairs]);
         }
@@ -493,7 +495,7 @@ class QuizController extends Controller
             $wrongOptions = $this->buildWordlistWrongOptions($word, $words);
             $options = array_merge([$word->word], $wrongOptions);
             shuffle($options);
-            $pool[] = ['type' => 'fill_blank', 'word' => $word->word, 'sentence' => $sentence, 'options' => $options, 'correct' => $word->word];
+            $pool[] = ['type' => 'fill_blank', 'id' => $word->id, 'word' => $word->word, 'sentence' => $sentence, 'options' => $options, 'correct' => $word->word];
         }
 
         foreach ($synonymWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(6) as $word) {
@@ -505,7 +507,7 @@ class QuizController extends Controller
             $wrongOptions = $this->buildWordDistractors($correct, $word->word, $words, 3);
             $options = array_merge([$correct], $wrongOptions);
             shuffle($options);
-            $pool[] = ['type' => 'synonym', 'word' => $word->word, 'options' => $options, 'correct' => $correct];
+            $pool[] = ['type' => 'synonym', 'id' => $word->id, 'word' => $word->word, 'options' => $options, 'correct' => $correct];
         }
 
         foreach ($antonymWords->filter(fn($w) => !in_array($w->id, $usedIds))->shuffle()->take(6) as $word) {
@@ -517,7 +519,7 @@ class QuizController extends Controller
             $wrongOptions = $this->buildWordDistractors($correct, $word->word, $words, 3);
             $options = array_merge([$correct], $wrongOptions);
             shuffle($options);
-            $pool[] = ['type' => 'antonym', 'word' => $word->word, 'options' => $options, 'correct' => $correct];
+            $pool[] = ['type' => 'antonym', 'id' => $word->id, 'word' => $word->word, 'options' => $options, 'correct' => $correct];
         }
 
         // Only generate translation questions if user has Bangla translation enabled
@@ -531,7 +533,7 @@ class QuizController extends Controller
                 }
                 $options = array_merge([$word->bangla_meaning], $distractors);
                 shuffle($options);
-                $pool[] = ['type' => 'translation_en_bn', 'word' => $word->word, 'options' => $options, 'correct' => $word->bangla_meaning];
+                $pool[] = ['type' => 'translation_en_bn', 'id' => $word->id, 'word' => $word->word, 'options' => $options, 'correct' => $word->bangla_meaning];
             }
         }
 

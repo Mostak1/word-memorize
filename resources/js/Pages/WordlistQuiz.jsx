@@ -9,12 +9,19 @@ import {
     X,
     Volume2,
     Bookmark,
+    RotateCcw,
+    Trophy,
+    Unlock,
+    Clock,
+    Square,
+    CheckSquare,
 } from "lucide-react";
 import Lottie from "lottie-react";
 import confetti from "canvas-confetti";
 import doneAnimation from "../../../public/lottie/Done.json";
 import StreakPop from "@/Components/StreakPop";
 import FlashMessages from "@/Components/FlashMessage";
+import { toast, Toaster } from "sonner";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -384,6 +391,13 @@ function ResultsScreen({
     total,
     passed,
     nextAttemptAt,
+    incorrectQuestions,
+    showMistakes,
+    setShowMistakes,
+    bookmarks,
+    handleBookmark,
+    handleDemote,
+    uniqueIncorrectWords,
 }) {
     const pct = total > 0 ? Math.round((score / total) * 100) : 0;
 
@@ -486,6 +500,15 @@ function ResultsScreen({
                     )}
 
                     <div className="flex flex-col gap-3">
+                        {uniqueIncorrectWords.length > 0 && (
+                            <button
+                                onClick={() => setShowMistakes(!showMistakes)}
+                                className={`w-full h-14 flex items-center justify-center gap-2 rounded-2xl border-2 transition-all font-bold shadow-sm ${showMistakes ? "bg-orange-600 text-white border-orange-600" : "bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/40"}`}
+                            >
+                                <Brain className="h-5 w-5" /> 
+                                {showMistakes ? "Hide Mistakes" : `Review Mistakes (${uniqueIncorrectWords.length})`}
+                            </button>
+                        )}
                         <Link
                             href={route("wordlistcategory.wordlists", {
                                 category: wordList.word_list_category_id,
@@ -501,6 +524,52 @@ function ResultsScreen({
                             Go to Dashboard
                         </Link>
                     </div>
+
+                    {showMistakes && (
+                        <div className="mt-8 space-y-4 text-left border-t border-gray-100 dark:border-slate-800 pt-8">
+                            <div className="flex items-center justify-between mb-4 px-2">
+                                <div className="flex items-center gap-2">
+                                    <div className="h-1 w-8 bg-red-500 rounded-full" />
+                                    <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
+                                        Incorrect Words
+                                    </h2>
+                                </div>
+                                <span className="text-xs font-bold text-gray-400 px-2 py-1 bg-gray-50 dark:bg-slate-800 rounded-lg">
+                                    {uniqueIncorrectWords.length}
+                                </span>
+                            </div>
+                            {uniqueIncorrectWords.map((wordObj, idx) => (
+                                <div
+                                    key={wordObj.id || `mistake-${idx}`}
+                                    className="bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-slate-800 hover:border-red-100 dark:hover:border-red-900/40 transition-all"
+                                >
+                                <div className="flex items-center gap-3">
+                                    <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 flex-1 truncate">
+                                        {wordObj.word}
+                                    </h3>
+                                    <div className="flex gap-2 shrink-0">
+                                        <button
+                                            onClick={() => handleBookmark(wordObj.id)}
+                                            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all ${bookmarks[wordObj.id] ? "bg-yellow-100 text-yellow-600 border border-yellow-200" : "bg-gray-50 dark:bg-slate-800 text-gray-500 border border-transparent hover:bg-gray-100 dark:hover:bg-slate-700"}`}
+                                        >
+                                            <Bookmark
+                                                className={`h-3 w-3 ${bookmarks[wordObj.id] ? "fill-current" : ""}`}
+                                            />
+                                            {bookmarks[wordObj.id] ? "Saved" : "Save"}
+                                        </button>
+                                        <button
+                                            onClick={() => handleDemote(wordObj.id)}
+                                            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-bold bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30 hover:bg-amber-100 dark:hover:bg-amber-950/40 transition-all"
+                                        >
+                                            <RotateCcw className="h-3 w-3" />
+                                            Remove Mastered
+                                        </button>
+                                    </div>
+                                </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
@@ -594,8 +663,70 @@ export default function WordlistQuiz({
     const [submitting, setSubmitting] = useState(false);
     const [showStreakEffect, setShowStreakEffect] = useState(false);
     const [streakCount, setStreakCount] = useState(0);
+    const [incorrectQuestions, setIncorrectQuestions] = useState([]);
+    const [showMistakes, setShowMistakes] = useState(false);
+    const [bookmarks, setBookmarks] = useState({});
+
+    const uniqueIncorrectWords = useMemo(() => {
+        const wordMap = new Map();
+        incorrectQuestions.forEach((iq) => {
+            // Case 1: Matching pairs (MasteryTest uses iq.pairs, WordlistQuiz uses iq.matching_pairs)
+            const pairs = iq.pairs || iq.matching_pairs;
+            if ((iq.type === "match_pairs" || iq.type === "matching") && pairs) {
+                pairs.forEach((p) => {
+                    const id = p.id || p.word_id;
+                    const word = p.word || p.left;
+                    if (id && word && !wordMap.has(id)) {
+                        wordMap.set(id, { id, word });
+                    }
+                });
+            } else {
+                // Case 2: Regular questions (MCQ, synonym, antonym, etc.)
+                const id = iq.word_id || iq.id;
+                const word = iq.word || iq.question_text || iq.label || iq.targetWordWord || iq.correct;
+                
+                if (id && word && !wordMap.has(id)) {
+                    wordMap.set(id, { id, word });
+                }
+            }
+        });
+        return Array.from(wordMap.values());
+    }, [incorrectQuestions]);
 
     const q = questions[current] ?? null;
+
+    const handleBookmark = (wordId) => {
+        if (!wordId) return;
+        setBookmarks((prev) => ({ ...prev, [wordId]: !prev[wordId] }));
+        router.post(
+            route("word.bookmark", wordId),
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.success(
+                        bookmarks[wordId]
+                            ? "Removed from bookmarks"
+                            : "Added to bookmarks",
+                    );
+                },
+            },
+        );
+    };
+
+    const handleDemote = (wordId) => {
+        if (!wordId) return;
+        router.post(
+            route("word.demote-from-mastery", wordId),
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.success("Word moved back to the list!");
+                },
+            },
+        );
+    };
 
     // ── Grading helpers ────────────────────────────────────────────────────────
 
@@ -610,6 +741,7 @@ export default function WordlistQuiz({
             setAnswered(true);
             setIsCorrect(ok);
             if (ok) setScoreCount((s) => s + 1);
+            else setIncorrectQuestions((prev) => [...prev, q]);
             setAnswers((prev) => [
                 ...prev,
                 { question_id: q.id, given: choice, correct: ok },
@@ -630,6 +762,7 @@ export default function WordlistQuiz({
             setAnswered(true);
             setIsCorrect(ok);
             if (ok) setScoreCount((s) => s + 1);
+            else setIncorrectQuestions((prev) => [...prev, q]);
             setAnswers((prev) => [
                 ...prev,
                 { question_id: q.id, given: choices, correct: ok },
@@ -644,6 +777,7 @@ export default function WordlistQuiz({
             setAnswered(true);
             setIsCorrect(ok);
             if (ok) setScoreCount((s) => s + 1);
+            else setIncorrectQuestions((prev) => [...prev, q]);
             setAnswers((prev) => [
                 ...prev,
                 {
@@ -761,6 +895,7 @@ export default function WordlistQuiz({
                         onComplete={() => setShowStreakEffect(false)}
                     />
                 )}
+                <Toaster position="top-center" expand={false} richColors />
                 <ResultsScreen
                     quiz={quiz}
                     wordList={wordList}
@@ -768,6 +903,13 @@ export default function WordlistQuiz({
                     total={total}
                     passed={finalPassed}
                     nextAttemptAt={nextAttemptAt}
+                    incorrectQuestions={incorrectQuestions}
+                    showMistakes={showMistakes}
+                    setShowMistakes={setShowMistakes}
+                    bookmarks={bookmarks}
+                    handleBookmark={handleBookmark}
+                    handleDemote={handleDemote}
+                    uniqueIncorrectWords={uniqueIncorrectWords}
                 />
             </AppLayout>
         );
