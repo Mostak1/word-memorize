@@ -65,7 +65,7 @@ class StreakService
         // Back-fill the missed day in the activity log
         UserDailyActivity::updateOrCreate(
           ['user_id' => $user->id, 'activity_date' => Carbon::yesterday()],
-          ['completed' => true]
+          ['completed' => true, 'is_freeze' => true]
         );
 
         $newStreak = $streak->current_streak + 1;
@@ -132,6 +132,28 @@ class StreakService
   public function getSummary(User $user): array
   {
     $streak = $this->getOrCreate($user);
+    $startOfWeek = Carbon::today()->startOfWeek(Carbon::SUNDAY);
+    $activities = UserDailyActivity::where('user_id', $user->id)
+      ->where('activity_date', '>=', $startOfWeek)
+      ->where('activity_date', '<=', $startOfWeek->copy()->addDays(6))
+      ->get()
+      ->keyBy(fn($item) => $item->activity_date->format('Y-m-d'));
+
+    $history = [];
+    for ($i = 0; $i < 7; $i++) {
+      $date = $startOfWeek->copy()->addDays($i);
+      $dateStr = $date->format('Y-m-d');
+      $activity = $activities->get($dateStr);
+
+      $history[] = [
+        'date' => $dateStr,
+        'short_day' => substr($date->format('D'), 0, 2), // Su, Mo, etc.
+        'is_active' => $activity?->completed ?? false,
+        'is_freeze' => $activity?->is_freeze ?? false,
+        'is_today' => $date->isToday(),
+        'is_future' => $date->isFuture(),
+      ];
+    }
 
     return [
       'current_streak' => $streak->current_streak,
@@ -141,8 +163,8 @@ class StreakService
       'at_risk' => $streak->isAtRisk(),
       'is_frozen' => $streak->isFrozen(),
       'is_broken' => $streak->isBroken(),
-      // Whether auto-save is still available this week
       'auto_save_available' => !$streak->autoSaveUsedThisWeek(),
+      'weekly_history' => $history,
     ];
   }
 }

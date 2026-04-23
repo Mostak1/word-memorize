@@ -12,6 +12,7 @@ import {
     Flag,
     Zap,
     ShoppingBag,
+    Settings,
 } from "lucide-react";
 import FlashMessages from "@/Components/FlashMessage";
 import ReportErrorDialog from "@/Components/ReportErrorDialog";
@@ -193,6 +194,13 @@ export default function AppLayout({ children }) {
                                     <ThemeToggle />
 
                                     <ReportErrorDialog />
+                                    <Link
+                                        href={route("settings.show")}
+                                        className="flex items-center gap-1.5 text-white/80 hover:text-white text-sm font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
+                                        title={t("nav.settings")}
+                                    >
+                                        <Settings className="h-4 w-4" />
+                                    </Link>
 
                                     {/* Profile dropdown */}
                                     <div className="relative group ml-1">
@@ -294,7 +302,8 @@ export default function AppLayout({ children }) {
                                         onClick={() => setMobileOpen(false)}
                                         className="flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
                                     >
-                                        <Home className="h-4 w-4" /> {t("nav.home")}
+                                        <Home className="h-4 w-4" />{" "}
+                                        {t("nav.home")}
                                     </Link>
                                     <Link
                                         href={route("wordlistcategory.index")}
@@ -337,6 +346,15 @@ export default function AppLayout({ children }) {
                                         {t("nav.report_error")}
                                     </button>
 
+                                    <Link
+                                        href={route("settings.show")}
+                                        onClick={() => setMobileOpen(false)}
+                                        className="flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors w-full"
+                                    >
+                                        <Settings className="h-4 w-4 shrink-0" />
+                                        {t("nav.settings")}
+                                    </Link>
+
                                     <div className="pt-3 mt-3 border-t border-white/20">
                                         <Link
                                             href={route("profile.edit")}
@@ -376,7 +394,8 @@ export default function AppLayout({ children }) {
                                             onClick={() => setMobileOpen(false)}
                                             className="w-full flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
                                         >
-                                            <LogOut className="h-4 w-4" /> {t("nav.logout")}
+                                            <LogOut className="h-4 w-4" />{" "}
+                                            {t("nav.logout")}
                                         </Link>
                                     </div>
                                 </>
@@ -395,7 +414,8 @@ export default function AppLayout({ children }) {
                                         onClick={() => setMobileOpen(false)}
                                         className="flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
                                     >
-                                        <LogIn className="h-4 w-4" /> {t("nav.login")}
+                                        <LogIn className="h-4 w-4" />{" "}
+                                        {t("nav.login")}
                                     </Link>
 
                                     <Link
@@ -413,6 +433,15 @@ export default function AppLayout({ children }) {
                                         <Flag className="h-4 w-4 shrink-0" />
                                         {t("nav.report_error")}
                                     </button>
+
+                                    <Link
+                                        href={route("settings.show")}
+                                        onClick={() => setMobileOpen(false)}
+                                        className="flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors w-full"
+                                    >
+                                        <Settings className="h-4 w-4 shrink-0" />
+                                        {t("nav.settings")}
+                                    </Link>
 
                                     <div className="px-3 py-2">
                                         <ThemeToggle />

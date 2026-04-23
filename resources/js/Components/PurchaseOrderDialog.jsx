@@ -115,7 +115,10 @@ export default function PurchaseOrderDialog({
                             <div className="flex flex-col gap-2 w-full">
                                 <a
                                     href={`https://wa.me/8801979756067?text=${encodeURIComponent(
-                                        `Hi! I just placed an order for "${category?.name}" on VocabPix. My bKash Transaction ID is: ${data.transaction_id}. Please approve my access. Thank you!`,
+                                        t("shop.order_dialog.whatsapp_msg", {
+                                            name: category?.name,
+                                            tid: data.transaction_id,
+                                        }),
                                     )}`}
                                     target="_blank"
                                     rel="noopener noreferrer"

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { usePage } from "@inertiajs/react";
 import AchievementOverlay from "@/Components/AchievementOverlay";
+import axios from "axios";
 
 /**
  * Component that listens for achievement checks and shows them in an overlay.
@@ -14,22 +15,12 @@ export default function AchievementToaster() {
         if (!auth.user) return;
 
         try {
-            const res = await fetch(route("api.achievements.unseen"), {
-                headers: {
-                    "Accept": "application/json",
-                },
-            });
-            if (!res.ok) {
-                window.dispatchEvent(new CustomEvent("achievements-dismissed"));
-                return;
-            }
-            const data = await res.json();
+            const res = await axios.get(route("api.achievements.unseen"));
+            const data = res.data;
 
             if (data.unseen && data.unseen.length > 0) {
                 // Add new achievements to queue
                 setQueue((prev) => [...prev, ...data.unseen]);
-                // If nothing was showing, start showing from the first new one added
-                // (activeIdx will be handled by the relative index in the queue)
             } else {
                 window.dispatchEvent(new CustomEvent("achievements-dismissed"));
             }
@@ -38,6 +29,19 @@ export default function AchievementToaster() {
             window.dispatchEvent(new CustomEvent("achievements-dismissed"));
         }
     };
+
+    const currentAchievement = queue[activeIdx] || null;
+
+    // Auto-mark as seen the moment it is shown to the user
+    useEffect(() => {
+        if (currentAchievement) {
+            axios.post(route("api.achievements.mark-seen"), {
+                ids: [currentAchievement.id]
+            }).catch(err => {
+                console.error("Failed to mark achievement as seen", err);
+            });
+        }
+    }, [currentAchievement?.id]);
 
     const handleDismiss = () => {
         if (activeIdx < queue.length - 1) {
@@ -71,8 +75,6 @@ export default function AchievementToaster() {
             document.body.style.overflow = "";
         };
     }, [queue.length]);
-
-    const currentAchievement = queue[activeIdx] || null;
 
     if (!currentAchievement) return null;
 

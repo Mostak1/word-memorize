@@ -1,6 +1,6 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import AppLayout from "@/Layouts/AppLayout";
-import { Head, Link } from "@inertiajs/react";
+import { Head, Link, usePage } from "@inertiajs/react";
 import {
     Plus,
     BookOpen,
@@ -15,10 +15,11 @@ import {
     Users,
 } from "lucide-react";
 import { useTranslation } from "@/Contexts/LanguageContext";
+import StreakHistoryModal from "@/Components/StreakHistoryModal";
 
 // ── Streak Banner ─────────────────────────────────────────────────────────────
 
-function StreakBanner({ streak }) {
+function StreakBanner({ streak, onClick }) {
     const { t } = useTranslation();
     if (!streak) return null;
 
@@ -92,7 +93,10 @@ function StreakBanner({ streak }) {
                 };
 
     return (
-        <div className={`rounded-2xl border p-4 mb-3 ${config.bg}`}>
+        <div
+            onClick={onClick}
+            className={`rounded-2xl border p-4 mb-3 ${config.bg} cursor-pointer active:scale-[0.98] transition-transform shadow-sm hover:shadow-md`}
+        >
             <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                     {is_frozen ? (
@@ -186,6 +190,9 @@ export default function Dashboard({
     reviseCounts = {},
 }) {
     const { t } = useTranslation();
+    const { auth } = usePage().props;
+    const user = auth?.user;
+    const [showStreakModal, setShowStreakModal] = useState(false);
 
     useEffect(() => {
         // Check for unseen achievements when landing on the dashboard
@@ -198,10 +205,23 @@ export default function Dashboard({
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
                 <div className="w-full max-w-2xl mx-auto px-4 py-5">
                     <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">
-                        {t("dashboard.subtitle")}
+                        {user
+                            ? t("dashboard.greeting", {
+                                  name: user.name.split(" ")[0],
+                              })
+                            : t("dashboard.subtitle")}
                     </p>
 
-                    <StreakBanner streak={streak} />
+                    <StreakBanner
+                        streak={streak}
+                        onClick={() => setShowStreakModal(true)}
+                    />
+
+                    <StreakHistoryModal
+                        show={showStreakModal}
+                        onClose={() => setShowStreakModal(false)}
+                        streak={streak}
+                    />
 
                     <div className="grid grid-cols-2 gap-3 mb-3">
                         <Link

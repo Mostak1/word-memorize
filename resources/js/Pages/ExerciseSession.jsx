@@ -34,32 +34,10 @@ import {
     playSessionComplete,
     playMastered,
 } from "@/Utils/sounds";
+import { useTranslation } from "@/Contexts/LanguageContext";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const MASTERED_BOX = 4;
-
-const LEVEL_META = {
-    1: {
-        label: "New",
-        color: "bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-300",
-        dot: "bg-gray-400 dark:bg-slate-600",
-    },
-    2: {
-        label: "Learning",
-        color: "bg-cyan-100 text-cyan-600 dark:bg-cyan-950 dark:text-cyan-400",
-        dot: "bg-cyan-400 dark:bg-cyan-500",
-    },
-    3: {
-        label: "Reviewing",
-        color: "bg-orange-100 text-orange-600 dark:bg-orange-950 dark:text-orange-400",
-        dot: "bg-orange-400 dark:bg-orange-500",
-    },
-    4: {
-        label: "Mastered",
-        color: "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400",
-        dot: "bg-green-500 dark:bg-green-400",
-    },
-};
 
 // Confetti pieces — stable (generated once outside component)
 const CONFETTI = Array.from({ length: 60 }, (_, i) => ({
@@ -122,16 +100,8 @@ const preloadImages = async (words, onProgress) => {
     onProgress?.(100);
 };
 
-// ── MasteryOverlay ────────────────────────────────────────────────────────────
-// Defined at MODULE scope (outside ExerciseSession) so its identity is stable
-// across parent re-renders. This prevents React from unmounting/remounting it
-// on every state change (bookmark clicks, show meaning, etc.), which was
-// causing the animation to replay on every button press.
-//
-// Receiving a new `key` prop from the parent causes React to fully unmount
-// and remount this component, giving each rapid mastery its own fresh
-// state and independent timers — no stale closures, no timer collisions.
 function MasteryOverlay({ word }) {
+    const { t } = useTranslation();
     const [flash, setFlash] = useState(true);
     const [visible, setVisible] = useState(true);
 
@@ -175,10 +145,10 @@ function MasteryOverlay({ word }) {
                         <p className="text-3xl mb-1">🌟</p>
                         <p className="text-lg font-extrabold text-green-600 dark:text-green-400">
                             {/* {word}! */}
-                            Mastered!
+                            {t("exercise.mastery.title")}
                         </p>
                         <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                            Word added to your Mastery Garden
+                            {t("exercise.mastery.desc")}
                         </p>
                     </div>
                 </div>
@@ -197,6 +167,31 @@ export default function ExerciseSession({
     streak: initialStreak = null,
     xp_enabled = true,
 }) {
+    const { t } = useTranslation();
+
+    const LEVEL_META = {
+        1: {
+            label: t("srs.new"),
+            color: "bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-300",
+            dot: "bg-gray-400 dark:bg-slate-600",
+        },
+        2: {
+            label: t("srs.learning"),
+            color: "bg-cyan-100 text-cyan-600 dark:bg-cyan-950 dark:text-cyan-400",
+            dot: "bg-cyan-400 dark:bg-cyan-500",
+        },
+        3: {
+            label: t("srs.reviewing"),
+            color: "bg-orange-100 text-orange-600 dark:bg-orange-950 dark:text-orange-400",
+            dot: "bg-orange-400 dark:bg-orange-500",
+        },
+        4: {
+            label: t("srs.mastered"),
+            color: "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400",
+            dot: "bg-green-500 dark:bg-green-400",
+        },
+    };
+
     const { auth, userSettings } = usePage().props;
     const [streak, setStreak] = useState(initialStreak);
     const [streakChange, setStreakChange] = useState(null);
@@ -793,10 +788,10 @@ export default function ExerciseSession({
                         </div>
 
                         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                            Preparing your session...
+                            {t("exercise.loading.title")}
                         </h1>
                         <p className="text-gray-500 dark:text-gray-400 mb-6">
-                            Loading words &amp; images
+                            {t("exercise.loading.desc")}
                         </p>
 
                         <div className="h-2.5 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden mb-3">
@@ -837,27 +832,26 @@ export default function ExerciseSession({
                     <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-md dark:shadow-xl dark:shadow-slate-950 w-full max-w-md p-8 text-center">
                         <div className="text-6xl mb-4">🎯</div>
                         <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 mb-1">
-                            All Caught Up!
+                            {t("exercise.empty.title")}
                         </h1>
                         <p className="text-gray-400 dark:text-gray-500 text-sm mb-2">
                             {subcategory ? subcategory.name : wordList.title}
                         </p>
                         <p className="text-gray-500 dark:text-gray-400 text-sm mb-8">
-                            No words are due for review right now. Check back
-                            tomorrow to keep your streak going!
+                            {t("exercise.empty.desc")}
                         </p>
                         <div className="flex flex-col gap-3">
                             <Link
                                 href={route("words.mastered")}
                                 className="w-full py-3.5 bg-green-600 text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-green-700 transition"
                             >
-                                View Mastered Words
+                                {t("exercise.empty.view_mastered")}
                             </Link>
                             <Link
                                 href={backHref}
                                 className="w-full py-3.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 font-semibold rounded-2xl flex items-center justify-center gap-2 hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-slate-900 transition"
                             >
-                                <ChevronLeft className="h-4 w-4" /> Back to List
+                                <ChevronLeft className="h-4 w-4" /> {t("exercise.empty.back_to_list")}
                             </Link>
                         </div>
                     </div>
@@ -923,7 +917,7 @@ export default function ExerciseSession({
                             )}
                         </div>
                         <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 mb-1">
-                            Session Complete!
+                            {t("exercise.complete.title")}
                         </h1>
                         <p className="text-gray-400 dark:text-gray-500 text-sm mb-6">
                             {subcategory ? subcategory.name : wordList.title}
@@ -939,7 +933,7 @@ export default function ExerciseSession({
                                     {promotedCount}
                                 </p>
                                 <p className="text-xs text-green-600 dark:text-green-400 mt-0.5 font-medium">
-                                    Cleared ✅
+                                    {t("exercise.complete.cleared")}
                                 </p>
                             </div>
                             <div
@@ -950,7 +944,7 @@ export default function ExerciseSession({
                                     {retries}
                                 </p>
                                 <p className="text-xs text-red-500 dark:text-red-400 mt-0.5 font-medium">
-                                    Retries
+                                    {t("exercise.complete.retries")}
                                 </p>
                             </div>
                             <div
@@ -961,7 +955,7 @@ export default function ExerciseSession({
                                     {promotedCount + retries}
                                 </p>
                                 <p className="text-xs text-blue-500 dark:text-blue-400 mt-0.5 font-medium">
-                                    Total Reps 💪
+                                    {t("exercise.complete.total_reps")}
                                 </p>
                             </div>
                         </div>
@@ -977,7 +971,7 @@ export default function ExerciseSession({
                                     <Zap className="h-6 w-6 text-yellow-500" />
                                 </div>
                                 <p className="text-sm font-medium text-yellow-700 dark:text-yellow-300">
-                                    Experience Points Earned
+                                    {t("exercise.complete.xp_earned")}
                                 </p>
                             </div>
                         )}
@@ -988,7 +982,7 @@ export default function ExerciseSession({
                                 <div className="flex items-center justify-center gap-2">
                                     <Zap className="h-4 w-4 text-gray-400" />
                                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                                        XP is not awarded for custom word lists
+                                        {t("exercise.complete.xp_custom_list")}
                                     </p>
                                 </div>
                             </div>
@@ -1002,14 +996,15 @@ export default function ExerciseSession({
                                 <p
                                     className={`text-lg font-bold mb-1 text-orange-600 dark:text-orange-400`}
                                 >
-                                    🔥 Current Streak: {streak.current_streak}{" "}
-                                    day{streak.current_streak !== 1 ? "s" : ""}
+                                    {t("exercise.complete.streak", {
+                                        count: streak.current_streak,
+                                        plural: streak.current_streak !== 1 ? "s" : "",
+                                    })}
                                 </p>
                                 <p
                                     className={`text-sm text-orange-700 dark:text-orange-300`}
                                 >
-                                    ✨ Amazing! You're on fire! Keep this
-                                    momentum going! 🎉
+                                    {t("exercise.complete.streak_message")}
                                 </p>
                             </div>
                         )}
@@ -1018,7 +1013,7 @@ export default function ExerciseSession({
                         {totalWordsInList > 0 && (
                             <div className="mb-8">
                                 <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500 mb-1.5">
-                                    <span>List Progress</span>
+                                    <span>{t("exercise.complete.progress_label")}</span>
                                     <span>
                                         {Math.round(
                                             (promotedCount / totalWordsInList) *
@@ -1036,8 +1031,10 @@ export default function ExerciseSession({
                                     />
                                 </div>
                                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5 text-center">
-                                    {promotedCount} of {totalWordsInList} words
-                                    in this session's queue
+                                    {t("exercise.complete.progress_detail", {
+                                        count: promotedCount,
+                                        total: totalWordsInList,
+                                    })}
                                 </p>
                             </div>
                         )}
@@ -1047,7 +1044,7 @@ export default function ExerciseSession({
                                 href={route("wordlist.start", wordList.id)}
                                 className="w-full py-3.5 bg-[#E5201C] text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-red-700 transition"
                             >
-                                New Session
+                                {t("exercise.complete.new_session")}
                             </Link>
                             {auth?.user && (
                                 <Link
@@ -1058,14 +1055,14 @@ export default function ExerciseSession({
                                         className="h-4 w-4 fill-yellow-400 text-yellow-400"
                                         strokeWidth={1.8}
                                     />
-                                    View Bookmarks
+                                    {t("exercise.complete.view_bookmarks")}
                                 </Link>
                             )}
                             <Link
                                 href={backHref}
                                 className="w-full py-3.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 font-semibold rounded-2xl flex items-center justify-center gap-2 hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-slate-900 transition"
                             >
-                                <ChevronLeft className="h-4 w-4" /> Back to List
+                                <ChevronLeft className="h-4 w-4" /> {t("exercise.complete.back_to_list")}
                             </Link>
                         </div>
                     </div>
@@ -1133,7 +1130,7 @@ export default function ExerciseSession({
                                 Test Streak
                             </button> */}
                             <span className="shrink-0 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-full px-2.5 py-0.5 shadow-sm dark:shadow-lg">
-                                {queue.length} left
+                                {t("exercise.left", { count: queue.length })}
                             </span>
                         </div>
                         {/* Bookmarks shortcut */}
@@ -1192,7 +1189,7 @@ export default function ExerciseSession({
                                     <div className="px-4">
                                         <div className="h-px bg-gray-100 dark:bg-slate-800 mb-3" />
                                         <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
-                                            Part of Exercise:{" "}
+                                            {t("exercise.card.part_of_exercise")}{" "}
                                             {subcategory
                                                 ? `${wordList.title} › ${subcategory.name}`
                                                 : wordList.title}
@@ -1208,8 +1205,8 @@ export default function ExerciseSession({
                                                 className="p-1 transition-colors"
                                                 aria-label={
                                                     bookmarks[word.id]
-                                                        ? "Remove bookmark"
-                                                        : "Bookmark word"
+                                                        ? t("exercise.card.bookmark_remove", "Remove bookmark")
+                                                        : t("exercise.card.bookmark_add", "Bookmark word")
                                                 }
                                             >
                                                 <Bookmark
@@ -1340,7 +1337,7 @@ export default function ExerciseSession({
                                                 {currentBox >= MASTERED_BOX && (
                                                     <div className="absolute top-2 right-2">
                                                         <span className="bg-green-500 dark:bg-green-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md dark:shadow-lg">
-                                                            ✨ Mastered
+                                                            {t("exercise.card.mastered_title")}
                                                         </span>
                                                     </div>
                                                 )}
@@ -1429,7 +1426,7 @@ export default function ExerciseSession({
                                                             d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
                                                         />
                                                     </svg>
-                                                    Hide Meaning
+                                                    {t("exercise.card.hide_meaning")}
                                                 </>
                                             ) : (
                                                 <>
@@ -1452,7 +1449,7 @@ export default function ExerciseSession({
                                                             d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                                                         />
                                                     </svg>
-                                                    Tap to see meaning
+                                                    {t("exercise.card.show_meaning")}
                                                 </>
                                             )}
                                         </button>
@@ -1488,7 +1485,7 @@ export default function ExerciseSession({
                                             <div className="mx-4 mt-4 mb-4">
                                                 <div className="border-l-4 border-[#E5201C] dark:border-red-600 pl-3 py-1">
                                                     <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">
-                                                        Definition
+                                                        {t("exercise.card.definition")}
                                                     </p>
                                                     <p className="text-sm text-gray-900 dark:text-gray-200 leading-snug">
                                                         {word.definition}
@@ -1531,7 +1528,7 @@ export default function ExerciseSession({
                                             <div className="px-4 pb-4">
                                                 <div className="h-px bg-gray-100 dark:bg-slate-800 mb-3" />
                                                 <p className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-3">
-                                                    Common Collocations
+                                                    {t("exercise.card.collocations")}
                                                 </p>
                                                 <div className="flex flex-col gap-3">
                                                     {collocationList
@@ -1654,7 +1651,7 @@ export default function ExerciseSession({
                                                         {word.synonym ? (
                                                             <div className="border-l-4 border-[#E5201C] dark:border-red-600 pl-3 pr-2 py-1">
                                                                 <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
-                                                                    Synonyms
+                                                                    {t("exercise.card.synonym")}
                                                                 </p>
                                                                 <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug">
                                                                     {
@@ -1668,7 +1665,7 @@ export default function ExerciseSession({
                                                         {word.antonym ? (
                                                             <div className="border-l-4 border-blue-400 dark:border-blue-600 pl-3 pr-2 py-1">
                                                                 <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
-                                                                    Antonyms
+                                                                    {t("exercise.card.antonym")}
                                                                 </p>
                                                                 <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug">
                                                                     {
@@ -1733,7 +1730,7 @@ export default function ExerciseSession({
                                                         className="h-5 w-5"
                                                         strokeWidth={2.5}
                                                     />
-                                                    I Don't Know
+                                                    {t("exercise.card.dont_know_button")}
                                                 </button>
                                                 <button
                                                     onClick={handleKnow}
@@ -1744,19 +1741,19 @@ export default function ExerciseSession({
                                                         className="h-5 w-5"
                                                         strokeWidth={2.5}
                                                     />
-                                                    I Know
+                                                    {t("exercise.card.know_button")}
                                                 </button>
                                             </div>
                                             {/* Context hint */}
                                             {auth?.user && (
                                                 <p className="text-center text-[11px] text-gray-400 dark:text-gray-500 mt-2">
                                                     {currentBox <= 1
-                                                        ? "New word — master it today in another session ✨"
+                                                        ? t("exercise.card_hints.new")
                                                         : currentBox === 2
-                                                          ? "Learning — keep going, one more session!"
+                                                          ? t("exercise.card_hints.learning")
                                                           : currentBox === 3
-                                                            ? "Reviewing — final push to mastery!"
-                                                            : "✨ Already mastered — just confirming!"}
+                                                            ? t("exercise.card_hints.reviewing")
+                                                            : t("exercise.card_hints.already_mastered")}
                                                 </p>
                                             )}
                                         </div>
@@ -1812,17 +1809,15 @@ export default function ExerciseSession({
                 <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-md sm:w-full">
                     <AlertDialogHeader>
                         <AlertDialogTitle className="flex items-center gap-2">
-                            <LogIn className="h-5 w-5 text-[#E5201C]" /> Login
-                            Required
+                            <LogIn className="h-5 w-5 text-[#E5201C]" /> {t("exercise.dialogs.login.title")}
                         </AlertDialogTitle>
                         <AlertDialogDescription className="text-base">
-                            You need to be logged in to track your progress. Log
-                            in to save your results.
+                            {t("exercise.dialogs.login.desc")}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="flex-col sm:flex-row gap-2">
                         <AlertDialogCancel className="w-full sm:w-auto">
-                            Skip for now
+                            {t("exercise.dialogs.login.skip")}
                         </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={() => {
@@ -1830,7 +1825,7 @@ export default function ExerciseSession({
                             }}
                             className="w-full sm:w-auto bg-[#E5201C] hover:bg-red-700"
                         >
-                            Go to Login
+                            {t("exercise.dialogs.login.login")}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -1845,13 +1840,12 @@ export default function ExerciseSession({
                     <AlertDialogHeader>
                         <AlertDialogTitle className="flex items-center gap-2">
                             <span className="text-[#E5201C] text-xl">
-                                Wait!
+                                {t("exercise.dialogs.leave.title")}
                             </span>{" "}
-                            Are you sure you want to leave?
+                            {t("exercise.dialogs.leave.confirm")}
                         </AlertDialogTitle>
                         <AlertDialogDescription className="text-base text-gray-500">
-                            You will lose the exercises progress if you leave
-                            before completing the session.
+                            {t("exercise.dialogs.leave.desc")}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="flex-col sm:flex-row gap-2">
@@ -1862,7 +1856,7 @@ export default function ExerciseSession({
                                 setShowLeaveDialog(false);
                             }}
                         >
-                            Stay Here
+                            {t("exercise.dialogs.leave.stay")}
                         </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={() => {
@@ -1882,7 +1876,7 @@ export default function ExerciseSession({
                             }}
                             className="w-full sm:w-auto bg-[#E5201C] hover:bg-red-700"
                         >
-                            Yes, Leave
+                            {t("exercise.dialogs.leave.leave")}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

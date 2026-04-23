@@ -10,6 +10,7 @@ class UserDailyActivity extends Model
         'user_id',
         'activity_date',
         'completed',
+        'is_freeze',
         'session_xp_earned',
         'quiz_xp_earned',
     ];
@@ -17,6 +18,7 @@ class UserDailyActivity extends Model
     protected $casts = [
         'activity_date' => 'date',
         'completed' => 'boolean',
+        'is_freeze' => 'boolean',
     ];
 
     // ── Relationships ─────────────────────────────────────────────────────────

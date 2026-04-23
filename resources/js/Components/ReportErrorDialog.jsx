@@ -11,6 +11,7 @@ import {
 import { Button } from "@/Components/ui/button";
 import { Textarea } from "@/Components/ui/textarea";
 import { Flag, ImagePlus, X, Loader2, Send } from "lucide-react";
+import { useTranslation } from "@/Contexts/LanguageContext";
 
 /**
  * ReportErrorDialog
@@ -28,6 +29,7 @@ export default function ReportErrorDialog({
     controlledOpen,
     onControlledOpenChange,
 } = {}) {
+    const { t } = useTranslation();
     const { auth } = usePage().props;
     const isLoggedIn = Boolean(auth?.user);
 
@@ -107,20 +109,20 @@ export default function ReportErrorDialog({
                             onOpen?.();
                         }}
                         className="flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors w-full"
-                        aria-label="Report an error"
+                        aria-label={t("report_error.button")}
                     >
                         <Flag className="h-4 w-4 shrink-0" />
-                        Report Error
+                        {t("report_error.button")}
                     </button>
                 ) : (
                     <button
                         onClick={() => setOpen(true)}
                         className="flex items-center gap-1.5 text-xs font-medium text-white/80 hover:text-white border border-white/30 hover:border-white/60 rounded-full px-2.5 py-1.5 sm:px-3 transition-all"
-                        aria-label="Report an error"
+                        aria-label={t("report_error.button")}
                     >
                         <Flag className="h-3.5 w-3.5 shrink-0" />
                         <span className="hidden xs:inline sm:inline">
-                            Report
+                            {t("report_error.report_short")}
                         </span>
                     </button>
                 ))}
@@ -134,12 +136,12 @@ export default function ReportErrorDialog({
                             <DialogHeader>
                                 <DialogTitle className="flex items-center gap-2">
                                     <Flag className="h-5 w-5 text-[#E5201C]" />
-                                    Report an Error
+                                    {t("report_error.title")}
                                 </DialogTitle>
                             </DialogHeader>
                             <div className="py-4 text-center space-y-3">
                                 <p className="text-sm text-gray-500">
-                                    You need to be signed in to submit a report.
+                                    {t("report_error.login_required")}
                                 </p>
                                 <Button
                                     onClick={() => {
@@ -147,7 +149,7 @@ export default function ReportErrorDialog({
                                     }}
                                     className="bg-[#E5201C] hover:bg-red-700 text-white w-full"
                                 >
-                                    Sign in to Report
+                                    {t("report_error.sign_in_to_report")}
                                 </Button>
                             </div>
                             <DialogFooter>
@@ -156,7 +158,7 @@ export default function ReportErrorDialog({
                                         variant="outline"
                                         className="w-full"
                                     >
-                                        Cancel
+                                        {t("report_error.cancel")}
                                     </Button>
                                 </DialogClose>
                             </DialogFooter>
@@ -167,16 +169,16 @@ export default function ReportErrorDialog({
                             <DialogHeader>
                                 <DialogTitle className="flex items-center gap-2">
                                     <Flag className="h-5 w-5 text-green-600" />
-                                    Report Submitted
+                                    {t("report_error.success_title")}
                                 </DialogTitle>
                             </DialogHeader>
                             <div className="py-6 text-center space-y-2">
                                 <div className="text-4xl">✅</div>
                                 <p className="text-sm text-gray-600 font-medium">
-                                    Thank you for the report!
+                                    {t("report_error.success_msg")}
                                 </p>
                                 <p className="text-xs text-gray-400">
-                                    We'll review it as soon as possible.
+                                    {t("report_error.success_desc")}
                                 </p>
                             </div>
                             <DialogFooter>
@@ -184,7 +186,7 @@ export default function ReportErrorDialog({
                                     onClick={() => handleClose(false)}
                                     className="w-full bg-[#E5201C] hover:bg-red-700 text-white"
                                 >
-                                    Done
+                                    {t("report_error.done")}
                                 </Button>
                             </DialogFooter>
                         </>
@@ -194,10 +196,10 @@ export default function ReportErrorDialog({
                             <DialogHeader>
                                 <DialogTitle className="flex items-center gap-2">
                                     <Flag className="h-5 w-5 text-[#E5201C]" />
-                                    Report an Error
+                                    {t("report_error.title")}
                                 </DialogTitle>
                                 <p className="text-xs text-gray-400 pt-0.5">
-                                    Page:{" "}
+                                    {t("report_error.page")}{" "}
                                     <span className="font-medium text-gray-500">
                                         {typeof document !== "undefined"
                                             ? document.title
@@ -210,7 +212,7 @@ export default function ReportErrorDialog({
                                 {/* Description */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        What's wrong?{" "}
+                                        {t("report_error.whats_wrong")}{" "}
                                         <span className="text-[#E5201C]">
                                             *
                                         </span>
@@ -220,7 +222,7 @@ export default function ReportErrorDialog({
                                         onChange={(e) =>
                                             setDescription(e.target.value)
                                         }
-                                        placeholder="Describe the error, wrong information, or issue you found…"
+                                        placeholder={t("report_error.placeholder")}
                                         rows={4}
                                         maxLength={3000}
                                         className="resize-none focus-visible:ring-[#E5201C]/40 focus-visible:border-[#E5201C]"
@@ -233,9 +235,9 @@ export default function ReportErrorDialog({
                                 {/* Screenshot upload */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Screenshot{" "}
+                                        {t("report_error.screenshot")}{" "}
                                         <span className="text-gray-400 font-normal">
-                                            (optional)
+                                            {t("report_error.optional")}
                                         </span>
                                     </label>
 
@@ -263,7 +265,7 @@ export default function ReportErrorDialog({
                                         >
                                             <ImagePlus className="h-5 w-5" />
                                             <span className="text-xs">
-                                                Click to attach a screenshot
+                                                {t("report_error.click_to_attach")}
                                             </span>
                                         </button>
                                     )}
@@ -284,7 +286,7 @@ export default function ReportErrorDialog({
                                         disabled={submitting}
                                         className="w-full sm:w-auto"
                                     >
-                                        Cancel
+                                        {t("report_error.cancel")}
                                     </Button>
                                 </DialogClose>
                                 <Button
@@ -295,12 +297,12 @@ export default function ReportErrorDialog({
                                     {submitting ? (
                                         <>
                                             <Loader2 className="h-4 w-4 animate-spin" />
-                                            Submitting…
+                                            {t("report_error.submitting")}
                                         </>
                                     ) : (
                                         <>
                                             <Send className="h-4 w-4" />
-                                            Submit Report
+                                            {t("report_error.submit")}
                                         </>
                                     )}
                                 </Button>

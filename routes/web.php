@@ -244,6 +244,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Achievements API
     Route::get('/api/achievements', [UserAchievementController::class, 'index'])->name('api.achievements.index');
+    Route::post('/api/achievements/mark-seen', [UserAchievementController::class, 'markSeen'])->name('api.achievements.mark-seen');
 
 
     // Achievements page

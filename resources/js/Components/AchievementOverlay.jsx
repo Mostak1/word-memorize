@@ -1,19 +1,23 @@
-import React, { useState, useEffect } from "react";
-import { X, Share2, Facebook, MessageCircle, Send, Instagram, ArrowRight } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { X, Share2, Facebook, MessageCircle, Send, Instagram, ArrowRight, Image as ImageIcon } from "lucide-react";
 import { Link } from "@inertiajs/react";
 import { BadgeSVG } from "@/Components/AchievementBadges";
+import { toPng } from "html-to-image";
+import { toast } from "sonner";
+import { useTranslation } from "@/Contexts/LanguageContext";
 
 export default function AchievementOverlay({ achievementData, onDismiss }) {
+    const { t } = useTranslation();
     const [showShareMenu, setShowShareMenu] = useState(false);
     const [copied, setCopied] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
-
+    const [isCapturing, setIsCapturing] = useState(false);
+    const cardRef = useRef(null);
 
     if (!achievementData) return null;
 
     const handleClose = () => {
         setIsClosing(true);
-        // Wait for animation to finish before dismissing
         setTimeout(() => {
             onDismiss();
         }, 300);
@@ -21,11 +25,11 @@ export default function AchievementOverlay({ achievementData, onDismiss }) {
 
     const { achievement } = achievementData;
     const shareUrl = window.location.origin;
-    const shareText = `I just unlocked the "${achievement.name}" achievement on VocabPix! 🏆 Join me in mastering new words!`;
+    const shareText = t("achievements.overlay.achievement_share_text", { name: achievement.name });
 
     const shareActions = [
         {
-            name: "Facebook",
+            name: t("achievements.overlay.facebook"),
             icon: Facebook,
             color: "bg-[#1877F2]",
             action: () => {
@@ -33,7 +37,7 @@ export default function AchievementOverlay({ achievementData, onDismiss }) {
             }
         },
         {
-            name: "WhatsApp",
+            name: t("achievements.overlay.whatsapp"),
             icon: MessageCircle,
             color: "bg-[#25D366]",
             action: () => {
@@ -41,7 +45,7 @@ export default function AchievementOverlay({ achievementData, onDismiss }) {
             }
         },
         {
-            name: "Telegram",
+            name: t("achievements.overlay.telegram"),
             icon: Send,
             color: "bg-[#0088cc]",
             action: () => {
@@ -49,48 +53,98 @@ export default function AchievementOverlay({ achievementData, onDismiss }) {
             }
         },
         {
-            name: "Instagram",
-            icon: Instagram,
-            color: "bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]",
+            name: t("achievements.overlay.copy_link"),
+            icon: Send,
+            color: "bg-slate-600",
             action: () => {
-                copyToClipboard();
+                navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+            }
+        },
+        {
+            name: t("achievements.overlay.image"),
+            icon: ImageIcon,
+            color: "bg-emerald-600",
+            action: () => {
+                handleShareImage();
             }
         }
     ];
 
-    const copyToClipboard = () => {
-        navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+    const handleShareImage = async () => {
+        if (!cardRef.current) return;
+        setIsCapturing(true);
+        const toastId = toast.loading(t("achievements.overlay.generating"));
+
+        try {
+            await new Promise(r => setTimeout(r, 100));
+            
+            const dataUrl = await toPng(cardRef.current, {
+                cacheBust: true,
+                backgroundColor: document.documentElement.classList.contains('dark') ? '#0f172a' : '#ffffff',
+                style: {
+                    borderRadius: '40px',
+                },
+                fontEmbedCSS: '', 
+            });
+
+            const blob = await (await fetch(dataUrl)).blob();
+            const file = new File([blob], `achievement-${achievement.name.toLowerCase().replace(/\s+/g, '-')}.png`, { type: 'image/png' });
+
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: achievement.name,
+                    text: shareText,
+                });
+                toast.success(t("achievements.overlay.shared"), { id: toastId });
+            } else {
+                const link = document.createElement('a');
+                link.download = `achievement-${achievement.name.toLowerCase().replace(/\s+/g, '-')}.png`;
+                link.href = dataUrl;
+                link.click();
+                toast.success(t("achievements.overlay.downloaded"), { id: toastId });
+            }
+        } catch (error) {
+            console.error("Failed to share image:", error);
+            toast.error(t("achievements.overlay.failed"), { id: toastId });
+        } finally {
+            setIsCapturing(false);
+        }
     };
 
     return (
-        <div className={`fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md transition-opacity duration-300 ${isClosing ? "opacity-0" : "opacity-100"} animate-in fade-in`}>
+        <div 
+            className={`fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md transition-opacity duration-300 ${isClosing ? "opacity-0" : "opacity-100"} animate-in fade-in`}
+            onClick={handleClose}
+        >
             <div 
+                ref={cardRef}
                 className={`relative bg-white dark:bg-slate-900 w-full max-w-sm rounded-[40px] shadow-[0_20px_70px_-10px_rgba(0,0,0,0.3)] overflow-hidden transition-all duration-300 ${isClosing ? "scale-95 opacity-0" : "scale-100 opacity-100"} animate-in zoom-in-95 ease-out`}
                 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                onClick={(e) => e.stopPropagation()}
             >
                 {/* ── Close Button ── */}
                 <button 
                     onClick={handleClose}
-                    className="absolute top-6 right-6 p-2 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition-colors z-10"
+                    className={`absolute top-6 right-6 p-2 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition-colors z-10 ${isCapturing ? 'hidden' : ''}`}
                 >
                     <X className="w-5 h-5 text-slate-500" />
                 </button>
 
                 {/* ── Header ── */}
-                <div className="pt-12 pb-6 px-8 text-center">
-                    <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-purple-600 dark:text-purple-400 mb-2 block">
-                        Badge Trophy
+                <div className="pt-10 pb-6 px-8 text-center">
+                    <span className="text-[10px] font-bold tracking-[0.2em] text-purple-500 uppercase mb-2 block">
+                        {t("achievements.overlay.badge_trophy")}
                     </span>
-                    <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+                    <h2 className="text-4xl font-black text-slate-900 dark:text-white leading-tight">
                         {achievement.name}
                     </h2>
                 </div>
 
                 {/* ── Badge Visual ── */}
                 <div className="relative flex justify-center items-center py-4">
-                    {/* Decorative Blob Background */}
                     <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
                         <div className="w-56 h-56 bg-purple-600/10 rounded-full blur-3xl animate-pulse" />
                         <svg viewBox="0 0 200 200" className="w-64 h-64 text-purple-600/10 dark:text-purple-500/10 fill-current overflow-visible">
@@ -106,32 +160,30 @@ export default function AchievementOverlay({ achievementData, onDismiss }) {
                 {/* ── Content ── */}
                 <div className="px-10 pb-6 text-center">
                     <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed font-medium">
-                        {achievement.description || achievement.desc || "You've won a trophy for your achievement. Keep shining and reach even higher!"}
+                        {achievement.description || achievement.desc || t("achievements.overlay.achievement_desc_fallback")}
                     </p>
 
-                    <div className="mt-4">
-                        <Link 
-                            href={route('achievements')}
-                            className="inline-flex items-center gap-1 text-xs font-bold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
-                        >
-                            View All Achievements
-                            <ArrowRight className="w-3 h-3" />
-                        </Link>
-                    </div>
+                    <Link 
+                        href={route('achievements')}
+                        className="mt-6 flex items-center justify-center gap-1.5 text-xs font-bold text-purple-600 dark:text-purple-400 hover:gap-2 transition-all group"
+                    >
+                        {t("achievements.overlay.view_all")}
+                        <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
                 </div>
 
                 {/* ── Footer Button ── */}
-                <div className="p-4 bg-slate-50 dark:bg-slate-800/50">
+                <div className={`p-4 bg-slate-50 dark:bg-slate-800/50 ${isCapturing ? 'hidden' : ''}`}>
                     {!showShareMenu ? (
                         <button 
                             onClick={() => setShowShareMenu(true)}
                             className="w-full py-5 bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white font-bold rounded-3xl shadow-lg shadow-purple-200 dark:shadow-none transition-all flex items-center justify-center gap-2 group"
                         >
                             <Share2 className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-                            Share It
+                            {t("achievements.overlay.share_it")}
                         </button>
                     ) : (
-                        <div className="grid grid-cols-4 gap-3 animate-in slide-in-from-bottom-4 duration-300">
+                        <div className="grid grid-cols-5 gap-2 animate-in slide-in-from-bottom-4 duration-300">
                             {shareActions.map((s) => (
                                 <button
                                     key={s.name}
@@ -139,20 +191,13 @@ export default function AchievementOverlay({ achievementData, onDismiss }) {
                                     title={s.name}
                                     className={`flex flex-col items-center justify-center p-3 rounded-2xl ${s.color} hover:opacity-90 transition-all shadow-md group`}
                                 >
-                                    <s.icon className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
-                                    <span className="text-[9px] text-white font-bold mt-1.5 uppercase tracking-wider">{s.name}</span>
+                                    <s.icon className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
+                                    <span className="text-[8px] text-white font-bold mt-1.5 uppercase tracking-wider">{s.name}</span>
                                 </button>
                             ))}
                         </div>
                     )}
                 </div>
-
-                {/* ── Copy Toast ── */}
-                {copied && (
-                    <div className="absolute bottom-24 left-1/2 -translate-x-1/2 px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-full shadow-xl animate-in fade-in slide-in-from-bottom-2">
-                        Link Copied!
-                    </div>
-                )}
             </div>
         </div>
     );

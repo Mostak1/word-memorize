@@ -18,8 +18,10 @@ import {
 } from "@/Components/ui/dropdown-menu";
 import { useTheme } from "@/Components/ThemeProvider";
 import { Link, usePage } from "@inertiajs/react";
+import { useTranslation } from "@/Contexts/LanguageContext";
 
 export function ThemeToggle() {
+    const { t } = useTranslation();
     const { auth } = usePage().props;
     const user = auth?.user ?? null;
     const { setTheme, darkModeUnlocked, isAdmin } = useTheme();
@@ -49,28 +51,23 @@ export function ThemeToggle() {
                     >
                         <Sun className="h-[1.2rem] w-[1.2rem] text-red-900 transition-all dark:text-red-100 dark:-rotate-90 dark:scale-0" />
                         <Moon className="absolute h-[1.2rem] w-[1.2rem] text-red-900 transition-all dark:text-red-400 dark:rotate-0 dark:scale-100 rotate-90 scale-0" />
-                        <span className="sr-only">Toggle theme</span>
+                        <span className="sr-only">{t("theme.toggle")}</span>
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                     <DropdownMenuItem
                         onClick={() => handleThemeChange("light")}
                     >
-                        Light
+                        {t("theme.light")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleThemeChange("dark")}>
                         <div className="flex items-center justify-between w-full">
-                            Dark
+                            {t("theme.dark")}
                             {!effectiveDarkModeUnlocked && (
                                 <Lock className="h-3.5 w-3.5 ml-2 opacity-70" />
                             )}
                         </div>
                     </DropdownMenuItem>
-                    {/* <DropdownMenuItem
-                        onClick={() => handleThemeChange("system")}
-                    >
-                        System
-                    </DropdownMenuItem> */}
                 </DropdownMenuContent>
             </DropdownMenu>
 
@@ -82,15 +79,12 @@ export function ThemeToggle() {
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Moon className="h-5 w-5 text-indigo-500" />
-                            Unlock Dark Mode
+                            {t("theme.unlock_dark_mode")}
                         </DialogTitle>
                     </DialogHeader>
                     <div className="py-4 text-center space-y-3">
                         <p className="text-sm text-gray-500">
-                            Dark mode is a premium feature that helps reduce eye
-                            strain and improves battery life on OLED displays.
-                            Purchase it from the XP Shop to enable dark theme
-                            across the entire app.
+                            {t("theme.dark_mode_desc")}
                         </p>
                         <Link
                             href={route("shop", { tab: "xp" })}
@@ -98,14 +92,14 @@ export function ThemeToggle() {
                         >
                             <Button className="bg-indigo-600 hover:bg-indigo-700 text-white w-full">
                                 <ShoppingBag className="h-4 w-4 mr-2" />
-                                Go to Shop
+                                {t("theme.go_to_shop")}
                             </Button>
                         </Link>
                     </div>
                     <DialogFooter>
                         <DialogClose asChild>
                             <Button variant="outline" className="w-full">
-                                Maybe Later
+                                {t("theme.maybe_later")}
                             </Button>
                         </DialogClose>
                     </DialogFooter>
