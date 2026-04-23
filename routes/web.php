@@ -95,31 +95,36 @@ Route::get('/run-seeder', function () {
             Artisan::call('db:seed', ['--class' => $class, '--force' => true]);
             $output = Artisan::output();
 
-            preg_match('/inserted:\s*(\d+),\s*updated:\s*(\d+),\s*skipped:\s*(\d+)/i', $output, $m);
+            preg_match('/inserted:\s*(\d+),\s*updated:\s*(\d+),\s*skipped:\s*(\d+),\s*deleted:\s*(\d+)/i', $output, $m);
             preg_match('/images added:\s*(\d+),\s*already existed \/ no file:\s*(\d+)/i', $output, $img);
             preg_match('/words_without_images:\s*(\[.*\])/i', $output, $wni);
 
             $results[$class] = [
-                'status' => 'success',
-                'inserted' => isset($m[1]) ? (int) $m[1] : null,
-                'updated' => isset($m[2]) ? (int) $m[2] : null,
-                'skipped' => isset($m[3]) ? (int) $m[3] : null,
-                'images_added' => isset($img[1]) ? (int) $img[1] : null,
-                'images_skipped' => isset($img[2]) ? (int) $img[2] : null,
+                'status'              => 'success',
+                'inserted'            => isset($m[1]) ? (int) $m[1] : null,
+                'updated'             => isset($m[2]) ? (int) $m[2] : null,
+                'skipped'             => isset($m[3]) ? (int) $m[3] : null,
+                'deleted'             => isset($m[4]) ? (int) $m[4] : null,
+                'images_added'        => isset($img[1]) ? (int) $img[1] : null,
+                'images_skipped'      => isset($img[2]) ? (int) $img[2] : null,
                 'words_without_images' => isset($wni[1]) ? json_decode($wni[1], true) : [],
+                'raw_output'          => $output, // ← remove once stable
             ];
         } catch (\Throwable $e) {
             $results[$class] = [
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(), // ← remove once stable
             ];
         }
     }
 
-    $overallStatus = collect($results)->every(fn($r) => $r['status'] === 'success') ? 'success' : 'partial';
+    $overallStatus = collect($results)->every(fn($r) => $r['status'] === 'success')
+        ? 'success'
+        : 'partial';
 
     return response()->json([
-        'status' => $overallStatus,
+        'status'  => $overallStatus,
         'seeders' => $results,
     ]);
 });

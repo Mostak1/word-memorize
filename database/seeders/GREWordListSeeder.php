@@ -55,7 +55,7 @@ class GREWordListSeeder extends Seeder
     /**
      * How many words per WordList inside each category.
      */
-    private const GRE_332_CHUNK_SIZE = 20;
+    private const GRE_332_CHUNK_SIZE =40;
     private const GRE_EXTENDED_CHUNK_SIZE = 60;
 
     /**
@@ -68,25 +68,6 @@ class GREWordListSeeder extends Seeder
      * Admin email to use as creator.
      */
     private const ADMIN_EMAIL = 'admin@gmail.com';
-
-    /**
-     * Columns updated when a word already exists (upsert).
-     */
-    private const UPSERT_UPDATE_COLUMNS = [
-        'parts_of_speech_variations',
-        'ipa',
-        'pronunciation',
-        'bangla_pronunciation',
-        'definition',
-        'bangla_meaning',
-        'collocations',
-        'example_sentences',
-        'synonym',
-        'antonym',
-        'image_related_sentence',
-        'ai_prompt',
-        'updated_at',
-    ];
 
     // ── Public entry-points ────────────────────────────────────────────────
 
@@ -111,10 +92,9 @@ class GREWordListSeeder extends Seeder
             ', GRE Extended: ' . count($sublists['extended']) . '.'
         );
 
-        // Build a case-insensitive index of available images once,
-        // so we don't hit the filesystem for every single word.
+        // Build a case-insensitive index of available images once.
         $imageIndex = $this->buildImageIndex();
-        $this->log('info', count($imageIndex) . ' image(s) found in database/data/gre_word_images/.');
+        $this->log('info', count($imageIndex) . ' image(s) found in ' . $this->imagesPath . '/.');
 
         $creatorId = $this->getCreatorId();
 
@@ -122,6 +102,7 @@ class GREWordListSeeder extends Seeder
             'inserted' => $inserted,
             'updated' => $updated,
             'skipped' => $skipped,
+            'deleted' => $deleted,
             'images_added' => $imagesAdded,
             'images_skipped' => $imagesSkipped,
             'no_image_words' => $noImageWords,
@@ -129,7 +110,7 @@ class GREWordListSeeder extends Seeder
 
         $this->log(
             'info',
-            "\nDone — words inserted: {$inserted}, updated: {$updated}, skipped: {$skipped}." .
+            "\nDone — words inserted: {$inserted}, updated: {$updated}, skipped: {$skipped}, deleted: {$deleted}." .
             "\n       images added: {$imagesAdded}, already existed / no file: {$imagesSkipped}."
         );
 
@@ -178,7 +159,7 @@ class GREWordListSeeder extends Seeder
         $dir = base_path($this->imagesPath);
 
         if (!is_dir($dir)) {
-            $this->log('warn', "Images folder not found: database/data/gre_word_images/ — skipping image seeding.");
+            $this->log('warn', "Images folder not found: {$this->imagesPath} — skipping image seeding.");
             return [];
         }
 
@@ -252,14 +233,6 @@ class GREWordListSeeder extends Seeder
     }
 
     /**
-     * Group rows by their "list" column (col 4).
-     *
-     * The raw value (e.g. "333", "800", "3000") is mapped to a human-readable
-     * title via LIST_LABEL_MAP. Unknown values fall back to "GRE Other".
-     *
-     * Rows with a missing/empty word (col 0) are silently dropped.
-     */
-    /**
      * Split all rows into two buckets:
      *   'gre332'   — rows whose list column matches GRE_332_LIST_VALUES
      *   'extended' — everything else
@@ -298,6 +271,7 @@ class GREWordListSeeder extends Seeder
             $totalInserted = 0;
             $totalUpdated = 0;
             $totalSkipped = 0;
+            $totalDeleted = 0;
             $totalImagesAdded = 0;
             $totalImagesSkip = 0;
             $allNoImageWords = [];
@@ -327,6 +301,7 @@ class GREWordListSeeder extends Seeder
                     'inserted' => $ins,
                     'updated' => $upd,
                     'skipped' => $skp,
+                    'deleted' => $del,
                     'images_added' => $imgAdded,
                     'images_skipped' => $imgSkip,
                     'no_image_words' => $noImgWords,
@@ -335,6 +310,7 @@ class GREWordListSeeder extends Seeder
                 $totalInserted += $ins;
                 $totalUpdated += $upd;
                 $totalSkipped += $skp;
+                $totalDeleted += $del;
                 $totalImagesAdded += $imgAdded;
                 $totalImagesSkip += $imgSkip;
                 $allNoImageWords = array_merge($allNoImageWords, $noImgWords);
@@ -365,6 +341,7 @@ class GREWordListSeeder extends Seeder
                     'inserted' => $ins,
                     'updated' => $upd,
                     'skipped' => $skp,
+                    'deleted' => $del,
                     'images_added' => $imgAdded,
                     'images_skipped' => $imgSkip,
                     'no_image_words' => $noImgWords,
@@ -373,6 +350,7 @@ class GREWordListSeeder extends Seeder
                 $totalInserted += $ins;
                 $totalUpdated += $upd;
                 $totalSkipped += $skp;
+                $totalDeleted += $del;
                 $totalImagesAdded += $imgAdded;
                 $totalImagesSkip += $imgSkip;
                 $allNoImageWords = array_merge($allNoImageWords, $noImgWords);
@@ -382,6 +360,7 @@ class GREWordListSeeder extends Seeder
                 'inserted' => $totalInserted,
                 'updated' => $totalUpdated,
                 'skipped' => $totalSkipped,
+                'deleted' => $totalDeleted,
                 'images_added' => $totalImagesAdded,
                 'images_skipped' => $totalImagesSkip,
                 'no_image_words' => $allNoImageWords,
@@ -416,44 +395,11 @@ class GREWordListSeeder extends Seeder
 
         $this->log('info', "    WordList: {$title} (ID: {$wordList->id})");
 
-        // Pre-fetch existing words
-        $existingKeys = DB::table('words')
-            ->where('wordlist_id', $wordList->id)
-            ->select('word', 'wordlist_id')
-            ->get()
-            ->mapWithKeys(fn($r) => [$r->word . '|' . $r->wordlist_id => true])
-            ->toArray();
-
         $inserted = 0;
         $updated = 0;
         $skipped = 0;
-        $batchSize = 100;
-        $batch = [];
-        $now = now()->toDateTimeString();
-
-        $flush = function () use (&$batch, &$inserted, &$updated, &$existingKeys, $wordList): void {
-            if (empty($batch)) {
-                return;
-            }
-
-            DB::table('words')->upsert(
-                $batch,
-                ['word', 'wordlist_id'],
-                self::UPSERT_UPDATE_COLUMNS
-            );
-
-            foreach ($batch as $row) {
-                $key = $row['word'] . '|' . $row['wordlist_id'];
-                if (isset($existingKeys[$key])) {
-                    $updated++;
-                } else {
-                    $inserted++;
-                    $existingKeys[$key] = true;
-                }
-            }
-
-            $batch = [];
-        };
+        $deleted = 0;
+        $csvWords = [];
 
         foreach ($rows as $row) {
             // CSV column mapping:
@@ -487,35 +433,49 @@ class GREWordListSeeder extends Seeder
                 continue;
             }
 
-            $batch[] = [
-                'wordlist_id' => $wordList->id,
-                'word' => $word,
-                'parts_of_speech_variations' => $this->clean($row[5] ?? null) ?? '',
-                'ipa' => $this->clean($row[6] ?? null),
-                'pronunciation' => $this->clean($row[7] ?? null),
-                'bangla_pronunciation' => $this->clean($row[8] ?? null),
-                'definition' => $this->clean($row[3] ?? null) ?? '',
-                'bangla_meaning' => $this->clean($row[11] ?? null),
-                'collocations' => $this->clean($row[12] ?? null),
-                'example_sentences' => $this->clean($row[1] ?? null) ?? '',
-                'synonym' => $this->clean($row[9] ?? null),
-                'antonym' => $this->clean($row[10] ?? null),
-                'image_related_sentence' => null, // phrase col (2) intentionally unused; always null
-                'ai_prompt' => null,
-                'hyphenation' => null,
-                'image_url' => null,
-                'created_by' => $creatorId,
-                'is_public' => true,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ];
+            $csvWords[] = $word;
 
-            if (count($batch) >= $batchSize) {
-                $flush();
+            $wordModel = Word::updateOrCreate(
+                [
+                    'word' => $word,
+                    'wordlist_id' => $wordList->id,
+                ],
+                [
+                    'parts_of_speech_variations' => $this->clean($row[5] ?? null) ?? '',
+                    'ipa' => $this->clean($row[6] ?? null),
+                    'pronunciation' => $this->clean($row[7] ?? null),
+                    'bangla_pronunciation' => $this->clean($row[8] ?? null),
+                    'definition' => $this->clean($row[3] ?? null) ?? '',
+                    'bangla_meaning' => $this->clean($row[11] ?? null),
+                    'collocations' => $this->clean($row[12] ?? null),
+                    'example_sentences' => $this->clean($row[1] ?? null) ?? '',
+                    'synonym' => $this->clean($row[9] ?? null),
+                    'antonym' => $this->clean($row[10] ?? null),
+                    'image_related_sentence' => null, // phrase col (2) intentionally unused; always null
+                    'ai_prompt' => null,
+                    'hyphenation' => null,
+                    'image_url' => null,
+                    'created_by' => $creatorId,
+                    'is_public' => true,
+                ]
+            );
+
+            if ($wordModel->wasRecentlyCreated) {
+                $inserted++;
+            } else {
+                $updated++;
             }
         }
 
-        $flush();
+        // ── Remove words no longer present in the CSV ──────────────────────
+        // Fires the Word::deleting boot hook per record so WordImage files
+        // are cleaned up from storage automatically.
+        Word::where('wordlist_id', $wordList->id)
+            ->whereNotIn('word', $csvWords)
+            ->each(function (Word $w) use (&$deleted) {
+                $w->delete();
+                $deleted++;
+            });
 
         // ── Image seeding ──────────────────────────────────────────────────
         ['added' => $imagesAdded, 'skipped' => $imagesSkipped, 'no_image_words' => $noImageWords] =
@@ -523,7 +483,7 @@ class GREWordListSeeder extends Seeder
 
         $this->log(
             'info',
-            "    Done — words inserted: {$inserted}, updated: {$updated}, skipped: {$skipped}." .
+            "    Done — words inserted: {$inserted}, updated: {$updated}, skipped: {$skipped}, deleted: {$deleted}." .
             " Images added: {$imagesAdded}, skipped: {$imagesSkipped}."
         );
 
@@ -531,6 +491,7 @@ class GREWordListSeeder extends Seeder
             'inserted' => $inserted,
             'updated' => $updated,
             'skipped' => $skipped,
+            'deleted' => $deleted,
             'images_added' => $imagesAdded,
             'images_skipped' => $imagesSkipped,
             'no_image_words' => $noImageWords,
@@ -549,8 +510,8 @@ class GREWordListSeeder extends Seeder
             return ['added' => 0, 'skipped' => 0, 'no_image_words' => []];
         }
 
-        $wordMap = DB::table('words')
-            ->where('wordlist_id', $wordListId)
+        // Load all words for this list via the Word model: word => id
+        $wordMap = Word::where('wordlist_id', $wordListId)
             ->pluck('id', 'word')
             ->toArray();
 

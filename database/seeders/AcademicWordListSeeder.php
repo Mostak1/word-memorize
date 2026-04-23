@@ -58,25 +58,6 @@ class AcademicWordListSeeder extends Seeder
      */
     private const ADMIN_EMAIL = 'admin@gmail.com';
 
-    /**
-     * Columns updated when a word already exists (upsert).
-     */
-    private const UPSERT_UPDATE_COLUMNS = [
-        'parts_of_speech_variations',
-        'ipa',
-        'pronunciation',
-        'bangla_pronunciation',
-        'definition',
-        'bangla_meaning',
-        'collocations',
-        'example_sentences',
-        'synonym',
-        'antonym',
-        'image_related_sentence',
-        'ai_prompt',
-        'updated_at',
-    ];
-
     // ── Public entry-points ────────────────────────────────────────────────
 
     public function run(): void
@@ -99,7 +80,7 @@ class AcademicWordListSeeder extends Seeder
         // Build a case-insensitive index of available images once,
         // so we don't hit the filesystem for every single word.
         $imageIndex = $this->buildImageIndex();
-        $this->log('info', count($imageIndex) . ' image(s) found in database/data/academic-images/.');
+        $this->log('info', count($imageIndex) . ' image(s) found in ' . $this->imagesPath . '/.');
 
         $creatorId = $this->getCreatorId();
 
@@ -107,15 +88,15 @@ class AcademicWordListSeeder extends Seeder
             'inserted' => $inserted,
             'updated' => $updated,
             'skipped' => $skipped,
+            'deleted' => $deleted,
             'images_added' => $imagesAdded,
             'images_skipped' => $imagesSkipped,
             'no_image_words' => $noImageWords,
-        ] =
-            $this->seedSublists($sublists, $creatorId, $imageIndex);
+        ] = $this->seedSublists($sublists, $creatorId, $imageIndex);
 
         $this->log(
             'info',
-            "\nDone — words inserted: {$inserted}, updated: {$updated}, skipped: {$skipped}." .
+            "\nDone — words inserted: {$inserted}, updated: {$updated}, skipped: {$skipped}, deleted: {$deleted}." .
             "\n       images added: {$imagesAdded}, already existed / no file: {$imagesSkipped}."
         );
 
@@ -154,9 +135,6 @@ class AcademicWordListSeeder extends Seeder
      * Scan the images folder and build a lookup map:
      *   lowercase-word => absolute-file-path
      *
-     * This lets us do O(1) case-insensitive lookups per word without
-     * touching the filesystem again.
-     *
      * @return array<string, string>  e.g. ['task' => '/full/path/Task.jpg']
      */
     private function buildImageIndex(): array
@@ -164,7 +142,7 @@ class AcademicWordListSeeder extends Seeder
         $dir = base_path($this->imagesPath);
 
         if (!is_dir($dir)) {
-            $this->log('warn', "Images folder not found: database/data/academic-images/ — skipping image seeding.");
+            $this->log('warn', "Images folder not found: {$this->imagesPath} — skipping image seeding.");
             return [];
         }
 
@@ -204,9 +182,6 @@ class AcademicWordListSeeder extends Seeder
 
     // ── Helper: Get Creator ID ─────────────────────────────────────────────
 
-    /**
-     * Find user by admin@gmail.com, fallback to user ID 1
-     */
     private function getCreatorId(): int
     {
         $user = User::where('email', self::ADMIN_EMAIL)->first();
@@ -246,6 +221,7 @@ class AcademicWordListSeeder extends Seeder
     /**
      * Group rows by their Sublist column (col 0).
      * Rows with a missing/empty word (col 1) are silently dropped.
+     *
      * The sublist name is normalised to "Sublist N" so the output keys
      * are consistent regardless of how the CSV stores the number.
      */
@@ -296,6 +272,7 @@ class AcademicWordListSeeder extends Seeder
             $totalInserted = 0;
             $totalUpdated = 0;
             $totalSkipped = 0;
+            $totalDeleted = 0;
             $totalImagesAdded = 0;
             $totalImagesSkip = 0;
             $allNoImageWords = [];
@@ -308,6 +285,7 @@ class AcademicWordListSeeder extends Seeder
                     'inserted' => $ins,
                     'updated' => $upd,
                     'skipped' => $skp,
+                    'deleted' => $del,
                     'images_added' => $imgAdded,
                     'images_skipped' => $imgSkip,
                     'no_image_words' => $noImgWords,
@@ -318,6 +296,7 @@ class AcademicWordListSeeder extends Seeder
                 $totalInserted += $ins;
                 $totalUpdated += $upd;
                 $totalSkipped += $skp;
+                $totalDeleted += $del;
                 $totalImagesAdded += $imgAdded;
                 $totalImagesSkip += $imgSkip;
                 $allNoImageWords = array_merge($allNoImageWords, $noImgWords);
@@ -327,6 +306,7 @@ class AcademicWordListSeeder extends Seeder
                 'inserted' => $totalInserted,
                 'updated' => $totalUpdated,
                 'skipped' => $totalSkipped,
+                'deleted' => $totalDeleted,
                 'images_added' => $totalImagesAdded,
                 'images_skipped' => $totalImagesSkip,
                 'no_image_words' => $allNoImageWords,
@@ -350,7 +330,6 @@ class AcademicWordListSeeder extends Seeder
                 'title' => $title,
             ],
             [
-                // 'price' => 0,
                 'difficulty' => 'intermediate',
                 'status' => true,
                 'is_locked' => $isLocked,
@@ -361,43 +340,11 @@ class AcademicWordListSeeder extends Seeder
 
         $this->log('info', "    WordList: {$title} (ID: {$wordList->id})");
 
-        // Pre-fetch existing words
-        $existingKeys = DB::table('words')
-            ->where('wordlist_id', $wordList->id)
-            ->select('word', 'wordlist_id')
-            ->get()
-            ->mapWithKeys(fn($r) => [$r->word . '|' . $r->wordlist_id => true])
-            ->toArray();
-
         $inserted = 0;
         $updated = 0;
         $skipped = 0;
-        $batchSize = 100;
-        $batch = [];
-        $now = now()->toDateTimeString();
-
-        $flush = function () use (&$batch, &$inserted, &$updated, &$existingKeys, $wordList): void {
-            if (empty($batch))
-                return;
-
-            DB::table('words')->upsert(
-                $batch,
-                ['word', 'wordlist_id'],
-                self::UPSERT_UPDATE_COLUMNS
-            );
-
-            foreach ($batch as $row) {
-                $key = $row['word'] . '|' . $row['wordlist_id'];
-                if (isset($existingKeys[$key])) {
-                    $updated++;
-                } else {
-                    $inserted++;
-                    $existingKeys[$key] = true;
-                }
-            }
-
-            $batch = [];
-        };
+        $deleted = 0;
+        $csvWords = [];
 
         foreach ($rows as $row) {
             $word = $this->clean($row[1] ?? null);
@@ -407,41 +354,55 @@ class AcademicWordListSeeder extends Seeder
                 continue;
             }
 
+            $csvWords[] = $word;
+
             $exampleSentences = implode(' ', array_filter([
                 $this->clean($row[10] ?? null),
                 $this->clean($row[11] ?? null),
                 $this->clean($row[16] ?? null),
             ]));
 
-            $batch[] = [
-                'wordlist_id' => $wordList->id,
-                'word' => $word,
-                'parts_of_speech_variations' => $this->clean($row[2] ?? null) ?? '',
-                'ipa' => $this->clean($row[3] ?? null),
-                'pronunciation' => $this->clean($row[4] ?? null),
-                'bangla_pronunciation' => $this->clean($row[5] ?? null),
-                'definition' => $this->clean($row[7] ?? null) ?? '',
-                'bangla_meaning' => $this->clean($row[8] ?? null),
-                'collocations' => $this->clean($row[9] ?? null),
-                'example_sentences' => $exampleSentences ?: '',
-                'synonym' => $this->clean($row[12] ?? null),
-                'antonym' => $this->clean($row[13] ?? null),
-                'image_related_sentence' => $this->clean($row[14] ?? null),
-                'ai_prompt' => $this->clean($row[15] ?? null),
-                'hyphenation' => null,
-                'image_url' => null,
-                'created_by' => $creatorId,
-                'is_public' => true,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ];
+            $wordModel = Word::updateOrCreate(
+                [
+                    'word' => $word,
+                    'wordlist_id' => $wordList->id,
+                ],
+                [
+                    'parts_of_speech_variations' => $this->clean($row[2] ?? null) ?? '',
+                    'ipa' => $this->clean($row[3] ?? null),
+                    'pronunciation' => $this->clean($row[4] ?? null),
+                    'bangla_pronunciation' => $this->clean($row[5] ?? null),
+                    'definition' => $this->clean($row[7] ?? null) ?? '',
+                    'bangla_meaning' => $this->clean($row[8] ?? null),
+                    'collocations' => $this->clean($row[9] ?? null),
+                    'example_sentences' => $exampleSentences ?: '',
+                    'synonym' => $this->clean($row[12] ?? null),
+                    'antonym' => $this->clean($row[13] ?? null),
+                    'image_related_sentence' => $this->clean($row[14] ?? null),
+                    'ai_prompt' => $this->clean($row[15] ?? null),
+                    'hyphenation' => null,
+                    'image_url' => null,
+                    'created_by' => $creatorId,
+                    'is_public' => true,
+                ]
+            );
 
-            if (count($batch) >= $batchSize) {
-                $flush();
+            if ($wordModel->wasRecentlyCreated) {
+                $inserted++;
+            } else {
+                $updated++;
             }
         }
 
-        $flush();
+        // ── Remove words no longer present in the CSV ──────────────────────
+        // Fires the Word::deleting boot hook per record so WordImage files
+        // are cleaned up from storage automatically.
+        Word::where('wordlist_id', $wordList->id)
+            ->whereNotIn('word', $csvWords)
+            ->each(function (Word $w) use (&$deleted) {
+                $w->delete();
+                $deleted++;
+            });
 
         // ── Image seeding ──────────────────────────────────────────────────
         // Run after all words are upserted so word IDs are guaranteed to exist.
@@ -450,7 +411,7 @@ class AcademicWordListSeeder extends Seeder
 
         $this->log(
             'info',
-            "    Done — words inserted: {$inserted}, updated: {$updated}, skipped: {$skipped}." .
+            "    Done — words inserted: {$inserted}, updated: {$updated}, skipped: {$skipped}, deleted: {$deleted}." .
             " Images added: {$imagesAdded}, skipped: {$imagesSkipped}."
         );
 
@@ -458,6 +419,7 @@ class AcademicWordListSeeder extends Seeder
             'inserted' => $inserted,
             'updated' => $updated,
             'skipped' => $skipped,
+            'deleted' => $deleted,
             'images_added' => $imagesAdded,
             'images_skipped' => $imagesSkipped,
             'no_image_words' => $noImageWords,
@@ -470,24 +432,23 @@ class AcademicWordListSeeder extends Seeder
      *
      * Skips words that already have at least one WordImage row (idempotent).
      *
-     * @return array{added: int, skipped: int}
+     * @return array{added: int, skipped: int, no_image_words: array}
      */
     private function seedImagesForWordList(int $wordListId, array $rows, array $imageIndex): array
     {
         if (empty($imageIndex)) {
-            return ['added' => 0, 'skipped' => 0];
+            return ['added' => 0, 'skipped' => 0, 'no_image_words' => []];
         }
 
-        // Load all words for this list: word => id
-        $wordMap = DB::table('words')
-            ->where('wordlist_id', $wordListId)
-            ->pluck('id', 'word')   // ['Task' => 5, 'abandon' => 6, ...]
+        // Load all words for this list via the Word model: word => id
+        $wordMap = Word::where('wordlist_id', $wordListId)
+            ->pluck('id', 'word')
             ->toArray();
 
         // Load word_ids that already have at least one image (to skip them)
         $alreadyHasImage = WordImage::whereIn('word_id', array_values($wordMap))
             ->pluck('word_id')
-            ->flip()               // flip to a set for O(1) lookup
+            ->flip()
             ->toArray();
 
         $added = 0;
@@ -504,7 +465,7 @@ class AcademicWordListSeeder extends Seeder
             $wordId = $wordMap[$wordStr] ?? null;
 
             if ($wordId === null) {
-                // Word was not found in DB — skipped during upsert
+                // Word was not found in DB — skipped during updateOrCreate
                 $skipped++;
                 continue;
             }
@@ -531,7 +492,7 @@ class AcademicWordListSeeder extends Seeder
                 continue;
             }
 
-            // Create the WordImage record
+            // Create the WordImage record.
             // image_url stored as "/words/filename.jpg" (matches WordImage accessor)
             WordImage::create([
                 'word_id' => $wordId,
@@ -556,7 +517,7 @@ class AcademicWordListSeeder extends Seeder
     private function copyImageToStorage(string $sourcePath, string $word): ?string
     {
         $ext = strtolower(pathinfo($sourcePath, PATHINFO_EXTENSION));
-        $destFilename = strtolower($word) . '.' . $ext;   // e.g. "task.jpg"
+        $destFilename = strtolower($word) . '.' . $ext;    // e.g. "task.jpg"
         $destPath = self::STORAGE_DIR . '/' . $destFilename; // e.g. "words/task.jpg"
 
         // Already copied in a previous run — don't overwrite

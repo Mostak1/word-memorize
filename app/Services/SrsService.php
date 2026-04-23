@@ -24,7 +24,7 @@ class SrsService
   const REVIEW_LIMIT = 20;
   
   /** Mini-quiz frequency (3-4 cards) */
-  const QUIZ_MIN_INTERVAL = 3;
+  const QUIZ_MIN_INTERVAL = 4;
   const QUIZ_MAX_INTERVAL = 4;
 
   // ── Core answer handlers ──────────────────────────────────────────────────
@@ -155,9 +155,29 @@ class SrsService
    *   ✓ L1 intra-session reshuffling is handled entirely client-side.
    *   ✓ L4 (Mastered) words are excluded from the active queue.
    */
-  public function buildSessionQueue(User $user, int $wordlistId): Collection
+  public function buildSessionQueue(User $user, int $wordlistId, bool $isQuizOnly = false): Collection
   {
     $userId = $user->id;
+
+    if ($isQuizOnly) {
+      $words = Word::where('wordlist_id', $wordlistId)->get();
+      if ($words->isEmpty()) return collect();
+
+      $quizzes = collect();
+      // Ensure we get 20 quiz cards by rotating through words if necessary
+      while ($quizzes->count() < 20) {
+        foreach ($words->shuffle() as $word) {
+          if ($quizzes->count() >= 20) break;
+          $quiz = $this->generateQuizQuestion($word);
+          if ($quiz) {
+            $quizzes->push($quiz);
+          }
+        }
+        // Safety break if no words can generate quizzes
+        if ($quizzes->isEmpty()) break;
+      }
+      return $quizzes;
+    }
 
     // ── Priority 1: overdue L2 / L3 reviews ─────────────────────────────
     $reviewWords = Word::with(['images', 'wordList.category:id,show_example_sentences', 'progress' => fn($q) => $q->where('user_id', $userId)])
@@ -226,7 +246,7 @@ class SrsService
     if ($words->isEmpty()) return $words;
 
     $finalQueue = collect();
-    $counter = 0;
+    $window = collect(); // tracking words in the current interval
     $nextQuizAt = rand(self::QUIZ_MIN_INTERVAL, self::QUIZ_MAX_INTERVAL);
 
     foreach ($words as $word) {
@@ -235,14 +255,23 @@ class SrsService
       }
 
       $finalQueue->push($word);
-      $counter++;
+      $window->push($word);
 
-      if ($counter >= $nextQuizAt && $finalQueue->count() < self::QUEUE_SIZE) {
-        $quiz = $this->generateQuizQuestion($word);
-        if ($quiz) {
-          $finalQueue->push($quiz);
+      // When we reach the interval, try to inject a quiz
+      if ($window->count() >= $nextQuizAt) {
+        // Selection: Randomized from the window.
+        // Frontend will dynamically decide whether to show or skip based 
+        // on real-time session progress.
+        if ($window->isNotEmpty()) {
+          $target = $window->random();
+          $quiz = $this->generateQuizQuestion($target);
+          if ($quiz && $finalQueue->count() < self::QUEUE_SIZE) {
+            $finalQueue->push($quiz);
+          }
         }
-        $counter = 0;
+
+        // Reset for next interval
+        $window = collect();
         $nextQuizAt = rand(self::QUIZ_MIN_INTERVAL, self::QUIZ_MAX_INTERVAL);
       }
     }

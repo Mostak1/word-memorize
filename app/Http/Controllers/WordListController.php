@@ -99,8 +99,14 @@ class WordListController extends Controller
             abort(403, 'This word list needs at least 10 words to start an exercise.');
         }
 
+        $isQuizOnly = false;
         if (auth()->check()) {
-            $words = $srsService->buildSessionQueue(auth()->user(), (int) $id);
+            $sessionTracker = \App\Models\UserWordListSession::firstOrCreate(
+                ['user_id' => auth()->id(), 'wordlist_id' => $id],
+                ['regular_sessions_count' => 0]
+            );
+            $isQuizOnly = $sessionTracker->regular_sessions_count >= 4;
+            $words = $srsService->buildSessionQueue(auth()->user(), (int) $id, $isQuizOnly);
         } else {
             $words = Word::with([
                 'images',
@@ -128,6 +134,7 @@ class WordListController extends Controller
             'bookmarkedWordIds' => $this->bookmarkedIds($words->pluck('id')->toArray()),
             'streak' => auth()->check() ? $this->streakService->getSummary(auth()->user()) : null,
             'xp_enabled' => $this->isAdminWordList($wordList),
+            'isQuizOnly' => $isQuizOnly,
         ]);
     }
 

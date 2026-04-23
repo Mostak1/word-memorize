@@ -114,6 +114,19 @@ class ReviewWordController extends Controller
                     $listCompleted = true;
                 }
             }
+
+            // Update session tracking counter for this wordlist
+            $isQuizOnly = $request->input('is_quiz_only', false);
+            $sessionTracker = \App\Models\UserWordListSession::firstOrCreate(
+                ['user_id' => $user->id, 'wordlist_id' => $wordlistId],
+                ['regular_sessions_count' => 0]
+            );
+
+            if ($isQuizOnly) {
+                $sessionTracker->update(['regular_sessions_count' => 0]);
+            } else {
+                $sessionTracker->increment('regular_sessions_count');
+            }
         }
 
         return response()->json([

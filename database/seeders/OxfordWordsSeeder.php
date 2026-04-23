@@ -59,25 +59,6 @@ class OxfordWordsSeeder extends Seeder
      */
     private const ADMIN_EMAIL = 'admin@gmail.com';
 
-    /**
-     * Columns updated when a word already exists (upsert).
-     * Note: image_url is intentionally absent — images live in word_images table.
-     */
-    private const UPSERT_UPDATE_COLUMNS = [
-        'parts_of_speech_variations',
-        'ipa',
-        'bangla_pronunciation',
-        'pronunciation',
-        'definition',
-        'bangla_meaning',
-        'example_sentences',
-        'collocations',
-        'ai_prompt',
-        'synonym',
-        'antonym',
-        'updated_at',
-    ];
-
     // ── Public entry-points ────────────────────────────────────────────────
 
     public function run(): void
@@ -108,6 +89,7 @@ class OxfordWordsSeeder extends Seeder
             'inserted' => $inserted,
             'updated' => $updated,
             'skipped' => $skipped,
+            'deleted' => $deleted,
             'images_added' => $imagesAdded,
             'images_skipped' => $imagesSkipped,
             'no_image_words' => $noImageWords,
@@ -115,7 +97,7 @@ class OxfordWordsSeeder extends Seeder
 
         $this->log(
             'info',
-            "\nDone — words inserted: {$inserted}, updated: {$updated}, skipped: {$skipped}." .
+            "\nDone — words inserted: {$inserted}, updated: {$updated}, skipped: {$skipped}, deleted: {$deleted}." .
             "\n       images added: {$imagesAdded}, already existed / no file: {$imagesSkipped}."
         );
 
@@ -203,7 +185,6 @@ class OxfordWordsSeeder extends Seeder
             // Fix 2: also index the base word with the POS suffix stripped
             // so "accept (v.).jpg"  → key "accept"
             //    "furniture (n.)."  → key "furniture"  (note optional trailing dot)
-            // $base = trim(preg_replace('/\s*\(.*?\)\.?\s*$/', '', $stem));
             $base = trim(preg_replace('/\s*\(.*?\)\.*\s*$/', '', $stem));
 
             if ($base !== '' && $base !== $stem && !isset($index[$base])) {
@@ -230,7 +211,6 @@ class OxfordWordsSeeder extends Seeder
 
                 // Also strip POS suffix from the _suffix-stripped result so that
                 // "furniture (n.)._cropped" ultimately resolves to "furniture".
-                // $strippedBase = trim(preg_replace('/\s*\(.*?\)\.?\s*$/', '', $stripped));
                 $strippedBase = trim(preg_replace('/\s*\(.*?\)\.*\s*$/', '', $stripped));
                 if ($strippedBase !== '' && $strippedBase !== $stripped && !isset($index[$strippedBase])) {
                     $index[$strippedBase] = $absPath;
@@ -259,7 +239,7 @@ class OxfordWordsSeeder extends Seeder
         if (isset($imageIndex[$key]))
             return $imageIndex[$key];
 
-        // ── NEW: strip trailing parenthetical from the word itself ──────
+        // Strip trailing parenthetical from the word itself.
         // Handles: "April (abbr. Apr.)"  → "april"
         //          "television (also TV)" → "television"
         //          "can (modal)"          → "can"
@@ -276,7 +256,6 @@ class OxfordWordsSeeder extends Seeder
             if (isset($imageIndex[$hyphenated]))
                 return $imageIndex[$hyphenated];
         }
-        // ───────────────────────────────────────────────────────────────
 
         $underscored = str_replace(' ', '_', $key);
         if (isset($imageIndex[$underscored]))
@@ -395,6 +374,7 @@ class OxfordWordsSeeder extends Seeder
             $totalInserted = 0;
             $totalUpdated = 0;
             $totalSkipped = 0;
+            $totalDeleted = 0;
             $totalImagesAdded = 0;
             $totalImagesSkipped = 0;
             $allNoImageWords = [];
@@ -410,6 +390,7 @@ class OxfordWordsSeeder extends Seeder
                     'inserted' => $ins,
                     'updated' => $upd,
                     'skipped' => $skp,
+                    'deleted' => $del,
                     'images_added' => $imgAdded,
                     'images_skipped' => $imgSkip,
                     'no_image_words' => $noImgWords,
@@ -418,6 +399,7 @@ class OxfordWordsSeeder extends Seeder
                 $totalInserted += $ins;
                 $totalUpdated += $upd;
                 $totalSkipped += $skp;
+                $totalDeleted += $del;
                 $totalImagesAdded += $imgAdded;
                 $totalImagesSkipped += $imgSkip;
                 $allNoImageWords = array_merge($allNoImageWords, $noImgWords);
@@ -428,6 +410,7 @@ class OxfordWordsSeeder extends Seeder
                 'inserted' => $totalInserted,
                 'updated' => $totalUpdated,
                 'skipped' => $totalSkipped,
+                'deleted' => $totalDeleted,
                 'images_added' => $totalImagesAdded,
                 'images_skipped' => $totalImagesSkipped,
                 'no_image_words' => $allNoImageWords,
@@ -451,7 +434,6 @@ class OxfordWordsSeeder extends Seeder
                 'title' => $title,
             ],
             [
-                // 'price' => 0,
                 'difficulty' => 'beginner',
                 'status' => true,
                 'is_locked' => $isLocked,
@@ -467,45 +449,11 @@ class OxfordWordsSeeder extends Seeder
             : "  WordList already exists (ID: {$wordList->id}) — skipping creation."
         );
 
-        // ── Word upsert ────────────────────────────────────────────────────
-
-        $existingKeys = DB::table('words')
-            ->where('wordlist_id', $wordList->id)
-            ->select('word', 'wordlist_id')
-            ->get()
-            ->mapWithKeys(fn($r) => [$r->word . '|' . $r->wordlist_id => true])
-            ->toArray();
-
         $inserted = 0;
         $updated = 0;
         $skipped = 0;
-        $batchSize = 100;
-        $batch = [];
-        $now = now()->toDateTimeString();
-
-        $flush = function () use (&$batch, &$inserted, &$updated, &$existingKeys): void {
-            if (empty($batch)) {
-                return;
-            }
-
-            DB::table('words')->upsert(
-                $batch,
-                ['word', 'wordlist_id'],
-                self::UPSERT_UPDATE_COLUMNS
-            );
-
-            foreach ($batch as $row) {
-                $key = $row['word'] . '|' . $row['wordlist_id'];
-                if (isset($existingKeys[$key])) {
-                    $updated++;
-                } else {
-                    $inserted++;
-                    $existingKeys[$key] = true;
-                }
-            }
-
-            $batch = [];
-        };
+        $deleted = 0;
+        $csvWords = [];
 
         foreach ($rows as $row) {
             $word = $this->clean($row[0] ?? null);
@@ -515,38 +463,52 @@ class OxfordWordsSeeder extends Seeder
                 continue;
             }
 
+            $csvWords[] = $word;
+
             // Format: "IPA/ বাংলা উচ্চারণ/ romanized"
             $pron = $this->parsePronunciation($this->clean($row[4] ?? null));
 
-            $batch[] = [
-                'wordlist_id' => $wordList->id,
-                'word' => $word,
-                'parts_of_speech_variations' => $this->clean($row[1] ?? null) ?? '',
-                'ipa' => $pron['ipa'],
-                'bangla_pronunciation' => $pron['bangla_pronunciation'],
-                'pronunciation' => $pron['pronunciation'],
-                'definition' => $this->clean($row[5] ?? null) ?? '',
-                'bangla_meaning' => $this->clean($row[6] ?? null),
-                'example_sentences' => $this->clean($row[7] ?? null) ?? '',
-                'ai_prompt' => $this->clean($row[8] ?? null),
-                'collocations' => $this->parseCollocations($this->clean($row[9] ?? null)),
-                'synonym' => $this->clean($row[10] ?? null),
-                'antonym' => $this->clean($row[11] ?? null),
-                'hyphenation' => null,
-                'image_url' => null,
-                'image_related_sentence' => null,
-                'created_by' => $creatorId,
-                'is_public' => true,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ];
+            $wordModel = Word::updateOrCreate(
+                [
+                    'word' => $word,
+                    'wordlist_id' => $wordList->id,
+                ],
+                [
+                    'parts_of_speech_variations' => $this->clean($row[1] ?? null) ?? '',
+                    'ipa' => $pron['ipa'],
+                    'bangla_pronunciation' => $pron['bangla_pronunciation'],
+                    'pronunciation' => $pron['pronunciation'],
+                    'definition' => $this->clean($row[5] ?? null) ?? '',
+                    'bangla_meaning' => $this->clean($row[6] ?? null),
+                    'example_sentences' => $this->clean($row[7] ?? null) ?? '',
+                    'ai_prompt' => $this->clean($row[8] ?? null),
+                    'collocations' => $this->parseCollocations($this->clean($row[9] ?? null)),
+                    'synonym' => $this->clean($row[10] ?? null),
+                    'antonym' => $this->clean($row[11] ?? null),
+                    'hyphenation' => null,
+                    'image_url' => null,
+                    'image_related_sentence' => null,
+                    'created_by' => $creatorId,
+                    'is_public' => true,
+                ]
+            );
 
-            if (count($batch) >= $batchSize) {
-                $flush();
+            if ($wordModel->wasRecentlyCreated) {
+                $inserted++;
+            } else {
+                $updated++;
             }
         }
 
-        $flush();
+        // ── Remove words no longer present in the CSV ──────────────────────
+        // Fires the Word::deleting boot hook per record so WordImage files
+        // are cleaned up from storage automatically.
+        Word::where('wordlist_id', $wordList->id)
+            ->whereNotIn('word', $csvWords)
+            ->each(function (Word $w) use (&$deleted) {
+                $w->delete();
+                $deleted++;
+            });
 
         // ── Image seeding ──────────────────────────────────────────────────
         // Run after all words are upserted so word IDs are guaranteed to exist.
@@ -555,7 +517,7 @@ class OxfordWordsSeeder extends Seeder
 
         $this->log(
             'info',
-            "  Done — words inserted: {$inserted}, updated: {$updated}, skipped: {$skipped}." .
+            "  Done — words inserted: {$inserted}, updated: {$updated}, skipped: {$skipped}, deleted: {$deleted}." .
             " Images added: {$imagesAdded}, skipped: {$imagesSkipped}."
         );
 
@@ -563,6 +525,7 @@ class OxfordWordsSeeder extends Seeder
             'inserted' => $inserted,
             'updated' => $updated,
             'skipped' => $skipped,
+            'deleted' => $deleted,
             'images_added' => $imagesAdded,
             'images_skipped' => $imagesSkipped,
             'no_image_words' => $noImageWords,
@@ -576,18 +539,17 @@ class OxfordWordsSeeder extends Seeder
      * Skips words that already have at least one WordImage row (idempotent).
      *
      * @param  array<string, string> $imageIndex
-     * @return array{added: int, skipped: int}
+     * @return array{added: int, skipped: int, no_image_words: array}
      */
     private function seedImagesForWordList(int $wordListId, array $rows, array $imageIndex): array
     {
         if (empty($imageIndex)) {
-            return ['added' => 0, 'skipped' => 0];
+            return ['added' => 0, 'skipped' => 0, 'no_image_words' => []];
         }
 
-        // Load all words for this list: word => id
-        $wordMap = DB::table('words')
-            ->where('wordlist_id', $wordListId)
-            ->pluck('id', 'word')   // ['able' => 12, 'accept' => 13, ...]
+        // Load all words for this list via the Word model: word => id
+        $wordMap = Word::where('wordlist_id', $wordListId)
+            ->pluck('id', 'word')
             ->toArray();
 
         // Build a set of word_ids that already have at least one image (skip them)
@@ -689,21 +651,12 @@ class OxfordWordsSeeder extends Seeder
      * Expected CSV format (already JSON-encoded array of objects):
      *   [{"phrase":"board chairman","example_sentence":"The board chairman..."}]
      *
-     * Desired stored format (text column):
-     *   [
-     *     {"phrase":"board chairman","example_sentence":"The board chairman..."},
-     *     ...
-     *   ]
-     *
      * Rules:
      *  - If the value is null / empty → store null.
      *  - If it decodes to a valid array of objects with at least a "phrase" key
      *    → re-encode to compact JSON so the column is always consistent.
      *  - If decoding fails or the structure is unexpected → store null and log a
      *    warning so bad data is never silently persisted.
-     *
-     * Each item is normalised to guarantee both keys are present:
-     *   { "phrase": string, "example_sentence": string }
      */
     private function parseCollocations(?string $raw): ?string
     {
@@ -722,7 +675,6 @@ class OxfordWordsSeeder extends Seeder
 
         foreach ($decoded as $item) {
             if (!is_array($item) || !isset($item['phrase'])) {
-                // Skip malformed entries silently (keeps the rest of the array intact)
                 continue;
             }
 

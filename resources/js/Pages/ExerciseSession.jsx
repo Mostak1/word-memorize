@@ -166,6 +166,7 @@ export default function ExerciseSession({
     bookmarkedWordIds = [],
     streak: initialStreak = null,
     xp_enabled = true,
+    isQuizOnly = false,
 }) {
     const { t } = useTranslation();
 
@@ -214,7 +215,10 @@ export default function ExerciseSession({
     const [queue, setQueue] = useState(() =>
         initialWords.map((w) => ({ ...w })),
     );
-    const initialQueueSize = useMemo(() => initialWords.length, []); // cap at session start
+    const initialQueueSize = useMemo(
+        () => initialWords.filter((w) => !w.is_quiz).length,
+        [],
+    ); // count only words, not quizzes
 
     // ── Session stats ─────────────────────────────────────────────────────────
     const [promotedCount, setPromotedCount] = useState(0); // words answered "I Know"
@@ -237,6 +241,8 @@ export default function ExerciseSession({
         Object.fromEntries(bookmarkedWordIds.map((id) => [id, true])),
     );
     const [showMeaning, setShowMeaning] = useState(false);
+    const [showAlreadyKnowDialog, setShowAlreadyKnowDialog] = useState(false);
+    const [pendingKnowWord, setPendingKnowWord] = useState(null);
 
     // ── Card animation state ──────────────────────────────────────────────────
     // exitDir: 'left' = I Know (word leaves), 'right' = I Don't Know (shuffles back)
@@ -269,9 +275,31 @@ export default function ExerciseSession({
 
     // Reset per-card UI when the front of the queue changes
     useEffect(() => {
+        if (!word) return;
+
+        // 🧠 Dynamic Quiz Filtering:
+        // Quizzes should only show if the user has already "learned" the word
+        // (either from a previous session or by clicking 'I Know' in this session).
+        if (word.is_quiz) {
+            const result = sessionResults.find((r) => r.word_id === word.id);
+            const isReviewWord = (word.srs_box ?? 1) > 1;
+
+            // Skip conditions:
+            // 1. User marked it as "Don't Know" in this session.
+            // 2. It's a "New" word and hasn't been answered correctly yet in this session.
+            const shouldSkip =
+                result?.action === "learn" || (!result && !isReviewWord);
+
+            if (shouldSkip) {
+                // Silently skip to the next item in the queue
+                setQueue((prev) => prev.slice(1));
+                return;
+            }
+        }
+
         setActiveImageIndex(0);
         setShowMeaning(false);
-    }, [word?.id]);
+    }, [word?.id, sessionResults]);
 
     // Auto-scroll to I Know / I Don't Know buttons when meaning is revealed
     useEffect(() => {
@@ -357,6 +385,7 @@ export default function ExerciseSession({
             body: JSON.stringify({
                 wordlist_id: wordList?.id,
                 results: sessionResults,
+                is_quiz_only: !!isQuizOnly,
             }),
         })
             .then((response) => response.json())
@@ -596,15 +625,51 @@ export default function ExerciseSession({
         }
         if (isSubmitting) return;
 
-        setIsSubmitting(true);
         const currentBox = word.srs_box ?? 1;
         const willMaster = currentBox >= MASTERED_BOX - 1; // L3 → L4
+
+        // ✅ "Double Know" check: if Box 2 and they have 1 correct / 0 incorrect,
+        // it means this is their second time seeing it and they got it right twice.
+        const isDoubleKnowCandidate =
+            currentBox === 2 &&
+            word.srs_correct === 1 &&
+            word.srs_incorrect === 0;
+
+        if (isDoubleKnowCandidate && !willMaster) {
+            setPendingKnowWord(word);
+            setShowAlreadyKnowDialog(true);
+            return;
+        }
+
+        processKnowAction(false);
+    };
+
+    /**
+     * Handles the decision from the "Do you already know this word?" popup.
+     */
+    const handleAlreadyKnowConfirm = (confirmMastery) => {
+        setShowAlreadyKnowDialog(false);
+        if (confirmMastery) {
+            processKnowAction(true); // fast-track to mastery
+        } else {
+            processKnowAction(false); // normal progression to Box 3
+        }
+    };
+
+    /**
+     * Shared logic for "I Know" and "Already Know" confirmation.
+     * @param {boolean} forceMaster - if true, the word is sent to MASTERED_BOX immediately.
+     */
+    const processKnowAction = (forceMaster = false) => {
+        if (isSubmitting) return;
+        setIsSubmitting(true);
+
+        const currentBox = word.srs_box ?? 1;
+        const willMaster = forceMaster || currentBox >= MASTERED_BOX - 1;
         const willLevelUp = currentBox < MASTERED_BOX;
 
         if (willMaster) {
             playMastered(userSettings);
-            // Increment key → React unmounts old overlay, mounts a fresh one
-            // with its own independent timer. Safe for rapid presses.
             setMasteryEventKey((k) => k + 1);
         } else {
             playCorrect(userSettings);
@@ -615,46 +680,64 @@ export default function ExerciseSession({
         }
 
         const wordId = word.id;
+        const action = forceMaster ? "master" : "know";
+
+        // Update remaining items in the queue locally so that future occurrences
+        // (like quizzes) of this same word reflect the updated SRS status.
+        const syncUpdatedQueue = (prevQueue) => {
+            return prevQueue.map((item) => {
+                if (item.id === wordId) {
+                    const nextBox = forceMaster
+                        ? MASTERED_BOX
+                        : Math.min((item.srs_box ?? 1) + 1, MASTERED_BOX);
+                    const meta = LEVEL_META[nextBox] ?? LEVEL_META[1];
+                    return {
+                        ...item,
+                        srs_box: nextBox,
+                        srs_label: meta.label,
+                        srs_color: meta.color,
+                        srs_correct: (item.srs_correct ?? 0) + 1,
+                    };
+                }
+                return item;
+            });
+        };
 
         if (willMaster) {
-            // The overlay is fixed z-50 and covers the full viewport, so
-            // we can silently reset UI state underneath it:
-            //  - close meaning card (avoids layout shift on transition)
-            //  - scroll to top (page is already at top when next card enters)
             setShowMeaning(false);
             window.scrollTo({ top: 0, behavior: "instant" });
 
-            // ~300ms before the overlay disappears, slide the frozen card out
-            // so the transition into the next card feels fluid.
             setTimeout(() => {
                 exitDir.current = "left";
                 setExiting(true);
             }, MASTERY_ANIM_MS - 300);
 
-            // When overlay finishes: reset exit state, advance the queue.
-            // Page is already at top & meaning is closed, so next card enters
-            // cleanly with no jitter or scroll jump.
             setTimeout(() => {
                 setExiting(false);
                 setSessionResults((prev) => [
                     ...prev,
-                    { word_id: wordId, action: "know" },
+                    { word_id: wordId, action: action },
                 ]);
-                setQueue((prev) => prev.slice(1)); // remove from front
-                setPromotedCount((c) => c + 1);
-                setCardKey((k) => k + 1); // triggers next card enter animation
+                setQueue((prev) => syncUpdatedQueue(prev.slice(1)));
+                if (!word.is_quiz) {
+                    setPromotedCount((c) => c + 1);
+                }
+                setCardKey((k) => k + 1);
                 setIsSubmitting(false);
+                setPendingKnowWord(null);
             }, MASTERY_ANIM_MS);
         } else {
-            // Normal (non-mastery) path: advance quickly as before.
             animateThen("left", () => {
                 setSessionResults((prev) => [
                     ...prev,
-                    { word_id: wordId, action: "know" },
+                    { word_id: wordId, action: action },
                 ]);
-                setQueue((prev) => prev.slice(1)); // remove from front
-                setPromotedCount((c) => c + 1);
+                setQueue((prev) => syncUpdatedQueue(prev.slice(1)));
+                if (!word.is_quiz) {
+                    setPromotedCount((c) => c + 1);
+                }
                 setIsSubmitting(false);
+                setPendingKnowWord(null);
             });
         }
     };
@@ -681,7 +764,6 @@ export default function ExerciseSession({
 
         // playIncorrect(userSettings);
         setIsSubmitting(true);
-        setDontKnowCount((c) => c + 1);
 
         const wordId = word.id;
 
@@ -690,7 +772,25 @@ export default function ExerciseSession({
                 ...prev,
                 { word_id: wordId, action: "learn" },
             ]);
-            setQueue((prev) => prev.slice(1)); // ← word leaves session
+            if (!word.is_quiz) {
+                setDontKnowCount((c) => c + 1);
+            }
+            setQueue((prev) => {
+                const nextQueue = prev.slice(1);
+                return nextQueue.map((item) => {
+                    if (item.id === wordId) {
+                        const meta = LEVEL_META[1];
+                        return {
+                            ...item,
+                            srs_box: 1,
+                            srs_label: meta.label,
+                            srs_color: meta.color,
+                            srs_incorrect: (item.srs_incorrect ?? 0) + 1,
+                        };
+                    }
+                    return item;
+                });
+            });
             setIsSubmitting(false);
         });
     };
@@ -1130,7 +1230,10 @@ export default function ExerciseSession({
                                 Test Streak
                             </button> */}
                             <span className="shrink-0 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-full px-2.5 py-0.5 shadow-sm dark:shadow-lg">
-                                {t("exercise.left", { count: queue.length })}
+                                {t("exercise.left", {
+                                    count: queue.filter((i) => !i.is_quiz)
+                                        .length,
+                                })}
                             </span>
                         </div>
                         {/* Bookmarks shortcut */}
@@ -1877,6 +1980,39 @@ export default function ExerciseSession({
                             className="w-full sm:w-auto bg-[#E5201C] hover:bg-red-700"
                         >
                             {t("exercise.dialogs.leave.leave")}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Already Know (Double-Correct) Dialog */}
+            <AlertDialog
+                open={showAlreadyKnowDialog}
+                onOpenChange={setShowAlreadyKnowDialog}
+            >
+                <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-md sm:w-full">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2 text-xl">
+                            {t("exercise.dialogs.already_know.title")}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-base text-gray-600 dark:text-gray-400">
+                            {t("exercise.dialogs.already_know.desc", {
+                                word: pendingKnowWord?.word,
+                            })}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                        <AlertDialogCancel
+                            onClick={() => handleAlreadyKnowConfirm(false)}
+                            className="w-full sm:w-auto"
+                        >
+                            {t("exercise.dialogs.already_know.no")}
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => handleAlreadyKnowConfirm(true)}
+                            className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white"
+                        >
+                            {t("exercise.dialogs.already_know.yes")}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

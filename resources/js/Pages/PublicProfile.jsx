@@ -3,6 +3,7 @@ import { Head, Link, usePage, router } from "@inertiajs/react";
 import { ArrowLeft, Users, Trophy, Heart } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "@/Contexts/LanguageContext";
+import { BadgeSVG } from "@/Components/AchievementBadges";
 
 export default function PublicProfile({
     user,
@@ -183,24 +184,34 @@ export default function PublicProfile({
                                 </h2>
                             </div>
                             {achievements.length > 0 ? (
-                                <div className="space-y-3">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
                                     {achievements.map((achievement) => (
                                         <div
                                             key={achievement.id}
-                                            className="rounded-2xl bg-slate-50 dark:bg-slate-800 p-3"
+                                            className="flex flex-col items-center text-center gap-2 group"
                                         >
-                                            <div className="flex items-center justify-between gap-3">
-                                                <div>
-                                                    <p className="font-medium text-gray-900 dark:text-white">
-                                                        {t(`achievements.items.${achievement.key}.name`, { defaultValue: achievement.name })}
-                                                    </p>
-                                                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                        {t(`achievements.items.${achievement.key}.description`, { defaultValue: achievement.description })}
-                                                    </p>
-                                                </div>
-                                                <span className="text-sm text-blue-600 dark:text-blue-300">
-                                                    {t("achievements.tier", { tier: achievement.tier })}
-                                                </span>
+                                            <div className="relative transform transition-transform group-hover:scale-110 duration-300">
+                                                <BadgeSVG
+                                                    badge={achievement}
+                                                    earned={true}
+                                                    size={64}
+                                                />
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-bold text-gray-900 dark:text-white leading-tight">
+                                                    {t(
+                                                        `achievements.items.${achievement.key}.name`,
+                                                        {
+                                                            defaultValue:
+                                                                achievement.name,
+                                                        },
+                                                    )}
+                                                </p>
+                                                <p className="text-[10px] text-blue-600 dark:text-blue-400 font-bold mt-0.5">
+                                                    {t("achievements.tier", {
+                                                        tier: achievement.tier,
+                                                    })}
+                                                </p>
                                             </div>
                                         </div>
                                     ))}
