@@ -88,6 +88,8 @@ class ReviewWordController extends Controller
             $xpEnabled = $category?->creator?->email === 'admin@gmail.com';
         }
 
+        $this->streakService->recordActivity($user);
+        
         if (!$xpEnabled) {
             return response()->json([
                 'xp_awarded' => 0,
@@ -95,7 +97,6 @@ class ReviewWordController extends Controller
             ]);
         }
 
-        $this->streakService->recordActivity($user);
         $xpAwarded = $this->xpService->awardSessionXp($user);
 
         // Check if the entire wordlist is now completed (all words mastered)

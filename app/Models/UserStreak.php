@@ -14,6 +14,7 @@ class UserStreak extends Model
     'last_activity_date',
     'freeze_count',
     'last_auto_save_at',
+    'broken_streak_notified',
   ];
 
   protected $casts = [

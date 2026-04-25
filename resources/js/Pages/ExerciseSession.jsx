@@ -27,6 +27,8 @@ import StreakPop from "@/Components/StreakPop";
 import ListCompletedOverlay from "@/Components/ListCompletedOverlay";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import FlashMessages from "@/Components/FlashMessage";
+import { toast, Toaster } from "sonner";
+import XpCounter from "@/Components/XpCounter";
 import { usePage } from "@inertiajs/react";
 import {
     playCorrect,
@@ -216,9 +218,9 @@ export default function ExerciseSession({
         initialWords.map((w) => ({ ...w })),
     );
     const initialQueueSize = useMemo(
-        () => initialWords.filter((w) => !w.is_quiz).length,
+        () => initialWords.length,
         [],
-    ); // count only words, not quizzes
+    ); 
 
     // ── Session stats ─────────────────────────────────────────────────────────
     const [promotedCount, setPromotedCount] = useState(0); // words answered "I Know"
@@ -279,16 +281,20 @@ export default function ExerciseSession({
 
         // 🧠 Dynamic Quiz Filtering:
         // Quizzes should only show if the user has already "learned" the word
-        // (either from a previous session or by clicking 'I Know' in this session).
+        // and is not already "mastered" (Box 5+).
         if (word.is_quiz) {
             const result = sessionResults.find((r) => r.word_id === word.id);
             const isReviewWord = (word.srs_box ?? 1) > 1;
+            const isMastered = (word.srs_box ?? 1) >= 5 || result?.action === "master";
 
             // Skip conditions:
             // 1. User marked it as "Don't Know" in this session.
             // 2. It's a "New" word and hasn't been answered correctly yet in this session.
+            // 3. The word is already Mastered (either before or during this session).
             const shouldSkip =
-                result?.action === "learn" || (!result && !isReviewWord);
+                result?.action === "learn" || 
+                (!result && !isReviewWord) ||
+                isMastered;
 
             if (shouldSkip) {
                 // Silently skip to the next item in the queue
@@ -375,6 +381,21 @@ export default function ExerciseSession({
             ? decodeURIComponent(_xsrfRow.substring("XSRF-TOKEN=".length))
             : "";
 
+        // ── Immediate Streak Animation ─────────────────────────────────────
+        // Trigger animation immediately for better UX if it's the first session today
+        const today = new Date().toDateString();
+        const lastSessionDay = localStorage.getItem("lastSessionDay");
+        if (lastSessionDay !== today && (initialStreak?.current_streak ?? 0) >= 0) {
+            setStreakChange("up");
+            setShowStreakEffect(true);
+            setTimeout(() => setShowStreakEffect(false), 2800);
+            localStorage.setItem("lastSessionDay", today);
+            
+            // Also update the local streak count immediately so the UI doesn't jump
+            const predictedStreak = (initialStreak?.current_streak ?? 0) + 1;
+            setStreak(prev => prev ? { ...prev, current_streak: predictedStreak, active_today: true } : null);
+        }
+
         fetch(route("word.session-complete"), {
             method: "POST",
             headers: {
@@ -408,11 +429,12 @@ export default function ExerciseSession({
                     const lastSessionDay =
                         localStorage.getItem("lastSessionDay");
 
+                    // Only trigger if not already triggered by the immediate effect
                     if (
-                        newStreak > prevStreak ||
+                        (newStreak > prevStreak ||
                         (newStreak === prevStreak &&
                             lastSessionDay !== today &&
-                            newStreak > 0)
+                            newStreak > 0)) && !showStreakEffect
                     ) {
                         streakIncreased = true;
                         setStreakChange("up");
@@ -719,9 +741,7 @@ export default function ExerciseSession({
                     { word_id: wordId, action: action },
                 ]);
                 setQueue((prev) => syncUpdatedQueue(prev.slice(1)));
-                if (!word.is_quiz) {
-                    setPromotedCount((c) => c + 1);
-                }
+                setPromotedCount((c) => c + 1);
                 setCardKey((k) => k + 1);
                 setIsSubmitting(false);
                 setPendingKnowWord(null);
@@ -733,9 +753,7 @@ export default function ExerciseSession({
                     { word_id: wordId, action: action },
                 ]);
                 setQueue((prev) => syncUpdatedQueue(prev.slice(1)));
-                if (!word.is_quiz) {
-                    setPromotedCount((c) => c + 1);
-                }
+                setPromotedCount((c) => c + 1);
                 setIsSubmitting(false);
                 setPendingKnowWord(null);
             });
@@ -772,9 +790,7 @@ export default function ExerciseSession({
                 ...prev,
                 { word_id: wordId, action: "learn" },
             ]);
-            if (!word.is_quiz) {
-                setDontKnowCount((c) => c + 1);
-            }
+            setDontKnowCount((c) => c + 1);
             setQueue((prev) => {
                 const nextQueue = prev.slice(1);
                 return nextQueue.map((item) => {
@@ -1062,15 +1078,10 @@ export default function ExerciseSession({
 
                         {/* XP Earned Display */}
                         {sessionXpAwarded > 0 && (
-                            <div className="bg-yellow-50 dark:bg-yellow-950/30 rounded-2xl py-6 px-4 mb-8 text-center border-2 border-yellow-200 dark:border-yellow-800">
-                                <div className="flex items-center justify-center gap-2 mb-2">
-                                    <Zap className="h-6 w-6 text-yellow-500" />
-                                    <p className="text-3xl font-extrabold text-yellow-600 dark:text-yellow-400">
-                                        +{sessionXpAwarded}
-                                    </p>
-                                    <Zap className="h-6 w-6 text-yellow-500" />
-                                </div>
-                                <p className="text-sm font-medium text-yellow-700 dark:text-yellow-300">
+                            <div className="bg-yellow-50 dark:bg-yellow-950/30 rounded-2xl py-8 px-4 mb-8 text-center border-2 border-yellow-200 dark:border-yellow-800 shadow-sm overflow-hidden relative group">
+                                <div className="absolute inset-0 bg-yellow-400/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                                <XpCounter targetXp={sessionXpAwarded} />
+                                <p className="text-sm font-bold text-yellow-700 dark:text-yellow-300 mt-2 tracking-wide uppercase">
                                     {t("exercise.complete.xp_earned")}
                                 </p>
                             </div>
@@ -1179,7 +1190,7 @@ export default function ExerciseSession({
     // const sessionProgress =
     //     initialQueueSize > 0 ? (promotedCount / initialQueueSize) * 100 : 0;
     const sessionProgress =
-        initialQueueSize > 0 ? (answeredCount / initialQueueSize) * 100 : 0;
+        initialQueueSize > 0 ? ((initialQueueSize - queue.length) / initialQueueSize) * 100 : 0;
 
     return (
         <AppLayout>
@@ -1231,8 +1242,7 @@ export default function ExerciseSession({
                             </button> */}
                             <span className="shrink-0 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-full px-2.5 py-0.5 shadow-sm dark:shadow-lg">
                                 {t("exercise.left", {
-                                    count: queue.filter((i) => !i.is_quiz)
-                                        .length,
+                                    count: queue.length,
                                 })}
                             </span>
                         </div>

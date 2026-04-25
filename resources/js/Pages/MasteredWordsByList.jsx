@@ -35,7 +35,11 @@ export default function MasteredWordsByList({ words, wordlist }) {
 
     return (
         <AppLayout>
-            <Head title={t("mastered.head_title", { title: wordlist?.title ?? "Word List" })} />
+            <Head
+                title={t("mastered.head_title", {
+                    title: wordlist?.title ?? "Word List",
+                })}
+            />
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 pb-20">
                 <div className="max-w-xl mx-auto px-4 pt-5">
                     {/* Header */}
@@ -54,12 +58,20 @@ export default function MasteredWordsByList({ words, wordlist }) {
                                 </span>
                             </h1>
                             <p className="text-xs text-gray-400 mt-0.5">
-                                {t("mastered.list_item_mastered", { count: words.total })}
+                                {t("mastered.list_item_mastered", {
+                                    count: words.total,
+                                })}
                                 {wordlist?.difficulty && (
                                     <span
                                         className={`ml-2 inline-block text-xs font-medium px-2 py-0.5 rounded-full border ${getDifficultyBadge(wordlist.difficulty)}`}
                                     >
-                                        {t(`common.difficulties.${wordlist.difficulty.toLowerCase()}`, { defaultValue: wordlist.difficulty })}
+                                        {t(
+                                            `common.difficulties.${wordlist.difficulty.toLowerCase()}`,
+                                            {
+                                                defaultValue:
+                                                    wordlist.difficulty,
+                                            },
+                                        )}
                                     </span>
                                 )}
                             </p>
@@ -96,7 +108,9 @@ export default function MasteredWordsByList({ words, wordlist }) {
                                                         </h3>
                                                         <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400">
                                                             <Trophy className="h-3 w-3" />
-                                                            {t("mastered.title")}
+                                                            {t(
+                                                                "mastered.title",
+                                                            )}
                                                         </span>
                                                     </div>
 
@@ -115,7 +129,9 @@ export default function MasteredWordsByList({ words, wordlist }) {
                                                     )}
 
                                                     <p className="text-xs text-[#E5201C] font-semibold mt-2">
-                                                        {t("mastered.view_full_details")}
+                                                        {t(
+                                                            "mastered.view_full_details",
+                                                        )}
                                                     </p>
                                                 </div>
 
@@ -153,7 +169,10 @@ export default function MasteredWordsByList({ words, wordlist }) {
                                         {t("common.previous")}
                                     </button>
                                     <span className="text-sm text-gray-400 dark:text-gray-500">
-                                        {t("common.page_info", { current: words.current_page, total: words.last_page })}
+                                        {t("common.page_info", {
+                                            current: words.current_page,
+                                            total: words.last_page,
+                                        })}
                                     </span>
                                     <button
                                         disabled={!words.next_page_url}
@@ -177,7 +196,7 @@ export default function MasteredWordsByList({ words, wordlist }) {
                             <div className="w-20 h-20 rounded-full bg-green-50 dark:bg-green-950/30 flex items-center justify-center mx-auto mb-4">
                                 <Trophy className="h-10 w-10 text-green-300 dark:text-green-600" />
                             </div>
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50 mb-2">
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
                                 {t("mastered.empty_list_title")}
                             </h3>
                             <p className="text-gray-500 dark:text-slate-400 text-sm mb-5">

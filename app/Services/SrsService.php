@@ -264,9 +264,15 @@ class SrsService
         // on real-time session progress.
         if ($window->isNotEmpty()) {
           $target = $window->random();
-          $quiz = $this->generateQuizQuestion($target);
-          if ($quiz && $finalQueue->count() < self::QUEUE_SIZE) {
-            $finalQueue->push($quiz);
+          
+          // Only show quiz if the word is "learning/reviewing" (Box 2-4)
+          // Don't show if it's Box 1 (New) or Box 5 (Mastered)
+          $srsBox = $target->srs_box ?? 1;
+          if ($srsBox >= 2 && $srsBox < 5) {
+            $quiz = $this->generateQuizQuestion($target);
+            if ($quiz && $finalQueue->count() < self::QUEUE_SIZE) {
+              $finalQueue->push($quiz);
+            }
           }
         }
 

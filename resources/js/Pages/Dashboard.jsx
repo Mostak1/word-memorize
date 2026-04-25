@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { useTranslation } from "@/Contexts/LanguageContext";
 import StreakHistoryModal from "@/Components/StreakHistoryModal";
+import StreakLostOverlay from "@/Components/StreakLostOverlay";
+import axios from "axios";
 
 // ── Streak Banner ─────────────────────────────────────────────────────────────
 
@@ -193,6 +195,18 @@ export default function Dashboard({
     const { auth } = usePage().props;
     const user = auth?.user;
     const [showStreakModal, setShowStreakModal] = useState(false);
+    const [showStreakLost, setShowStreakLost] = useState(
+        streak?.is_broken && !streak?.broken_streak_notified
+    );
+
+    const handleDismissStreakLost = async () => {
+        setShowStreakLost(false);
+        try {
+            await axios.post(route("streak.dismiss-broken"));
+        } catch (err) {
+            console.error("Failed to dismiss streak lost notification:", err);
+        }
+    };
 
     useEffect(() => {
         // Check for unseen achievements when landing on the dashboard
@@ -221,6 +235,12 @@ export default function Dashboard({
                         show={showStreakModal}
                         onClose={() => setShowStreakModal(false)}
                         streak={streak}
+                    />
+
+                    <StreakLostOverlay
+                        isOpen={showStreakLost}
+                        onClose={handleDismissStreakLost}
+                        prevStreak={streak?.current_streak ?? 0}
                     />
 
                     <div className="grid grid-cols-2 gap-3 mb-3">

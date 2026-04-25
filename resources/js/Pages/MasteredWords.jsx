@@ -41,13 +41,21 @@ export default function MasteredWords({ wordlists, totalMastered }) {
     };
 
     const listsCount = wordlists?.length ?? 0;
-    
+
     // Determine the subtitle key based on singular/plural
     const getSubtitle = () => {
-        if (totalMastered === 1 && listsCount === 1) return t("mastered.subtitle_both_singular");
-        if (totalMastered === 1) return t("mastered.subtitle_singular_word", { lists: listsCount });
-        if (listsCount === 1) return t("mastered.subtitle_singular_list", { total: totalMastered });
-        return t("mastered.subtitle", { total: totalMastered, lists: listsCount });
+        if (totalMastered === 1 && listsCount === 1)
+            return t("mastered.subtitle_both_singular");
+        if (totalMastered === 1)
+            return t("mastered.subtitle_singular_word", { lists: listsCount });
+        if (listsCount === 1)
+            return t("mastered.subtitle_singular_list", {
+                total: totalMastered,
+            });
+        return t("mastered.subtitle", {
+            total: totalMastered,
+            lists: listsCount,
+        });
     };
 
     return (
@@ -82,7 +90,9 @@ export default function MasteredWords({ wordlists, totalMastered }) {
                             </div>
                             <div>
                                 <p className="text-white font-bold text-lg leading-tight">
-                                    {t("mastered.banner_title", { count: totalMastered })}
+                                    {t("mastered.banner_title", {
+                                        count: totalMastered,
+                                    })}
                                 </p>
                                 <p className="text-green-100 text-xs mt-0.5">
                                     {t("mastered.banner_subtitle")}
@@ -121,7 +131,7 @@ export default function MasteredWords({ wordlists, totalMastered }) {
                                                         <Layers className="h-5 w-5 text-green-600 dark:text-green-400" />
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <h3 className="text-base font-bold text-gray-900 dark:text-gray-50 truncate">
+                                                        <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 truncate">
                                                             {wl.title}
                                                         </h3>
                                                         <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -129,12 +139,23 @@ export default function MasteredWords({ wordlists, totalMastered }) {
                                                                 <span
                                                                     className={`text-xs font-medium px-2 py-0.5 rounded-full border ${cfg.badge}`}
                                                                 >
-                                                                    {t(`common.difficulties.${wl.difficulty.toLowerCase()}`, { defaultValue: wl.difficulty })}
+                                                                    {t(
+                                                                        `common.difficulties.${wl.difficulty.toLowerCase()}`,
+                                                                        {
+                                                                            defaultValue:
+                                                                                wl.difficulty,
+                                                                        },
+                                                                    )}
                                                                 </span>
                                                             )}
                                                             <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 dark:text-green-400">
                                                                 <Trophy className="h-3 w-3" />
-                                                                {t("mastered.list_item_mastered", { count: wl.mastered_count })}
+                                                                {t(
+                                                                    "mastered.list_item_mastered",
+                                                                    {
+                                                                        count: wl.mastered_count,
+                                                                    },
+                                                                )}
                                                             </span>
                                                         </div>
                                                     </div>
@@ -147,7 +168,13 @@ export default function MasteredWords({ wordlists, totalMastered }) {
                                                 <div className="mt-3">
                                                     <div className="flex justify-between text-xs text-gray-400 dark:text-slate-500 mb-1">
                                                         <span>
-                                                            {t("mastered.progress_words", { count: wl.mastered_count, total: wl.total_words })}
+                                                            {t(
+                                                                "mastered.progress_words",
+                                                                {
+                                                                    count: wl.mastered_count,
+                                                                    total: wl.total_words,
+                                                                },
+                                                            )}
                                                         </span>
                                                         <span>
                                                             {Math.round(
@@ -178,7 +205,7 @@ export default function MasteredWords({ wordlists, totalMastered }) {
                             <div className="w-20 h-20 rounded-full bg-green-50 dark:bg-green-950/30 flex items-center justify-center mx-auto mb-4">
                                 <Trophy className="h-10 w-10 text-green-300 dark:text-green-600" />
                             </div>
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50 mb-2">
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
                                 {t("mastered.empty_title")}
                             </h3>
                             <p className="text-gray-500 dark:text-slate-400 text-sm mb-5">

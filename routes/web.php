@@ -153,6 +153,7 @@ Route::get('/l/{link}', [PublicLinkTreeController::class, 'redirect'])->name('li
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
+Route::post('/streak/dismiss-broken', [DashboardController::class, 'dismissStreakBroken'])->middleware(['auth'])->name('streak.dismiss-broken');
 
 // ── Leaderboard ───────────────────────────────────────────────────────────────
 Route::get('/leaderboard', [LeaderboardController::class, 'index'])->middleware(['auth', 'verified'])->name('leaderboard');

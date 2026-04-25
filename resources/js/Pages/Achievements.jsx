@@ -1,7 +1,19 @@
 import AppLayout from "@/Layouts/AppLayout";
 import { Head } from "@inertiajs/react";
 import { useState, useEffect } from "react";
-import { Trophy, Target, Flame, Coins, Sunrise, Award, BookOpen, Clock, Moon, GraduationCap, Calendar } from "lucide-react";
+import {
+    Trophy,
+    Target,
+    Flame,
+    Coins,
+    Sunrise,
+    Award,
+    BookOpen,
+    Clock,
+    Moon,
+    GraduationCap,
+    Calendar,
+} from "lucide-react";
 import { useTranslation } from "@/Contexts/LanguageContext";
 import { BadgeSVG } from "@/Components/AchievementBadges";
 
@@ -84,7 +96,7 @@ function AchievementCard({ achievement, earned, progress, earnedAt }) {
             className={`p-4 rounded-lg border-2 transition-all ${
                 isEarned
                     ? "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20"
-                    : "border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
+                    : "border-gray-200 bg-white dark:border-slate-700 dark:bg-slate-800"
             }`}
         >
             <div className="flex items-start gap-4">
@@ -134,7 +146,7 @@ function AchievementCard({ achievement, earned, progress, earnedAt }) {
                                     {progress.current} / {progress.target}
                                 </span>
                             </div>
-                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                            <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
                                 <div
                                     className="bg-blue-500 h-2 rounded-full transition-all duration-300"
                                     style={{ width: `${progressPercent}%` }}
@@ -247,7 +259,7 @@ export default function Achievements() {
                             <div className="flex items-center gap-3 mb-6">
                                 <Trophy className="w-8 h-8 text-yellow-500" />
                                 <div>
-                                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50">
+                                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                                         {t("achievements.title")}
                                     </h1>
                                     <p className="text-gray-600 dark:text-slate-400">

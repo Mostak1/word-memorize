@@ -20,6 +20,11 @@ import StreakPop from "@/Components/StreakPop";
 import WordlistUnlockedOverlay from "@/Components/WordlistUnlockedOverlay";
 import FlashMessages from "@/Components/FlashMessage";
 import { toast, Toaster } from "sonner";
+import XpCounter from "@/Components/XpCounter";
+import { useTranslation } from "@/Contexts/LanguageContext";
+import { usePage } from "@inertiajs/react";
+import { Zap } from "lucide-react";
+
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -396,7 +401,10 @@ function ResultsScreen({
     handleBookmark,
     handleDemote,
     uniqueIncorrectWords,
+    xpAwarded,
 }) {
+    const { t } = useTranslation();
+
     const pct = total > 0 ? Math.round((score / total) * 100) : 0;
 
     return (
@@ -462,7 +470,18 @@ function ResultsScreen({
                         </div>
                     </div>
 
+                    {xpAwarded > 0 && (
+                        <div className="bg-yellow-50 dark:bg-yellow-950/30 rounded-2xl py-8 px-4 mb-8 text-center border-2 border-yellow-200 dark:border-yellow-800 shadow-sm overflow-hidden relative group">
+                            <div className="absolute inset-0 bg-yellow-400/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                            <XpCounter targetXp={xpAwarded} />
+                            <p className="text-sm font-bold text-yellow-700 dark:text-yellow-300 mt-2 tracking-wide uppercase">
+                                {t("exercise.complete.xp_earned")}
+                            </p>
+                        </div>
+                    )}
+
                     {/* Pass mark info */}
+
                     <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">
                         Pass mark: {quiz.pass_mark}%
                     </p>
@@ -666,6 +685,8 @@ export default function WordlistQuiz({
     const [bookmarks, setBookmarks] = useState({});
     const [unlockedListName, setUnlockedListName] = useState(null);
     const [showUnlockedOverlay, setShowUnlockedOverlay] = useState(false);
+    const [xpAwarded, setXpAwarded] = useState(0);
+
 
     const triggerAchievements = () => {
         window.dispatchEvent(new CustomEvent("check-achievements"));
@@ -818,9 +839,12 @@ export default function WordlistQuiz({
                         answers,
                     }),
                 });
-                const data = await res.json();
-                setFinalPassed(data.passed);
-                setNextAttemptAt(data.next_attempt_at ?? null);
+                const result = await res.json();
+                if (result.xp_awarded) {
+                    setXpAwarded(result.xp_awarded);
+                }
+                setFinalPassed(result.passed);
+                setNextAttemptAt(result.next_attempt_at ?? null);
 
                 const today = new Date().toDateString();
                 const lastShown = localStorage.getItem("lastSessionDay");
@@ -942,8 +966,10 @@ export default function WordlistQuiz({
                     handleBookmark={handleBookmark}
                     handleDemote={handleDemote}
                     uniqueIncorrectWords={uniqueIncorrectWords}
+                    xpAwarded={xpAwarded}
                 />
             </AppLayout>
+
         );
     }
 

@@ -56,7 +56,8 @@ export default function PublicProfile({
                             href={route("leaderboard")}
                             className="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
                         >
-                            <ArrowLeft className="h-4 w-4" /> {t("profile.back_to_leaderboard")}
+                            <ArrowLeft className="h-4 w-4" />{" "}
+                            {t("profile.back_to_leaderboard")}
                         </Link>
 
                         {canFollow && (
@@ -95,7 +96,7 @@ export default function PublicProfile({
                                     )}
                                 </div>
                                 <div>
-                                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                                         {user.name}
                                     </h1>
                                     {user.headline && (
@@ -111,7 +112,7 @@ export default function PublicProfile({
                                     <p className="text-sm text-gray-500 dark:text-gray-400">
                                         {t("profile.xp")}
                                     </p>
-                                    <p className="text-lg font-bold text-gray-900 dark:text-white">
+                                    <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
                                         {user.xp.toLocaleString()}
                                     </p>
                                 </div>
@@ -119,7 +120,7 @@ export default function PublicProfile({
                                     <p className="text-sm text-gray-500 dark:text-gray-400">
                                         {t("profile.mastered")}
                                     </p>
-                                    <p className="text-lg font-bold text-gray-900 dark:text-white">
+                                    <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
                                         {user.mastered_count}
                                     </p>
                                 </div>
@@ -127,7 +128,7 @@ export default function PublicProfile({
                                     <p className="text-sm text-gray-500 dark:text-gray-400">
                                         {t("profile.followers")}
                                     </p>
-                                    <p className="text-lg font-bold text-gray-900 dark:text-white">
+                                    <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
                                         {followerCount}
                                     </p>
                                 </div>
@@ -135,7 +136,7 @@ export default function PublicProfile({
                                     <p className="text-sm text-gray-500 dark:text-gray-400">
                                         {t("profile.streak")}
                                     </p>
-                                    <p className="text-lg font-bold text-gray-900 dark:text-white">
+                                    <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
                                         {user.current_streak}
                                     </p>
                                 </div>
@@ -166,20 +167,28 @@ export default function PublicProfile({
                         <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm">
                             <div className="flex items-center gap-3 mb-4">
                                 <Users className="h-5 w-5 text-blue-600" />
-                                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                                     {t("profile.community")}
                                 </h2>
                             </div>
                             <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
-                                <p>{t("profile.following_count", { count: followingCount })}</p>
-                                <p>{t("profile.followers_count", { count: followerCount })}</p>
+                                <p>
+                                    {t("profile.following_count", {
+                                        count: followingCount,
+                                    })}
+                                </p>
+                                <p>
+                                    {t("profile.followers_count", {
+                                        count: followerCount,
+                                    })}
+                                </p>
                             </div>
                         </div>
 
                         <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm">
                             <div className="flex items-center gap-3 mb-4">
                                 <Trophy className="h-5 w-5 text-amber-500" />
-                                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                                     {t("profile.achievements")}
                                 </h2>
                             </div>
@@ -198,7 +207,7 @@ export default function PublicProfile({
                                                 />
                                             </div>
                                             <div>
-                                                <p className="text-xs font-bold text-gray-900 dark:text-white leading-tight">
+                                                <p className="text-xs font-bold text-gray-900 dark:text-gray-100 leading-tight">
                                                     {t(
                                                         `achievements.items.${achievement.key}.name`,
                                                         {

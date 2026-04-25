@@ -22,10 +22,15 @@ import logo from "/public/img/logo.png";
 import { setAssetBaseUrl } from "@/Utils/sounds";
 import AchievementToaster from "@/Components/AchievementToaster";
 import { useTranslation } from "@/Contexts/LanguageContext";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import OfflineOverlay from "@/Components/OfflineOverlay";
 
 export default function AppLayout({ children }) {
+    const isOnline = useOnlineStatus();
     const { t } = useTranslation();
-    const { auth, assetUrl } = usePage().props;
+    const { props } = usePage();
+    const auth = props?.auth;
+    const assetUrl = props?.assetUrl;
     const user = auth?.user ?? null;
     const { setDarkModeUnlocked } = useTheme();
     const [mobileOpen, setMobileOpen] = useState(false);
@@ -125,6 +130,8 @@ export default function AppLayout({ children }) {
             setLocalDarkModeUnlocked(false);
         }
     }, [user, setDarkModeUnlocked]);
+
+    // No early return for offline anymore to keep header visible
 
     return (
         <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
@@ -325,13 +332,15 @@ export default function AppLayout({ children }) {
                                             <span>{t("nav.shop")}</span>
                                         </div>
 
-                                        <div className="flex items-center gap-2">
-                                            <Zap className="h-4 w-4 text-yellow-300" />
-                                            <span>
-                                                {xpData.balance.toLocaleString()}{" "}
-                                                XP
-                                            </span>
-                                        </div>
+                                        {xpData && (
+                                            <div className="flex items-center gap-2">
+                                                <Zap className="h-4 w-4 text-yellow-300" />
+                                                <span>
+                                                    {xpData.balance.toLocaleString()}{" "}
+                                                    XP
+                                                </span>
+                                            </div>
+                                        )}
                                     </Link>
 
                                     <div className="px-3 py-2">
@@ -454,7 +463,9 @@ export default function AppLayout({ children }) {
             </div>
 
             <div className="h-[60px]" />
-            <main>{children}</main>
+            <main>
+                {isOnline ? children : <OfflineOverlay />}
+            </main>
         </div>
     );
 }

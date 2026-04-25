@@ -33,4 +33,13 @@ class DashboardController extends Controller
       'reviseCounts' => $reviseCounts,
     ]);
   }
+
+  public function dismissStreakBroken(Request $request)
+  {
+    $user = $request->user();
+    $streak = $this->streakService->getOrCreate($user);
+    $streak->update(['broken_streak_notified' => true]);
+
+    return response()->json(['status' => 'ok']);
+  }
 }

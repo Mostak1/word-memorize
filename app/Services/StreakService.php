@@ -81,6 +81,7 @@ class StreakService
     $streak->current_streak = $newStreak;
     $streak->longest_streak = max($streak->longest_streak, $newStreak);
     $streak->last_activity_date = $today;
+    $streak->broken_streak_notified = false; // Reset when streak is healthy/active again
     $streak->save();
 
     // Award XP for milestone if applicable
@@ -163,6 +164,7 @@ class StreakService
       'at_risk' => $streak->isAtRisk(),
       'is_frozen' => $streak->isFrozen(),
       'is_broken' => $streak->isBroken(),
+      'broken_streak_notified' => (bool) ($streak->broken_streak_notified ?? false),
       'auto_save_available' => !$streak->autoSaveUsedThisWeek(),
       'weekly_history' => $history,
     ];

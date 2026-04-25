@@ -14,9 +14,9 @@ export default function StreakHistoryModal({ show, onClose, streak }) {
             <div className="p-6 flex flex-col items-center dark:bg-slate-900">
                 {/* Header with Flame Icon */}
                 <div className="relative mb-4 mt-4">
-                    <div className="absolute inset-0 bg-red-500/20 blur-2xl rounded-full scale-150 animate-pulse" />
+                    <div className="absolute inset-0 bg-orange-500/20 blur-2xl rounded-full scale-150 animate-pulse" />
                     <div className="relative z-10 bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-xl">
-                        <Flame className="h-16 w-16 text-red-500 fill-red-500" />
+                        <Flame className="h-16 w-16 text-orange-500 fill-orange-500" />
                     </div>
                 </div>
 
@@ -24,7 +24,7 @@ export default function StreakHistoryModal({ show, onClose, streak }) {
                 <h2 className="text-7xl font-black text-gray-900 dark:text-white tracking-tighter mb-1">
                     {current_streak}
                 </h2>
-                <p className="text-red-500 font-extrabold uppercase tracking-[0.2em] text-sm mb-10">
+                <p className="text-orange-500 font-extrabold uppercase tracking-[0.2em] text-sm mb-10">
                     {t("streak.day_streak")}
                 </p>
 
@@ -36,7 +36,7 @@ export default function StreakHistoryModal({ show, onClose, streak }) {
                             className="flex flex-col items-center gap-3"
                         >
                             <span
-                                className={`text-[10px] font-bold uppercase tracking-wider ${day.is_today ? "text-red-500" : "text-gray-400 dark:text-gray-500"}`}
+                                className={`text-[10px] font-bold uppercase tracking-wider ${day.is_today ? "text-orange-500" : "text-gray-400 dark:text-gray-500"}`}
                             >
                                 {day.short_day}
                             </span>
@@ -46,7 +46,7 @@ export default function StreakHistoryModal({ show, onClose, streak }) {
                                     day.is_active
                                         ? day.is_freeze
                                             ? "bg-blue-400 border-blue-400 shadow-lg shadow-blue-400/40 scale-110"
-                                            : "bg-red-500 border-red-500 shadow-lg shadow-red-500/40 scale-110"
+                                            : "bg-orange-500 border-orange-500 shadow-lg shadow-orange-500/40 scale-110"
                                         : "bg-gray-100 dark:bg-slate-800 border-gray-200 dark:border-slate-700"
                                 }`}
                             >

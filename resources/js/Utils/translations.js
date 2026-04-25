@@ -4,6 +4,11 @@ export const translations = {
             optional: "optional",
             required: "required",
         },
+        offline: {
+            title: "Connection Lost",
+            message: "It looks like you're offline. VocabPix needs an internet connection to continue your learning journey.",
+            retry: "Try Again",
+        },
         dashboard: {
             title: "Dashboard",
             subtitle: "Start learning and expand your vocabulary",
@@ -90,6 +95,16 @@ export const translations = {
             message_start: "Complete a quiz or exercise to start your streak.",
             auto_save_message:
                 "🛡️ Auto-save available — if you miss a day this week your streak will be saved.",
+            broken_title: "Streak Broken",
+            broken_desc: "Oh no! Your {count}-day streak has turned to smoke.",
+            start_again: "Start a New Streak Today",
+            encouragement: "Champion can fall but champions gets back up.",
+            days_lost_label: "Day Streak Lost",
+            stat_lost: "Streak Lost",
+            stat_restart: "Study Today",
+            stat_restart_val: "→ +1",
+            stat_goal: "New Record",
+            stat_goal_val: "Possible",
         },
         settings: {
             title: "Settings",
@@ -943,6 +958,17 @@ export const translations = {
                 "আপনার স্ট্রাক শুরু করতে একটি কুইজ বা অনুশীলন সম্পন্ন করুন।",
             auto_save_message:
                 "🛡️ অটো-সেভ উপলব্ধ — আপনি এই সপ্তাহে একদিন মিস করলে আপনার স্ট্রাক সংরক্ষিত হবে।",
+            broken_title: "স্ট্রাক হারিয়েছেন",
+            broken_desc:
+                "ওহ না! আপনার {count} দিনের স্ট্রাকটি ধোঁয়ায় পরিণত হয়েছে।",
+            start_again: "আজই নতুন স্ট্রাক শুরু করুন",
+            encouragement: "প্রতিটি বিশেষজ্ঞই একসময় শিক্ষানবিস ছিলেন। চালিয়ে যান!",
+            days_lost_label: "দিনের স্ট্রাক হারিয়েছেন",
+            stat_lost: "স্ট্রাক হারিয়েছেন",
+            stat_restart: "আজই শিখুন",
+            stat_restart_val: "→ +১",
+            stat_goal: "নতুন রেকর্ড",
+            stat_goal_val: "সম্ভব",
         },
         settings: {
             title: "সেটিংস",
@@ -1705,6 +1731,11 @@ export const translations = {
             learning: "শিখছেন",
             reviewing: "পর্যালোচনা",
             mastered: "আয়ত্ত করেছেন",
+        },
+        offline: {
+            title: "ইন্টারনেট সংযোগ নেই",
+            message: "মনে হচ্ছে আপনি অফলাইনে আছেন। আপনার শেখা চালিয়ে যেতে ইন্টারনেট সংযোগ প্রয়োজন।",
+            retry: "পুনরায় চেষ্টা করুন",
         },
     },
 };

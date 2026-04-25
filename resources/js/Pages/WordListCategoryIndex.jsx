@@ -53,7 +53,7 @@ export default function WordListCategoryIndex({ wordListCategories }) {
 
                                         {/* Info */}
                                         <div className="px-3.5 py-3 h-[72px] flex flex-col justify-between">
-                                            <h2 className="text-sm font-bold text-gray-900 dark:text-gray-50 leading-snug line-clamp-2">
+                                            <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100 leading-snug line-clamp-2">
                                                 {category.name}
                                             </h2>
                                             <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-slate-400">
@@ -76,7 +76,7 @@ export default function WordListCategoryIndex({ wordListCategories }) {
                             <div className="w-20 h-20 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center mx-auto mb-4">
                                 <BookOpen className="h-10 w-10 text-gray-400 dark:text-slate-600" />
                             </div>
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50 mb-2">
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
                                 {t("wordlists.empty.title_categories")}
                             </h3>
                             <p className="text-gray-500 dark:text-slate-400 text-sm mb-5">
