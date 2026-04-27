@@ -571,13 +571,9 @@ export default function MasteryTest({
                     setXpAwarded(result.xp_awarded);
                 }
 
-                const today = new Date().toDateString();
-                const lastShown = localStorage.getItem("lastSessionDay");
-
-                if (result.streak_increased && lastShown !== today) {
+                if (result.streak_increased) {
                     setStreakCount(result.streak?.current_streak ?? 0);
                     setShowStreakEffect(true);
-                    localStorage.setItem("lastSessionDay", today);
 
                     if (result.unlocked_wordlist) {
                         setUnlockedListName(result.unlocked_wordlist);

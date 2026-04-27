@@ -27,7 +27,6 @@ import StreakPop from "@/Components/StreakPop";
 import ListCompletedOverlay from "@/Components/ListCompletedOverlay";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import FlashMessages from "@/Components/FlashMessage";
-import { toast, Toaster } from "sonner";
 import XpCounter from "@/Components/XpCounter";
 import { usePage } from "@inertiajs/react";
 import {
@@ -217,10 +216,7 @@ export default function ExerciseSession({
     const [queue, setQueue] = useState(() =>
         initialWords.map((w) => ({ ...w })),
     );
-    const initialQueueSize = useMemo(
-        () => initialWords.length,
-        [],
-    ); 
+    const initialQueueSize = useMemo(() => initialWords.length, []);
 
     // ── Session stats ─────────────────────────────────────────────────────────
     const [promotedCount, setPromotedCount] = useState(0); // words answered "I Know"
@@ -285,14 +281,15 @@ export default function ExerciseSession({
         if (word.is_quiz) {
             const result = sessionResults.find((r) => r.word_id === word.id);
             const isReviewWord = (word.srs_box ?? 1) > 1;
-            const isMastered = (word.srs_box ?? 1) >= 5 || result?.action === "master";
+            const isMastered =
+                (word.srs_box ?? 1) >= 5 || result?.action === "master";
 
             // Skip conditions:
             // 1. User marked it as "Don't Know" in this session.
             // 2. It's a "New" word and hasn't been answered correctly yet in this session.
             // 3. The word is already Mastered (either before or during this session).
             const shouldSkip =
-                result?.action === "learn" || 
+                result?.action === "learn" ||
                 (!result && !isReviewWord) ||
                 isMastered;
 
@@ -381,19 +378,30 @@ export default function ExerciseSession({
             ? decodeURIComponent(_xsrfRow.substring("XSRF-TOKEN=".length))
             : "";
 
+        let immediateAnimationTriggered = false;
+
         // ── Immediate Streak Animation ─────────────────────────────────────
         // Trigger animation immediately for better UX if it's the first session today
-        const today = new Date().toDateString();
-        const lastSessionDay = localStorage.getItem("lastSessionDay");
-        if (lastSessionDay !== today && (initialStreak?.current_streak ?? 0) >= 0) {
+        if (
+            !initialStreak?.active_today &&
+            (initialStreak?.current_streak ?? 0) >= 0
+        ) {
+            immediateAnimationTriggered = true;
             setStreakChange("up");
             setShowStreakEffect(true);
             setTimeout(() => setShowStreakEffect(false), 2800);
-            localStorage.setItem("lastSessionDay", today);
-            
+
             // Also update the local streak count immediately so the UI doesn't jump
             const predictedStreak = (initialStreak?.current_streak ?? 0) + 1;
-            setStreak(prev => prev ? { ...prev, current_streak: predictedStreak, active_today: true } : null);
+            setStreak((prev) =>
+                prev
+                    ? {
+                          ...prev,
+                          current_streak: predictedStreak,
+                          active_today: true,
+                      }
+                    : null,
+            );
         }
 
         fetch(route("word.session-complete"), {
@@ -422,19 +430,13 @@ export default function ExerciseSession({
                     const newStreak = data.streak.current_streak ?? 0;
                     const prevStreak = previousStreak.current;
 
-                    // ✅ Fix for midnight streak: if it's a new calendar day AND streak is same as before,
-                    // this means it's the first session of the new day - streak is being maintained!
-                    // We still show the streak increase animation for the first session of each day
-                    const today = new Date().toDateString();
-                    const lastSessionDay =
-                        localStorage.getItem("lastSessionDay");
-
                     // Only trigger if not already triggered by the immediate effect
                     if (
                         (newStreak > prevStreak ||
-                        (newStreak === prevStreak &&
-                            lastSessionDay !== today &&
-                            newStreak > 0)) && !showStreakEffect
+                            (newStreak === prevStreak &&
+                                !initialStreak?.active_today &&
+                                newStreak > 0)) &&
+                        !immediateAnimationTriggered
                     ) {
                         streakIncreased = true;
                         setStreakChange("up");
@@ -442,9 +444,6 @@ export default function ExerciseSession({
                         setShowStreakEffect(true);
                         // Auto hide after animation
                         setTimeout(() => setShowStreakEffect(false), 2800);
-
-                        // Store today as last session day
-                        localStorage.setItem("lastSessionDay", today);
                     } else if (newStreak < prevStreak) {
                         setStreakChange("down");
                     }
@@ -967,7 +966,8 @@ export default function ExerciseSession({
                                 href={backHref}
                                 className="w-full py-3.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 font-semibold rounded-2xl flex items-center justify-center gap-2 hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-slate-900 transition"
                             >
-                                <ChevronLeft className="h-4 w-4" /> {t("exercise.empty.back_to_list")}
+                                <ChevronLeft className="h-4 w-4" />{" "}
+                                {t("exercise.empty.back_to_list")}
                             </Link>
                         </div>
                     </div>
@@ -1001,7 +1001,10 @@ export default function ExerciseSession({
                 )}
 
                 {/* Global confetti celebration for EVERY completed session */}
-                <div key="complete-confetti" className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+                <div
+                    key="complete-confetti"
+                    className="fixed inset-0 pointer-events-none z-50 overflow-hidden"
+                >
                     {CONFETTI.map((p) => (
                         <div
                             key={p.id}
@@ -1109,7 +1112,10 @@ export default function ExerciseSession({
                                 >
                                     {t("exercise.complete.streak", {
                                         count: streak.current_streak,
-                                        plural: streak.current_streak !== 1 ? "s" : "",
+                                        plural:
+                                            streak.current_streak !== 1
+                                                ? "s"
+                                                : "",
                                     })}
                                 </p>
                                 <p
@@ -1124,7 +1130,9 @@ export default function ExerciseSession({
                         {totalWordsInList > 0 && (
                             <div className="mb-8">
                                 <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500 mb-1.5">
-                                    <span>{t("exercise.complete.progress_label")}</span>
+                                    <span>
+                                        {t("exercise.complete.progress_label")}
+                                    </span>
                                     <span>
                                         {Math.round(
                                             (promotedCount / totalWordsInList) *
@@ -1173,7 +1181,8 @@ export default function ExerciseSession({
                                 href={backHref}
                                 className="w-full py-3.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 font-semibold rounded-2xl flex items-center justify-center gap-2 hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-slate-900 transition"
                             >
-                                <ChevronLeft className="h-4 w-4" /> {t("exercise.complete.back_to_list")}
+                                <ChevronLeft className="h-4 w-4" />{" "}
+                                {t("exercise.complete.back_to_list")}
                             </Link>
                         </div>
                     </div>
@@ -1190,7 +1199,9 @@ export default function ExerciseSession({
     // const sessionProgress =
     //     initialQueueSize > 0 ? (promotedCount / initialQueueSize) * 100 : 0;
     const sessionProgress =
-        initialQueueSize > 0 ? ((initialQueueSize - queue.length) / initialQueueSize) * 100 : 0;
+        initialQueueSize > 0
+            ? ((initialQueueSize - queue.length) / initialQueueSize) * 100
+            : 0;
 
     return (
         <AppLayout>
@@ -1302,7 +1313,9 @@ export default function ExerciseSession({
                                     <div className="px-4">
                                         <div className="h-px bg-gray-100 dark:bg-slate-800 mb-3" />
                                         <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
-                                            {t("exercise.card.part_of_exercise")}{" "}
+                                            {t(
+                                                "exercise.card.part_of_exercise",
+                                            )}{" "}
                                             {subcategory
                                                 ? `${wordList.title} › ${subcategory.name}`
                                                 : wordList.title}
@@ -1318,8 +1331,14 @@ export default function ExerciseSession({
                                                 className="p-1 transition-colors"
                                                 aria-label={
                                                     bookmarks[word.id]
-                                                        ? t("exercise.card.bookmark_remove", "Remove bookmark")
-                                                        : t("exercise.card.bookmark_add", "Bookmark word")
+                                                        ? t(
+                                                              "exercise.card.bookmark_remove",
+                                                              "Remove bookmark",
+                                                          )
+                                                        : t(
+                                                              "exercise.card.bookmark_add",
+                                                              "Bookmark word",
+                                                          )
                                                 }
                                             >
                                                 <Bookmark
@@ -1450,7 +1469,9 @@ export default function ExerciseSession({
                                                 {currentBox >= MASTERED_BOX && (
                                                     <div className="absolute top-2 right-2">
                                                         <span className="bg-green-500 dark:bg-green-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md dark:shadow-lg">
-                                                            {t("exercise.card.mastered_title")}
+                                                            {t(
+                                                                "exercise.card.mastered_title",
+                                                            )}
                                                         </span>
                                                     </div>
                                                 )}
@@ -1539,7 +1560,9 @@ export default function ExerciseSession({
                                                             d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
                                                         />
                                                     </svg>
-                                                    {t("exercise.card.hide_meaning")}
+                                                    {t(
+                                                        "exercise.card.hide_meaning",
+                                                    )}
                                                 </>
                                             ) : (
                                                 <>
@@ -1562,7 +1585,9 @@ export default function ExerciseSession({
                                                             d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                                                         />
                                                     </svg>
-                                                    {t("exercise.card.show_meaning")}
+                                                    {t(
+                                                        "exercise.card.show_meaning",
+                                                    )}
                                                 </>
                                             )}
                                         </button>
@@ -1598,7 +1623,9 @@ export default function ExerciseSession({
                                             <div className="mx-4 mt-4 mb-4">
                                                 <div className="border-l-4 border-[#E5201C] dark:border-red-600 pl-3 py-1">
                                                     <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">
-                                                        {t("exercise.card.definition")}
+                                                        {t(
+                                                            "exercise.card.definition",
+                                                        )}
                                                     </p>
                                                     <p className="text-sm text-gray-900 dark:text-gray-200 leading-snug">
                                                         {word.definition}
@@ -1641,7 +1668,9 @@ export default function ExerciseSession({
                                             <div className="px-4 pb-4">
                                                 <div className="h-px bg-gray-100 dark:bg-slate-800 mb-3" />
                                                 <p className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-3">
-                                                    {t("exercise.card.collocations")}
+                                                    {t(
+                                                        "exercise.card.collocations",
+                                                    )}
                                                 </p>
                                                 <div className="flex flex-col gap-3">
                                                     {collocationList
@@ -1764,7 +1793,9 @@ export default function ExerciseSession({
                                                         {word.synonym ? (
                                                             <div className="border-l-4 border-[#E5201C] dark:border-red-600 pl-3 pr-2 py-1">
                                                                 <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
-                                                                    {t("exercise.card.synonym")}
+                                                                    {t(
+                                                                        "exercise.card.synonym",
+                                                                    )}
                                                                 </p>
                                                                 <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug">
                                                                     {
@@ -1778,7 +1809,9 @@ export default function ExerciseSession({
                                                         {word.antonym ? (
                                                             <div className="border-l-4 border-blue-400 dark:border-blue-600 pl-3 pr-2 py-1">
                                                                 <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
-                                                                    {t("exercise.card.antonym")}
+                                                                    {t(
+                                                                        "exercise.card.antonym",
+                                                                    )}
                                                                 </p>
                                                                 <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug">
                                                                     {
@@ -1843,7 +1876,9 @@ export default function ExerciseSession({
                                                         className="h-5 w-5"
                                                         strokeWidth={2.5}
                                                     />
-                                                    {t("exercise.card.dont_know_button")}
+                                                    {t(
+                                                        "exercise.card.dont_know_button",
+                                                    )}
                                                 </button>
                                                 <button
                                                     onClick={handleKnow}
@@ -1854,19 +1889,29 @@ export default function ExerciseSession({
                                                         className="h-5 w-5"
                                                         strokeWidth={2.5}
                                                     />
-                                                    {t("exercise.card.know_button")}
+                                                    {t(
+                                                        "exercise.card.know_button",
+                                                    )}
                                                 </button>
                                             </div>
                                             {/* Context hint */}
                                             {auth?.user && (
                                                 <p className="text-center text-[11px] text-gray-400 dark:text-gray-500 mt-2">
                                                     {currentBox <= 1
-                                                        ? t("exercise.card_hints.new")
+                                                        ? t(
+                                                              "exercise.card_hints.new",
+                                                          )
                                                         : currentBox === 2
-                                                          ? t("exercise.card_hints.learning")
+                                                          ? t(
+                                                                "exercise.card_hints.learning",
+                                                            )
                                                           : currentBox === 3
-                                                            ? t("exercise.card_hints.reviewing")
-                                                            : t("exercise.card_hints.already_mastered")}
+                                                            ? t(
+                                                                  "exercise.card_hints.reviewing",
+                                                              )
+                                                            : t(
+                                                                  "exercise.card_hints.already_mastered",
+                                                              )}
                                                 </p>
                                             )}
                                         </div>
@@ -1922,7 +1967,8 @@ export default function ExerciseSession({
                 <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-md sm:w-full">
                     <AlertDialogHeader>
                         <AlertDialogTitle className="flex items-center gap-2">
-                            <LogIn className="h-5 w-5 text-[#E5201C]" /> {t("exercise.dialogs.login.title")}
+                            <LogIn className="h-5 w-5 text-[#E5201C]" />{" "}
+                            {t("exercise.dialogs.login.title")}
                         </AlertDialogTitle>
                         <AlertDialogDescription className="text-base">
                             {t("exercise.dialogs.login.desc")}

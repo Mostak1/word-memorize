@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "@/Contexts/LanguageContext";
-import { router } from "@inertiajs/react";
 
 export default function StreakLostOverlay({ isOpen, onClose, prevStreak }) {
     const { t } = useTranslation();
@@ -38,7 +37,7 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak }) {
                     0%   { transform: scale(1) rotate(0deg);    opacity: 1;   filter: blur(0px); }
                     30%  { transform: scale(1.1) rotate(-4deg); opacity: 0.9; }
                     60%  { transform: scale(0.85) rotate(3deg); opacity: 0.6; filter: blur(2px); }
-                    100% { transform: scale(0.7) rotate(-2deg); opacity: 0.3; filter: blur(6px); }
+                    100% { transform: scale(0.7) rotate(-2deg); opacity: 0.55; filter: blur(4px); }
                 }
                 @keyframes sl-smoke {
                     0%   { transform: translateX(-50%) translateY(0) scale(0.6);     opacity: 0; }
@@ -250,8 +249,8 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak }) {
                                 }}
                             >
                                 <svg
-                                    width="110"
-                                    height="110"
+                                    width="150"
+                                    height="150"
                                     viewBox="0 0 100 120"
                                     fill="none"
                                     xmlns="http://www.w3.org/2000/svg"
@@ -425,7 +424,7 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak }) {
                         >
                             <div
                                 style={{
-                                    fontSize: "72px",
+                                    fontSize: "88px",
                                     fontWeight: 900,
                                     color: "var(--sl-number-color)",
                                     lineHeight: 1,
@@ -440,10 +439,10 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak }) {
                             <div
                                 style={{
                                     color: "var(--sl-days-label)",
-                                    fontSize: "12px",
+                                    fontSize: "13px",
                                     fontWeight: 700,
                                     textTransform: "uppercase",
-                                    letterSpacing: "0.2em",
+                                    letterSpacing: "0.25em",
                                     marginTop: "3px",
                                 }}
                             >
@@ -454,7 +453,7 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak }) {
                         {/* ── Headline ──────────────────────────────────────── */}
                         <h2
                             style={{
-                                fontSize: "22px",
+                                fontSize: "25px",
                                 fontWeight: 800,
                                 color: "var(--sl-headline)",
                                 letterSpacing: "-0.5px",
@@ -470,8 +469,8 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak }) {
                         <p
                             style={{
                                 color: "var(--sl-body)",
-                                fontSize: "13px",
-                                lineHeight: 1.6,
+                                fontSize: "14px",
+                                lineHeight: 1.65,
                                 margin: "0 0 24px",
                                 animation:
                                     "sl-slideUp 0.6s 0.85s ease-out both",
@@ -520,7 +519,7 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak }) {
                                     key={i}
                                     style={{
                                         flex: 1,
-                                        padding: "10px 4px",
+                                        padding: "11px 6px",
                                         background: "var(--sl-stat-bg)",
                                         border: "1px solid var(--sl-stat-border)",
                                         borderRadius: "16px",
@@ -529,7 +528,7 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak }) {
                                 >
                                     <div
                                         style={{
-                                            fontSize: "16px",
+                                            fontSize: "18px",
                                             marginBottom: "4px",
                                         }}
                                     >
@@ -537,7 +536,7 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak }) {
                                     </div>
                                     <div
                                         style={{
-                                            fontSize: "13px",
+                                            fontSize: "14px",
                                             fontWeight: 700,
                                             color: "var(--sl-stat-val)",
                                         }}
@@ -546,10 +545,10 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak }) {
                                     </div>
                                     <div
                                         style={{
-                                            fontSize: "9px",
+                                            fontSize: "10px",
                                             color: "var(--sl-stat-lbl)",
                                             textTransform: "uppercase",
-                                            letterSpacing: "0.05em",
+                                            letterSpacing: "0.1em",
                                             marginTop: "2px",
                                         }}
                                     >
@@ -567,10 +566,7 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak }) {
                             }}
                         >
                             <button
-                                onClick={() => {
-                                    onClose();
-                                    router.visit(route("wordlistcategory.index"));
-                                }}
+                                onClick={onClose}
                                 style={{
                                     width: "100%",
                                     padding: "16px 24px",
@@ -579,7 +575,7 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak }) {
                                     border: "none",
                                     borderRadius: "18px",
                                     color: "white",
-                                    fontSize: "14px",
+                                    fontSize: "15px",
                                     fontWeight: 800,
                                     letterSpacing: "0.05em",
                                     cursor: "pointer",
@@ -648,14 +644,14 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak }) {
                                 <span
                                     style={{
                                         color: "var(--sl-pill-text)",
-                                        fontSize: "10px",
+                                        fontSize: "11px",
                                         fontWeight: 600,
                                         letterSpacing: "0.05em",
                                     }}
                                 >
                                     {t(
                                         "streak.encouragement",
-                                        "Champion can fall but champions gets back up.",
+                                        "Every champion has fallen. Champions get back up.",
                                     )}
                                 </span>
                             </div>

@@ -308,7 +308,9 @@ function StreakStatusCard({ streak }) {
                 </span>
             </div>
             <div className="text-right shrink-0">
-                <p className="text-xs text-gray-400 mb-1">{t("shop.freezes_owned")}</p>
+                <p className="text-xs text-gray-400 mb-1">
+                    {t("shop.freezes_owned")}
+                </p>
                 <div className="flex items-center gap-1 justify-end">
                     <Snowflake className="h-4 w-4 text-blue-400" />
                     <span className="text-lg font-bold text-blue-500">
@@ -434,22 +436,58 @@ function ShopItemCard({
 
 function HowXpWorks() {
     const { t } = useTranslation();
-    
-    const xpSources = useMemo(() => [
-        { label: t("shop.sources.complete_session"), xp: "+100 XP", note: t("shop.notes.session") },
-        { label: t("shop.sources.pass_quiz"), xp: "+150 XP", note: t("shop.notes.pass") },
-        { label: t("shop.sources.perfect_quiz"), xp: "+200 XP", note: t("shop.notes.perfect") },
-        { label: t("shop.sources.master_word"), xp: "+10 XP", note: t("shop.notes.word") },
-        { label: t("shop.sources.complete_list"), xp: "+50 XP", note: t("shop.notes.list") },
-        { label: t("shop.sources.streak_7"), xp: "+50 XP", note: t("shop.notes.milestone") },
-        { label: t("shop.sources.streak_14"), xp: "+100 XP", note: t("shop.notes.milestone") },
-        { label: t("shop.sources.streak_30"), xp: "+200 XP", note: t("shop.notes.milestone") },
-    ], [t]);
+
+    const xpSources = useMemo(
+        () => [
+            {
+                label: t("shop.sources.complete_session"),
+                xp: "+100 XP",
+                note: t("shop.notes.session"),
+            },
+            {
+                label: t("shop.sources.pass_quiz"),
+                xp: "+150 XP",
+                note: t("shop.notes.pass"),
+            },
+            {
+                label: t("shop.sources.perfect_quiz"),
+                xp: "+200 XP",
+                note: t("shop.notes.perfect"),
+            },
+            {
+                label: t("shop.sources.master_word"),
+                xp: "+10 XP",
+                note: t("shop.notes.word"),
+            },
+            {
+                label: t("shop.sources.complete_list"),
+                xp: "+50 XP",
+                note: t("shop.notes.list"),
+            },
+            {
+                label: t("shop.sources.streak_7"),
+                xp: "+50 XP",
+                note: t("shop.notes.milestone"),
+            },
+            {
+                label: t("shop.sources.streak_14"),
+                xp: "+100 XP",
+                note: t("shop.notes.milestone"),
+            },
+            {
+                label: t("shop.sources.streak_30"),
+                xp: "+200 XP",
+                note: t("shop.notes.milestone"),
+            },
+        ],
+        [t],
+    );
 
     return (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-5">
             <h3 className="text-base font-bold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
-                <Zap className="h-4 w-4 text-yellow-400" /> {t("shop.how_to_earn")}
+                <Zap className="h-4 w-4 text-yellow-400" />{" "}
+                {t("shop.how_to_earn")}
             </h3>
             <ul className="space-y-2.5">
                 {xpSources.map((src) => (
@@ -519,7 +557,10 @@ function XpShopTab() {
                 showToast(t("shop.toasts.freeze_success"));
                 playXpPurchase();
             } else {
-                showToast(data.error ?? t("shop.toasts.purchase_failed"), "error");
+                showToast(
+                    data.error ?? t("shop.toasts.purchase_failed"),
+                    "error",
+                );
             }
         } catch {
             showToast(t("shop.toasts.error"), "error");
@@ -543,7 +584,7 @@ function XpShopTab() {
 
                 // ✅ PERFECT NO-FLASH SOLUTION:
                 // 1. Set localStorage FIRST - ThemeProvider watches this
-                localStorage.setItem("theme", "dark");
+                localStorage.setItem("admin-theme", "dark");
                 playXpPurchase();
 
                 // 2. Then reload shared props
@@ -556,7 +597,10 @@ function XpShopTab() {
                 // ThemeProvider will automatically detect localStorage change and enable dark mode by itself
                 showToast(t("shop.toasts.dark_mode_success"));
             } else {
-                showToast(data.error ?? t("shop.toasts.purchase_failed"), "error");
+                showToast(
+                    data.error ?? t("shop.toasts.purchase_failed"),
+                    "error",
+                );
             }
         } catch {
             showToast(t("shop.toasts.error"), "error");
@@ -663,7 +707,7 @@ export default function Shop({
     defaultTab = "shop",
 }) {
     const { t } = useTranslation();
-    
+
     // Determine initial tab: from props, or from URL query parameter, or default to "shop"
     const getInitialTab = () => {
         // Check URL parameters first
@@ -684,14 +728,22 @@ export default function Shop({
 
     return (
         <AppLayout>
-            <Head title={activeTab === "shop" ? t("shop.title") : t("shop.xp_shop_title")} />
+            <Head
+                title={
+                    activeTab === "shop"
+                        ? t("shop.title")
+                        : t("shop.xp_shop_title")
+                }
+            />
 
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
                 <main className="max-w-2xl mx-auto px-4 py-5 pb-20 space-y-5">
                     {/* Page header */}
                     <div style={{ animation: "fadeInUp 0.3s ease-out" }}>
                         <h1 className="text-2xl font-black text-gray-900 dark:text-gray-100">
-                            {activeTab === "shop" ? t("shop.title") : t("shop.xp_shop_title")}
+                            {activeTab === "shop"
+                                ? t("shop.title")
+                                : t("shop.xp_shop_title")}
                         </h1>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                             {activeTab === "shop"

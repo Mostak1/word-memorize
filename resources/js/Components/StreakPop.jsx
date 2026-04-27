@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Lottie from "lottie-react";
 import fireAnim from "../../../public/lottie/FireStreakOrange.json";
 
@@ -8,6 +8,8 @@ import fireAnim from "../../../public/lottie/FireStreakOrange.json";
  * and "YOU'RE ON FIRE!" badge.
  */
 export default function StreakPop({ streakCount, onComplete }) {
+    const [lastTap, setLastTap] = useState(0);
+
     useEffect(() => {
         const timer = setTimeout(() => {
             onComplete?.();
@@ -15,8 +17,20 @@ export default function StreakPop({ streakCount, onComplete }) {
         return () => clearTimeout(timer);
     }, [onComplete]);
 
+    const handleTap = () => {
+        const now = Date.now();
+        if (now - lastTap < 300) {
+            onComplete?.();
+        } else {
+            setLastTap(now);
+        }
+    };
+
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none bg-black/60 backdrop-blur-sm animate-[fadeIn_0.3s_ease-out]">
+        <div 
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-[fadeIn_0.3s_ease-out]"
+            onClick={handleTap}
+        >
             <style>{`
                 @keyframes shimmerPill {
                     0% { transform: translateX(-100%) skewX(-15deg); }

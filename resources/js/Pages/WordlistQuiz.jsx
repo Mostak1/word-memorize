@@ -846,20 +846,16 @@ export default function WordlistQuiz({
                 setFinalPassed(result.passed);
                 setNextAttemptAt(result.next_attempt_at ?? null);
 
-                const today = new Date().toDateString();
-                const lastShown = localStorage.getItem("lastSessionDay");
-
-                if (data.streak_increased && lastShown !== today) {
-                    setStreakCount(data.streak?.current_streak ?? 0);
+                if (result.streak_increased) {
+                    setStreakCount(result.streak?.current_streak ?? 0);
                     setShowStreakEffect(true);
-                    localStorage.setItem("lastSessionDay", today);
                     
                     // If wordlist also unlocked, store it but wait for streak to finish
-                    if (data.unlocked_wordlist) {
-                        setUnlockedListName(data.unlocked_wordlist);
+                    if (result.unlocked_wordlist) {
+                        setUnlockedListName(result.unlocked_wordlist);
                     }
-                } else if (data.unlocked_wordlist) {
-                    setUnlockedListName(data.unlocked_wordlist);
+                } else if (result.unlocked_wordlist) {
+                    setUnlockedListName(result.unlocked_wordlist);
                     setShowUnlockedOverlay(true);
                 } else {
                     triggerAchievements();
