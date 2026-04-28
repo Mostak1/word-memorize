@@ -38,6 +38,9 @@ export const initSounds = () => {
         mastered: getAssetUrl(
             "/sounds/freesound_crunchpixstudio-great-success-384935.mp3.mpeg",
         ),
+        xpCount: getAssetUrl(
+            "/sounds/freesound_community-countdown-beeps-remixed-fast-101155.mp3.mpeg",
+        ),
     };
 
     Object.entries(SOUND_PATHS).forEach(([key, path]) => {
@@ -110,6 +113,8 @@ export const playXpPurchase = (userSettings) =>
 
 export const playMastered = (userSettings) =>
     playSound("mastered", userSettings, 1900);
+
+export const playXpCount = (userSettings) => playSound("xpCount", userSettings);
 
 // 🔹 Global controls
 export const disableSoundsGlobally = () => {

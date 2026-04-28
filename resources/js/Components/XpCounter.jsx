@@ -1,5 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Zap } from "lucide-react";
+import { playXpCount } from "@/Utils/sounds";
+import { usePage } from "@inertiajs/react";
 
 /**
  * XpCounter - A game-like XP counter that counts up to a target value
@@ -8,9 +10,15 @@ import { Zap } from "lucide-react";
 export default function XpCounter({ targetXp, duration = 1500, onComplete }) {
     const [displayXp, setDisplayXp] = useState(0);
     const [isBouncing, setIsBouncing] = useState(false);
+    const { props } = usePage();
+    const user = props?.auth?.user;
+    
+    // Use a ref to track the last played XP value to avoid multiple plays for the same number
+    const lastPlayedXp = useRef(0);
 
     useEffect(() => {
         if (targetXp <= 0) return;
+        lastPlayedXp.current = 0;
 
         let startTimestamp = null;
         const step = (timestamp) => {
@@ -18,6 +26,11 @@ export default function XpCounter({ targetXp, duration = 1500, onComplete }) {
             const progress = Math.min((timestamp - startTimestamp) / duration, 1);
             const current = Math.floor(progress * targetXp);
             
+            if (current > lastPlayedXp.current) {
+                playXpCount(user?.settings);
+                lastPlayedXp.current = current;
+            }
+
             setDisplayXp(current);
 
             if (progress < 1) {
@@ -33,7 +46,7 @@ export default function XpCounter({ targetXp, duration = 1500, onComplete }) {
         };
 
         window.requestAnimationFrame(step);
-    }, [targetXp, duration]);
+    }, [targetXp, duration, user?.settings]);
 
     return (
         <div className={`flex items-center justify-center gap-2 transition-transform duration-300 ${isBouncing ? "animate-xp-bounce scale-110" : ""}`}>
