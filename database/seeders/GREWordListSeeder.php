@@ -44,7 +44,7 @@ class GREWordListSeeder extends Seeder
      * Results in: storage/app/public/words/filename.jpg
      * Public URL:  /storage/words/filename.jpg
      */
-    private const STORAGE_DIR = 'words';
+    private const STORAGE_DIR = 'words/gre';
 
     /**
      * Category names for the two GRE buckets.
@@ -515,11 +515,6 @@ class GREWordListSeeder extends Seeder
             ->pluck('id', 'word')
             ->toArray();
 
-        $alreadyHasImage = WordImage::whereIn('word_id', array_values($wordMap))
-            ->pluck('word_id')
-            ->flip()
-            ->toArray();
-
         $added = 0;
         $skipped = 0;
         $noImageWords = [];
@@ -534,11 +529,6 @@ class GREWordListSeeder extends Seeder
             $wordId = $wordMap[$wordStr] ?? null;
 
             if ($wordId === null) {
-                $skipped++;
-                continue;
-            }
-
-            if (isset($alreadyHasImage[$wordId])) {
                 $skipped++;
                 continue;
             }
@@ -558,14 +548,16 @@ class GREWordListSeeder extends Seeder
                 continue;
             }
 
-            WordImage::create([
-                'word_id' => $wordId,
-                'image_url' => '/' . ltrim($storedPath, '/'),
-                'caption' => null,
-                'sort_order' => 0,
-            ]);
+            // Always update or create the WordImage record so re-runs refresh the image.
+            WordImage::updateOrCreate(
+                ['word_id' => $wordId],
+                [
+                    'image_url' => '/' . ltrim($storedPath, '/'),
+                    'caption' => null,
+                    'sort_order' => 0,
+                ]
+            );
 
-            $alreadyHasImage[$wordId] = true;
             $added++;
         }
 
@@ -580,11 +572,7 @@ class GREWordListSeeder extends Seeder
     {
         $ext = strtolower(pathinfo($sourcePath, PATHINFO_EXTENSION));
         $destFilename = strtolower($word) . '.' . $ext;
-        $destPath = self::STORAGE_DIR . '/' . $destFilename;
-
-        if (Storage::disk(self::STORAGE_DISK)->exists($destPath)) {
-            return $destPath;
-        }
+        $destPath = self::STORAGE_DIR . '/' . $destFilename; // e.g. "words/gre/pan.jpg"
 
         $contents = @file_get_contents($sourcePath);
 
@@ -593,6 +581,7 @@ class GREWordListSeeder extends Seeder
             return null;
         }
 
+        // Always overwrite so re-runs pick up updated image files.
         Storage::disk(self::STORAGE_DISK)->put($destPath, $contents);
 
         return $destPath;

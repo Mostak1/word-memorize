@@ -47,7 +47,7 @@ class OxfordWordsSeeder extends Seeder
      * Results in: storage/app/public/words/filename.jpg
      * Public URL:  /storage/words/filename.jpg
      */
-    private const STORAGE_DIR = 'words';
+    private const STORAGE_DIR = 'words/oxford';
 
     /**
      * The single WordListCategory that owns all Oxford 3000 word lists.
@@ -552,12 +552,6 @@ class OxfordWordsSeeder extends Seeder
             ->pluck('id', 'word')
             ->toArray();
 
-        // Build a set of word_ids that already have at least one image (skip them)
-        $alreadyHasImage = WordImage::whereIn('word_id', array_values($wordMap))
-            ->pluck('word_id')
-            ->flip()
-            ->toArray();
-
         $added = 0;
         $skipped = 0;
         $noImageWords = [];
@@ -572,11 +566,6 @@ class OxfordWordsSeeder extends Seeder
             $wordId = $wordMap[$wordStr] ?? null;
 
             if ($wordId === null) {
-                $skipped++;
-                continue;
-            }
-
-            if (isset($alreadyHasImage[$wordId])) {
                 $skipped++;
                 continue;
             }
@@ -596,14 +585,16 @@ class OxfordWordsSeeder extends Seeder
                 continue;
             }
 
-            WordImage::create([
-                'word_id' => $wordId,
-                'image_url' => '/' . ltrim($storedPath, '/'),
-                'caption' => null,
-                'sort_order' => 0,
-            ]);
+            // Always update or create the WordImage record so re-runs refresh the image.
+            WordImage::updateOrCreate(
+                ['word_id' => $wordId],
+                [
+                    'image_url' => '/' . ltrim($storedPath, '/'),
+                    'caption' => null,
+                    'sort_order' => 0,
+                ]
+            );
 
-            $alreadyHasImage[$wordId] = true; // prevent duplicate in same run
             $added++;
         }
 
@@ -621,12 +612,7 @@ class OxfordWordsSeeder extends Seeder
     {
         $ext = strtolower(pathinfo($sourcePath, PATHINFO_EXTENSION));
         $destFilename = strtolower(trim($word)) . '.' . $ext;    // e.g. "able.jpg"
-        $destPath = self::STORAGE_DIR . '/' . $destFilename; // e.g. "words/able.jpg"
-
-        // Already copied in a previous run — don't overwrite
-        if (Storage::disk(self::STORAGE_DISK)->exists($destPath)) {
-            return $destPath;
-        }
+        $destPath = self::STORAGE_DIR . '/' . $destFilename; // e.g. "words/oxford/able.jpg"
 
         $contents = @file_get_contents($sourcePath);
 
@@ -635,6 +621,7 @@ class OxfordWordsSeeder extends Seeder
             return null;
         }
 
+        // Always overwrite so re-runs pick up updated image files.
         Storage::disk(self::STORAGE_DISK)->put($destPath, $contents);
 
         return $destPath;

@@ -46,7 +46,7 @@ class AcademicWordListSeeder extends Seeder
      * Results in: storage/app/public/words/filename.jpg
      * Public URL:  /storage/words/filename.jpg
      */
-    private const STORAGE_DIR = 'words';
+    private const STORAGE_DIR = 'words/academic';
 
     /**
      * Category name used throughout seeding / unseeding.
@@ -445,12 +445,6 @@ class AcademicWordListSeeder extends Seeder
             ->pluck('id', 'word')
             ->toArray();
 
-        // Load word_ids that already have at least one image (to skip them)
-        $alreadyHasImage = WordImage::whereIn('word_id', array_values($wordMap))
-            ->pluck('word_id')
-            ->flip()
-            ->toArray();
-
         $added = 0;
         $skipped = 0;
         $noImageWords = [];
@@ -466,12 +460,6 @@ class AcademicWordListSeeder extends Seeder
 
             if ($wordId === null) {
                 // Word was not found in DB — skipped during updateOrCreate
-                $skipped++;
-                continue;
-            }
-
-            // Already has an image — don't add a duplicate
-            if (isset($alreadyHasImage[$wordId])) {
                 $skipped++;
                 continue;
             }
@@ -492,16 +480,17 @@ class AcademicWordListSeeder extends Seeder
                 continue;
             }
 
-            // Create the WordImage record.
-            // image_url stored as "/words/filename.jpg" (matches WordImage accessor)
-            WordImage::create([
-                'word_id' => $wordId,
-                'image_url' => '/' . ltrim($storedPath, '/'),
-                'caption' => null,
-                'sort_order' => 0,
-            ]);
+            // Always update or create the WordImage record so re-runs refresh the image.
+            // image_url stored as "/words/academic/filename.jpg" (matches WordImage accessor)
+            WordImage::updateOrCreate(
+                ['word_id' => $wordId],
+                [
+                    'image_url' => '/' . ltrim($storedPath, '/'),
+                    'caption' => null,
+                    'sort_order' => 0,
+                ]
+            );
 
-            $alreadyHasImage[$wordId] = true; // prevent duplicate in same run
             $added++;
         }
 
@@ -518,12 +507,7 @@ class AcademicWordListSeeder extends Seeder
     {
         $ext = strtolower(pathinfo($sourcePath, PATHINFO_EXTENSION));
         $destFilename = strtolower($word) . '.' . $ext;    // e.g. "task.jpg"
-        $destPath = self::STORAGE_DIR . '/' . $destFilename; // e.g. "words/task.jpg"
-
-        // Already copied in a previous run — don't overwrite
-        if (Storage::disk(self::STORAGE_DISK)->exists($destPath)) {
-            return $destPath;
-        }
+        $destPath = self::STORAGE_DIR . '/' . $destFilename; // e.g. "words/academic/task.jpg"
 
         $contents = @file_get_contents($sourcePath);
 
@@ -532,6 +516,7 @@ class AcademicWordListSeeder extends Seeder
             return null;
         }
 
+        // Always overwrite so re-runs pick up updated image files.
         Storage::disk(self::STORAGE_DISK)->put($destPath, $contents);
 
         return $destPath;
