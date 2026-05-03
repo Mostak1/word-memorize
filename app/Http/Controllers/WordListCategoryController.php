@@ -62,7 +62,7 @@ class WordListCategoryController extends Controller
             ->where('word_list_category_id', $category->id)
             ->where('status', true)
             ->orderBy('id')
-            ->paginate(10)
+            ->paginate(12)
             ->withQueryString();
 
         // IDs on the current page only

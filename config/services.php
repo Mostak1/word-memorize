@@ -46,4 +46,9 @@ return [
         'voice_id' => env('ELEVENLABS_VOICE_ID'),
     ],
 
+    'brevo' => [
+        'api_key' => env('BREVO_API_KEY'),
+        'admin_email' => env('BREVO_ADMIN_EMAIL'),
+    ],
+
 ];

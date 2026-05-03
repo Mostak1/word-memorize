@@ -339,17 +339,17 @@ export default function Index({ reports, filters, statuses }) {
                 cell: ({ row }) => {
                     const r = row.original;
                     return (
-                        <div className="space-y-1 min-w-0">
-                            <p className="text-sm line-clamp-2">
+                        <div className="space-y-2 min-w-[200px] max-w-[400px]">
+                            <p className="text-sm whitespace-pre-wrap break-words">
                                 {r.description}
                             </p>
                             {r.admin_note && (
-                                <p className="text-xs text-muted-foreground bg-muted/60 rounded px-2 py-1 border-l-2 border-yellow-400 line-clamp-1">
-                                    <span className="font-medium text-foreground">
-                                        Note:{" "}
+                                <div className="text-xs text-muted-foreground bg-muted/60 rounded px-2 py-1.5 border-l-2 border-yellow-400">
+                                    <span className="font-semibold text-foreground uppercase text-[10px] tracking-wider block mb-0.5">
+                                        Admin Note
                                     </span>
-                                    {r.admin_note}
-                                </p>
+                                    <p className="italic">{r.admin_note}</p>
+                                </div>
                             )}
                         </div>
                     );
@@ -395,32 +395,27 @@ export default function Index({ reports, filters, statuses }) {
                 size: 160,
             },
             {
+                id: "dates",
                 accessorKey: "created_at",
                 header: ({ column }) => (
-                    <SortHeader column={column}>
-                        <Clock className="h-4 w-4 mr-1" /> Created
-                    </SortHeader>
+                    <SortHeader column={column}>Activity</SortHeader>
                 ),
-                cell: ({ getValue }) => (
-                    <span className="text-sm text-muted-foreground">
-                        {formatDate(getValue())}
-                    </span>
-                ),
-                size: 110,
-            },
-            {
-                accessorKey: "updated_at",
-                header: ({ column }) => (
-                    <SortHeader column={column}>
-                        <Clock className="h-4 w-4 mr-1" /> Updated
-                    </SortHeader>
-                ),
-                cell: ({ getValue }) => (
-                    <span className="text-sm text-muted-foreground">
-                        {formatDate(getValue())}
-                    </span>
-                ),
-                size: 110,
+                cell: ({ row }) => {
+                    const r = row.original;
+                    return (
+                        <div className="text-[11px] space-y-1 text-muted-foreground tabular-nums whitespace-nowrap">
+                            <div className="flex items-center justify-between gap-3">
+                                <span className="opacity-60">Created</span>
+                                <span>{formatDate(r.created_at)}</span>
+                            </div>
+                            <div className="flex items-center justify-between gap-3 border-t border-muted pt-1">
+                                <span className="opacity-60">Updated</span>
+                                <span>{formatDate(r.updated_at)}</span>
+                            </div>
+                        </div>
+                    );
+                },
+                size: 180,
             },
             {
                 id: "actions",
@@ -570,8 +565,7 @@ export default function Index({ reports, filters, statuses }) {
                                         description: "Description",
                                         user: "User",
                                         page_title: "Page",
-                                        created_at: "Created",
-                                        updated_at: "Updated",
+                                        dates: "Activity",
                                     };
                                     return (
                                         <DropdownMenuCheckboxItem

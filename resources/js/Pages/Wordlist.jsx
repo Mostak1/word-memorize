@@ -372,8 +372,8 @@ export default function Wordlist({
     const items = Array.isArray(wordLists)
         ? wordLists
         : (wordLists?.data ?? []);
-    const paginationLinks = wordLists?.links ?? [];
-    const paginationMeta = wordLists?.meta ?? null;
+    const paginationLinks = wordLists?.meta?.links ?? wordLists?.links ?? [];
+    const paginationMeta = wordLists?.meta ?? (wordLists?.current_page ? wordLists : null);
 
     // Category is effectively locked when it has is_locked=true and no approved order
     // const categoryIsLocked =

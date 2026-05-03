@@ -358,10 +358,13 @@ class OxfordWordsSeeder extends Seeder
     {
         return DB::transaction(function () use ($grouped, $creatorId, $imageIndex): array {
 
-            $category = WordListCategory::firstOrCreate(
+            $thumbnailPath = $this->copyCategoryThumbnail('Oxford_3000.jpeg');
+
+            $category = WordListCategory::updateOrCreate(
                 ['name' => self::CATEGORY_NAME],
                 [
                     'description' => null,
+                    'thumbnail' => $thumbnailPath,
                     'status' => true,
                     'created_by' => $creatorId,
                     'show_example_sentences' => false,
@@ -676,6 +679,32 @@ class OxfordWordsSeeder extends Seeder
         }
 
         return json_encode($normalised, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+
+    /**
+     * Copy a category thumbnail from database/data/ to storage/app/public/word_categories/
+     */
+    private function copyCategoryThumbnail(string $filename): ?string
+    {
+        $sourcePath = base_path('database/data/' . $filename);
+
+        if (!file_exists($sourcePath)) {
+            $this->log('warn', "Category thumbnail not found at: {$sourcePath}");
+            return null;
+        }
+
+        $destDir = 'word_categories';
+        $destPath = $destDir . '/' . $filename;
+
+        $contents = @file_get_contents($sourcePath);
+        if ($contents === false) {
+            $this->log('warn', "Could not read category thumbnail: {$sourcePath}");
+            return null;
+        }
+
+        Storage::disk(self::STORAGE_DISK)->put($destPath, $contents);
+
+        return '/' . $destPath;
     }
 
     private function clean(mixed $value): ?string

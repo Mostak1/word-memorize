@@ -276,11 +276,14 @@ class GREWordListSeeder extends Seeder
             $totalImagesSkip = 0;
             $allNoImageWords = [];
 
+            $thumbnailPath = $this->copyCategoryThumbnail('GRE.jpeg');
+
             // ── GRE 332 category (20 words per WordList) ──────────────────────
-            $gre332Category = WordListCategory::firstOrCreate(
+            $gre332Category = WordListCategory::updateOrCreate(
                 ['name' => self::GRE_332_CATEGORY_NAME],
                 [
                     'description' => '332 high-frequency words essential for the GRE exam.',
+                    'thumbnail' => $thumbnailPath,
                     'status' => true,
                     'created_by' => $creatorId,
                     'show_example_sentences' => true,
@@ -317,10 +320,11 @@ class GREWordListSeeder extends Seeder
             }
 
             // ── GRE Extended category (60 words per WordList) ─────────────────
-            $extendedCategory = WordListCategory::firstOrCreate(
+            $extendedCategory = WordListCategory::updateOrCreate(
                 ['name' => self::GRE_EXTENDED_CATEGORY_NAME],
                 [
                     'description' => 'Extended GRE vocabulary beyond the core 332 words.',
+                    'thumbnail' => $thumbnailPath,
                     'status' => true,
                     'created_by' => $creatorId,
                     'show_example_sentences' => true,
@@ -585,6 +589,32 @@ class GREWordListSeeder extends Seeder
         Storage::disk(self::STORAGE_DISK)->put($destPath, $contents);
 
         return $destPath;
+    }
+
+    /**
+     * Copy a category thumbnail from database/data/ to storage/app/public/word_categories/
+     */
+    private function copyCategoryThumbnail(string $filename): ?string
+    {
+        $sourcePath = base_path('database/data/' . $filename);
+
+        if (!file_exists($sourcePath)) {
+            $this->log('warn', "Category thumbnail not found at: {$sourcePath}");
+            return null;
+        }
+
+        $destDir = 'word_categories';
+        $destPath = $destDir . '/' . $filename;
+
+        $contents = @file_get_contents($sourcePath);
+        if ($contents === false) {
+            $this->log('warn', "Could not read category thumbnail: {$sourcePath}");
+            return null;
+        }
+
+        Storage::disk(self::STORAGE_DISK)->put($destPath, $contents);
+
+        return '/' . $destPath;
     }
 
     private function clean(mixed $value): ?string

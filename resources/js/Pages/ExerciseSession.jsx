@@ -39,6 +39,8 @@ import { useTranslation } from "@/Contexts/LanguageContext";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const MASTERED_BOX = 4;
+const SECRET_KEY = "wm-cache-secure-key";
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 // Confetti pieces — stable (generated once outside component)
 const CONFETTI = Array.from({ length: 60 }, (_, i) => ({
@@ -58,6 +60,32 @@ const CONFETTI = Array.from({ length: 60 }, (_, i) => ({
     size: 7 + (i % 6) * 2,
     borderRadius: i % 3 === 0 ? "50%" : "2px",
 }));
+
+const MAX_CACHED_SESSIONS = 2;
+
+const pruneOldCaches = () => {
+    const keys = Object.keys(localStorage).filter((k) =>
+        k.startsWith("cached-session-"),
+    );
+    if (keys.length <= MAX_CACHED_SESSIONS) return;
+
+    // Sort by the timestamp stored inside each cached JSON
+    const entries = keys
+        .map((key) => {
+            try {
+                const encrypted = localStorage.getItem(key);
+                const bytes = CryptoJS.AES.decrypt(encrypted, SECRET_KEY);
+                const data = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+                return { key, timestamp: data.timestamp || 0 };
+            } catch {
+                return { key, timestamp: 0 };
+            }
+        })
+        .sort((a, b) => a.timestamp - b.timestamp);
+
+    const toRemove = entries.slice(0, entries.length - MAX_CACHED_SESSIONS);
+    toRemove.forEach(({ key }) => localStorage.removeItem(key));
+};
 
 // Image preloader utility – now preloads EVERYTHING with progress
 const preloadImages = async (words, onProgress) => {
@@ -492,29 +520,81 @@ export default function ExerciseSession({
     // Initial full preload + localStorage cache
     useEffect(() => {
         const runPreload = async () => {
+            // ── Try cached version first ─────────────────────────────
+            if (wordList?.id) {
+                try {
+                    const encrypted = localStorage.getItem(
+                        `cached-session-${wordList.id}`,
+                    );
+                    if (encrypted) {
+                        const bytes = CryptoJS.AES.decrypt(
+                            encrypted,
+                            SECRET_KEY,
+                        );
+                        const cacheData = JSON.parse(
+                            bytes.toString(CryptoJS.enc.Utf8),
+                        );
+                        const age = Date.now() - (cacheData.timestamp ?? 0);
+                        if (age < CACHE_TTL_MS && cacheData.words?.length) {
+                            // Cache is fresh → skip preloading, use cached words
+                            setQueue(cacheData.words.map((w) => ({ ...w })));
+                            setIsPreloading(false);
+                            return; // early exit – no preload needed
+                        } else {
+                            // Cache expired → remove it so it can be recreated
+                            localStorage.removeItem(
+                                `cached-session-${wordList.id}`,
+                            );
+                        }
+                    }
+                } catch (e) {
+                    // Invalid cache data → just ignore and preload normally
+                }
+            }
+
+            // ── Normal preload (first time or cache invalid) ─────────
             setIsPreloading(true);
             setLoadingProgress(0);
 
             await preloadImages(initialWords, setLoadingProgress);
 
             // Cache words JSON for future visits
+            // if (wordList?.id && initialWords.length > 0) {
+            //     try {
+            //         const cacheData = JSON.stringify({
+            //             words: initialWords,
+            //             timestamp: Date.now(),
+            //         });
+            //         // Obfuscating cache data so casual users cannot read it
+            //         const SECRET_KEY = "wm-cache-secure-key";
+            //         const encryptedData = CryptoJS.AES.encrypt(
+            //             cacheData,
+            //             SECRET_KEY,
+            //         ).toString();
+
+            //         localStorage.setItem(
+            //             `cached-session-${wordList.id}`,
+            //             encryptedData,
+            //         );
+            //     } catch (e) {}
+            // }
+
+            // Cache the fresh data after preload
             if (wordList?.id && initialWords.length > 0) {
                 try {
                     const cacheData = JSON.stringify({
                         words: initialWords,
                         timestamp: Date.now(),
                     });
-                    // Obfuscating cache data so casual users cannot read it
-                    const SECRET_KEY = "wm-cache-secure-key";
-                    const encryptedData = CryptoJS.AES.encrypt(
+                    const encrypted = CryptoJS.AES.encrypt(
                         cacheData,
                         SECRET_KEY,
                     ).toString();
-
                     localStorage.setItem(
                         `cached-session-${wordList.id}`,
-                        encryptedData,
+                        encrypted,
                     );
+                    pruneOldCaches();
                 } catch (e) {}
             }
 
