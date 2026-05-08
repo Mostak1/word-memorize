@@ -188,7 +188,11 @@ class WordListController extends Controller
 
     public function showWord(Request $request, $id)
     {
-        $word = Word::with(['wordList', 'images'])->findOrFail($id);
+        $word = Word::with(['wordList.category', 'images'])->findOrFail($id);
+
+        if ($word->wordList && $this->categoryIsLockedForUser($word->wordList)) {
+            abort(403, 'This word list category is locked.');
+        }
 
         $isBookmarked = auth()->check()
             ? BookmarkedWord::where('user_id', auth()->id())
@@ -228,6 +232,16 @@ class WordListController extends Controller
                     $query->where('incorrect_count', '>=', 2);
                 }
 
+                $userId = auth()->id();
+                $query->whereHas('word.wordList.category', function ($q) use ($userId) {
+                    $q->where('is_locked', false)
+                        ->orWhereIn('id', function ($q2) use ($userId) {
+                            $q2->select('word_list_category_id')
+                                ->from('user_word_list_access')
+                                ->where('user_id', $userId);
+                        });
+                });
+
                 $reviseIds = $query->orderBy('word_id')->pluck('word_id')->toArray();
                 $currentIndex = array_search($word->id, $reviseIds);
 
@@ -259,6 +273,9 @@ class WordListController extends Controller
             $q->where('user_id', $userId)
                 ->where('box', '>=', WordProgress::MASTERED_BOX);
         })
+            ->with([
+                'category' => fn($q) => $q->select('id', 'is_locked'),
+            ])
             ->withCount([
                 'words as total_words',
                 'words as mastered_count' => function ($q) use ($userId) {
@@ -270,7 +287,19 @@ class WordListController extends Controller
                     );
                 },
             ])
-            ->get(['id', 'title', 'difficulty']);
+            ->get(['id', 'title', 'difficulty', 'word_list_category_id'])
+            ->map(function ($wl) use ($userId) {
+                $wl->is_locked = (bool) ($wl->category?->is_locked ?? false);
+                $wl->has_access = true;
+
+                if ($wl->is_locked) {
+                    $wl->has_access = UserWordListAccess::where('user_id', $userId)
+                        ->where('word_list_category_id', $wl->word_list_category_id)
+                        ->exists();
+                }
+
+                return $wl;
+            });
 
         $totalMastered = WordProgress::where('user_id', $userId)
             ->where('box', '>=', WordProgress::MASTERED_BOX)

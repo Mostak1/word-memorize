@@ -182,12 +182,17 @@ export default function WordFormDialog({
         synonym: word?.synonym || "",
         antonym: word?.antonym || "",
         image_related_sentence: word?.image_related_sentence || "",
+        image_related_sentence_bangla: word?.image_related_sentence_bangla || "",
         is_public: word?.is_public ?? true,
     });
 
     // ── Collocations state (structured) ───────────────────────────────────────
     const [collocations, setCollocations] = useState(
         () => parseCollocations(word?.collocations) || [emptyCollocation()],
+    );
+
+    const [banglaCollocations, setBanglaCollocations] = useState(
+        () => parseCollocations(word?.bangla_collocations) || [emptyCollocation()],
     );
 
     const [clientErrors, setClientErrors] = useState({});
@@ -208,6 +213,10 @@ export default function WordFormDialog({
         if (open) {
             const parsed = parseCollocations(word?.collocations);
             setCollocations(parsed.length ? parsed : [emptyCollocation()]);
+
+            const parsedBangla = parseCollocations(word?.bangla_collocations);
+            setBanglaCollocations(parsedBangla.length ? parsedBangla : [emptyCollocation()]);
+
             setExistingImages(
                 word?.images?.map((img) => ({
                     id: img.id,
@@ -221,6 +230,7 @@ export default function WordFormDialog({
         } else {
             reset();
             setCollocations([emptyCollocation()]);
+            setBanglaCollocations([emptyCollocation()]);
             setExistingImages([]);
             setNewImages([]);
             setClientErrors({});
@@ -242,6 +252,25 @@ export default function WordFormDialog({
 
     const removeCollocation = (index) => {
         setCollocations((prev) => {
+            if (prev.length <= 1) return [emptyCollocation()];
+            return prev.filter((_, i) => i !== index);
+        });
+    };
+
+    const updateBanglaCollocation = (index, key, value) => {
+        setBanglaCollocations((prev) =>
+            prev.map((item, i) =>
+                i === index ? { ...item, [key]: value } : item,
+            ),
+        );
+    };
+
+    const addBanglaCollocation = () => {
+        setBanglaCollocations((prev) => [...prev, emptyCollocation()]);
+    };
+
+    const removeBanglaCollocation = (index) => {
+        setBanglaCollocations((prev) => {
             if (prev.length <= 1) return [emptyCollocation()];
             return prev.filter((_, i) => i !== index);
         });
@@ -342,6 +371,7 @@ export default function WordFormDialog({
 
         // Serialize collocations as a JSON string
         payload.append("collocations", serializeCollocations(collocations));
+        payload.append("bangla_collocations", serializeCollocations(banglaCollocations));
 
         if (isEditing) {
             payload.append("_method", "patch");
@@ -587,6 +617,61 @@ export default function WordFormDialog({
                         </p>
                     </div>
 
+                    {/* ── Bangla Collocations (structured) ─────────────────── */}
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                            <Label className="text-sm font-semibold">
+                                Bangla Collocations
+                                {banglaCollocations.filter(
+                                    (c) =>
+                                        c.phrase.trim() ||
+                                        c.example_sentence.trim(),
+                                ).length > 0 && (
+                                    <Badge
+                                        variant="secondary"
+                                        className="ml-2 text-xs"
+                                    >
+                                        {
+                                            banglaCollocations.filter(
+                                                (c) =>
+                                                    c.phrase.trim() ||
+                                                    c.example_sentence.trim(),
+                                            ).length
+                                        }
+                                    </Badge>
+                                )}
+                            </Label>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={addBanglaCollocation}
+                            >
+                                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                                Add Bangla Collocation
+                            </Button>
+                        </div>
+
+                        <div className="space-y-2">
+                            {banglaCollocations.map((item, index) => (
+                                <CollocationRow
+                                    key={index}
+                                    index={index}
+                                    item={item}
+                                    onChange={(key, value) =>
+                                        updateBanglaCollocation(index, key, value)
+                                    }
+                                    onRemove={() => removeBanglaCollocation(index)}
+                                    isOnly={banglaCollocations.length === 1}
+                                />
+                            ))}
+                        </div>
+
+                        <p className="text-xs text-muted-foreground">
+                            Bangla collocations structured as JSON.
+                        </p>
+                    </div>
+
                     {/* Example Sentences * */}
                     <div className="space-y-2">
                         <Label>
@@ -607,6 +692,23 @@ export default function WordFormDialog({
                                 {errors.example_sentences}
                             </p>
                         )}
+                    </div>
+
+                    {/* Bangla Example Sentence (Image Related) */}
+                    <div className="space-y-2">
+                        <Label>
+                            Featured Bangla Example Sentence (Image Related)
+                        </Label>
+                        <Input
+                            value={data.image_related_sentence_bangla}
+                            onChange={(e) =>
+                                setData(
+                                    "image_related_sentence_bangla",
+                                    e.target.value,
+                                )
+                            }
+                            placeholder="বাংলা উদাহরণ বাক্য"
+                        />
                     </div>
 
                     {/* AI Prompt */}

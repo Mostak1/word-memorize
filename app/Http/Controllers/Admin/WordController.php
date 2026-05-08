@@ -23,11 +23,13 @@ class WordController extends Controller
             'definition' => 'required|string',
             'bangla_meaning' => 'required|string',
             'collocations' => 'nullable|string',
+            'bangla_collocations' => 'nullable|string',
             'example_sentences' => 'required|string',
             'ai_prompt' => 'nullable|string',
             'synonym' => 'nullable|string',
             'antonym' => 'nullable|string',
             'image_related_sentence' => 'nullable|string',
+            'image_related_sentence_bangla' => 'nullable|string',
             'is_public' => 'boolean',
         ];
     }

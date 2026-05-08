@@ -17,7 +17,7 @@ class OxfordWordsSeeder extends Seeder
      * Path to the CSV file (relative to Laravel project root).
      */
     protected string $filePath = 'database/data/Oxford_3000.csv';
-    protected $price = 299;
+    protected $price = 599;
 
     /**
      * Path to the word images folder (relative to Laravel project root).
@@ -365,7 +365,7 @@ class OxfordWordsSeeder extends Seeder
                 [
                     'description' => null,
                     'thumbnail' => $thumbnailPath,
-                    'status' => true,
+                    // 'status' => true,
                     'created_by' => $creatorId,
                     'show_example_sentences' => false,
                     'price' => $this->price,

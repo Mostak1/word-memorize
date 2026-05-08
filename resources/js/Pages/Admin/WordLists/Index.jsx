@@ -177,6 +177,12 @@ export default function Index({ categories }) {
                                 <span className="font-medium text-lg truncate">
                                     {category.name}
                                 </span>
+                                {category.is_locked && (
+                                    <Lock
+                                        className="h-4 w-4 text-amber-500 shrink-0"
+                                        title={`Paid Access (৳${category.price})`}
+                                    />
+                                )}
                                 <Badge variant="outline" className="shrink-0">
                                     {category.word_lists_count} lists
                                 </Badge>
@@ -331,9 +337,14 @@ export default function Index({ categories }) {
                                                                         e.stopPropagation()
                                                                     }
                                                                 >
-                                                                    {
-                                                                        wordList.title
-                                                                    }
+                                                                    <div className="flex items-center gap-2">
+                                                                        {
+                                                                            wordList.title
+                                                                        }
+                                                                        {/* {wordList.is_locked && (
+                                                                            <Lock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                                                                        )} */}
+                                                                    </div>
                                                                 </Link>
                                                             </TableCell>
                                                             <TableCell className="text-center">

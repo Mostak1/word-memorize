@@ -1,6 +1,7 @@
 import { Head, Link } from "@inertiajs/react";
 import AppLayout from "@/Layouts/AppLayout";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Lock } from "lucide-react";
+
 import { useTranslation } from "@/Contexts/LanguageContext";
 
 export default function WordListCategoryIndex({ wordListCategories }) {
@@ -28,9 +29,10 @@ export default function WordListCategoryIndex({ wordListCategories }) {
                                         opacity: 0,
                                     }}
                                 >
-                                    <div className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-md active:scale-[0.98] transition-all flex flex-col">
+                                    <div className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-md active:scale-[0.98] transition-all flex flex-col relative">
+
                                         {/* Thumbnail */}
-                                        <div className="w-full aspect-[4/3] bg-gray-100 dark:bg-slate-700 flex items-center justify-center overflow-hidden">
+                                        <div className="w-full aspect-[4/3] bg-gray-100 dark:bg-slate-700 flex items-center justify-center overflow-hidden relative">
                                             {category.thumbnail_url_full ? (
                                                 <img
                                                     src={
@@ -49,7 +51,17 @@ export default function WordListCategoryIndex({ wordListCategories }) {
                                                     </span>
                                                 </div>
                                             )}
+
+                                            {/* Lock overlay */}
+                                            {category.is_locked &&
+                                                !category.has_access && (
+                                                    <div className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 dark:bg-slate-900/90 shadow-sm flex items-center justify-center backdrop-blur-sm">
+                                                        <Lock className="h-4 w-4 text-amber-500" />
+                                                    </div>
+                                                )}
                                         </div>
+
+
 
                                         {/* Info */}
                                         <div className="px-3.5 py-3 h-[72px] flex flex-col justify-between">

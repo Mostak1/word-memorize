@@ -69,8 +69,10 @@ class HandleInertiaRequests extends Middleware
                     'ui_language' => $settings->ui_language ?? 'en',
                 ];
             },
+            'csrf_token' => csrf_token(),
             // ✅ Flash messages for Sonner toasts
             'flash' => [
+
                 'toast' => fn() => $request->session()->get('flash.toast'),
                 'success' => fn() => $request->session()->get('success'),
                 'error' => fn() => $request->session()->get('error'),

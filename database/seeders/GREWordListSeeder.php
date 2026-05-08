@@ -17,7 +17,7 @@ class GREWordListSeeder extends Seeder
      * Path to the CSV file (relative to Laravel project root).
      */
     protected string $filePath = 'database/data/GRE_Words.csv';
-    protected $price = 499;
+    protected $price = 399;
 
     /**
      * Path to the word images folder (relative to Laravel project root).
@@ -252,7 +252,8 @@ class GREWordListSeeder extends Seeder
                 continue;
             }
 
-            $listRaw = $this->clean($row[4] ?? null);
+            // Index 5 is 'list' in the current CSV
+            $listRaw = $this->clean($row[5] ?? null);
 
             if (in_array($listRaw, self::GRE_332_LIST_VALUES, true)) {
                 $buckets['gre332'][] = $row;
@@ -284,7 +285,7 @@ class GREWordListSeeder extends Seeder
                 [
                     'description' => '332 high-frequency words essential for the GRE exam.',
                     'thumbnail' => $thumbnailPath,
-                    'status' => true,
+                    // 'status' => true,
                     'created_by' => $creatorId,
                     'show_example_sentences' => true,
                     'price' => $this->price,
@@ -325,7 +326,7 @@ class GREWordListSeeder extends Seeder
                 [
                     'description' => 'Extended GRE vocabulary beyond the core 332 words.',
                     'thumbnail' => $thumbnailPath,
-                    'status' => true,
+                    // 'status' => true,
                     'created_by' => $creatorId,
                     'show_example_sentences' => true,
                     'price' => $this->price,
@@ -408,18 +409,20 @@ class GREWordListSeeder extends Seeder
         foreach ($rows as $row) {
             // CSV column mapping:
             // 0  word
-            // 1  sentence          → example_sentences
-            // 2  phrase            → useless row
-            // 3  definition
-            // 4  list              (used for grouping, not stored per-word)
-            // 5  type              → parts_of_speech_variations
-            // 6  ipa
-            // 7  pronunciation
-            // 8  bangla_pronunciation
-            // 9  synonyms          → synonym
-            // 10 antonyms          → antonym
-            // 11 bangla_meaning
-            // 12 collocations
+            // 1  sentence                   → image_related_sentence
+            // 2  sentence bangla            → image_related_sentence_bangla
+            // 3  phrase                     → image_related_sentence (fallback)
+            // 4  definition
+            // 5  list                       (used for grouping, not stored per-word)
+            // 6  type                       → parts_of_speech_variations
+            // 7  ipa
+            // 8  pronunciation
+            // 9  bangla_pronunciation
+            // 10 synonyms                   → synonym
+            // 11 antonyms                   → antonym
+            // 12 bangla_meaning
+            // 13 collocations
+            // 14 collocations bangla        → bangla_collocations
 
             $word = $this->clean($row[0] ?? null);
 
@@ -445,17 +448,19 @@ class GREWordListSeeder extends Seeder
                     'wordlist_id' => $wordList->id,
                 ],
                 [
-                    'parts_of_speech_variations' => $this->clean($row[5] ?? null) ?? '',
-                    'ipa' => $this->clean($row[6] ?? null),
-                    'pronunciation' => $this->clean($row[7] ?? null),
-                    'bangla_pronunciation' => $this->clean($row[8] ?? null),
-                    'definition' => $this->clean($row[3] ?? null) ?? '',
-                    'bangla_meaning' => $this->clean($row[11] ?? null),
-                    'collocations' => $this->clean($row[12] ?? null),
-                    'example_sentences' => $this->clean($row[1] ?? null) ?? '',
-                    'synonym' => $this->clean($row[9] ?? null),
-                    'antonym' => $this->clean($row[10] ?? null),
-                    'image_related_sentence' => null, // phrase col (2) intentionally unused; always null
+                    'parts_of_speech_variations' => $this->clean($row[6] ?? null) ?? '',
+                    'ipa' => $this->clean($row[7] ?? null),
+                    'pronunciation' => $this->clean($row[8] ?? null),
+                    'bangla_pronunciation' => $this->clean($row[9] ?? null),
+                    'definition' => $this->clean($row[4] ?? null) ?? '',
+                    'bangla_meaning' => $this->clean($row[12] ?? null),
+                    'collocations' => $this->clean($row[13] ?? null),
+                    'bangla_collocations' => $this->clean($row[14] ?? null),
+                    'example_sentences' => null, // We favor the bilingual image_related_sentence fields
+                    'synonym' => $this->clean($row[10] ?? null),
+                    'antonym' => $this->clean($row[11] ?? null),
+                    'image_related_sentence' => $this->clean($row[1] ?? null),
+                    'image_related_sentence_bangla' => $this->clean($row[2] ?? null),
                     'ai_prompt' => null,
                     'hyphenation' => null,
                     'image_url' => null,

@@ -1,9 +1,5 @@
 export const translations = {
     en: {
-        common: {
-            optional: "optional",
-            required: "required",
-        },
         offline: {
             title: "Connection Lost",
             message: "It looks like you're offline. VocabPix needs an internet connection to continue your learning journey.",
@@ -334,6 +330,9 @@ export const translations = {
             next: "Next",
         },
         common: {
+            optional: "optional",
+            required: "required",
+            loading: "Loading...",
             difficulties: {
                 beginner: "Beginner",
                 easy: "Easy",
@@ -345,6 +344,7 @@ export const translations = {
             previous: "Previous",
             next: "Next",
             page_info: "Page {current} of {total}",
+            locked: "Locked",
         },
         leaderboard: {
             title: "Leaderboard",
@@ -637,6 +637,7 @@ export const translations = {
                 desc_lists: "There are no word lists yet.",
                 go_home: "Go Back Home",
             },
+            load_more: "Load More",
         },
         exercise: {
             head_title: "Exercise — {word}",
@@ -865,10 +866,6 @@ export const translations = {
         },
     },
     bn: {
-        common: {
-            optional: "ঐচ্ছিক",
-            required: "আবশ্যিক",
-        },
         dashboard: {
             title: "ড্যাশবোর্ড",
             subtitle: "শেখা শুরু করুন এবং আপনার শব্দভাণ্ডার বৃদ্ধি করুন",
@@ -1199,6 +1196,9 @@ export const translations = {
             next: "পরবর্তী",
         },
         common: {
+            optional: "ঐচ্ছিক",
+            required: "আবশ্যিক",
+            loading: "লোড হচ্ছে...",
             difficulties: {
                 beginner: "প্রাথমিক",
                 easy: "সহজ",
@@ -1210,6 +1210,7 @@ export const translations = {
             previous: "পূর্ববর্তী",
             next: "পরবর্তী",
             page_info: "{total} এর মধ্যে {current} নম্বর পৃষ্ঠা",
+            locked: "লক করা",
         },
         leaderboard: {
             title: "লিডারবোর্ড",
@@ -1506,6 +1507,7 @@ export const translations = {
                 desc_lists: "এখনো কোনো শব্দ তালিকা তৈরি করা হয়নি।",
                 go_home: "হোমে ফিরে যান",
             },
+            load_more: "আরো দেখুন",
         },
         exercise: {
             head_title: "অনুশীলন — {word}",

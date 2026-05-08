@@ -129,21 +129,21 @@ Route::get('/run-seeder', function () {
     ]);
 });
 
-Route::get('/run-unseeder', function () {
-    try {
-        $seeders = [
-            \Database\Seeders\AcademicWordListSeeder::class,
-            \Database\Seeders\OxfordWordsSeeder::class,
-            \Database\Seeders\GREWordListSeeder::class,
-        ];
-        foreach ($seeders as $seederClass) {
-            app($seederClass)->unseed();
-        }
-        return response()->json(['status' => 'success', 'message' => 'All seeders unseeded successfully.']);
-    } catch (\Throwable $e) {
-        return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
-    }
-});
+// Route::get('/run-unseeder', function () {
+//     try {
+//         $seeders = [
+//             \Database\Seeders\AcademicWordListSeeder::class,
+//             \Database\Seeders\OxfordWordsSeeder::class,
+//             \Database\Seeders\GREWordListSeeder::class,
+//         ];
+//         foreach ($seeders as $seederClass) {
+//             app($seederClass)->unseed();
+//         }
+//         return response()->json(['status' => 'success', 'message' => 'All seeders unseeded successfully.']);
+//     } catch (\Throwable $e) {
+//         return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+//     }
+// });
 
 // Public LinkTree page
 Route::get('/links', [PublicLinkTreeController::class, 'show'])->name('link-tree.show');
@@ -264,4 +264,3 @@ Route::middleware(['auth'])->group(function () {
 Route::get('/api/achievements/unseen', [UserAchievementController::class, 'getUnseen'])->name('api.achievements.unseen');
 
 require __DIR__ . '/auth.php';
-require __DIR__ . '/admin.php';

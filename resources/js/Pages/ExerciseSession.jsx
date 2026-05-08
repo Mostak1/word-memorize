@@ -901,27 +901,52 @@ export default function ExerciseSession({
 
     const collocationList = (() => {
         const raw = word?.collocations;
+        const rawBangla = word?.bangla_collocations;
 
         if (!raw) return [];
 
+        let items = [];
+
         // Case 1: already array (ideal future case)
-        if (Array.isArray(raw)) return raw;
+        if (Array.isArray(raw)) {
+            items = raw;
+        } else {
+            // Case 2: JSON string
+            try {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed)) items = parsed;
+            } catch (e) {
+                // Case 3: fallback (old comma-separated string)
+                items = raw
+                    .split(/[\n,]+/)
+                    .map((c) => c.trim())
+                    .filter(Boolean)
+                    .map((phrase) => ({
+                        phrase,
+                        example_sentence: "",
+                    }));
+            }
+        }
 
-        // Case 2: JSON string
-        try {
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed)) return parsed;
-        } catch (e) {}
+        // Merge Bangla if enabled
+        if (userSettings?.show_bangla && rawBangla) {
+            try {
+                const parsedBangla = JSON.parse(rawBangla);
+                if (Array.isArray(parsedBangla)) {
+                    items = items.map((item, idx) => {
+                        if (parsedBangla[idx]) {
+                            return {
+                                ...item,
+                                bangla: parsedBangla[idx],
+                            };
+                        }
+                        return item;
+                    });
+                }
+            } catch (e) {}
+        }
 
-        // Case 3: fallback (old comma-separated string)
-        return raw
-            .split(/[\n,]+/)
-            .map((c) => c.trim())
-            .filter(Boolean)
-            .map((phrase) => ({
-                phrase,
-                example_sentence: "", // no example available
-            }));
+        return items;
     })();
 
     const collocationColors = [
@@ -1614,6 +1639,14 @@ export default function ExerciseSession({
                                                         word.word,
                                                     )}
                                                 </p>
+                                                {userSettings?.show_bangla &&
+                                                    word.image_related_sentence_bangla && (
+                                                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium italic">
+                                                            {
+                                                                word.image_related_sentence_bangla
+                                                            }
+                                                        </p>
+                                                    )}
                                             </div>
                                         )}
 
@@ -1818,18 +1851,40 @@ export default function ExerciseSession({
                                                                     <div className="flex items-center gap-2">
                                                                         <div className="flex-1">
                                                                             {col.example_sentence ? (
-                                                                                <p className="text-sm leading-snug dark:text-gray-400">
-                                                                                    {renderHighlighted(
-                                                                                        col.example_sentence,
-                                                                                        col.phrase,
-                                                                                    )}
-                                                                                </p>
+                                                                                <>
+                                                                                    <p className="text-sm leading-snug dark:text-gray-400">
+                                                                                        {renderHighlighted(
+                                                                                            col.example_sentence,
+                                                                                            col.phrase,
+                                                                                        )}
+                                                                                    </p>
+                                                                                    {userSettings?.show_bangla &&
+                                                                                        col.bangla?.example_sentence && (
+                                                                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 italic">
+                                                                                                {
+                                                                                                    col.bangla
+                                                                                                        .example_sentence
+                                                                                                }
+                                                                                            </p>
+                                                                                        )}
+                                                                                </>
                                                                             ) : (
-                                                                                <p className="text-xs font-bold uppercase tracking-wide opacity-75 dark:text-gray-100">
-                                                                                    {
-                                                                                        col.phrase
-                                                                                    }
-                                                                                </p>
+                                                                                <>
+                                                                                    <p className="text-xs font-bold uppercase tracking-wide opacity-75 dark:text-gray-100">
+                                                                                        {
+                                                                                            col.phrase
+                                                                                        }
+                                                                                    </p>
+                                                                                    {userSettings?.show_bangla &&
+                                                                                        col.bangla?.phrase && (
+                                                                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 font-medium">
+                                                                                                {
+                                                                                                    col.bangla
+                                                                                                        .phrase
+                                                                                                }
+                                                                                            </p>
+                                                                                        )}
+                                                                                </>
                                                                             )}
                                                                         </div>
                                                                         <button

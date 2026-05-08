@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { router } from "@inertiajs/react";
+import { router, usePage } from "@inertiajs/react";
 import {
     Dialog,
     DialogContent,
@@ -21,6 +21,8 @@ export default function WordListCategoryFormDialog({
 }) {
     const isEditing = !!category;
     const fileInputRef = useRef(null);
+    const { csrf_token } = usePage().props;
+
 
     const [data, setData] = useState({
         name: "",
@@ -102,7 +104,9 @@ export default function WordListCategoryFormDialog({
         setErrors({});
 
         const formData = new FormData();
+        formData.append("_token", csrf_token);
         formData.append("name", data.name);
+
         formData.append("description", data.description ?? "");
         formData.append("status", data.status ? "1" : "0");
         formData.append("is_locked", data.is_locked ? "1" : "0");

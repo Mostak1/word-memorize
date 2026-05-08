@@ -17,7 +17,7 @@ class AcademicWordListSeeder extends Seeder
      * Path to the CSV file (relative to Laravel project root).
      */
     protected string $filePath = 'database/data/Academic_word_list.csv';
-    protected $price = 399;
+    protected $price = 250;
 
     /**
      * Path to the word images folder (relative to Laravel project root).
@@ -263,7 +263,7 @@ class AcademicWordListSeeder extends Seeder
                 [
                     'description' => 'High-frequency words commonly found in academic texts.',
                     'thumbnail' => $thumbnailPath,
-                    'status' => true,
+                    // 'status' => true,
                     'created_by' => $creatorId,
                     'show_example_sentences' => true,
                     'price' => $this->price,
@@ -359,10 +359,10 @@ class AcademicWordListSeeder extends Seeder
 
             $csvWords[] = $word;
 
-            $exampleSentences = implode(' ', array_filter([
-                $this->clean($row[10] ?? null),
+            $exampleSentences = implode('. ', array_filter([
                 $this->clean($row[11] ?? null),
-                $this->clean($row[16] ?? null),
+                $this->clean($row[12] ?? null),
+                $this->clean($row[18] ?? null),
             ]));
 
             $wordModel = Word::updateOrCreate(
@@ -378,11 +378,13 @@ class AcademicWordListSeeder extends Seeder
                     'definition' => $this->clean($row[7] ?? null) ?? '',
                     'bangla_meaning' => $this->clean($row[8] ?? null),
                     'collocations' => $this->clean($row[9] ?? null),
+                    'bangla_collocations' => $this->clean($row[10] ?? null),
                     'example_sentences' => $exampleSentences ?: '',
-                    'synonym' => $this->clean($row[12] ?? null),
-                    'antonym' => $this->clean($row[13] ?? null),
-                    'image_related_sentence' => $this->clean($row[14] ?? null),
-                    'ai_prompt' => $this->clean($row[15] ?? null),
+                    'synonym' => $this->clean($row[13] ?? null),
+                    'antonym' => $this->clean($row[14] ?? null),
+                    'image_related_sentence' => $this->clean($row[15] ?? null),
+                    'image_related_sentence_bangla' => $this->clean($row[16] ?? null),
+                    'ai_prompt' => $this->clean($row[17] ?? null),
                     'hyphenation' => null,
                     'image_url' => null,
                     'created_by' => $creatorId,

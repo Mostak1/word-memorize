@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Head, Link, router, usePage } from "@inertiajs/react";
 import AppLayout from "@/Layouts/AppLayout";
 import PurchaseOrderDialog from "@/Components/PurchaseOrderDialog";
@@ -26,94 +26,33 @@ import {
 } from "@/Components/ui/breadcrumb";
 import { useTranslation } from "@/Contexts/LanguageContext";
 
-function Pagination({ links, meta }) {
+function LoadMore({ meta, onLoadMore, loading }) {
     const { t } = useTranslation();
-    if (!meta || meta.last_page <= 1) return null;
-
-    const { current_page, last_page, from, to, total } = meta;
-
-    const goTo = (url) => {
-        if (url)
-            router.get(url, {}, { preserveScroll: true, preserveState: true });
-    };
-
-    const getPages = () => {
-        const pages = [];
-        const delta = 1;
-
-        for (let i = 1; i <= last_page; i++) {
-            if (
-                i === 1 ||
-                i === last_page ||
-                (i >= current_page - delta && i <= current_page + delta)
-            ) {
-                pages.push(i);
-            } else if (
-                i === current_page - delta - 1 ||
-                i === current_page + delta + 1
-            ) {
-                pages.push("...");
-            }
-        }
-        return pages;
-    };
-
-    const prevLink = links.find((l) => l.label.includes("Previous"))?.url;
-    const nextLink = links.find((l) => l.label.includes("Next"))?.url;
+    const hasNext = meta?.next_page_url || (meta?.current_page < meta?.last_page);
+    
+    if (!meta || !hasNext) return null;
 
     return (
-        <div className="flex flex-col items-center gap-3 mt-6">
-            <p className="text-xs text-gray-400 dark:text-gray-500">
-                {t("wordlists.pagination.showing", { from, to, total })}
-            </p>
-
-            <div className="flex items-center gap-1">
-                <button
-                    onClick={() => goTo(prevLink)}
-                    disabled={!prevLink}
-                    className="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-500 dark:text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-slate-800 hover:border-gray-300 dark:hover:border-slate-600 transition-all shadow-sm"
-                    aria-label={t("wordlists.pagination.previous")}
-                >
-                    <ChevronLeft className="h-4 w-4" />
-                </button>
-
-                {getPages().map((page, i) =>
-                    page === "..." ? (
-                        <span
-                            key={`ellipsis-${i}`}
-                            className="w-9 h-9 flex items-center justify-center text-sm text-gray-400"
-                        >
-                            …
-                        </span>
-                    ) : (
-                        <button
-                            key={page}
-                            onClick={() => {
-                                const link = links.find(
-                                    (l) => l.label === String(page),
-                                );
-                                goTo(link?.url);
-                            }}
-                            className={`w-9 h-9 rounded-xl text-sm font-semibold transition-all shadow-sm border ${
-                                page === current_page
-                                    ? "bg-[#E5201C] text-white border-[#E5201C] shadow-md shadow-red-100 dark:shadow-red-900/30"
-                                    : "bg-white dark:bg-slate-900 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 hover:border-gray-300 dark:hover:border-slate-600"
-                            }`}
-                        >
-                            {page}
-                        </button>
-                    ),
+        <div className="flex flex-col items-center gap-3 mt-8">
+            <button
+                onClick={onLoadMore}
+                disabled={loading}
+                className="group flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-2xl bg-white dark:bg-slate-900 border-2 border-[#E5201C]/10 hover:border-[#E5201C] text-[#E5201C] font-bold transition-all shadow-sm hover:shadow-md disabled:opacity-50 active:scale-95"
+            >
+                {loading ? (
+                    <Clock className="h-4 w-4 animate-spin" />
+                ) : (
+                    <Play className="h-4 w-4 rotate-90 transition-transform group-hover:translate-y-0.5" />
                 )}
-
-                <button
-                    onClick={() => goTo(nextLink)}
-                    disabled={!nextLink}
-                    className="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-500 dark:text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-slate-800 hover:border-gray-300 dark:hover:border-slate-600 transition-all shadow-sm"
-                    aria-label={t("wordlists.pagination.next")}
-                >
-                    <ChevronRight className="h-4 w-4" />
-                </button>
-            </div>
+                {loading ? t("common.loading") : t("wordlists.load_more")}
+            </button>
+            <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 dark:text-gray-500">
+                {t("wordlists.pagination.showing", { 
+                    from: 1, 
+                    to: meta.to, 
+                    total: meta.total 
+                })}
+            </p>
         </div>
     );
 }
@@ -349,6 +288,67 @@ export default function Wordlist({
     const user = auth?.user ?? null;
 
     const [purchaseTarget, setPurchaseTarget] = useState(null);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+    // Dynamic state to accumulate items across loads
+    const [items, setItems] = useState(wordLists?.data ?? []);
+    const [meta, setMeta] = useState(wordLists?.meta ?? wordLists);
+    const [counts, setCounts] = useState(masteredCounts || {});
+    const [eligible, setEligible] = useState(quizEligibleIds || []);
+    const [hasQuiz, setHasQuiz] = useState(hasQuizIds || []);
+    const [unlocked, setUnlocked] = useState(quizUnlockedIds || []);
+    const [prevMap, setPrevMap] = useState(previousWordlistIdMap || {});
+    const [takeable, setTakeable] = useState(quizTakeableIds || []);
+
+    // Reset when category changes
+    useEffect(() => {
+        if (category?.id) {
+            setItems(wordLists?.data ?? []);
+            setMeta(wordLists?.meta ?? wordLists);
+            setCounts(masteredCounts || {});
+            setEligible(quizEligibleIds || []);
+            setHasQuiz(hasQuizIds || []);
+            setUnlocked(quizUnlockedIds || []);
+            setPrevMap(previousWordlistIdMap || {});
+            setTakeable(quizTakeableIds || []);
+        }
+    }, [category?.id]);
+
+    const handleLoadMore = () => {
+        const nextUrl = meta?.next_page_url || meta?.links?.find(l => l.label.includes('Next'))?.url;
+        if (!nextUrl || isLoadingMore) return;
+
+        setIsLoadingMore(true);
+        router.get(nextUrl, {}, {
+            preserveScroll: true,
+            preserveState: true,
+            only: [
+                'wordLists',
+                'masteredCounts',
+                'quizEligibleIds',
+                'hasQuizIds',
+                'quizUnlockedIds',
+                'previousWordlistIdMap',
+                'quizTakeableIds'
+            ],
+            onSuccess: (page) => {
+                const p = page.props;
+                const newItems = p.wordLists?.data ?? [];
+                
+                setItems(prev => [...prev, ...newItems]);
+                setMeta(p.wordLists?.meta ?? p.wordLists);
+                setCounts(prev => ({ ...prev, ...(p.masteredCounts || {}) }));
+                setEligible(prev => [...new Set([...prev, ...(p.quizEligibleIds || [])])]);
+                setHasQuiz(prev => [...new Set([...prev, ...(p.hasQuizIds || [])])]);
+                setUnlocked(prev => [...new Set([...prev, ...(p.quizUnlockedIds || [])])]);
+                setPrevMap(prev => ({ ...prev, ...(p.previousWordlistIdMap || {}) }));
+                setTakeable(prev => [...new Set([...prev, ...(p.quizTakeableIds || [])])]);
+                
+                setIsLoadingMore(false);
+            },
+            onError: () => setIsLoadingMore(false)
+        });
+    };
 
     const getDifficultyBadge = (difficulty) => {
         const d = difficulty?.toLowerCase();
@@ -369,11 +369,11 @@ export default function Wordlist({
         return { star, color };
     };
 
-    const items = Array.isArray(wordLists)
-        ? wordLists
-        : (wordLists?.data ?? []);
-    const paginationLinks = wordLists?.meta?.links ?? wordLists?.links ?? [];
-    const paginationMeta = wordLists?.meta ?? (wordLists?.current_page ? wordLists : null);
+    // const items = Array.isArray(wordLists)
+    //     ? wordLists
+    //     : (wordLists?.data ?? []);
+    // const paginationLinks = wordLists?.meta?.links ?? wordLists?.links ?? [];
+    // const paginationMeta = wordLists?.meta ?? (wordLists?.current_page ? wordLists : null);
 
     // Category is effectively locked when it has is_locked=true and no approved order
     // const categoryIsLocked =
@@ -440,7 +440,7 @@ export default function Wordlist({
                                         wordList.difficulty,
                                     );
                                     const mastered =
-                                        masteredCounts?.[wordList.id] ?? null;
+                                        counts?.[wordList.id] ?? null;
                                     const total = wordList.words_count ?? 0;
 
                                     // Locked by category purchase gate
@@ -484,7 +484,7 @@ export default function Wordlist({
                                     // Locked by quiz gate — is_locked=true and user hasn't passed yet
                                     if (
                                         wordList.is_locked &&
-                                        !quizUnlockedIds.includes(wordList.id)
+                                        !unlocked.includes(wordList.id)
                                     ) {
                                         return (
                                             <div key={wordList.id}>
@@ -493,11 +493,11 @@ export default function Wordlist({
                                                     color={color}
                                                     star={star}
                                                     previousWordlistId={
-                                                        previousWordlistIdMap[
+                                                        prevMap[
                                                             wordList.id
                                                         ] ?? null
                                                     }
-                                                    isTakeable={quizTakeableIds.includes(
+                                                    isTakeable={takeable.includes(
                                                         wordList.id,
                                                     )}
                                                     user={user}
@@ -578,7 +578,7 @@ export default function Wordlist({
                                                 <div className="flex items-center justify-between mt-3">
                                                     <div>
                                                         {user &&
-                                                        quizEligibleIds.includes(
+                                                        eligible.includes(
                                                             wordList.id,
                                                         ) ? (
                                                             <Link
@@ -617,9 +617,10 @@ export default function Wordlist({
                                 })}
                             </div>
 
-                            <Pagination
-                                links={paginationLinks}
-                                meta={paginationMeta}
+                            <LoadMore
+                                meta={meta}
+                                onLoadMore={handleLoadMore}
+                                loading={isLoadingMore}
                             />
                         </>
                     ) : (

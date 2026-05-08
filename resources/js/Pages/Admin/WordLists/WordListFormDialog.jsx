@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { router } from "@inertiajs/react";
+import { router, usePage } from "@inertiajs/react";
 import {
     Dialog,
     DialogContent,
@@ -27,6 +27,7 @@ export default function WordListFormDialog({
     categoryId = null,
 }) {
     const isEditing = !!wordList;
+    const { csrf_token } = usePage().props;
 
     const [data, setData] = useState({
         title: wordList?.title || "",
@@ -79,7 +80,7 @@ export default function WordListFormDialog({
             : route("admin.word-lists.store");
         const method = isEditing ? "patch" : "post";
 
-        router[method](url, data, {
+        router[method](url, { ...data, _token: csrf_token }, {
             preserveState: true,
             preserveScroll: true,
             onSuccess: () => {

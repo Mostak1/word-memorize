@@ -49,7 +49,15 @@ class WordListCategoryController extends Controller
             });
         }
 
-        $wordListCategories = $query->get();
+        $wordListCategories = $query->get()->map(function ($cat) {
+            $cat->has_access = true;
+            if ($cat->is_locked) {
+                $cat->has_access = auth()->check() && UserWordListAccess::where('user_id', auth()->id())
+                    ->where('word_list_category_id', $cat->id)
+                    ->exists();
+            }
+            return $cat;
+        });
 
         return Inertia::render('WordListCategoryIndex', [
             'wordListCategories' => $wordListCategories,
@@ -58,11 +66,39 @@ class WordListCategoryController extends Controller
 
     public function showWordlists(WordListCategory $category)
     {
-        $wordLists = WordList::withCount('words')
-            ->where('word_list_category_id', $category->id)
-            ->where('status', true)
-            ->orderBy('id')
-            ->paginate(12)
+        $userId = auth()->id();
+        $wordListsQuery = WordList::where('word_list_category_id', $category->id)
+            ->where('status', true);
+
+        if ($userId) {
+            $wordListsQuery->select('wordlists.*')
+                ->selectRaw("
+                    CASE 
+                        WHEN EXISTS (
+                            SELECT 1 FROM quiz_attempts qa 
+                            JOIN quizzes q ON qa.quiz_id = q.id 
+                            WHERE q.wordlist_id = wordlists.id 
+                            AND qa.user_id = ? 
+                            AND qa.passed = 1
+                        ) THEN 3 -- Completed
+                        WHEN EXISTS (
+                            SELECT 1 FROM word_progress wp 
+                            JOIN words w ON wp.word_id = w.id 
+                            WHERE w.wordlist_id = wordlists.id 
+                            AND wp.user_id = ?
+                        ) THEN 1 -- In Progress
+                        ELSE 2 -- Not Started
+                    END as progress_sort_order
+                ", [$userId, $userId])
+                ->orderBy('progress_sort_order')
+                ->orderBy('id');
+        } else {
+            $wordListsQuery->orderBy('id');
+        }
+        
+        $wordListsQuery->withCount('words');
+
+        $wordLists = $wordListsQuery->paginate(12)
             ->withQueryString();
 
         // IDs on the current page only

@@ -7,7 +7,9 @@ import {
     BookOpen,
     Layers,
     Star,
+    Lock,
 } from "lucide-react";
+
 import { useTranslation } from "@/Contexts/LanguageContext";
 
 export default function MasteredWords({ wordlists, totalMastered }) {
@@ -106,98 +108,130 @@ export default function MasteredWords({ wordlists, totalMastered }) {
                     {wordlists && wordlists.length > 0 ? (
                         <div className="space-y-3">
                             {wordlists.map((wl, index) => {
-                                const cfg = getDifficultyConfig(wl.difficulty);
-                                return (
-                                    <Link
-                                        key={wl.id}
-                                        href={route(
-                                            "words.mastered.byList",
-                                            wl.id,
-                                        )}
-                                        className="block"
-                                        style={{
-                                            animationDelay: `${index * 0.06}s`,
-                                            animation:
-                                                "fadeInUp 0.4s ease-out forwards",
-                                            opacity: 0,
-                                        }}
-                                    >
-                                        <div
-                                            className={`bg-white dark:bg-slate-800 rounded-2xl px-5 py-4 shadow-sm hover:shadow-md dark:hover:shadow-lg transition-all ${cfg.glow}`}
-                                        >
-                                            <div className="flex items-center justify-between gap-3">
-                                                <div className="flex items-center gap-3 min-w-0">
-                                                    <div className="w-10 h-10 rounded-xl bg-green-50 dark:bg-green-950/30 flex items-center justify-center shrink-0">
-                                                        <Layers className="h-5 w-5 text-green-600 dark:text-green-400" />
-                                                    </div>
-                                                    <div className="min-w-0">
-                                                        <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 truncate">
-                                                            {wl.title}
-                                                        </h3>
-                                                        <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                                            {wl.difficulty && (
-                                                                <span
-                                                                    className={`text-xs font-medium px-2 py-0.5 rounded-full border ${cfg.badge}`}
-                                                                >
+                                        const cfg = getDifficultyConfig(wl.difficulty);
+                                        const isLocked = wl.is_locked && !wl.has_access;
+                                        const CardContent = (
+                                            <div
+                                                className={`bg-white dark:bg-slate-800 rounded-2xl px-5 py-4 shadow-sm hover:shadow-md dark:hover:shadow-lg transition-all ${cfg.glow} ${isLocked ? "opacity-90" : ""}`}
+                                            >
+                                                <div className="flex items-center justify-between gap-3">
+                                                    <div className="flex items-center gap-3 min-w-0">
+                                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isLocked ? "bg-amber-50 dark:bg-amber-950/30" : "bg-green-50 dark:bg-green-950/30"}`}>
+                                                            {isLocked ? (
+                                                                <Lock className="h-5 w-5 text-amber-500" />
+                                                            ) : (
+                                                                <Layers className="h-5 w-5 text-green-600 dark:text-green-400" />
+                                                            )}
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 truncate flex items-center gap-2">
+                                                                {wl.title}
+                                                            </h3>
+                                                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                                                {wl.difficulty && (
+                                                                    <span
+                                                                        className={`text-xs font-medium px-2 py-0.5 rounded-full border ${cfg.badge}`}
+                                                                    >
+                                                                        {t(
+                                                                            `common.difficulties.${wl.difficulty.toLowerCase()}`,
+                                                                            {
+                                                                                defaultValue:
+                                                                                    wl.difficulty,
+                                                                            },
+                                                                        )}
+                                                                    </span>
+                                                                )}
+                                                                <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 dark:text-green-400">
+                                                                    <Trophy className="h-3 w-3" />
                                                                     {t(
-                                                                        `common.difficulties.${wl.difficulty.toLowerCase()}`,
+                                                                        "mastered.list_item_mastered",
                                                                         {
-                                                                            defaultValue:
-                                                                                wl.difficulty,
+                                                                            count: wl.mastered_count,
                                                                         },
                                                                     )}
                                                                 </span>
-                                                            )}
-                                                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 dark:text-green-400">
-                                                                <Trophy className="h-3 w-3" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    {!isLocked ? (
+                                                        <ChevronRight className="h-5 w-5 text-gray-300 dark:text-slate-600 shrink-0" />
+                                                    ) : (
+                                                        <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">
+                                                            {t("common.locked", {
+                                                                defaultValue:
+                                                                    "Locked",
+                                                            })}
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                {/* Progress bar */}
+                                                {wl.total_words > 0 && (
+                                                    <div className="mt-3">
+                                                        <div className="flex justify-between text-xs text-gray-400 dark:text-slate-500 mb-1">
+                                                            <span>
                                                                 {t(
-                                                                    "mastered.list_item_mastered",
+                                                                    "mastered.progress_words",
                                                                     {
                                                                         count: wl.mastered_count,
+                                                                        total: wl.total_words,
                                                                     },
                                                                 )}
                                                             </span>
+                                                            <span>
+                                                                {Math.round(
+                                                                    (wl.mastered_count /
+                                                                        wl.total_words) *
+                                                                        100,
+                                                                )}
+                                                                %
+                                                            </span>
+                                                        </div>
+                                                        <div className="h-1.5 bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                                                            <div
+                                                                className={`h-full rounded-full ${cfg.bar} transition-all`}
+                                                                style={{
+                                                                    width: `${Math.min(100, (wl.mastered_count / wl.total_words) * 100)}%`,
+                                                                }}
+                                                            />
                                                         </div>
                                                     </div>
-                                                </div>
-                                                <ChevronRight className="h-5 w-5 text-gray-300 dark:text-slate-600 shrink-0" />
+                                                )}
                                             </div>
+                                        );
 
-                                            {/* Progress bar */}
-                                            {wl.total_words > 0 && (
-                                                <div className="mt-3">
-                                                    <div className="flex justify-between text-xs text-gray-400 dark:text-slate-500 mb-1">
-                                                        <span>
-                                                            {t(
-                                                                "mastered.progress_words",
-                                                                {
-                                                                    count: wl.mastered_count,
-                                                                    total: wl.total_words,
-                                                                },
-                                                            )}
-                                                        </span>
-                                                        <span>
-                                                            {Math.round(
-                                                                (wl.mastered_count /
-                                                                    wl.total_words) *
-                                                                    100,
-                                                            )}
-                                                            %
-                                                        </span>
-                                                    </div>
-                                                    <div className="h-1.5 bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                                                        <div
-                                                            className={`h-full rounded-full ${cfg.bar} transition-all`}
-                                                            style={{
-                                                                width: `${Math.min(100, (wl.mastered_count / wl.total_words) * 100)}%`,
-                                                            }}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </Link>
-                                );
+                                        return isLocked ? (
+                                            <div
+                                                key={wl.id}
+                                                className="block cursor-not-allowed"
+                                                style={{
+                                                    animationDelay: `${index * 0.06}s`,
+                                                    animation:
+                                                        "fadeInUp 0.4s ease-out forwards",
+                                                    opacity: 0,
+                                                }}
+                                            >
+                                                {CardContent}
+                                            </div>
+                                        ) : (
+                                            <Link
+                                                key={wl.id}
+                                                href={route(
+                                                    "words.mastered.byList",
+                                                    wl.id,
+                                                )}
+                                                className="block"
+                                                style={{
+                                                    animationDelay: `${index * 0.06}s`,
+                                                    animation:
+                                                        "fadeInUp 0.4s ease-out forwards",
+                                                    opacity: 0,
+                                                }}
+                                            >
+                                                {CardContent}
+                                            </Link>
+                                        );
+
                             })}
                         </div>
                     ) : (

@@ -20,10 +20,10 @@ use App\Http\Controllers\Admin\AchievementController;
 use App\Http\Controllers\Admin\UserProgressController;
 use Illuminate\Support\Facades\Route;
 
-Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin', 'as' => 'admin.'], function () {
 
-    // ── Dashboard ──────────────────────────────────────────────────────────────
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+// ── Dashboard ──────────────────────────────────────────────────────────────
+Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
 
     // ── Admin Profile ──────────────────────────────────────────────────────────
     Route::prefix('profile')->name('profile.')->group(function () {
@@ -165,5 +165,4 @@ Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin', 'as' => 'a
             Route::post('/{link}/thumbnail', [LinkTreeLinkController::class, 'uploadThumbnail'])->name('thumbnail.upload');
             Route::delete('/{link}/thumbnail', [LinkTreeLinkController::class, 'deleteThumbnail'])->name('thumbnail.delete');
         });
-    });
 });

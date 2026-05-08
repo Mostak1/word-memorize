@@ -171,7 +171,15 @@ class ReviewWordController extends Controller
 
         [$query, $sessionTitle] = $this->getReviseQuery($user, $filter);
 
-        $wordIds = $query->pluck('word_id')->toArray();
+        // Exclude locked words from the session
+        $wordIds = $query->whereHas('word.wordList.category', function ($q) use ($user) {
+            $q->where('is_locked', false)
+                ->orWhereIn('id', function ($q2) use ($user) {
+                    $q2->select('word_list_category_id')
+                        ->from('user_word_list_access')
+                        ->where('user_id', $user->id);
+                });
+        })->pluck('word_id')->toArray();
 
         // Try SRS-ordered due words first
         $words = $this->srsService->getDueWordsByIds($user, $wordIds);
@@ -218,9 +226,24 @@ class ReviewWordController extends Controller
         [$query, $title] = $this->getReviseQuery($user, $filter);
 
         $words = Word::whereIn('id', $query->pluck('word_id'))
-            ->with(['wordList', 'images'])
+            ->with(['wordList.category', 'images'])
             ->paginate(15)
-            ->withQueryString();
+            ->withQueryString()
+            ->through(function ($word) use ($user) {
+                $category = $word->wordList?->category;
+                $isLocked = (bool) ($category?->is_locked ?? false);
+                $hasAccess = true;
+
+                if ($isLocked && $category) {
+                    $hasAccess = \App\Models\UserWordListAccess::where('user_id', $user->id)
+                        ->where('word_list_category_id', $category->id)
+                        ->exists();
+                }
+
+                $word->is_locked = $isLocked;
+                $word->has_access = $hasAccess;
+                return $word;
+            });
 
         return Inertia::render('ReviseWordsList', [
             'words' => $words,
@@ -297,7 +320,8 @@ class ReviewWordController extends Controller
             return ['all' => 0, 'learning' => 0, 'reviewing' => 0, 'more_practice' => 0];
         }
 
-        $base = WordProgress::where('user_id', $user->id)
+        $userId = $user->id;
+        $base = WordProgress::where('user_id', $userId)
             ->where('box', '<', WordProgress::MASTERED_BOX);
 
         return [
@@ -306,6 +330,25 @@ class ReviewWordController extends Controller
             'reviewing' => (clone $base)->where('box', 3)->count(),
             'more_practice' => (clone $base)->where('incorrect_count', '>=', 2)->count(),
         ];
+    }
+
+    public function reviewWords()
+    {
+        $userId = auth()->id();
+        $words = ReviewWord::where('user_id', $userId)
+            ->whereHas('word.wordList.category', function ($q) use ($userId) {
+                $q->where('is_locked', false)
+                    ->orWhereIn('id', function ($q2) use ($userId) {
+                        $q2->select('word_list_category_id')
+                            ->from('user_word_list_access')
+                            ->where('user_id', $userId);
+                    });
+            })
+            ->with(['word.wordList', 'word.images'])
+            ->latest()->paginate(20)->withQueryString()
+            ->through(fn($e) => $e->word);
+
+        return Inertia::render('ReviewWords', ['words' => $words]);
     }
 
     private function wordListAwardsXp(Word $word): bool

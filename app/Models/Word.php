@@ -21,6 +21,7 @@ class Word extends Model
         'definition',
         'bangla_meaning',
         'collocations',
+        'bangla_collocations',
         'example_sentences',
         'ai_prompt',
         'synonym',
@@ -28,6 +29,7 @@ class Word extends Model
         // Legacy single-image columns — kept for backward compat
         'image_url',
         'image_related_sentence',
+        'image_related_sentence_bangla',
         'created_by',
         'is_public',
     ];
