@@ -999,7 +999,7 @@ export default function ExerciseSession({
     // ── Loading Screen ─────────────────────────────────────────────────────
     if (isPreloading) {
         return (
-            <AppLayout>
+            <AppLayout hideHeader={true}>
                 <Head title="Loading Session..." />
                 <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 flex flex-col items-center justify-center px-4">
                     <div className="max-w-md w-full text-center">
@@ -1046,7 +1046,7 @@ export default function ExerciseSession({
     // ── Empty queue (nothing due, nothing new) ────────────────────────────────
     if (initialQueueSize === 0) {
         return (
-            <AppLayout>
+            <AppLayout hideHeader={true}>
                 <Head title="All Caught Up!" />
                 <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 flex flex-col items-center justify-center px-4 py-10">
                     <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-md dark:shadow-xl dark:shadow-slate-950 w-full max-w-md p-8 text-center">
@@ -1085,7 +1085,7 @@ export default function ExerciseSession({
     if (isDone) {
         const retries = dontKnowCount; // total "I Don't Know" taps during session
         return (
-            <AppLayout>
+            <AppLayout hideHeader={true}>
                 <Head title="Session Complete" />
                 {/* StreakPop overlay — only for streak increase */}
                 {showStreakEffect && streakChange === "up" && (
@@ -1309,7 +1309,7 @@ export default function ExerciseSession({
             : 0;
 
     return (
-        <AppLayout>
+        <AppLayout hideHeader={true}>
             <Head title={`Exercise — ${word?.word ?? ""}`} />
             <FlashMessages />
 

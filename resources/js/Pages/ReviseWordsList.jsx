@@ -70,7 +70,7 @@ export default function ReviseWordsList({ words, filter, title }) {
     };
 
     return (
-        <AppLayout>
+        <AppLayout hideHeader={true}>
             <Head title={pageTitle} />
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 pb-20">
                 <div className="max-w-xl mx-auto px-4 pt-5">

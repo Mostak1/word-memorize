@@ -5,41 +5,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VocabPix — Learn Vocabulary Scientifically</title>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800;900&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800;900&display=swap"
         rel="stylesheet">
     <style>
         @font-face {
             font-family: 'Aileron';
-            src: url('{{ asset('fonts/aileron/Aileron-Regular.otf') }}') format('opentype');
+            src: url('{{ asset(' fonts/aileron/Aileron-Regular.otf') }}') format('opentype');
             font-weight: 400;
             font-style: normal;
         }
 
         @font-face {
             font-family: 'Aileron';
-            src: url('{{ asset('fonts/aileron/Aileron-SemiBold.otf') }}') format('opentype');
+            src: url('{{ asset(' fonts/aileron/Aileron-SemiBold.otf') }}') format('opentype');
             font-weight: 600;
             font-style: normal;
         }
 
         @font-face {
             font-family: 'Aileron';
-            src: url('{{ asset('fonts/aileron/Aileron-Bold.otf') }}') format('opentype');
+            src: url('{{ asset(' fonts/aileron/Aileron-Bold.otf') }}') format('opentype');
             font-weight: 700;
             font-style: normal;
         }
 
         @font-face {
             font-family: 'Aileron';
-            src: url('{{ asset('fonts/aileron/Aileron-Heavy.otf') }}') format('opentype');
+            src: url('{{ asset(' fonts/aileron/Aileron-Heavy.otf') }}') format('opentype');
             font-weight: 800;
             font-style: normal;
         }
 
         @font-face {
             font-family: 'Aileron';
-            src: url('{{ asset('fonts/aileron/Aileron-Black.otf') }}') format('opentype');
+            src: url('{{ asset(' fonts/aileron/Aileron-Black.otf') }}') format('opentype');
             font-weight: 900;
             font-style: normal;
         }
@@ -2116,15 +2115,19 @@
             <div class="pricing-grid">
                 <!-- Oxford 3000 -->
                 <div class="price-card">
-                    <div class="price-plan"><span class="t-en">Oxford 3000</span><span class="t-bn">অক্সফোর্ড ৩০০০</span>
+                    <div class="price-plan"><span class="t-en">Oxford 3000</span><span class="t-bn">অক্সফোর্ড
+                            ৩০০০</span>
                     </div>
                     <div class="price-amount"><sub>৳</sub>599</div>
                     <div class="price-period"><span class="t-en">One-time purchase</span><span class="t-bn">এককালীন
                             ক্রয়</span></div>
                     <ul class="price-features">
-                        <li><span class="t-en">3000 Essential English Words</span><span class="t-bn">৩০০০টি প্রয়োজনীয় ইংরেজি শব্দ</span></li>
-                        <li><span class="t-en">Scientific Memory Anchoring</span><span class="t-bn">বৈজ্ঞানিক মেমোরি অ্যাঙ্করিং</span></li>
-                        <li><span class="t-en">Image + Audio for every word</span><span class="t-bn">প্রতিটি শব্দে ছবি + অডিও</span></li>
+                        <li><span class="t-en">3000 Essential English Words</span><span class="t-bn">৩০০০টি প্রয়োজনীয়
+                                ইংরেজি শব্দ</span></li>
+                        <li><span class="t-en">Scientific Memory Anchoring</span><span class="t-bn">বৈজ্ঞানিক মেমোরি
+                                অ্যাঙ্করিং</span></li>
+                        <li><span class="t-en">Image + Audio for every word</span><span class="t-bn">প্রতিটি শব্দে ছবি +
+                                অডিও</span></li>
                         <li><span class="t-en">Lifetime Access</span><span class="t-bn">আজীবন প্রবেশাধিকার</span></li>
                     </ul>
                     <a href="#enroll" class="btn-ghost" style="display:block;text-align:center;padding:13px">
@@ -2133,15 +2136,19 @@
                 </div>
                 <!-- Academic -->
                 <div class="price-card">
-                    <div class="price-plan"><span class="t-en">Academic Word List</span><span class="t-bn">অ্যাকাডেমিক শব্দ তালিকা</span>
+                    <div class="price-plan"><span class="t-en">Academic Word List</span><span class="t-bn">অ্যাকাডেমিক
+                            শব্দ তালিকা</span>
                     </div>
                     <div class="price-amount"><sub>৳</sub>250</div>
                     <div class="price-period"><span class="t-en">One-time purchase</span><span class="t-bn">এককালীন
                             ক্রয়</span></div>
                     <ul class="price-features">
-                        <li><span class="t-en">Essential Academic Vocabulary</span><span class="t-bn">প্রয়োজনীয় অ্যাকাডেমিক শব্দভান্ডার</span></li>
-                        <li><span class="t-en">University & Research Focus</span><span class="t-bn">বিশ্ববিদ্যালয় ও গবেষণা ফোকাস</span></li>
-                        <li><span class="t-en">Advanced Example Sentences</span><span class="t-bn">উন্নত উদাহরণ বাক্য</span></li>
+                        <li><span class="t-en">Essential Academic Vocabulary</span><span class="t-bn">প্রয়োজনীয়
+                                অ্যাকাডেমিক শব্দভান্ডার</span></li>
+                        <li><span class="t-en">University & Research Focus</span><span class="t-bn">বিশ্ববিদ্যালয় ও
+                                গবেষণা ফোকাস</span></li>
+                        <li><span class="t-en">Advanced Example Sentences</span><span class="t-bn">উন্নত উদাহরণ
+                                বাক্য</span></li>
                         <li><span class="t-en">Lifetime Access</span><span class="t-bn">আজীবন প্রবেশাধিকার</span></li>
                     </ul>
                     <a href="#enroll" class="btn-ghost" style="display:block;text-align:center;padding:13px">
@@ -2152,17 +2159,22 @@
                 <div class="price-card featured">
                     <div class="price-badge">🔥 <span class="t-en">Most Popular</span><span class="t-bn">সবচেয়ে
                             জনপ্রিয়</span></div>
-                    <div class="price-plan"><span class="t-en">GRE Extended</span><span class="t-bn">জিআরই এক্সটেন্ডেড</span></div>
+                    <div class="price-plan"><span class="t-en">GRE Extended</span><span class="t-bn">জিআরই
+                            এক্সটেন্ডেড</span></div>
                     <div class="price-amount"><sub>৳</sub>399</div>
                     <div class="price-period"><span class="t-en">One-time purchase</span><span class="t-bn">এককালীন
                             ক্রয়</span></div>
                     <ul class="price-features">
-                        <li><span class="t-en">800+ High-Frequency Words</span><span class="t-bn">৮০০+ উচ্চ-ফ্রিকোয়েন্সি শব্দ</span></li>
-                        <li><span class="t-en">Designed for GRE Verbal</span><span class="t-bn">জিআরই ভার্বাল এর জন্য ডিজাইন করা</span></li>
-                        <li><span class="t-en">Scientific Spaced Repetition</span><span class="t-bn">বৈজ্ঞানিক স্পেসড রিপিটিশন</span></li>
+                        <li><span class="t-en">800+ High-Frequency Words</span><span class="t-bn">৮০০+
+                                উচ্চ-ফ্রিকোয়েন্সি শব্দ</span></li>
+                        <li><span class="t-en">Designed for GRE Verbal</span><span class="t-bn">জিআরই ভার্বাল এর জন্য
+                                ডিজাইন করা</span></li>
+                        <li><span class="t-en">Scientific Spaced Repetition</span><span class="t-bn">বৈজ্ঞানিক স্পেসড
+                                রিপিটিশন</span></li>
                         <li><span class="t-en">Lifetime Access</span><span class="t-bn">আজীবন প্রবেশাধিকার</span></li>
                     </ul>
-                    <a href="#enroll" class="btn-red" style="display:block;text-align:center;padding:13px;border-radius:12px">
+                    <a href="#enroll" class="btn-red"
+                        style="display:block;text-align:center;padding:13px;border-radius:12px">
                         <span class="t-en">Buy Now →</span><span class="t-bn">এখনই কিনুন →</span>
                     </a>
                 </div>
@@ -2173,9 +2185,12 @@
                     <div class="price-period"><span class="t-en">One-time purchase</span><span class="t-bn">এককালীন
                             ক্রয়</span></div>
                     <ul class="price-features">
-                        <li><span class="t-en">332 Essential GRE Words</span><span class="t-bn">৩৩২টি প্রয়োজনীয় জিআরই শব্দ</span></li>
-                        <li><span class="t-en">Quick Prep Focused</span><span class="t-bn">দ্রুত প্রস্তুতি ফোকাসড</span></li>
-                        <li><span class="t-en">Memory Cues in Bangla</span><span class="t-bn">বাংলায় মেমোরি কিউ</span></li>
+                        <li><span class="t-en">332 Essential GRE Words</span><span class="t-bn">৩৩২টি প্রয়োজনীয় জিআরই
+                                শব্দ</span></li>
+                        <li><span class="t-en">Quick Prep Focused</span><span class="t-bn">দ্রুত প্রস্তুতি ফোকাসড</span>
+                        </li>
+                        <li><span class="t-en">Memory Cues in Bangla</span><span class="t-bn">বাংলায় মেমোরি কিউ</span>
+                        </li>
                         <li><span class="t-en">Lifetime Access</span><span class="t-bn">আজীবন প্রবেশাধিকার</span></li>
                     </ul>
                     <a href="#enroll" class="btn-ghost" style="display:block;text-align:center;padding:13px">
@@ -2243,14 +2258,31 @@
                             </div>
                         </div>
                         <div class="fg">
-                            <label><span class="t-en">Daily Word Target</span><span class="t-bn">দৈনিক শব্দ
-                                    লক্ষ্যমাত্রা</span></label>
-                            <select id="dg">
-                                <option value=""><span class="t-en">Choose daily goal...</span></option>
-                                <option>20 words/day — Casual</option>
-                                <option>40 words/day — Steady</option>
-                                <option>60 words/day — Intensive</option>
-                                <option>80+ words/day — Expert</option>
+                            <label><span class="t-en">WhatsApp Number</span><span class="t-bn">হোয়াটসঅ্যাপ
+                                    নম্বর</span></label>
+                            <input type="text" id="wa" placeholder="e.g. 01712345678">
+                        </div>
+                        @php
+                        $districts = [
+                        'Bagerhat', 'Bandarban', 'Barguna', 'Barisal', 'Bhola', 'Bogura', 'Brahmanbaria', 'Chandpur',
+                        'Chapai Nawabganj', 'Chattogram', 'Chuadanga', 'Cumilla', "Cox's Bazar", 'Dhaka', 'Dinajpur',
+                        'Faridpur', 'Feni', 'Gaibandha', 'Gazipur', 'Gopalganj', 'Habiganj', 'Jamalpur', 'Jashore',
+                        'Jhalokathi', 'Jhenaidah', 'Joypurhat', 'Khagrachari', 'Khulna', 'Kishoreganj', 'Kurigram',
+                        'Kushtia', 'Lakshmipur', 'Lalmonirhat', 'Madaripur', 'Magura', 'Manikganj', 'Meherpur',
+                        'Moulvibazar', 'Munshiganj', 'Mymensingh', 'Naogaon', 'Narail', 'Narayanganj', 'Narsingdi',
+                        'Natore', 'Netrokona', 'Nilphamari', 'Noakhali', 'Pabna', 'Panchagarh', 'Patuakhali',
+                        'Pirojpur', 'Rajbari', 'Rajshahi', 'Rangamati', 'Rangpur', 'Satkhira', 'Shariatpur',
+                        'Sherpur', 'Sirajganj', 'Sunamganj', 'Sylhet', 'Tangail', 'Thakurgaon', 'Expat'
+                        ];
+                        @endphp
+                        <div class="fg">
+                            <label><span class="t-en">Location (where you are joining from)</span><span
+                                    class="t-bn">স্থান (আপনি যেখান থেকে যুক্ত হচ্ছেন)</span></label>
+                            <select id="loc">
+                                <option value="">Choose location...</option>
+                                @foreach($districts as $district)
+                                <option value="{{ $district }}">{{ $district }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <button class="form-submit" onclick="doRegister()">

@@ -123,6 +123,10 @@ export const translations = {
             changes_immediate:
                 "Changes take effect immediately across the whole app.",
             saved: "Settings saved",
+            appearance: "Appearance",
+            dark_mode: "Dark Mode",
+            dark_mode_desc_on: "Dark theme is active",
+            dark_mode_desc_off: "Light theme is active",
         },
         bookmarks: {
             title: "Bookmarked Words",
@@ -987,6 +991,10 @@ export const translations = {
             changes_immediate:
                 "পরিবর্তনগুলো অবিলম্বে পুরো অ্যাপ জুড়ে কার্যকর হবে।",
             saved: "সেটিংস সংরক্ষিত হয়েছে",
+            appearance: "অ্যাপিয়ারেন্স",
+            dark_mode: "ডার্ক মোড",
+            dark_mode_desc_on: "ডার্ক থিম সক্রিয় আছে",
+            dark_mode_desc_off: "লাইট থিম সক্রিয় আছে",
         },
         bookmarks: {
             title: "বুকমার্ক করা শব্দ",

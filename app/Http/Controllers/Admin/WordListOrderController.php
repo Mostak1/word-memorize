@@ -61,11 +61,21 @@ class WordListOrderController extends Controller
 
         $mailable = new WordListOrderStatusMail($order);
 
-        if (config('mail_queue.is_queue')) {
+        if (config('settings.mail_queue')) {
           Mail::to($userEmail)->cc(config('settings.receiver_email'))->queue($mailable);
+          Log::info('Order status email queued', [
+            'order_id' => $order->id,
+            'user_email' => $userEmail,
+            'status' => $order->status
+          ]);
         } else {
           Mail::purge('smtp');
           Mail::mailer('smtp')->to($userEmail)->cc(config('settings.receiver_email'))->send($mailable);
+          Log::info('Order status email sent (sync)', [
+            'order_id' => $order->id,
+            'user_email' => $userEmail,
+            'status' => $order->status
+          ]);
         }
       } catch (\Exception $e) {
         Log::error('Failed to send order status email to user', [

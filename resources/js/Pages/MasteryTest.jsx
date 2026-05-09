@@ -612,7 +612,7 @@ export default function MasteryTest({
 
     if (showIntro && !noMasteredWords && !noUsableSentences) {
         return (
-            <AppLayout>
+            <AppLayout hideHeader={true}>
                 <Head title={t("quiz.title")} />
                 <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 flex justify-center px-4 pt-4">
                     <div
@@ -699,7 +699,7 @@ export default function MasteryTest({
         const pct = Math.round((score / total) * 100);
         const emoji = pct >= 80 ? "🎉" : pct >= 50 ? "👍" : "💪";
         return (
-            <AppLayout>
+            <AppLayout hideHeader={true}>
                 <Head title={t("quiz.results_title")} />
                 {done && showAnimation && !showStreakEffect && (
                     <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center">
@@ -917,7 +917,7 @@ export default function MasteryTest({
     }
 
     return (
-        <AppLayout>
+        <AppLayout hideHeader={true}>
             <Head title={q?.word ? `${q.word} - Quiz` : t("quiz.title")} />
             <Toaster position="top-center" expand={false} richColors />
             {showStreakEffect && (

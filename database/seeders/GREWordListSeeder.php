@@ -49,8 +49,8 @@ class GREWordListSeeder extends Seeder
     /**
      * Category names for the two GRE buckets.
      */
-    private const GRE_332_CATEGORY_NAME = 'GRE 332';
-    private const GRE_EXTENDED_CATEGORY_NAME = 'GRE Extended';
+    private const GRE_332_CATEGORY_NAME = 'Advanced Essential Words';
+    private const GRE_EXTENDED_CATEGORY_NAME = 'IBA / GRE / GMAT / SAT Master Vocabulary';
 
     /**
      * How many words per WordList inside each category.
@@ -277,14 +277,12 @@ class GREWordListSeeder extends Seeder
             $totalImagesSkip = 0;
             $allNoImageWords = [];
 
-            $thumbnailPath = $this->copyCategoryThumbnail('GRE.jpeg');
-
             // ── GRE 332 category (20 words per WordList) ──────────────────────
             $gre332Category = WordListCategory::updateOrCreate(
                 ['name' => self::GRE_332_CATEGORY_NAME],
                 [
                     'description' => '332 high-frequency words essential for the GRE exam.',
-                    'thumbnail' => $thumbnailPath,
+                    'thumbnail' => $this->copyCategoryThumbnail('Advanced_essential.webp'),
                     // 'status' => true,
                     'created_by' => $creatorId,
                     'show_example_sentences' => true,
@@ -325,7 +323,7 @@ class GREWordListSeeder extends Seeder
                 ['name' => self::GRE_EXTENDED_CATEGORY_NAME],
                 [
                     'description' => 'Extended GRE vocabulary beyond the core 332 words.',
-                    'thumbnail' => $thumbnailPath,
+                    'thumbnail' => $this->copyCategoryThumbnail('IBA.webp'),
                     // 'status' => true,
                     'created_by' => $creatorId,
                     'show_example_sentences' => true,
@@ -384,12 +382,13 @@ class GREWordListSeeder extends Seeder
         // First sublist (GRE 333) is free; the rest are locked
         $isLocked = $index >= 1;
 
-        $wordList = WordList::firstOrCreate(
+        $wordList = WordList::updateOrCreate(
             [
                 'word_list_category_id' => $categoryId,
-                'title' => $title,
+                
             ],
             [
+                'title' => $title,
                 'difficulty' => 'advanced',
                 'status' => true,
                 'is_locked' => $isLocked,

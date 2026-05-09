@@ -109,19 +109,22 @@ function CategoryLockBanner({
     if (userHasAccess) return null;
 
     return (
-        <div className="mb-4 rounded-2xl overflow-hidden shadow-sm border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30">
+        <div className="mb-4 rounded-2xl overflow-hidden shadow-sm border border-red-200 dark:border-red-900/30 bg-red-50 dark:bg-red-950/20">
             <div className="px-5 py-4">
                 <div className="flex items-start gap-3">
-                    <div className="mt-0.5 flex-shrink-0">
-                        <Lock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                    <div 
+                        className="mt-0.5 flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center"
+                        style={{ animation: 'lockPulse 2s infinite alternate ease-in-out' }}
+                    >
+                        <Lock className="h-5 w-5 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-amber-800 dark:text-amber-300 mb-0.5">
+                        <p className="text-sm font-bold text-red-900 dark:text-red-300 mb-0.5">
                             {t("wordlists.category_locked.title")}
                         </p>
 
                         {orderStatus === "pending" ? (
-                            <div className="flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-400">
+                                <div className="flex items-center gap-1.5 text-xs text-red-700 dark:text-red-400">
                                 <Clock className="h-3.5 w-3.5 shrink-0" />
                                 {t("wordlists.category_locked.pending")}
                             </div>
@@ -153,7 +156,7 @@ function CategoryLockBanner({
                             </div>
                         ) : (
                             <div className="flex items-center justify-between mt-1 flex-wrap gap-2">
-                                <p className="text-xs text-amber-700 dark:text-amber-400">
+                                <p className="text-xs text-red-700 dark:text-red-400">
                                     {category.price > 0
                                         ? t("wordlists.category_locked.purchase_desc", { price: category.price })
                                         : t("wordlists.category_locked.purchase_desc_free")}
@@ -217,7 +220,9 @@ function QuizLockedCard({
                 </h2>
                 <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
                     <GraduationCap className="h-4 w-4 text-indigo-400 dark:text-indigo-500" />
-                    <Lock className="h-4 w-4 text-indigo-400 dark:text-indigo-500" />
+                    <div className="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center border border-indigo-100 dark:border-indigo-800">
+                        <Lock className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                    </div>
                 </div>
             </div>
 
@@ -381,7 +386,7 @@ export default function Wordlist({
     const categoryIsLocked = category?.is_locked && !userHasAccess;
 
     return (
-        <AppLayout>
+        <AppLayout hideHeader={true}>
             <Head title={t("wordlists.title")} />
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
                 <main className="max-w-2xl mx-auto px-4 py-5 pb-20">
@@ -460,7 +465,9 @@ export default function Wordlist({
                                                         <h2 className="text-base font-bold text-gray-500 dark:text-gray-400 leading-snug flex-1">
                                                             {wordList.title}
                                                         </h2>
-                                                        <Lock className="h-4 w-4 text-gray-300 dark:text-gray-600 shrink-0 mt-1" />
+                                                        <div className="w-8 h-8 rounded-lg bg-gray-50 dark:bg-slate-800 flex items-center justify-center border border-gray-100 dark:border-slate-700">
+                                                            <Lock className="h-4 w-4 text-gray-400 dark:text-gray-500 shrink-0" />
+                                                        </div>
                                                     </div>
 
                                                     <div className="flex items-center gap-2">
@@ -647,6 +654,11 @@ export default function Wordlist({
                     @keyframes fadeInUp {
                         from { opacity: 0; transform: translateY(12px); }
                         to   { opacity: 1; transform: translateY(0); }
+                    }
+                    @keyframes lockPulse {
+                        0% { background-color: #B71C13; box-shadow: 0 4px 12px rgba(183, 28, 19, 0.4); }
+                        50% { background-color: #E70013; box-shadow: 0 4px 20px rgba(231, 0, 19, 0.6); }
+                        100% { background-color: #FF3B22; box-shadow: 0 4px 12px rgba(255, 59, 34, 0.4); }
                     }
                 `}</style>
             </div>

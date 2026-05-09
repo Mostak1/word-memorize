@@ -52,7 +52,7 @@ class OxfordWordsSeeder extends Seeder
     /**
      * The single WordListCategory that owns all Oxford 3000 word lists.
      */
-    private const CATEGORY_NAME = 'Oxford 3000 Essential Words';
+    private const CATEGORY_NAME = 'Basic to Fluent Vocabulary';
 
     /**
      * Admin email to use as creator.

@@ -25,6 +25,7 @@ import { useTranslation } from "@/Contexts/LanguageContext";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import OfflineOverlay from "@/Components/OfflineOverlay";
 import BottomNav from "@/Components/BottomNav";
+import TopHeader from "@/Components/TopHeader";
 
 export default function AppLayout({ children, hideHeader = false }) {
     const isOnline = useOnlineStatus();
@@ -35,6 +36,7 @@ export default function AppLayout({ children, hideHeader = false }) {
     const user = auth?.user ?? null;
     const { setDarkModeUnlocked } = useTheme();
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [imgError, setImgError] = useState(false);
     const [headerVisible, setHeaderVisible] = useState(true);
     const [reportDialogOpen, setReportDialogOpen] = useState(false);
     const [xpData, setXpData] = useState(user?.xp ?? null);
@@ -216,14 +218,16 @@ export default function AppLayout({ children, hideHeader = false }) {
                                             <button className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg transition-colors text-sm font-medium">
                                                 {/* Avatar */}
                                                 <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold overflow-hidden">
-                                                    {user.image &&
-                                                    user.image.includes(
-                                                        "googleusercontent.com",
-                                                    ) ? (
+                                                    {user.image && !imgError ? (
                                                         <img
-                                                            src={user.image}
+                                                            src={
+                                                                user.image.startsWith("http")
+                                                                    ? user.image
+                                                                    : `${assetUrl}/${user.image}`
+                                                            }
                                                             alt={user.name}
                                                             className="w-full h-full object-cover"
+                                                            onError={() => setImgError(true)}
                                                         />
                                                     ) : (
                                                         user.name
@@ -374,14 +378,16 @@ export default function AppLayout({ children, hideHeader = false }) {
                                             >
                                                 {/* Avatar */}
                                                 <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center font-semibold overflow-hidden">
-                                                    {user.image &&
-                                                    user.image.includes(
-                                                        "googleusercontent.com",
-                                                    ) ? (
+                                                    {user.image && !imgError ? (
                                                         <img
-                                                            src={user.image}
+                                                            src={
+                                                                user.image.startsWith("http")
+                                                                    ? user.image
+                                                                    : `${assetUrl}/${user.image}`
+                                                            }
                                                             alt={user.name}
                                                             className="w-full h-full object-cover"
+                                                            onError={() => setImgError(true)}
                                                         />
                                                     ) : (
                                                         user.name
@@ -466,7 +472,14 @@ export default function AppLayout({ children, hideHeader = false }) {
             )}
 
             {!hideHeader && <div className="h-[60px]" />}
-            <main className="relative z-10 pb-32 sm:pb-0">
+
+            {hideHeader && (
+                <div className="w-full max-w-2xl mx-auto px-4 pt-6 sm:pt-12 relative z-50">
+                    <TopHeader />
+                </div>
+            )}
+
+            <main className="relative z-10 pb-32">
                 {isOnline ? children : <OfflineOverlay />}
             </main>
 

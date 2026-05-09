@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import AppLayout from "@/Layouts/AppLayout";
 import { Head, Link, usePage } from "@inertiajs/react";
 import {
@@ -141,13 +141,26 @@ export default function Dashboard({
     reviseCounts = {},
 }) {
     const { t } = useTranslation();
-    const { auth } = usePage().props;
+    const { auth, assetUrl } = usePage().props;
     const user = auth?.user;
     const [showStreakModal, setShowStreakModal] = useState(false);
+    const [imgError, setImgError] = useState(false);
     const [xpBalance, setXpBalance] = useState(350);
     const [showStreakLost, setShowStreakLost] = useState(
         streak?.is_broken && !streak?.broken_streak_notified,
     );
+    const [showDropdown, setShowDropdown] = useState(false);
+    const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setShowDropdown(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     useEffect(() => {
         const fetchXp = async () => {
@@ -250,49 +263,7 @@ export default function Dashboard({
             <Head title={t("dashboard.title")} />
             <div className="min-h-screen pb-28 sm:pb-12 bg-transparent">
                 <div className="w-full max-w-2xl mx-auto px-4 pt-6 pb-8 sm:pt-12">
-                    {/* ── Top Header ── */}
-                    <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-[28px] p-2 flex items-center justify-between shadow-[0_10px_40px_rgba(0,0,0,0.04)] mb-8 border border-white dark:border-slate-800 sticky top-4 z-50 transition-all">
-                        <div className="flex items-center gap-2 pl-3">
-                            <div className="bg-red-50 dark:bg-red-900/30 p-1.5 rounded-xl">
-                                <img
-                                    src={logo}
-                                    className="h-6 w-6"
-                                    alt="Logo"
-                                />
-                            </div>
-                            <span className="text-xl font-black tracking-tighter text-[#E5201C]">
-                                VocabPix
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-3 pr-1">
-                            <div className="bg-yellow-50 dark:bg-yellow-950/30 px-3 py-1.5 rounded-2xl flex items-center gap-1.5 border border-yellow-100 dark:border-yellow-900/30">
-                                <Zap className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                                <span className="text-sm font-black text-yellow-700 dark:text-yellow-400">
-                                    {xpBalance.toLocaleString()}
-                                </span>
-                            </div>
-                            <Link
-                                href={route("profile.edit")}
-                                className="active:scale-95 transition-transform"
-                            >
-                                <div className="w-10 h-10 rounded-2xl border-2 border-white dark:border-slate-800 shadow-md overflow-hidden bg-gray-100 relative">
-                                    {user?.image ? (
-                                        <img
-                                            src={user.image}
-                                            alt={user.name}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center font-black text-gray-400 bg-gradient-to-br from-gray-50 to-gray-200">
-                                            {user?.name
-                                                ?.charAt(0)
-                                                .toUpperCase()}
-                                        </div>
-                                    )}
-                                </div>
-                            </Link>
-                        </div>
-                    </div>
+
 
                     {/* ── Greeting ── */}
                     <div className="flex items-center justify-between mb-10 mt-2 px-2 relative min-h-[120px]">
@@ -307,7 +278,7 @@ export default function Dashboard({
                         </div>
                         <div className="absolute right-[-10px] bottom-[-30px] w-44 h-44 opacity-100 pointer-events-none z-0">
                             <img
-                                src="/img/learning_illustration.png"
+                                src={`${assetUrl}/img/learning_illustration.png`}
                                 alt="Learning illustration"
                                 className="w-full h-full object-contain transform drop-shadow-[0_20px_40px_rgba(229,32,28,0.15)]"
                             />
@@ -367,10 +338,10 @@ export default function Dashboard({
                                     <LayoutGrid className="h-8 w-8 text-[#E5201C]" />
                                 </div>
                                 <div>
-                                    <p className="text-white font-black text-2xl leading-tight tracking-tight">
+                                    <p className="text-white font-black text-lg leading-tight tracking-tight">
                                         {t("dashboard.my_word_collection")}
                                     </p>
-                                    <p className="text-white/90 text-xs font-black mt-1 uppercase tracking-widest">
+                                    <p className="text-white/90 text-[10px] font-black mt-1 uppercase tracking-widest">
                                         View & manage all your words
                                     </p>
                                 </div>

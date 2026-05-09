@@ -1,9 +1,27 @@
 import AppLayout from "@/Layouts/AppLayout";
 import { Head, router, usePage } from "@inertiajs/react";
 import { useState } from "react";
-import { Languages, ChevronLeft, CheckCircle2, Volume2 } from "lucide-react";
+import {
+    Languages,
+    ChevronLeft,
+    CheckCircle2,
+    Volume2,
+    Moon,
+    Lock,
+    ShoppingBag,
+} from "lucide-react";
 import { Link } from "@inertiajs/react";
 import { useTranslation } from "@/Contexts/LanguageContext";
+import { useTheme } from "@/Components/ThemeProvider";
+import { Button } from "@/Components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+    DialogClose,
+} from "@/Components/ui/dialog";
 
 // ── Toggle Switch ─────────────────────────────────────────────────────────────
 
@@ -99,6 +117,10 @@ function Toast({ visible }) {
 
 export default function Settings({ settings: initialSettings }) {
     const { t, locale: currentLocale } = useTranslation();
+    const { auth } = usePage().props;
+    const user = auth?.user ?? null;
+    const { theme, setTheme, darkModeUnlocked, isAdmin } = useTheme();
+
     const [settings, setSettings] = useState({
         show_bangla: initialSettings?.show_bangla ?? true,
         sound_effects: initialSettings?.sound_effects ?? true,
@@ -106,6 +128,11 @@ export default function Settings({ settings: initialSettings }) {
     });
     const [saving, setSaving] = useState(false);
     const [toastVisible, setToastVisible] = useState(false);
+    const [purchaseDialogOpen, setPurchaseDialogOpen] = useState(false);
+
+    // Admin users always have dark mode unlocked
+    const effectiveDarkModeUnlocked =
+        user?.role === "admin" || isAdmin ? true : darkModeUnlocked;
 
     const save = (newSettings) => {
         setSaving(true);
@@ -133,8 +160,17 @@ export default function Settings({ settings: initialSettings }) {
         save(updated);
     };
 
+    const handleThemeToggle = (checked) => {
+        const newTheme = checked ? "dark" : "light";
+        if (newTheme === "dark" && !effectiveDarkModeUnlocked) {
+            setPurchaseDialogOpen(true);
+            return;
+        }
+        setTheme(newTheme);
+    };
+
     return (
-        <AppLayout>
+        <AppLayout hideHeader={true}>
             <Head title={t("settings.title")} />
 
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
@@ -208,12 +244,66 @@ export default function Settings({ settings: initialSettings }) {
                         />
                     </SectionCard>
 
+                    {/* Appearance */}
+                    <SectionCard title={t("settings.appearance") || "Appearance"}>
+                        <SettingRow
+                            icon={Moon}
+                            iconBg="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                            title={t("settings.dark_mode") || "Dark Mode"}
+                            description={
+                                theme === "dark"
+                                    ? t("settings.dark_mode_desc_on") ||
+                                      "Dark theme is active"
+                                    : t("settings.dark_mode_desc_off") ||
+                                      "Light theme is active"
+                            }
+                            checked={theme === "dark"}
+                            onChange={handleThemeToggle}
+                            saving={false}
+                        />
+                    </SectionCard>
+
                     {/* Helper note */}
                     <p className="text-xs text-gray-400 dark:text-gray-500 text-center mt-4 px-2">
                         {t("settings.changes_immediate")}
                     </p>
                 </div>
             </div>
+
+            <Dialog
+                open={purchaseDialogOpen}
+                onOpenChange={setPurchaseDialogOpen}
+            >
+                <DialogContent className="w-[calc(100vw-2rem)] max-w-md sm:w-full">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Moon className="h-5 w-5 text-indigo-500" />
+                            {t("theme.unlock_dark_mode")}
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4 text-center space-y-3">
+                        <p className="text-sm text-gray-500">
+                            {t("theme.dark_mode_desc")}
+                        </p>
+                        <Link
+                            href={route("shop", { tab: "xp" })}
+                            className="block w-full"
+                        >
+                            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white w-full">
+                                <ShoppingBag className="h-4 w-4 mr-2" />
+                                {t("theme.go_to_shop")}
+                            </Button>
+                        </Link>
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button variant="outline" className="w-full">
+                                {t("theme.maybe_later")}
+                            </Button>
+                        </DialogClose>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <Toast visible={toastVisible} />
         </AppLayout>

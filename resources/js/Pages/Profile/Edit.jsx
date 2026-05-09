@@ -22,11 +22,11 @@ export default function Edit({
     const { t } = useTranslation();
 
     return (
-        <AppLayout>
+        <AppLayout hideHeader={true}>
             <Head title={t("profile_edit.title")} />
 
-            <div className="py-6 sm:py-12">
-                <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 space-y-6">
+            <div className="min-h-screen pb-28 sm:pb-12 bg-transparent">
+                <div className="w-full max-w-2xl mx-auto px-4 pt-6 pb-8 sm:pt-12 space-y-6">
                     {/* Community Stats Tabs */}
                     <div className="mb-8 grid grid-cols-2 gap-3">
                         <Link

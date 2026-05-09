@@ -213,7 +213,7 @@ export default function WordDetail({
     const activeImage = images[activeImageIndex] ?? null;
 
     return (
-        <AppLayout>
+        <AppLayout hideHeader={true}>
             <Head title={`${word.word} - Word Details`} />
             <FlashMessages />
 

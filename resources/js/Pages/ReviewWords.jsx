@@ -31,7 +31,7 @@ export default function ReviewWords({ words }) {
     };
 
     return (
-        <AppLayout>
+        <AppLayout hideHeader={true}>
             <Head title="Review Words" />
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 pb-20">
                 <div className="max-w-xl mx-auto px-4 pt-5">

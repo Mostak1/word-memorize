@@ -139,8 +139,11 @@ function CategoryCard({ category, index, onClick, categoryStatus }) {
             </div>
 
             {/* Info */}
-            <div className="px-3.5 py-3 h-[72px] flex flex-col justify-between">
-                <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100 leading-snug line-clamp-2">
+            <div className="px-3.5 py-3 h-[100px] flex flex-col justify-between">
+                <h2
+                    className="text-sm font-bold text-gray-900 dark:text-gray-100 leading-tight line-clamp-3"
+                    title={category.name}
+                >
                     {category.name}
                 </h2>
                 <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
@@ -434,84 +437,6 @@ function ShopItemCard({
     );
 }
 
-function HowXpWorks() {
-    const { t } = useTranslation();
-
-    const xpSources = useMemo(
-        () => [
-            {
-                label: t("shop.sources.complete_session"),
-                xp: "+100 XP",
-                note: t("shop.notes.session"),
-            },
-            {
-                label: t("shop.sources.pass_quiz"),
-                xp: "+150 XP",
-                note: t("shop.notes.pass"),
-            },
-            {
-                label: t("shop.sources.perfect_quiz"),
-                xp: "+200 XP",
-                note: t("shop.notes.perfect"),
-            },
-            {
-                label: t("shop.sources.master_word"),
-                xp: "+10 XP",
-                note: t("shop.notes.word"),
-            },
-            {
-                label: t("shop.sources.complete_list"),
-                xp: "+50 XP",
-                note: t("shop.notes.list"),
-            },
-            {
-                label: t("shop.sources.streak_7"),
-                xp: "+50 XP",
-                note: t("shop.notes.milestone"),
-            },
-            {
-                label: t("shop.sources.streak_14"),
-                xp: "+100 XP",
-                note: t("shop.notes.milestone"),
-            },
-            {
-                label: t("shop.sources.streak_30"),
-                xp: "+200 XP",
-                note: t("shop.notes.milestone"),
-            },
-        ],
-        [t],
-    );
-
-    return (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-5">
-            <h3 className="text-base font-bold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
-                <Zap className="h-4 w-4 text-yellow-400" />{" "}
-                {t("shop.how_to_earn")}
-            </h3>
-            <ul className="space-y-2.5">
-                {xpSources.map((src) => (
-                    <li
-                        key={src.label}
-                        className="flex items-center justify-between text-sm"
-                    >
-                        <span className="text-gray-600 dark:text-gray-400">
-                            {src.label}
-                        </span>
-                        <div className="text-right">
-                            <span className="font-bold text-yellow-500">
-                                {src.xp}
-                            </span>
-                            <span className="text-gray-400 ml-1 text-xs">
-                                ({src.note})
-                            </span>
-                        </div>
-                    </li>
-                ))}
-            </ul>
-        </div>
-    );
-}
 
 // ── XP Shop Tab ───────────────────────────────────────────────────────────────
 
@@ -691,7 +616,7 @@ function XpShopTab() {
                 </div>
             </div>
 
-            <HowXpWorks />
+
 
             <Toast toast={toast} />
         </>
@@ -727,7 +652,7 @@ export default function Shop({
     const [activeTab, setActiveTab] = useState(getInitialTab);
 
     return (
-        <AppLayout>
+        <AppLayout hideHeader={true}>
             <Head
                 title={
                     activeTab === "shop"

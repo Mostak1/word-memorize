@@ -198,7 +198,7 @@ export default function Achievements() {
 
     if (loading) {
         return (
-            <AppLayout>
+            <AppLayout hideHeader={true}>
                 <Head title={t("achievements.title")} />
                 <div className="py-1">
                     <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
@@ -225,7 +225,7 @@ export default function Achievements() {
 
     if (error) {
         return (
-            <AppLayout>
+            <AppLayout hideHeader={true}>
                 <Head title={t("achievements.title")} />
                 <div className="py-1">
                     <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
@@ -249,7 +249,7 @@ export default function Achievements() {
     }
 
     return (
-        <AppLayout>
+        <AppLayout hideHeader={true}>
             <Head title={t("achievements.title")} />
 
             <div className="py-1">

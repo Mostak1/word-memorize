@@ -51,7 +51,7 @@ class AcademicWordListSeeder extends Seeder
     /**
      * Category name used throughout seeding / unseeding.
      */
-    private const CATEGORY_NAME = 'Academic Word List';
+    private const CATEGORY_NAME = 'IELTS & Academic Writing Vocabulary';
 
     /**
      * Admin email to use as creator
@@ -256,7 +256,7 @@ class AcademicWordListSeeder extends Seeder
     {
         return DB::transaction(function () use ($sublists, $creatorId, $imageIndex): array {
 
-            $thumbnailPath = $this->copyCategoryThumbnail('academic_word.jpeg');
+            $thumbnailPath = $this->copyCategoryThumbnail('IELTS-&-Academic.webp');
 
             $category = WordListCategory::updateOrCreate(
                 ['name' => self::CATEGORY_NAME],

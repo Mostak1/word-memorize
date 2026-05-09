@@ -8,7 +8,7 @@ export default function WordListCategoryIndex({ wordListCategories }) {
     const { t } = useTranslation();
 
     return (
-        <AppLayout>
+        <AppLayout hideHeader={true}>
             <Head title={t("wordlists.breadcrumb_categories")} />
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
                 <main className="max-w-2xl mx-auto px-4 py-5 pb-20">
@@ -30,7 +30,6 @@ export default function WordListCategoryIndex({ wordListCategories }) {
                                     }}
                                 >
                                     <div className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-md active:scale-[0.98] transition-all flex flex-col relative">
-
                                         {/* Thumbnail */}
                                         <div className="w-full aspect-[4/3] bg-gray-100 dark:bg-slate-700 flex items-center justify-center overflow-hidden relative">
                                             {category.thumbnail_url_full ? (
@@ -55,17 +54,21 @@ export default function WordListCategoryIndex({ wordListCategories }) {
                                             {/* Lock overlay */}
                                             {category.is_locked &&
                                                 !category.has_access && (
-                                                    <div className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 dark:bg-slate-900/90 shadow-sm flex items-center justify-center backdrop-blur-sm">
-                                                        <Lock className="h-4 w-4 text-amber-500" />
+                                                    <div
+                                                        className="absolute top-2.5 right-2.5 w-9 h-9 rounded-xl flex items-center justify-center border-2 border-white dark:border-slate-800 transition-transform group-hover:scale-110 z-10"
+                                                        style={{
+                                                            animation:
+                                                                "lockPulse 2s infinite alternate ease-in-out",
+                                                        }}
+                                                    >
+                                                        <Lock className="h-4.5 w-4.5 text-white" />
                                                     </div>
                                                 )}
                                         </div>
 
-
-
                                         {/* Info */}
-                                        <div className="px-3.5 py-3 h-[72px] flex flex-col justify-between">
-                                            <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100 leading-snug line-clamp-2">
+                                        <div className="px-3.5 py-3 min-h-[80px] flex flex-col justify-between">
+                                            <h2 className="text-xs font-bold text-gray-900 dark:text-gray-100 leading-snug">
                                                 {category.name}
                                             </h2>
                                             <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-slate-400">
@@ -107,6 +110,11 @@ export default function WordListCategoryIndex({ wordListCategories }) {
                     @keyframes fadeInUp {
                         from { opacity: 0; transform: translateY(12px); }
                         to   { opacity: 1; transform: translateY(0); }
+                    }
+                    @keyframes lockPulse {
+                        0% { background-color: #B71C13; box-shadow: 0 4px 12px rgba(183, 28, 19, 0.4); }
+                        50% { background-color: #E70013; box-shadow: 0 4px 20px rgba(231, 0, 19, 0.6); }
+                        100% { background-color: #FF3B22; box-shadow: 0 4px 12px rgba(255, 59, 34, 0.4); }
                     }
                 `}</style>
             </div>

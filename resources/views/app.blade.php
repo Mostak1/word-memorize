@@ -16,11 +16,13 @@
     <link rel="mask-icon" href="{{ asset('masked-icon.svg') }}" color="#e70013" />
     <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
     <link rel="icon" href="{{ asset('icon-192x192.png') }}" type="image/png">
-    
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Anek+Bangla:wght@100..800&display=swap" rel="stylesheet" crossorigin="anonymous">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Anek+Bangla:wght@100..800&display=swap"
+        rel="stylesheet" crossorigin="anonymous">
 
     <!-- Scripts -->
     @routes

@@ -34,7 +34,7 @@ export default function MasteredWordsByList({ words, wordlist }) {
     };
 
     return (
-        <AppLayout>
+        <AppLayout hideHeader={true}>
             <Head
                 title={t("mastered.head_title", {
                     title: wordlist?.title ?? "Word List",

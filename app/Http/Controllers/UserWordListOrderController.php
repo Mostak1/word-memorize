@@ -107,11 +107,19 @@ class UserWordListOrderController extends Controller
         $categoryNames = $categories->whereIn('id', $categoryIds->all())->pluck('name')->all();
         $mailable = new NewWordListOrderMail($order, $categoryNames);
 
-        if (config('mail_queue.is_queue')) {
+        if (config('settings.mail_queue')) {
           Mail::to($receiverEmail)->queue($mailable);
+          Log::info('New order notification email queued', [
+            'order_id' => $order->id,
+            'receiver_email' => $receiverEmail
+          ]);
         } else {
           Mail::purge('smtp');
           Mail::mailer('smtp')->to($receiverEmail)->send($mailable);
+          Log::info('New order notification email sent (sync)', [
+            'order_id' => $order->id,
+            'receiver_email' => $receiverEmail
+          ]);
         }
       } catch (\Exception $e) {
         Log::error('Failed to send new order notification email', [

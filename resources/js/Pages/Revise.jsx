@@ -58,7 +58,7 @@ export default function Revise({ reviseCounts = {} }) {
     const totalAll = reviseCounts.all ?? 0;
 
     return (
-        <AppLayout>
+        <AppLayout hideHeader={true}>
             <Head title={t("revise.title")} />
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
                 <div className="w-full max-w-2xl mx-auto px-4 py-5">

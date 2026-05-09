@@ -46,7 +46,7 @@ export default function PublicProfile({
     };
 
     return (
-        <AppLayout>
+        <AppLayout hideHeader={true}>
             <Head title={t("profile.title", { name: user.name })} />
 
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">

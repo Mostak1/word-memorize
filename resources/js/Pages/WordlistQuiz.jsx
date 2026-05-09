@@ -877,7 +877,7 @@ export default function WordlistQuiz({
 
     if (!canAttempt) {
         return (
-            <AppLayout>
+            <AppLayout hideHeader={true}>
                 <Head title={quiz.title} />
                 <CannotAttemptScreen
                     quiz={quiz}
@@ -892,7 +892,7 @@ export default function WordlistQuiz({
 
     if (total === 0) {
         return (
-            <AppLayout>
+            <AppLayout hideHeader={true}>
                 <Head title="Quiz" />
                 <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 flex items-center justify-center px-4">
                     <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-lg text-center max-w-sm w-full">
@@ -922,7 +922,7 @@ export default function WordlistQuiz({
 
     if (done) {
         return (
-            <AppLayout>
+            <AppLayout hideHeader={true}>
                 <Head title="Quiz Results" />
                 {showStreakEffect && (
                     <StreakPop
@@ -972,7 +972,7 @@ export default function WordlistQuiz({
     // ── Quiz in progress ───────────────────────────────────────────────────────
 
     return (
-        <AppLayout>
+        <AppLayout hideHeader={true}>
             <Head title={quiz.title} />
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
                 <div className="w-full max-w-xl mx-auto px-4 py-5">

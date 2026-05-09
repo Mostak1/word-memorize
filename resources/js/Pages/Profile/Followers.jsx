@@ -11,7 +11,7 @@ export default function Followers({
     const { t } = useTranslation();
 
     return (
-        <AppLayout>
+        <AppLayout hideHeader={true}>
             <Head title={t("profile_edit.followers")} />
 
             <div className="py-6 sm:py-12">
