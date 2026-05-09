@@ -172,12 +172,16 @@ class ReviewWordController extends Controller
         [$query, $sessionTitle] = $this->getReviseQuery($user, $filter);
 
         // Exclude locked words from the session
-        $wordIds = $query->whereHas('word.wordList.category', function ($q) use ($user) {
-            $q->where('is_locked', false)
-                ->orWhereIn('id', function ($q2) use ($user) {
-                    $q2->select('word_list_category_id')
-                        ->from('user_word_list_access')
-                        ->where('user_id', $user->id);
+        // A word is included if its wordlist is NOT locked OR user has category access.
+        $wordIds = $query->whereHas('word.wordList', function ($q) use ($user) {
+            $q->where('is_locked', false) // WordList itself is open
+                ->orWhereHas('category', function ($q2) use ($user) {
+                    $q2->where('is_locked', false) // Category is open
+                        ->orWhereIn('id', function ($q3) use ($user) {
+                            $q3->select('word_list_category_id')
+                                ->from('user_word_list_access')
+                                ->where('user_id', $user->id);
+                        });
                 });
         })->pluck('word_id')->toArray();
 
@@ -231,16 +235,18 @@ class ReviewWordController extends Controller
             ->withQueryString()
             ->through(function ($word) use ($user) {
                 $category = $word->wordList?->category;
-                $isLocked = (bool) ($category?->is_locked ?? false);
+                $categoryLocked = (bool) ($category?->is_locked ?? false);
+                $wordListLocked = (bool) ($word->wordList?->is_locked ?? false);
+                
                 $hasAccess = true;
 
-                if ($isLocked && $category) {
+                if ($categoryLocked && $wordListLocked && $category) {
                     $hasAccess = \App\Models\UserWordListAccess::where('user_id', $user->id)
                         ->where('word_list_category_id', $category->id)
                         ->exists();
                 }
 
-                $word->is_locked = $isLocked;
+                $word->is_locked = $categoryLocked && $wordListLocked;
                 $word->has_access = $hasAccess;
                 return $word;
             });
@@ -322,7 +328,18 @@ class ReviewWordController extends Controller
 
         $userId = $user->id;
         $base = WordProgress::where('user_id', $userId)
-            ->where('box', '<', WordProgress::MASTERED_BOX);
+            ->where('box', '<', WordProgress::MASTERED_BOX)
+            ->whereHas('word.wordList', function ($q) use ($userId) {
+                $q->where('is_locked', false)
+                    ->orWhereHas('category', function ($q2) use ($userId) {
+                        $q2->where('is_locked', false)
+                            ->orWhereIn('id', function ($q3) use ($userId) {
+                                $q3->select('word_list_category_id')
+                                    ->from('user_word_list_access')
+                                    ->where('user_id', $userId);
+                            });
+                    });
+            });
 
         return [
             'all' => (clone $base)->count(),
@@ -336,12 +353,15 @@ class ReviewWordController extends Controller
     {
         $userId = auth()->id();
         $words = ReviewWord::where('user_id', $userId)
-            ->whereHas('word.wordList.category', function ($q) use ($userId) {
+            ->whereHas('word.wordList', function ($q) use ($userId) {
                 $q->where('is_locked', false)
-                    ->orWhereIn('id', function ($q2) use ($userId) {
-                        $q2->select('word_list_category_id')
-                            ->from('user_word_list_access')
-                            ->where('user_id', $userId);
+                    ->orWhereHas('category', function ($q2) use ($userId) {
+                        $q2->where('is_locked', false)
+                            ->orWhereIn('id', function ($q3) use ($userId) {
+                                $q3->select('word_list_category_id')
+                                    ->from('user_word_list_access')
+                                    ->where('user_id', $userId);
+                            });
                     });
             })
             ->with(['word.wordList', 'word.images'])

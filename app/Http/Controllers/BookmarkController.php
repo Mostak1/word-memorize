@@ -31,12 +31,33 @@ class BookmarkController extends Controller
     /** Show all bookmarked words */
     public function index()
     {
-        $words = BookmarkedWord::where('user_id', Auth::id())
-            ->with(['word.wordList', 'word.images'])
+        $userId = Auth::id();
+        $words = BookmarkedWord::where('user_id', $userId)
+            ->whereHas('word')
+            ->with(['word.wordList.category', 'word.images'])
             ->latest()
             ->paginate(20)
             ->withQueryString()
-            ->through(fn($entry) => $entry->word);
+            ->through(function ($entry) use ($userId) {
+                $word = $entry->word;
+                if (!$word) return null;
+
+                $category = $word->wordList?->category;
+                $categoryLocked = (bool) ($category?->is_locked ?? false);
+                $wordListLocked = (bool) ($word->wordList?->is_locked ?? false);
+                
+                $hasAccess = true;
+
+                if ($categoryLocked && $wordListLocked && $category) {
+                    $hasAccess = \App\Models\UserWordListAccess::where('user_id', $userId)
+                        ->where('word_list_category_id', $category->id)
+                        ->exists();
+                }
+
+                $word->is_locked = $categoryLocked && $wordListLocked;
+                $word->has_access = $hasAccess;
+                return $word;
+            });
 
         return Inertia::render('BookmarkedWords', ['words' => $words]);
     }

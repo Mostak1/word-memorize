@@ -193,9 +193,18 @@ class QuizController extends Controller
         $userId = Auth::id();
 
         // ── Access guard ──────────────────────────────────────────────────────
-        // If this wordlist is locked the user must have passed the quiz for the
-        // immediately preceding wordlist (ordered by id) before they can take
-        // this one.  This prevents direct URL access to a locked quiz.
+        // 1. Check Category Lock (Bypassed if wordlist is NOT locked)
+        if ($wordlist->is_locked && $wordlist->category?->is_locked) {
+            $hasCategoryAccess = auth()->check() && UserWordListAccess::where('user_id', auth()->id())
+                ->where('word_list_category_id', $wordlist->word_list_category_id)
+                ->exists();
+
+            if (!$hasCategoryAccess && !auth()->user()?->isAdmin()) {
+                abort(403, 'This word list category is locked.');
+            }
+        }
+
+        // 2. Check Quiz Progression Lock
         if ($wordlist->is_locked) {
             if (!$userId) {
                 abort(403, 'You must be logged in to take this quiz.');

@@ -11,6 +11,8 @@ class UserWordListAccess extends Model
     'user_id',
     'word_list_category_id',
     'word_list_order_id',
+    'course_id',
+    'course_title',
     'granted_at',
   ];
 

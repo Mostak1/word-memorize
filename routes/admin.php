@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\ErrorReportController;
 use App\Http\Controllers\Admin\WordListOrderController;
 use App\Http\Controllers\Admin\AchievementController;
 use App\Http\Controllers\Admin\UserProgressController;
+use App\Http\Controllers\Admin\UserWordListAccessController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -96,6 +97,13 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
         Route::get('/', [WordListOrderController::class, 'index'])->name('index');
         Route::patch('/{order}', [WordListOrderController::class, 'update'])->name('update');
         Route::delete('/{order}', [WordListOrderController::class, 'destroy'])->name('destroy');
+    });
+
+    // ── User Word List Access ──────────────────────────────────────────────────
+    Route::prefix('user-wordlist-access')->name('user-wordlist-access.')->group(function () {
+        Route::get('/', [UserWordListAccessController::class, 'index'])->name('index');
+        Route::post('/', [UserWordListAccessController::class, 'store'])->name('store');
+        Route::delete('/{access}', [UserWordListAccessController::class, 'destroy'])->name('destroy');
     });
 
     // ── Quiz Management ────────────────────────────────────────────────────────

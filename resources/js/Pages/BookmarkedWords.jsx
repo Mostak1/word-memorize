@@ -8,6 +8,7 @@ import {
     Trash2,
     BookOpen,
     Search,
+    Lock,
 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "@/Contexts/LanguageContext";
@@ -132,15 +133,14 @@ function WordCard({ word, onRemove }) {
 
                 {/* Footer: wordlist label + detail link */}
                 <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 dark:border-slate-800">
-                    <span className="text-xs text-gray-400 dark:text-gray-500 truncate max-w-[60%]">
-                        {word.word_list?.title ?? word.wordList?.title ?? ""}
-                    </span>
-                    {/* <Link
-                        href={route("word.show", word.id)}
-                        className="flex items-center gap-1 text-xs font-semibold text-[#E5201C] dark:text-red-400 hover:underline"
-                    >
-                        Details <ChevronRight className="h-3 w-3" />
-                    </Link> */}
+                    <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-xs text-gray-400 dark:text-gray-500 truncate">
+                            {word.word_list?.title ?? word.wordList?.title ?? ""}
+                        </span>
+                        {word.is_locked && !word.has_access && (
+                            <Lock className="h-3 w-3 text-amber-500 shrink-0" />
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
@@ -237,13 +237,16 @@ export default function BookmarkedWords({ words }) {
                         <>
                             {/* Word grid */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                {localWords.map((word) => (
-                                    <WordCard
-                                        key={word.id}
-                                        word={word}
-                                        onRemove={handleRemove}
-                                    />
-                                ))}
+                                {localWords.map((word) => {
+                                    if (!word) return null;
+                                    return (
+                                        <WordCard
+                                            key={word.id}
+                                            word={word}
+                                            onRemove={handleRemove}
+                                        />
+                                    );
+                                })}
                             </div>
 
                             {/* Pagination */}

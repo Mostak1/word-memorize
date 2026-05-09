@@ -42,7 +42,8 @@ function StreakBanner({ streak, onClick }) {
               flame: "text-orange-500",
               label: null,
               message: t("streak.message_active_today", {
-                  defaultValue: "Great job! Come back tomorrow to keep it going.",
+                  defaultValue:
+                      "Great job! Come back tomorrow to keep it going.",
               }),
           }
         : is_frozen
@@ -110,7 +111,11 @@ function StreakBanner({ streak, onClick }) {
                         <p className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 leading-none">
                             {current_streak}
                             <span className="text-sm font-semibold text-gray-400 dark:text-gray-500 ml-1">
-                                {t(current_streak !== 1 ? "streak.days" : "streak.day")}
+                                {t(
+                                    current_streak !== 1
+                                        ? "streak.days"
+                                        : "streak.day",
+                                )}
                             </span>
                         </p>
                         <p className="text-xs text-gray-400 dark:text-gray-500">
@@ -136,7 +141,11 @@ function StreakBanner({ streak, onClick }) {
                                 {freeze_count}
                             </div>
                             <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                {t(freeze_count === 1 ? "streak.safe_day" : "streak.safe_days")}
+                                {t(
+                                    freeze_count === 1
+                                        ? "streak.safe_day"
+                                        : "streak.safe_days",
+                                )}
                             </p>
                         </div>
                     )}
@@ -175,7 +184,8 @@ function StreakBanner({ streak, onClick }) {
             {!active_today && !is_broken && auto_save_available && (
                 <p className="text-xs text-blue-400 dark:text-blue-300 mt-1.5">
                     {t("streak.auto_save_message", {
-                        defaultValue: "🛡️ Auto-save available — if you miss a day this week your streak will be saved.",
+                        defaultValue:
+                            "🛡️ Auto-save available — if you miss a day this week your streak will be saved.",
                     })}
                 </p>
             )}
@@ -196,7 +206,7 @@ export default function Dashboard({
     const user = auth?.user;
     const [showStreakModal, setShowStreakModal] = useState(false);
     const [showStreakLost, setShowStreakLost] = useState(
-        streak?.is_broken && !streak?.broken_streak_notified
+        streak?.is_broken && !streak?.broken_streak_notified,
     );
 
     const handleDismissStreakLost = async () => {
@@ -378,9 +388,29 @@ export default function Dashboard({
                                 </div>
                             </div>
                         </Link>
+
+                        {/* ── Bookmarked Words (Button Style) ── */}
+                        <Link
+                            href={route("words.bookmarked")}
+                            className="block"
+                        >
+                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm hover:shadow-md transition-shadow min-h-[180px]">
+                                <div className="w-16 h-16 rounded-full bg-yellow-50 dark:bg-yellow-950/30 flex items-center justify-center">
+                                    <Bookmark className="h-8 w-8 fill-yellow-400 text-yellow-400" />
+                                </div>
+                                <div className="text-center">
+                                    <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
+                                        {t("dashboard.bookmarked_words")}
+                                    </p>
+                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                                        {t("dashboard.saved_for_later")}
+                                    </p>
+                                </div>
+                            </div>
+                        </Link>
                     </div>
 
-                    {/* ── Bookmarked Words ── */}
+                    {/* ── Settings (Horizontal Banner Style) ── */}
                     <Link
                         href={route("words.bookmarked")}
                         className="block mb-3"

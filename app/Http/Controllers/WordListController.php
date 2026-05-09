@@ -35,6 +35,11 @@ class WordListController extends Controller
      */
     private function categoryIsLockedForUser(WordList $wordList): bool
     {
+        // If the wordlist itself is NOT locked, anyone can access it
+        if (!$wordList->is_locked) {
+            return false;
+        }
+
         $category = $wordList->category;
 
         // Not locked — everyone can access
@@ -45,6 +50,11 @@ class WordListController extends Controller
         // Locked but guest — no access
         if (!auth()->check()) {
             return true;
+        }
+
+        // Admin can access everything (optional safety check)
+        if (auth()->user()->isAdmin()) {
+            return false;
         }
 
         return !UserWordListAccess::where('user_id', auth()->id())
@@ -279,20 +289,21 @@ class WordListController extends Controller
             ->withCount([
                 'words as total_words',
                 'words as mastered_count' => function ($q) use ($userId) {
-                    $q->whereHas(
-                        'progress',
-                        fn($q2) => $q2
-                            ->where('user_id', $userId)
-                            ->where('box', '>=', WordProgress::MASTERED_BOX)
-                    );
+                    $q->whereHas('progress', function ($q2) use ($userId) {
+                        $q2->where('user_id', $userId)
+                            ->where('box', '>=', WordProgress::MASTERED_BOX);
+                    });
                 },
             ])
-            ->get(['id', 'title', 'difficulty', 'word_list_category_id'])
+            ->get(['id', 'title', 'difficulty', 'word_list_category_id', 'is_locked'])
             ->map(function ($wl) use ($userId) {
-                $wl->is_locked = (bool) ($wl->category?->is_locked ?? false);
+                $categoryLocked = (bool) ($wl->category?->is_locked ?? false);
+                $wordListLocked = (bool) $wl->is_locked;
+                
                 $wl->has_access = true;
 
-                if ($wl->is_locked) {
+                // Locked only if BOTH the category and the wordlist are locked
+                if ($categoryLocked && $wordListLocked) {
                     $wl->has_access = UserWordListAccess::where('user_id', $userId)
                         ->where('word_list_category_id', $wl->word_list_category_id)
                         ->exists();

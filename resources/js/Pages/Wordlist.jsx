@@ -443,8 +443,8 @@ export default function Wordlist({
                                         counts?.[wordList.id] ?? null;
                                     const total = wordList.words_count ?? 0;
 
-                                    // Locked by category purchase gate
-                                    if (categoryIsLocked) {
+                                    // Locked by category purchase gate — skip this block if wordlist is NOT locked
+                                    if (categoryIsLocked && wordList.is_locked) {
                                         return (
                                             <div key={wordList.id}>
                                                 <div

@@ -168,4 +168,23 @@ class User extends Authenticatable
 
         return $this->settings?->dark_mode_unlocked ?? false;
     }
+
+    /**
+     * Check if the user can access a specific word list.
+     * Accessible if: wordlist is NOT locked OR user has category access OR user is admin.
+     */
+    public function canAccessWordList(WordList $wordList): bool
+    {
+        if (!$wordList->is_locked) {
+            return true;
+        }
+
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        return UserWordListAccess::where('user_id', $this->id)
+            ->where('word_list_category_id', $wordList->word_list_category_id)
+            ->exists();
+    }
 }

@@ -6,9 +6,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VocabPix — Learn Vocabulary Scientifically</title>
     <link
-        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Anek+Bangla:wght@400;500;600;700;800&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800;900&display=swap"
         rel="stylesheet">
     <style>
+        @font-face {
+            font-family: 'Aileron';
+            src: url('{{ asset('fonts/aileron/Aileron-Regular.otf') }}') format('opentype');
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'Aileron';
+            src: url('{{ asset('fonts/aileron/Aileron-SemiBold.otf') }}') format('opentype');
+            font-weight: 600;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'Aileron';
+            src: url('{{ asset('fonts/aileron/Aileron-Bold.otf') }}') format('opentype');
+            font-weight: 700;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'Aileron';
+            src: url('{{ asset('fonts/aileron/Aileron-Heavy.otf') }}') format('opentype');
+            font-weight: 800;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'Aileron';
+            src: url('{{ asset('fonts/aileron/Aileron-Black.otf') }}') format('opentype');
+            font-weight: 900;
+            font-style: normal;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -35,7 +70,7 @@
         }
 
         body {
-            font-family: 'Plus Jakarta Sans', 'Anek Bangla', sans-serif;
+            font-family: 'Aileron', 'Noto Sans Bengali', sans-serif;
             color: var(--body);
             background: var(--bg);
             overflow-x: hidden;
@@ -61,7 +96,7 @@
         }
 
         body.lang-bn {
-            font-family: 'Anek Bangla', 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Noto Sans Bengali', 'Aileron', sans-serif;
         }
 
         /* ── Topbar ── */
@@ -791,7 +826,7 @@
             border: 1px solid rgba(255, 255, 255, .15);
             border-radius: 20px;
             padding: 28px;
-            font-family: 'Anek Bangla', sans-serif;
+            font-family: 'Noto Sans Bengali', sans-serif;
         }
 
         .bangla-word {
@@ -805,7 +840,7 @@
             font-size: 1rem;
             color: rgba(255, 255, 255, .6);
             margin-bottom: 16px;
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Aileron', sans-serif;
         }
 
         .bangla-def-label {
@@ -839,7 +874,7 @@
             padding: 3px 10px;
             font-size: .78rem;
             color: rgba(255, 255, 255, .7);
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Aileron', sans-serif;
         }
 
         .bangla-perks {
@@ -953,20 +988,20 @@
         }
 
         .pricing-inner {
-            max-width: 900px;
+            max-width: 1140px;
             margin: 0 auto;
         }
 
         .pricing-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
         }
 
         .price-card {
             border: 2px solid var(--border);
             border-radius: 20px;
-            padding: 36px;
+            padding: 28px 24px;
             background: #fff;
             position: relative;
         }
@@ -1102,7 +1137,7 @@
             background: #F9FAFB;
             color: var(--muted);
             transition: all .2s;
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Aileron', sans-serif;
         }
 
         .form-tab.active {
@@ -1137,7 +1172,7 @@
             border-radius: 10px;
             padding: 13px 14px;
             font-size: .95rem;
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Aileron', sans-serif;
             outline: none;
             transition: border-color .2s;
             color: var(--dark);
@@ -1171,7 +1206,7 @@
             cursor: pointer;
             text-align: center;
             transition: all .2s;
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Aileron', sans-serif;
         }
 
         .goal-chip.active,
@@ -1188,7 +1223,7 @@
             background: var(--red);
             color: #fff;
             border: none;
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Aileron', sans-serif;
             font-size: 1rem;
             font-weight: 900;
             cursor: pointer;
@@ -1257,7 +1292,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Aileron', sans-serif;
         }
 
         .faq-icon {
@@ -2072,61 +2107,79 @@
                     <span class="t-bn">সহজ, সৎ মূল্য নির্ধারণ</span>
                 </h2>
                 <p class="section-sub" style="margin:0 auto;text-align:center">
-                    <span class="t-en">Start free. Upgrade when you're ready.</span>
-                    <span class="t-bn">বিনামূল্যে শুরু করুন। প্রস্তুত হলে আপগ্রেড করুন।</span>
+                    <span class="t-en">Get lifetime access to our scientifically designed word lists with a one-time
+                        purchase.</span>
+                    <span class="t-bn">এককালীন ক্রয়ের মাধ্যমে আমাদের বৈজ্ঞানিকভাবে ডিজাইন করা শব্দ তালিকায় আজীবন
+                        প্রবেশাধিকার পান।</span>
                 </p>
             </div>
             <div class="pricing-grid">
+                <!-- Oxford 3000 -->
                 <div class="price-card">
-                    <div class="price-plan"><span class="t-en">Free</span><span class="t-bn">বিনামূল্যে</span></div>
-                    <div class="price-amount"><sub>৳</sub>0</div>
-                    <div class="price-period"><span class="t-en">Forever free</span><span class="t-bn">চিরকাল
-                            বিনামূল্যে</span></div>
+                    <div class="price-plan"><span class="t-en">Oxford 3000</span><span class="t-bn">অক্সফোর্ড ৩০০০</span>
+                    </div>
+                    <div class="price-amount"><sub>৳</sub>599</div>
+                    <div class="price-period"><span class="t-en">One-time purchase</span><span class="t-bn">এককালীন
+                            ক্রয়</span></div>
                     <ul class="price-features">
-                        <li><span class="t-en">All public word lists</span><span class="t-bn">সব পাবলিক শব্দ
-                                তালিকা</span></li>
-                        <li><span class="t-en">Image + audio for every word</span><span class="t-bn">প্রতিটি শব্দে ছবি +
-                                অডিও</span></li>
-                        <li><span class="t-en">Bangla definitions & phonetics</span><span class="t-bn">বাংলা সংজ্ঞা ও
-                                ধ্বনিতত্ত্ব</span></li>
-                        <li><span class="t-en">XP & streak tracking</span><span class="t-bn">XP ও স্ট্রিক
-                                ট্র্যাকিং</span></li>
-                        <li><span class="t-en">Basic quiz mode</span><span class="t-bn">মৌলিক কুইজ মোড</span></li>
-                        <li class="no"><span class="t-en">Custom word collections</span><span class="t-bn">কাস্টম শব্দ
-                                সংগ্রহ</span></li>
-                        <li class="no"><span class="t-en">Streak freeze protection</span><span class="t-bn">স্ট্রিক
-                                ফ্রিজ সুরক্ষা</span></li>
-                        <li class="no"><span class="t-en">Offline mode</span><span class="t-bn">অফলাইন মোড</span></li>
+                        <li><span class="t-en">3000 Essential English Words</span><span class="t-bn">৩০০০টি প্রয়োজনীয় ইংরেজি শব্দ</span></li>
+                        <li><span class="t-en">Scientific Memory Anchoring</span><span class="t-bn">বৈজ্ঞানিক মেমোরি অ্যাঙ্করিং</span></li>
+                        <li><span class="t-en">Image + Audio for every word</span><span class="t-bn">প্রতিটি শব্দে ছবি + অডিও</span></li>
+                        <li><span class="t-en">Lifetime Access</span><span class="t-bn">আজীবন প্রবেশাধিকার</span></li>
                     </ul>
                     <a href="#enroll" class="btn-ghost" style="display:block;text-align:center;padding:13px">
-                        <span class="t-en">Start Free →</span><span class="t-bn">বিনামূল্যে শুরু করুন →</span>
+                        <span class="t-en">Buy Now →</span><span class="t-bn">এখনই কিনুন →</span>
                     </a>
                 </div>
+                <!-- Academic -->
+                <div class="price-card">
+                    <div class="price-plan"><span class="t-en">Academic Word List</span><span class="t-bn">অ্যাকাডেমিক শব্দ তালিকা</span>
+                    </div>
+                    <div class="price-amount"><sub>৳</sub>250</div>
+                    <div class="price-period"><span class="t-en">One-time purchase</span><span class="t-bn">এককালীন
+                            ক্রয়</span></div>
+                    <ul class="price-features">
+                        <li><span class="t-en">Essential Academic Vocabulary</span><span class="t-bn">প্রয়োজনীয় অ্যাকাডেমিক শব্দভান্ডার</span></li>
+                        <li><span class="t-en">University & Research Focus</span><span class="t-bn">বিশ্ববিদ্যালয় ও গবেষণা ফোকাস</span></li>
+                        <li><span class="t-en">Advanced Example Sentences</span><span class="t-bn">উন্নত উদাহরণ বাক্য</span></li>
+                        <li><span class="t-en">Lifetime Access</span><span class="t-bn">আজীবন প্রবেশাধিকার</span></li>
+                    </ul>
+                    <a href="#enroll" class="btn-ghost" style="display:block;text-align:center;padding:13px">
+                        <span class="t-en">Buy Now →</span><span class="t-bn">এখনই কিনুন →</span>
+                    </a>
+                </div>
+                <!-- GRE Extended -->
                 <div class="price-card featured">
                     <div class="price-badge">🔥 <span class="t-en">Most Popular</span><span class="t-bn">সবচেয়ে
                             জনপ্রিয়</span></div>
-                    <div class="price-plan">Pro</div>
-                    <div class="price-amount"><sub>৳</sub>299</div>
-                    <div class="price-period"><span class="t-en">per month · cancel anytime</span><span
-                            class="t-bn">প্রতি মাসে · যেকোনো সময় বাতিল</span></div>
+                    <div class="price-plan"><span class="t-en">GRE Extended</span><span class="t-bn">জিআরই এক্সটেন্ডেড</span></div>
+                    <div class="price-amount"><sub>৳</sub>399</div>
+                    <div class="price-period"><span class="t-en">One-time purchase</span><span class="t-bn">এককালীন
+                            ক্রয়</span></div>
                     <ul class="price-features">
-                        <li><span class="t-en">Everything in Free</span><span class="t-bn">বিনামূল্যের সব সুবিধা</span>
-                        </li>
-                        <li><span class="t-en">Unlimited custom collections</span><span class="t-bn">সীমাহীন কাস্টম
-                                সংগ্রহ</span></li>
-                        <li><span class="t-en">Streak freeze protection</span><span class="t-bn">স্ট্রিক ফ্রিজ
-                                সুরক্ষা</span></li>
-                        <li><span class="t-en">Offline mode</span><span class="t-bn">অফলাইন মোড</span></li>
-                        <li><span class="t-en">Advanced quiz analytics</span><span class="t-bn">উন্নত কুইজ
-                                বিশ্লেষণ</span></li>
-                        <li><span class="t-en">Early access to new lists</span><span class="t-bn">নতুন তালিকায় আগাম
-                                প্রবেশ</span></li>
-                        <li><span class="t-en">Ad-free experience</span><span class="t-bn">বিজ্ঞাপন-মুক্ত
-                                অভিজ্ঞতা</span></li>
+                        <li><span class="t-en">800+ High-Frequency Words</span><span class="t-bn">৮০০+ উচ্চ-ফ্রিকোয়েন্সি শব্দ</span></li>
+                        <li><span class="t-en">Designed for GRE Verbal</span><span class="t-bn">জিআরই ভার্বাল এর জন্য ডিজাইন করা</span></li>
+                        <li><span class="t-en">Scientific Spaced Repetition</span><span class="t-bn">বৈজ্ঞানিক স্পেসড রিপিটিশন</span></li>
+                        <li><span class="t-en">Lifetime Access</span><span class="t-bn">আজীবন প্রবেশাধিকার</span></li>
                     </ul>
-                    <a href="#enroll" class="btn-red"
-                        style="display:block;text-align:center;padding:13px;border-radius:12px;font-size:.95rem">
-                        <span class="t-en">Get Pro — ৳299/mo →</span><span class="t-bn">Pro নিন — ৳২৯৯/মাস →</span>
+                    <a href="#enroll" class="btn-red" style="display:block;text-align:center;padding:13px;border-radius:12px">
+                        <span class="t-en">Buy Now →</span><span class="t-bn">এখনই কিনুন →</span>
+                    </a>
+                </div>
+                <!-- GRE 332 -->
+                <div class="price-card">
+                    <div class="price-plan"><span class="t-en">GRE 332</span><span class="t-bn">জিআরই ৩৩২</span></div>
+                    <div class="price-amount"><sub>৳</sub>399</div>
+                    <div class="price-period"><span class="t-en">One-time purchase</span><span class="t-bn">এককালীন
+                            ক্রয়</span></div>
+                    <ul class="price-features">
+                        <li><span class="t-en">332 Essential GRE Words</span><span class="t-bn">৩৩২টি প্রয়োজনীয় জিআরই শব্দ</span></li>
+                        <li><span class="t-en">Quick Prep Focused</span><span class="t-bn">দ্রুত প্রস্তুতি ফোকাসড</span></li>
+                        <li><span class="t-en">Memory Cues in Bangla</span><span class="t-bn">বাংলায় মেমোরি কিউ</span></li>
+                        <li><span class="t-en">Lifetime Access</span><span class="t-bn">আজীবন প্রবেশাধিকার</span></li>
+                    </ul>
+                    <a href="#enroll" class="btn-ghost" style="display:block;text-align:center;padding:13px">
+                        <span class="t-en">Buy Now →</span><span class="t-bn">এখনই কিনুন →</span>
                     </a>
                 </div>
             </div>

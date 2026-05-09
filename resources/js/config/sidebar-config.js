@@ -10,6 +10,7 @@ import {
     Link2,
     ClipboardList,
     HelpCircle,
+    ShieldCheck,
 } from "lucide-react";
 
 /**
@@ -77,6 +78,11 @@ export const sidebarConfig = {
                     name: "Word List Orders",
                     route: "admin.wordlist-orders.index",
                     icon: ClipboardList,
+                },
+                {
+                    name: "User Word List Access",
+                    route: "admin.user-wordlist-access.index",
+                    icon: ShieldCheck,
                 },
                 {
                     name: "Error Reports",

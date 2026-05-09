@@ -61,9 +61,13 @@ class WordList extends Model
 
     public function userHasAccess($userId): bool
     {
-        return WordListOrder::where('user_id', $userId)
+        // If the wordlist itself is not locked, everyone has access
+        if (!$this->is_locked) {
+            return true;
+        }
+
+        return UserWordListAccess::where('user_id', $userId)
             ->where('word_list_category_id', $this->word_list_category_id)
-            ->where('status', 'approved')
             ->exists();
     }
 

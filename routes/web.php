@@ -27,9 +27,9 @@ Route::get('/vocab', function () {
     return Inertia::render('Landing/Vocab');
 })->name('vocab');
 
-Route::get('/vocabland', function () {
-    return view('landing/vocabland');
-})->name('vocabland');
+// Route::get('/vocabland', function () {
+//     return view('landing/vocabland');
+// })->name('vocabland');
 Route::get('/practice', function () {
     return view('landing/practice');
 })->name('vocabland.practice');
