@@ -9,17 +9,38 @@ import {
     Trophy,
     Flame,
     ShieldCheck,
-    Snowflake,
     Bookmark,
     RotateCcw,
     Users,
+    ChevronRight,
+    Zap,
+    LayoutGrid,
 } from "lucide-react";
 import { useTranslation } from "@/Contexts/LanguageContext";
 import StreakHistoryModal from "@/Components/StreakHistoryModal";
 import StreakLostOverlay from "@/Components/StreakLostOverlay";
 import axios from "axios";
+import logo from "/public/img/logo.png";
 
-// ── Streak Banner ─────────────────────────────────────────────────────────────
+// ── Components ───────────────────────────────────────────────────────────────
+
+const FeatureCard = ({ icon: Icon, title, subtitle, href, iconBg, iconColor }) => (
+    <Link href={href} className="block group">
+        <div className="bg-white dark:bg-slate-900 rounded-[28px] p-4 h-full flex flex-col items-center text-center shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-md transition-all active:scale-[0.98] border border-transparent hover:border-red-100 dark:hover:border-red-900/30">
+            <div className={`w-12 h-12 rounded-2xl ${iconBg} flex items-center justify-center shrink-0 mb-3 transition-transform group-hover:scale-110`}>
+                <Icon className={`h-6 w-6 ${iconColor}`} />
+            </div>
+            <div>
+                <h3 className="font-bold text-gray-900 dark:text-gray-100 text-xs leading-tight mb-1 line-clamp-1">
+                    {title}
+                </h3>
+                <p className="text-[10px] text-gray-400 dark:text-gray-500 leading-tight line-clamp-2">
+                    {subtitle}
+                </p>
+            </div>
+        </div>
+    </Link>
+);
 
 function StreakBanner({ streak, onClick }) {
     const { t } = useTranslation();
@@ -28,157 +49,72 @@ function StreakBanner({ streak, onClick }) {
     const {
         current_streak,
         longest_streak,
-        freeze_count,
-        active_today,
-        at_risk,
-        is_frozen,
         is_broken,
-        auto_save_available,
     } = streak;
-
-    const config = active_today
-        ? {
-              bg: "bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800",
-              flame: "text-orange-500",
-              label: null,
-              message: t("streak.message_active_today", {
-                  defaultValue: "Great job! Come back tomorrow to keep it going.",
-              }),
-          }
-        : is_frozen
-          ? {
-                bg: "bg-blue-50 border-blue-300 dark:bg-blue-950/30 dark:border-blue-800",
-                flame: "text-blue-400",
-                label: {
-                    text: t("streak.frozen"),
-                    cls: "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300",
-                },
-                message: t("streak.message_frozen", {
-                    defaultValue:
-                        "You missed yesterday, but your streak is saved! Complete a quiz or exercise to continue.",
-                }),
-            }
-          : at_risk
-            ? {
-                  bg: "bg-yellow-50 border-yellow-300 dark:bg-yellow-950/30 dark:border-yellow-800",
-                  flame: "text-yellow-400",
-                  label: {
-                      text: t("streak.at_risk"),
-                      cls: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300",
-                  },
-                  message: t("streak.message_at_risk", {
-                      defaultValue:
-                          "No activity yet today — do a quiz or exercise before midnight!",
-                  }),
-              }
-            : is_broken
-              ? {
-                    bg: "bg-gray-100 border-gray-300 dark:bg-slate-800 dark:border-slate-700",
-                    flame: "text-gray-300",
-                    label: {
-                        text: t("streak.lost"),
-                        cls: "bg-gray-200 text-gray-600 dark:bg-slate-700 dark:text-slate-300",
-                    },
-                    message: t("streak.message_lost", {
-                        defaultValue:
-                            "You missed too many days. Start a new streak today!",
-                    }),
-                }
-              : {
-                    bg: "bg-white border-gray-200 dark:bg-slate-900 dark:border-slate-700",
-                    flame: "text-gray-300",
-                    label: null,
-                    message: t("streak.message_start", {
-                        defaultValue:
-                            "Complete a quiz or exercise to start your streak.",
-                    }),
-                };
 
     return (
         <div
             onClick={onClick}
-            className={`rounded-2xl border p-4 mb-3 ${config.bg} cursor-pointer active:scale-[0.98] transition-transform shadow-sm hover:shadow-md`}
+            className="relative overflow-hidden rounded-[32px] p-6 mb-8 bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-950/20 dark:to-pink-950/10 border border-red-100/50 dark:border-red-900/30 cursor-pointer active:scale-[0.98] transition-all shadow-[0_10px_30px_rgba(229,32,28,0.05)]"
         >
-            <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                    {is_frozen ? (
-                        <Snowflake className="h-8 w-8 text-blue-400" />
-                    ) : (
-                        <Flame className={`h-8 w-8 ${config.flame}`} />
-                    )}
+            <div className="flex items-center justify-between relative z-10">
+                <div className="flex items-center gap-4">
+                    <div className="relative">
+                        <div className="w-16 h-16 rounded-full border-2 border-red-200 dark:border-red-800 flex items-center justify-center bg-white dark:bg-slate-900 shadow-sm">
+                            <Flame className={`h-8 w-8 text-red-500 ${!is_broken ? "animate-pulse" : "opacity-30"}`} />
+                        </div>
+                        {is_broken && (
+                             <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center">
+                                <span className="text-[10px] text-white font-bold">!</span>
+                             </div>
+                        )}
+                    </div>
                     <div>
-                        <p className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 leading-none">
-                            {current_streak}
-                            <span className="text-sm font-semibold text-gray-400 dark:text-gray-500 ml-1">
+                        <div className="flex items-baseline gap-1">
+                            <span className="text-3xl font-black text-gray-900 dark:text-gray-100">
+                                {current_streak}
+                            </span>
+                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
                                 {t(current_streak !== 1 ? "streak.days" : "streak.day")}
                             </span>
-                        </p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500">
+                        </div>
+                        <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-0.5">
                             {t("streak.current")}
                         </p>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <div className="text-center">
-                        <p className="text-sm font-bold text-gray-700 dark:text-gray-200">
-                            {longest_streak}
-                        </p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500">
-                            {t("streak.best")}
-                        </p>
+                <div className="text-right border-l border-red-200/50 dark:border-red-800/50 pl-6">
+                    <div className="text-2xl font-black text-gray-900 dark:text-gray-100">
+                        {longest_streak}
                     </div>
-
-                    {freeze_count > 0 && (
-                        <div className="flex flex-col items-center">
-                            <div className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-300">
-                                <ShieldCheck className="h-3.5 w-3.5" />
-                                {freeze_count}
-                            </div>
-                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                {t(freeze_count === 1 ? "streak.safe_day" : "streak.safe_days")}
-                            </p>
-                        </div>
-                    )}
+                    <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                        {t("streak.best")}
+                    </p>
                 </div>
             </div>
 
-            {config.label && (
-                <span
-                    className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full mb-2 ${config.label.cls}`}
-                >
-                    {config.label.text}
-                </span>
-            )}
-
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-                {config.message}
-            </p>
-
-            {is_frozen && (
-                <div className="mt-3 flex gap-2">
-                    <Link
-                        href={route("quiz.index")}
-                        className="flex-1 text-center text-xs font-semibold bg-blue-500 text-white rounded-xl py-2 hover:bg-blue-600 transition-colors"
-                    >
-                        {t("streak.take_quiz")}
-                    </Link>
-                    <Link
-                        href={route("wordlistcategory.index")}
-                        className="flex-1 text-center text-xs font-semibold bg-white border border-blue-300 text-blue-600 rounded-xl py-2 hover:bg-blue-50 transition-colors dark:bg-slate-800 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-slate-700"
-                    >
-                        {t("streak.do_exercise")}
-                    </Link>
-                </div>
-            )}
-
-            {!active_today && !is_broken && auto_save_available && (
-                <p className="text-xs text-blue-400 dark:text-blue-300 mt-1.5">
-                    {t("streak.auto_save_message", {
-                        defaultValue: "🛡️ Auto-save available — if you miss a day this week your streak will be saved.",
-                    })}
+            <div className="mt-4 flex flex-wrap items-center gap-2 relative z-10">
+                {is_broken ? (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-black px-3 py-1 rounded-full bg-red-100 text-red-600 dark:bg-red-900/50 dark:text-red-400 uppercase tracking-wider">
+                        <Flame className="h-3 w-3" />
+                        {t("streak.lost")}
+                    </span>
+                ) : (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-black px-3 py-1 rounded-full bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-400 uppercase tracking-wider">
+                        <Zap className="h-3 w-3" />
+                        Active
+                    </span>
+                )}
+                <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400 italic">
+                    {is_broken
+                        ? "You missed too many days. Start a new streak today!"
+                        : "Great job! Keep the momentum going."}
                 </p>
-            )}
+            </div>
+
+            {/* Decorative background element */}
+            <div className="absolute top-[-20px] right-[-20px] w-32 h-32 bg-red-200/20 dark:bg-red-800/10 rounded-full blur-3xl pointer-events-none" />
         </div>
     );
 }
@@ -195,9 +131,24 @@ export default function Dashboard({
     const { auth } = usePage().props;
     const user = auth?.user;
     const [showStreakModal, setShowStreakModal] = useState(false);
+    const [xpBalance, setXpBalance] = useState(350);
     const [showStreakLost, setShowStreakLost] = useState(
         streak?.is_broken && !streak?.broken_streak_notified
     );
+
+    useEffect(() => {
+        const fetchXp = async () => {
+            if (!user) return;
+            try {
+                const response = await axios.get(route("api.xp-shop.status"));
+                setXpBalance(response.data.xp.balance);
+            } catch (err) {
+                console.error("Failed to fetch XP status:", err);
+            }
+        };
+        fetchXp();
+        window.dispatchEvent(new CustomEvent("check-achievements"));
+    }, [user]);
 
     const handleDismissStreakLost = async () => {
         setShowStreakLost(false);
@@ -208,24 +159,130 @@ export default function Dashboard({
         }
     };
 
-    useEffect(() => {
-        // Check for unseen achievements when landing on the dashboard
-        window.dispatchEvent(new CustomEvent("check-achievements"));
-    }, []);
+    const features = [
+        {
+            title: t("dashboard.add_new_word"),
+            subtitle: "Expand vocabulary",
+            icon: Plus,
+            href: route("my.words.index") + "?new=1",
+            iconBg: "bg-blue-50 dark:bg-blue-950/30",
+            iconColor: "text-blue-500",
+        },
+        {
+            title: t("dashboard.word_lists"),
+            subtitle: "Browse All",
+            icon: List,
+            href: route("wordlistcategory.index"),
+            iconBg: "bg-purple-50 dark:bg-purple-950/30",
+            iconColor: "text-purple-500",
+        },
+        {
+            title: t("dashboard.mastered_words"),
+            subtitle: masteredCount > 0 ? t("dashboard.words_count", { count: masteredCount }) : "Words you know",
+            icon: Trophy,
+            href: route("words.mastered"),
+            iconBg: "bg-green-50 dark:bg-green-950/30",
+            iconColor: "text-green-500",
+        },
+        {
+            title: t("dashboard.test_your_learning"),
+            subtitle: "Practice now",
+            icon: BookOpen,
+            href: route("quiz.index"),
+            iconBg: "bg-red-50 dark:bg-red-950/30",
+            iconColor: "text-red-500",
+        },
+        {
+            title: t("dashboard.leaderboard"),
+            subtitle: "See top learners",
+            icon: Users,
+            href: route("leaderboard"),
+            iconBg: "bg-orange-50 dark:bg-orange-950/30",
+            iconColor: "text-orange-500",
+        },
+        {
+            title: t("dashboard.achievements"),
+            subtitle: "View earned badges",
+            icon: ShieldCheck,
+            href: route("achievements"),
+            iconBg: "bg-cyan-50 dark:bg-cyan-950/30",
+            iconColor: "text-cyan-500",
+        },
+        {
+            title: t("dashboard.revise"),
+            subtitle: reviseCounts.all > 0 ? t("dashboard.words_count", { count: reviseCounts.all }) : "Practise & review",
+            icon: RotateCcw,
+            href: route("words.revise"),
+            iconBg: "bg-indigo-50 dark:bg-indigo-950/30",
+            iconColor: "text-indigo-500",
+        },
+        {
+            title: t("dashboard.bookmarked_words"),
+            subtitle: "Saved for later review",
+            icon: Bookmark,
+            href: route("words.bookmarked"),
+            iconBg: "bg-yellow-50 dark:bg-yellow-950/30",
+            iconColor: "text-yellow-500",
+        },
+    ];
 
     return (
-        <AppLayout>
+        <AppLayout hideHeader={true}>
             <Head title={t("dashboard.title")} />
-            <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
-                <div className="w-full max-w-2xl mx-auto px-4 py-5">
-                    <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">
-                        {user
-                            ? t("dashboard.greeting", {
-                                  name: user.name.split(" ")[0],
-                              })
-                            : t("dashboard.subtitle")}
-                    </p>
+            <div className="min-h-screen pb-28 sm:pb-12 bg-transparent">
+                <div className="w-full max-w-2xl mx-auto px-4 pt-6 pb-8 sm:pt-12">
+                    
+                    {/* ── Top Header ── */}
+                    <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-[28px] p-2 flex items-center justify-between shadow-[0_10px_40px_rgba(0,0,0,0.04)] mb-8 border border-white dark:border-slate-800 sticky top-4 z-50 transition-all">
+                        <div className="flex items-center gap-2 pl-3">
+                             <div className="bg-red-50 dark:bg-red-900/30 p-1.5 rounded-xl">
+                                <img src={logo} className="h-6 w-6" alt="Logo" />
+                             </div>
+                             <span className="text-xl font-black tracking-tighter text-[#E5201C]">
+                                VocabPix
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-3 pr-1">
+                            <div className="bg-yellow-50 dark:bg-yellow-950/30 px-3 py-1.5 rounded-2xl flex items-center gap-1.5 border border-yellow-100 dark:border-yellow-900/30">
+                                <Zap className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                                <span className="text-sm font-black text-yellow-700 dark:text-yellow-400">
+                                    {xpBalance.toLocaleString()}
+                                </span>
+                            </div>
+                            <Link href={route("profile.edit")} className="active:scale-95 transition-transform">
+                                <div className="w-10 h-10 rounded-2xl border-2 border-white dark:border-slate-800 shadow-md overflow-hidden bg-gray-100 relative">
+                                    {user?.image ? (
+                                        <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center font-black text-gray-400 bg-gradient-to-br from-gray-50 to-gray-200">
+                                            {user?.name?.charAt(0).toUpperCase()}
+                                        </div>
+                                    )}
+                                </div>
+                            </Link>
+                        </div>
+                    </div>
 
+                    {/* ── Greeting ── */}
+                    <div className="flex items-center justify-between mb-10 mt-2 px-2 relative min-h-[120px]">
+                        <div className="relative z-10 max-w-[60%]">
+                            <h1 className="text-3xl font-black text-gray-900 dark:text-gray-100 leading-tight">
+                                Hello {user?.name?.split(" ")[0] || "Learner"} 👋
+                            </h1>
+                            <p className="text-gray-400 dark:text-gray-500 font-bold mt-1 text-base">
+                                Ready to practice?
+                            </p>
+                        </div>
+                        <div className="absolute right-[-10px] bottom-[-30px] w-44 h-44 opacity-100 pointer-events-none z-0">
+                             <img 
+                                src="/img/learning_illustration.png" 
+                                alt="Learning illustration" 
+                                className="w-full h-full object-contain transform drop-shadow-[0_20px_40px_rgba(229,32,28,0.15)]"
+                             />
+                        </div>
+                    </div>
+
+                    {/* ── Streak ── */}
                     <StreakBanner
                         streak={streak}
                         onClick={() => setShowStreakModal(true)}
@@ -243,186 +300,58 @@ export default function Dashboard({
                         prevStreak={streak?.current_streak ?? 0}
                     />
 
-                    <div className="grid grid-cols-2 gap-3 mb-3">
-                        <Link
-                            href={route("my.words.index") + "?new=1"}
-                            className="block"
-                        >
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm hover:shadow-md transition-shadow min-h-[180px]">
-                                <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-950/30 flex items-center justify-center">
-                                    <Plus className="h-8 w-8 text-blue-500" />
-                                </div>
-                                <div className="text-center">
-                                    <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
-                                        {t("dashboard.add_new_word")}
-                                    </p>
-                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                        {t("dashboard.expand_vocabulary")}
-                                    </p>
-                                </div>
-                            </div>
-                        </Link>
-
-                        <Link
-                            href={route("wordlistcategory.index")}
-                            className="block"
-                        >
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm hover:shadow-md transition-shadow min-h-[180px]">
-                                <div className="w-16 h-16 rounded-full bg-purple-100 dark:bg-purple-950/30 flex items-center justify-center">
-                                    <List className="h-8 w-8 text-purple-500" />
-                                </div>
-                                <div className="text-center">
-                                    <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
-                                        {t("dashboard.word_lists")}
-                                    </p>
-                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                        {t("dashboard.browse_all")}
-                                    </p>
-                                </div>
-                            </div>
-                        </Link>
-
-                        <Link href={route("words.mastered")} className="block">
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm hover:shadow-md transition-shadow min-h-[180px]">
-                                <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-950/30 flex items-center justify-center">
-                                    <Trophy className="h-8 w-8 text-green-600" />
-                                </div>
-                                <div className="text-center">
-                                    <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
-                                        {t("dashboard.mastered_words")}
-                                    </p>
-                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                        {masteredCount > 0 ? (
-                                            <span className="font-extrabold text-green-600 text-base">
-                                                {t("dashboard.words_count", {
-                                                    count: masteredCount,
-                                                })}
-                                            </span>
-                                        ) : (
-                                            t("dashboard.words_you_know")
-                                        )}
-                                    </p>
-                                </div>
-                            </div>
-                        </Link>
-
-                        <Link href={route("quiz.index")} className="block">
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm hover:shadow-md transition-shadow min-h-[180px]">
-                                <div className="w-16 h-16 rounded-full bg-[#E5201C]/10 dark:bg-red-950/30 flex items-center justify-center">
-                                    <BookOpen className="h-8 w-8 text-[#E5201C]" />
-                                </div>
-                                <div className="text-center">
-                                    <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
-                                        {t("dashboard.test_your_learning")}
-                                    </p>
-                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                        {t("dashboard.practice_now")}
-                                    </p>
-                                </div>
-                            </div>
-                        </Link>
-
-                        <Link href={route("leaderboard")} className="block">
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm hover:shadow-md transition-shadow min-h-[180px]">
-                                <div className="w-16 h-16 rounded-full bg-orange-100 dark:bg-orange-950/30 flex items-center justify-center">
-                                    <Users className="h-8 w-8 text-orange-500" />
-                                </div>
-                                <div className="text-center">
-                                    <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
-                                        {t("dashboard.leaderboard")}
-                                    </p>
-                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                        {t("dashboard.see_top_learners")}
-                                    </p>
-                                </div>
-                            </div>
-                        </Link>
-
-                        <Link href={route("achievements")} className="block">
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm hover:shadow-md transition-shadow min-h-[180px]">
-                                <div className="w-16 h-16 rounded-full bg-cyan-100 dark:bg-cyan-950/30 flex items-center justify-center">
-                                    <ShieldCheck className="h-8 w-8 text-cyan-500" />
-                                </div>
-                                <div className="text-center">
-                                    <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
-                                        {t("dashboard.achievements")}
-                                    </p>
-                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                        {t("dashboard.view_earned_badges")}
-                                    </p>
-                                </div>
-                            </div>
-                        </Link>
-
-                        {/* ── Revise ── */}
-                        <Link href={route("words.revise")} className="block">
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-sm hover:shadow-md transition-shadow min-h-[180px]">
-                                <div className="w-16 h-16 rounded-full bg-indigo-100 dark:bg-indigo-950/30 flex items-center justify-center">
-                                    <RotateCcw className="h-8 w-8 text-indigo-500" />
-                                </div>
-                                <div className="text-center">
-                                    <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
-                                        {t("dashboard.revise")}
-                                    </p>
-                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                        {reviseCounts.all > 0 ? (
-                                            <span className="font-bold text-indigo-500 text-base">
-                                                {t("dashboard.words_count", {
-                                                    count: reviseCounts.all,
-                                                })}
-                                            </span>
-                                        ) : (
-                                            t("dashboard.practice_review")
-                                        )}
-                                    </p>
-                                </div>
-                            </div>
-                        </Link>
+                    {/* ── Feature Grid ── */}
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-8">
+                        {features.map((feature, idx) => (
+                            <FeatureCard key={idx} {...feature} />
+                        ))}
                     </div>
 
-                    {/* ── Bookmarked Words ── */}
-                    <Link
-                        href={route("words.bookmarked")}
-                        className="block mb-3"
-                    >
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
-                            <div className="w-12 h-12 rounded-full bg-yellow-50 dark:bg-yellow-950/30 flex items-center justify-center shrink-0">
-                                <Bookmark
-                                    className="h-6 w-6 fill-yellow-400 text-yellow-400"
-                                    strokeWidth={1.8}
-                                />
+                    {/* ── Settings Card (Full width) ── */}
+                    <Link href={route("settings.show")} className="block mb-8">
+                         <div className="bg-white dark:bg-slate-900 rounded-[32px] p-5 flex items-center justify-between shadow-[0_4px_25px_rgba(0,0,0,0.03)] border border-white dark:border-slate-800 transition-all active:scale-[0.98] hover:border-gray-200 dark:hover:border-slate-700">
+                            <div className="flex items-center gap-4">
+                                <div className="w-14 h-14 rounded-2xl bg-gray-50 dark:bg-slate-800 flex items-center justify-center border border-gray-100 dark:border-slate-700">
+                                    <Settings className="h-7 w-7 text-gray-400" />
+                                </div>
+                                <div>
+                                    <h3 className="font-black text-gray-900 dark:text-gray-100 text-base">
+                                        {t("dashboard.settings")}
+                                    </h3>
+                                    <p className="text-xs text-gray-400 dark:text-gray-500 font-bold mt-0.5">
+                                        Manage preferences
+                                    </p>
+                                </div>
                             </div>
-                            <div>
-                                <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
-                                    {t("dashboard.bookmarked_words")}
-                                </p>
-                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                    {t("dashboard.saved_for_later")}
-                                </p>
-                            </div>
+                            <ChevronRight className="h-5 w-5 text-gray-300" />
                         </div>
                     </Link>
 
-                    {/* ── Bottom bar: Settings ── */}
-                    <div className="grid grid-cols-3 gap-3 mb-4">
-                        <Link href={route("settings.show")} className="block">
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl py-5 px-3 flex flex-col items-center justify-center gap-2 shadow-sm hover:shadow-md transition-shadow h-full">
-                                <Settings className="h-6 w-6 text-gray-400" />
-                                <span className="text-xs font-medium text-gray-600 dark:text-gray-400 text-center">
-                                    {t("dashboard.settings")}
-                                </span>
-                            </div>
-                        </Link>
-                    </div>
-
+                    {/* ── Main CTA ── */}
                     <Link href={route("my.words.index")}>
-                        <div className="bg-[#E5201C] dark:bg-red-700 rounded-2xl py-5 px-6 text-center shadow-md hover:bg-red-700 dark:hover:bg-red-800 transition-colors cursor-pointer">
-                            <p className="text-white font-bold text-sm">
-                                {t("dashboard.my_word_collection")}
-                            </p>
-                            <p className="text-white/80 text-xs mt-1">
-                                {t("dashboard.manage_personal_words")}
-                            </p>
+                        <div className="bg-gradient-to-r from-[#E5201C] to-[#ff4d4d] dark:from-red-700 dark:to-red-600 rounded-[36px] p-7 text-left shadow-[0_20px_40px_rgba(229,32,28,0.3)] hover:shadow-2xl transition-all active:scale-[0.98] group flex items-center justify-between overflow-hidden relative border-t border-white/20">
+                            <div className="flex items-center gap-6 relative z-10">
+                                <div className="w-16 h-16 rounded-[20px] bg-white shadow-xl flex items-center justify-center group-hover:rotate-6 transition-transform">
+                                    <LayoutGrid className="h-8 w-8 text-[#E5201C]" />
+                                </div>
+                                <div>
+                                    <p className="text-white font-black text-2xl leading-tight tracking-tight">
+                                        {t("dashboard.my_word_collection")}
+                                    </p>
+                                    <p className="text-white/90 text-xs font-black mt-1 uppercase tracking-widest">
+                                        View & manage all your words
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center relative z-10 transition-transform group-hover:translate-x-2">
+                                <ChevronRight className="h-7 w-7 text-white" />
+                            </div>
+
+                            {/* Decorative background patterns */}
+                            <div className="absolute inset-0 opacity-20 pointer-events-none">
+                                <div className="absolute top-[-20px] right-[-20px] w-40 h-40 border-[12px] border-white rounded-full" />
+                                <div className="absolute bottom-[-10px] left-[-10px] w-24 h-24 bg-white rounded-full blur-2xl" />
+                            </div>
                         </div>
                     </Link>
                 </div>
