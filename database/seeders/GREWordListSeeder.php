@@ -382,20 +382,32 @@ class GREWordListSeeder extends Seeder
         // First sublist (GRE 333) is free; the rest are locked
         $isLocked = $index >= 1;
 
-        $wordList = WordList::updateOrCreate(
-            [
+        // Try to find the "nth" existing WordList in this category
+        $wordList = WordList::where('word_list_category_id', $categoryId)
+            ->offset($index)
+            ->first();
+
+        if ($wordList) {
+            // Update existing record
+            $wordList->update([
+                'title' => $title,
+                'difficulty' => 'advanced',
+                'status' => true,
+                'is_locked' => $isLocked,
+                'is_public' => true,
+            ]);
+        } else {
+            // Create new record if none exists at this position
+            $wordList = WordList::create([
                 'word_list_category_id' => $categoryId,
-                
-            ],
-            [
                 'title' => $title,
                 'difficulty' => 'advanced',
                 'status' => true,
                 'is_locked' => $isLocked,
                 'created_by' => $creatorId,
                 'is_public' => true,
-            ]
-        );
+            ]);
+        }
 
         $this->log('info', "    WordList: {$title} (ID: {$wordList->id})");
 
