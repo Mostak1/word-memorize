@@ -83,8 +83,8 @@ export default function Index({ categories }) {
             {
                 word_list_category_id: wordList.word_list_category_id,
                 title: wordList.title,
-                price: wordList.price,
-                difficulty: wordList.difficulty,
+                price: wordList.price ?? 0,
+                difficulty: wordList.difficulty || "beginner",
                 status: wordList.status,
                 is_locked: !wordList.is_locked,
                 is_public: wordList.is_public,
@@ -109,8 +109,8 @@ export default function Index({ categories }) {
             {
                 word_list_category_id: wordList.word_list_category_id,
                 title: wordList.title,
-                price: wordList.price,
-                difficulty: wordList.difficulty,
+                price: wordList.price ?? 0,
+                difficulty: wordList.difficulty || "beginner",
                 status: wordList.status,
                 is_locked: wordList.is_locked,
                 is_public: !wordList.is_public,

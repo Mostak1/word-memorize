@@ -69,6 +69,11 @@ class WordListCategory extends Model
         return $this->hasMany(WordList::class, 'word_list_category_id')->orderBy('title');
     }
 
+    public function words()
+    {
+        return $this->hasManyThrough(Word::class, WordList::class, 'word_list_category_id', 'wordlist_id');
+    }
+
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
@@ -117,11 +122,34 @@ class WordListCategory extends Model
 
     public function getThumbnailUrlFullAttribute(): ?string
     {
-        if (!$this->thumbnail)
+        $thumbnail = $this->thumbnail;
+
+        // If local path, check if file exists
+        if ($thumbnail && !str_starts_with($thumbnail, 'http')) {
+            $storagePath = ltrim($thumbnail, '/');
+            if (!Storage::disk('public')->exists($storagePath)) {
+                $thumbnail = null;
+            }
+        }
+
+        if (!$thumbnail) {
+            // Check if it's a user-created list (not admin)
+            static $adminId = null;
+            if ($adminId === null) {
+                $adminId = \App\Models\User::where('email', 'admin@gmail.com')->value('id');
+            }
+
+            if ($this->created_by && $this->created_by != $adminId) {
+                return asset('img/personal_word_list.webp');
+            }
             return null;
-        if (str_starts_with($this->thumbnail, 'http'))
-            return $this->thumbnail;
-        return asset('storage' . $this->thumbnail);
+        }
+
+        if (str_starts_with($thumbnail, 'http')) {
+            return $thumbnail;
+        }
+
+        return asset('storage' . $thumbnail);
     }
 
     // public function getThumbnailUrlFullAttribute(): ?string

@@ -334,13 +334,13 @@ export default function ExerciseSession({
 
     // Auto-scroll to I Know / I Don't Know buttons when meaning is revealed
     useEffect(() => {
-        if (showMeaning && meaningCardRef.current) {
+        if (showMeaning && buttonsRef.current) {
             setTimeout(() => {
-                meaningCardRef.current?.scrollIntoView({
+                buttonsRef.current?.scrollIntoView({
                     behavior: "smooth",
-                    block: "end",
+                    block: "center", // Center buttons to avoid being obscured by BottomNav
                 });
-            }, 250);
+            }, 300);
         }
     }, [showMeaning]);
 

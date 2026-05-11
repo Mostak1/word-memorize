@@ -217,13 +217,13 @@ export default function AppLayout({ children, hideHeader = false }) {
                                         <div className="relative group ml-1">
                                             <button className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg transition-colors text-sm font-medium">
                                                 {/* Avatar */}
-                                                <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold overflow-hidden">
+                                                <div className="w-6 h-6 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-[10px] font-bold overflow-hidden text-gray-500 dark:text-gray-300">
                                                     {user.image && !imgError ? (
                                                         <img
                                                             src={
                                                                 user.image.startsWith("http")
                                                                     ? user.image
-                                                                    : `${assetUrl}/${user.image}`
+                                                                    : `${assetUrl?.replace(/\/$/, "")}/${user.image.replace(/^\//, "")}`
                                                             }
                                                             alt={user.name}
                                                             className="w-full h-full object-cover"
@@ -377,13 +377,13 @@ export default function AppLayout({ children, hideHeader = false }) {
                                                 className="flex items-center gap-2 text-white font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
                                             >
                                                 {/* Avatar */}
-                                                <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center font-semibold overflow-hidden">
+                                                <div className="w-9 h-9 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center font-bold overflow-hidden text-gray-500 dark:text-gray-300">
                                                     {user.image && !imgError ? (
                                                         <img
                                                             src={
                                                                 user.image.startsWith("http")
                                                                     ? user.image
-                                                                    : `${assetUrl}/${user.image}`
+                                                                    : `${assetUrl?.replace(/\/$/, "")}/${user.image.replace(/^\//, "")}`
                                                             }
                                                             alt={user.name}
                                                             className="w-full h-full object-cover"

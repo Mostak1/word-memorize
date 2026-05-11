@@ -54,7 +54,7 @@ class UserWordListAccessController extends Controller
         UserWordListAccess::create([
             'user_id' => $validated['user_id'],
             'word_list_category_id' => $validated['word_list_category_id'],
-            'course_title' => $validated['course_title'],
+            // 'course_title' => $validated['course_title'],
             'granted_at' => now(),
         ]);
 

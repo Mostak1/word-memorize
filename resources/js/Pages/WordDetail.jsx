@@ -223,11 +223,25 @@ export default function WordDetail({
                 <main className="max-w-lg mx-auto px-3">
                     <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-md overflow-hidden">
                         {/* Top row: bookmark | word + POS | speaker */}
-                        <div className="flex items-center px-5 pt-5 pb-2">
-                            <div className="flex-none w-8 flex justify-start">
+                        <div className="flex items-center justify-between px-5 pt-5 pb-2">
+                            <div className="flex items-center gap-2">
+                                {(isRevise || isMastered) && (
+                                    <Link
+                                        href={
+                                            isRevise
+                                                ? route("words.revise.list", {
+                                                      filter: reviseFilter,
+                                                  })
+                                                : route("words.mastered")
+                                        }
+                                        className="p-2 rounded-xl bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 transition"
+                                    >
+                                        <ChevronLeft className="h-5 w-5" />
+                                    </Link>
+                                )}
                                 <button
                                     onClick={handleBookmark}
-                                    className="p-1 transition-colors"
+                                    className="p-2 rounded-xl bg-gray-100 dark:bg-slate-800 transition-colors"
                                     aria-label={
                                         bookmarked
                                             ? "Remove bookmark"
@@ -235,7 +249,7 @@ export default function WordDetail({
                                     }
                                 >
                                     <Bookmark
-                                        className={`h-6 w-6 transition-colors ${
+                                        className={`h-5 w-5 transition-colors ${
                                             bookmarked
                                                 ? "fill-yellow-400 text-yellow-400"
                                                 : "text-gray-400 hover:text-gray-600"
@@ -245,26 +259,26 @@ export default function WordDetail({
                                 </button>
                             </div>
 
-                            <div className="flex-1 flex flex-col items-center justify-center gap-1 text-center px-2">
+                            <div className="flex flex-col items-center justify-center gap-0 text-center px-2">
                                 <h1
-                                    className={`${wordFontSize(word.word)} font-extrabold text-gray-900 dark:text-gray-100 tracking-tight leading-tight text-center break-words w-full`}
+                                    className={`${wordFontSize(word.word)} font-extrabold text-gray-900 dark:text-gray-100 tracking-tight leading-tight text-center break-words`}
                                 >
                                     {word.word}
                                 </h1>
                                 {word.parts_of_speech_variations && (
-                                    <span className="bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 text-sm font-medium px-3 py-0.5 rounded-md">
+                                    <span className="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-bold tracking-widest">
                                         {word.parts_of_speech_variations}
                                     </span>
                                 )}
                             </div>
 
-                            <div className="flex-none w-8 flex justify-end">
+                            <div className="flex items-center gap-2">
                                 <button
                                     onClick={() => speakWord(word.word)}
-                                    className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition"
+                                    className="p-2 rounded-xl bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 transition"
                                 >
                                     <Volume2
-                                        className="h-6 w-6"
+                                        className="h-5 w-5"
                                         strokeWidth={1.8}
                                     />
                                 </button>
@@ -586,7 +600,7 @@ export default function WordDetail({
 
             {/* ── Mastered: Prev / Put Back / Next navigation ── */}
             {isMastered && (
-                <div className="fixed bottom-0 left-0 right-0 z-20">
+                <div className="fixed bottom-0 left-0 right-0 z-[60] bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-gray-100 dark:border-slate-800">
                     <div className="max-w-lg mx-auto px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
                         <div className="flex items-center gap-3">
                             <button
@@ -623,7 +637,7 @@ export default function WordDetail({
 
             {/* ── Revise: Prev / Next navigation ── */}
             {isRevise && (
-                <div className="fixed bottom-0 left-0 right-0 z-20">
+                <div className="fixed bottom-0 left-0 right-0 z-[60] bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-gray-100 dark:border-slate-800">
                     <div className="max-w-lg mx-auto px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
                         <div className="flex items-center gap-3">
                             <button

@@ -154,12 +154,16 @@ export default function Dashboard({
 
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+            if (
+                dropdownRef.current &&
+                !dropdownRef.current.contains(event.target)
+            ) {
                 setShowDropdown(false);
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
+        return () =>
+            document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
     useEffect(() => {
@@ -263,13 +267,12 @@ export default function Dashboard({
             <Head title={t("dashboard.title")} />
             <div className="min-h-screen pb-28 sm:pb-12 bg-transparent">
                 <div className="w-full max-w-2xl mx-auto px-4 pt-6 pb-8 sm:pt-12">
-
-
                     {/* ── Greeting ── */}
                     <div className="flex items-center justify-between mb-10 mt-2 px-2 relative min-h-[120px]">
-                        <div className="relative z-10 max-w-[60%]">
+                        <div className="relative z-10 max-w-[70%]">
                             <h1 className="text-3xl font-black text-gray-900 dark:text-gray-100 leading-tight">
-                                Hello {user?.name?.split(" ")[0] || "Learner"}{" "}
+                                Hello<br></br>{" "}
+                                {user?.name?.split(" ")[0] || "Learner"}
                                 👋
                             </h1>
                             <p className="text-gray-400 dark:text-gray-500 font-bold mt-1 text-base">
@@ -277,10 +280,18 @@ export default function Dashboard({
                             </p>
                         </div>
                         <div className="absolute right-[-10px] bottom-[-30px] w-44 h-44 opacity-100 pointer-events-none z-0">
+                            {/* Pulsating Glow */}
+                            <div className="absolute top-1/2 left-1/2 w-32 h-32 bg-[#e70013] rounded-full animate-glow -z-10" />
+                            
                             <img
                                 src={`${assetUrl}/img/learning_illustration.png`}
                                 alt="Learning illustration"
-                                className="w-full h-full object-contain transform drop-shadow-[0_20px_40px_rgba(229,32,28,0.15)]"
+                                className="w-full h-full object-contain transform drop-shadow-[0_20px_40px_rgba(229,32,28,0.15)] dark:hidden"
+                            />
+                            <img
+                                src={`${assetUrl}/img/learning_illustration_dark.png`}
+                                alt="Learning illustration"
+                                className="w-full h-full object-contain transform drop-shadow-[0_20px_40px_rgba(229,32,28,0.15)] hidden dark:block"
                             />
                         </div>
                     </div>
@@ -311,7 +322,7 @@ export default function Dashboard({
                     </div>
 
                     {/* ── Settings Card (Full width) ── */}
-                    <Link href={route("settings.show")} className="block mb-8">
+                    {/* <Link href={route("settings.show")} className="block mb-8">
                         <div className="bg-white dark:bg-slate-900 rounded-[32px] p-5 flex items-center justify-between shadow-[0_4px_25px_rgba(0,0,0,0.03)] border border-white dark:border-slate-800 transition-all active:scale-[0.98] hover:border-gray-200 dark:hover:border-slate-700">
                             <div className="flex items-center gap-4">
                                 <div className="w-14 h-14 rounded-2xl bg-gray-50 dark:bg-slate-800 flex items-center justify-center border border-gray-100 dark:border-slate-700">
@@ -328,7 +339,7 @@ export default function Dashboard({
                             </div>
                             <ChevronRight className="h-5 w-5 text-gray-300" />
                         </div>
-                    </Link>
+                    </Link> */}
 
                     {/* ── Main CTA ── */}
                     <Link href={route("my.words.index")}>

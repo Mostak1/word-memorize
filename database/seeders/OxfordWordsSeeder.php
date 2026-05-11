@@ -358,7 +358,7 @@ class OxfordWordsSeeder extends Seeder
     {
         return DB::transaction(function () use ($grouped, $creatorId, $imageIndex): array {
 
-            $thumbnailPath = $this->copyCategoryThumbnail('Oxford_3000.jpeg');
+            $thumbnailPath = $this->copyCategoryThumbnail('basic_to_fluent.webp');
 
             $category = WordListCategory::updateOrCreate(
                 ['name' => self::CATEGORY_NAME],
@@ -429,7 +429,7 @@ class OxfordWordsSeeder extends Seeder
         int $creatorId,
         array $imageIndex
     ): array {
-        $isLocked = $index >= 3;
+        $isLocked = $index > 0;
 
         $wordList = WordList::firstOrCreate(
             [

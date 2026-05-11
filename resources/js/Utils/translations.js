@@ -32,7 +32,10 @@ export const translations = {
         },
         nav: {
             home: "Home",
+            words: "Words",
             word_lists: "WordLists",
+            practice: "Practice",
+            leaderboard: "Leaderboard",
             shop: "Shop",
             profile: "Profile",
             logout: "Log Out",
@@ -447,6 +450,10 @@ export const translations = {
             empty_list_desc:
                 'Press "Check" on a word during exercise to mark it as mastered.',
             practice_button: "Practice This List",
+            locked_alert_title: "Access Restricted",
+            locked_alert_desc: "You don't have access to this wordlist, please go to shop and order it.",
+            locked_alert_cancel: "Cancel",
+            locked_alert_action: "Go to Shop",
         },
         shop: {
             title: "Shop",
@@ -898,7 +905,10 @@ export const translations = {
         },
         nav: {
             home: "হোম",
+            words: "শব্দ",
             word_lists: "শব্দ তালিকা",
+            practice: "অনুশীলন",
+            leaderboard: "লিডারবোর্ড",
             shop: "শপ",
             profile: "প্রোফাইল",
             logout: "লগ আউট",
@@ -1320,6 +1330,10 @@ export const translations = {
             empty_list_desc:
                 'অনুশীলনের সময় একটি শব্দে "চেক" চাপলে সেটি অর্জিত হিসেবে চিহ্নিত হবে।',
             practice_button: "এই তালিকাটি অনুশীলন করুন",
+            locked_alert_title: "অ্যাক্সেস সীমিত",
+            locked_alert_desc: "আপনার এই শব্দ তালিকায় অ্যাক্সেস নেই, দয়া করে শপে গিয়ে অর্ডার করুন।",
+            locked_alert_cancel: "বাতিল",
+            locked_alert_action: "শপে যান",
         },
         shop: {
             title: "শপ",

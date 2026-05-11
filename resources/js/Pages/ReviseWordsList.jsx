@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Head, Link, router } from "@inertiajs/react";
 import AppLayout from "@/Layouts/AppLayout";
 import {
@@ -12,6 +13,16 @@ import {
     BookOpen,
     Lock,
 } from "lucide-react";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/Components/ui/alert-dialog";
 import { useTranslation } from "@/Contexts/LanguageContext";
 
 const FILTER_META = {
@@ -42,6 +53,7 @@ const FILTER_META = {
 
 export default function ReviseWordsList({ words, filter, title }) {
     const { t } = useTranslation();
+    const [showLockedDialog, setShowLockedDialog] = useState(false);
     const meta = FILTER_META[filter] || FILTER_META.all;
     const Icon = meta.icon;
 
@@ -106,7 +118,10 @@ export default function ReviseWordsList({ words, filter, title }) {
                                     const isLocked = word.is_locked && !word.has_access;
                                     const CardWrapper = isLocked ? "div" : Link;
                                     const wrapperProps = isLocked 
-                                        ? { className: "block cursor-not-allowed" }
+                                        ? { 
+                                            className: "block cursor-pointer",
+                                            onClick: () => setShowLockedDialog(true)
+                                          }
                                         : { 
                                             className: "block",
                                             href: route("word.show", word.id) + `?from=revise&filter=${filter}`
@@ -128,10 +143,10 @@ export default function ReviseWordsList({ words, filter, title }) {
                                                         <div className="flex items-center gap-2 flex-wrap">
                                                             <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                                                                 {word.word}
-                                                                {isLocked && <Lock className="h-4 w-4 text-amber-500" />}
+                                                                {isLocked && <Lock className="h-4 w-4 text-[#E5201C]" />}
                                                             </h3>
                                                             {isLocked ? (
-                                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-900/50 uppercase tracking-wider">
+                                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-50 dark:bg-red-950/30 text-[#E5201C] dark:text-red-400 border border-red-100 dark:border-red-900/50 uppercase tracking-wider">
                                                                     <Lock className="h-2.5 w-2.5" />
                                                                     {t("common.locked", { defaultValue: "Locked" })}
                                                                 </span>
@@ -276,6 +291,32 @@ export default function ReviseWordsList({ words, filter, title }) {
                     to   { opacity: 1; transform: translateY(0); }
                 }
             `}</style>
+            <AlertDialog
+                open={showLockedDialog}
+                onOpenChange={setShowLockedDialog}
+            >
+                <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-sm rounded-2xl">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            {t("mastered.locked_alert_title")}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t("mastered.locked_alert_desc")}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="gap-2">
+                        <AlertDialogCancel className="rounded-xl flex-1">
+                            {t("mastered.locked_alert_cancel")}
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => router.get(route("shop"))}
+                            className="rounded-xl flex-1 bg-[#E5201C] hover:bg-red-700 text-white"
+                        >
+                            {t("mastered.locked_alert_action")}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </AppLayout>
     );
 }

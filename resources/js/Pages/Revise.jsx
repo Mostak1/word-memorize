@@ -102,9 +102,11 @@ export default function Revise({ reviseCounts = {} }) {
                                         <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
                                             {t(`revise.filters.${f.key}.label`)}
                                         </p>
-                                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                            {t(`revise.filters.${f.key}.description`)}
-                                        </p>
+                                        {f.key !== "more_practice" && (
+                                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                                                {t(`revise.filters.${f.key}.description`)}
+                                            </p>
+                                        )}
                                     </div>
 
                                     {/* Count badge + arrow */}

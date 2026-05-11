@@ -325,7 +325,7 @@ class AcademicWordListSeeder extends Seeder
         int $creatorId,
         array $imageIndex
     ): array {
-        $isLocked = $index >= 3;
+        $isLocked = $index >= 1;
 
         $wordList = WordList::firstOrCreate(
             [

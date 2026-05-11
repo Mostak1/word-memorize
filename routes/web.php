@@ -23,16 +23,30 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 
-Route::get('/vocab', function () {
-    return Inertia::render('Landing/Vocab');
+Route::get('/practice', function () {
+    $categories = \App\Models\WordListCategory::where('status', true)
+        ->whereHas('creator', function ($q) {
+            $q->where('id', 3)->orWhere('email', 'admin@gmail.com');
+        })
+        ->withCount(['wordLists', 'words'])
+        ->get();
+
+    $freeWordsCount = \App\Models\Word::whereHas('wordList', function ($q) {
+        $q->where('is_locked', false);
+    })->count();
+
+    return Inertia::render('Landing/Vocab', [
+        'categories' => $categories,
+        'freeWordsCount' => $freeWordsCount,
+    ]);
 })->name('vocab');
 
 // Route::get('/vocabland', function () {
 //     return view('landing/vocabland');
 // })->name('vocabland');
-Route::get('/practice', function () {
-    return view('landing/practice');
-})->name('vocabland.practice');
+// Route::get('/practice', function () {
+//     return view('landing/practice');
+// })->name('vocabland.practice');
 // Route::get('/tts', [TTSController::class, 'generate'])->name('tts');
 
 Route::get('/', function () {

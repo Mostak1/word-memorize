@@ -160,17 +160,20 @@ class SrsService
     $userId = $user->id;
 
     // ── Check Category Access ──────────────────────────────────────────
-    $wordlist = Word::where('wordlist_id', $wordlistId)->first()?->wordList;
-    $isLocked = $wordlist?->category?->is_locked ?? false;
-    $hasAccess = true;
-    if ($isLocked) {
-      $hasAccess = \App\Models\UserWordListAccess::where('user_id', $userId)
-        ->where('word_list_category_id', $wordlist->word_list_category_id)
-        ->exists();
-    }
+    // Standard logic: Access is only blocked if BOTH the wordlist and its category are locked,
+    // and the user has not purchased/unlocked it.
+    $wordlist = \App\Models\WordList::with('category')->find($wordlistId);
+    if ($wordlist && $wordlist->is_locked) {
+        $isCategoryLocked = $wordlist->category?->is_locked ?? false;
+        if ($isCategoryLocked) {
+            $hasAccess = \App\Models\UserWordListAccess::where('user_id', $userId)
+                ->where('word_list_category_id', $wordlist->word_list_category_id)
+                ->exists();
 
-    if ($isLocked && !$hasAccess) {
-      return collect();
+            if (!$hasAccess && !$user->isAdmin()) {
+                return collect();
+            }
+        }
     }
 
     if ($isQuizOnly) {
@@ -372,13 +375,18 @@ class SrsService
 
     return Word::with(['images', 'wordList.category:id,show_example_sentences', 'wordList', 'progress' => fn($q) => $q->where('user_id', $userId)])
       ->whereIn('id', $wordIds)
-      ->whereHas('wordList.category', function ($q) use ($userId) {
-        $q->where('is_locked', false)
-          ->orWhereIn('id', function ($q2) use ($userId) {
-            $q2->select('word_list_category_id')
-              ->from('user_word_list_access')
-              ->where('user_id', $userId);
-          });
+      ->where(function ($query) use ($userId) {
+        $query->whereHas('wordList', function ($q) {
+            $q->where('is_locked', false);
+        })
+        ->orWhereHas('wordList.category', function ($q) use ($userId) {
+            $q->where('is_locked', false)
+              ->orWhereIn('id', function ($q2) use ($userId) {
+                $q2->select('word_list_category_id')
+                  ->from('user_word_list_access')
+                  ->where('user_id', $userId);
+              });
+        });
       })
       ->get()
       ->sortBy(fn($w) => $w->progress->first()?->box ?? 1)

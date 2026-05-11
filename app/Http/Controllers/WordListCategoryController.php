@@ -9,6 +9,7 @@ use App\Models\WordListCategory;
 use App\Models\WordListOrder;
 use App\Models\WordProgress;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class WordListCategoryController extends Controller
@@ -56,6 +57,7 @@ class WordListCategoryController extends Controller
                     ->where('word_list_category_id', $cat->id)
                     ->exists();
             }
+
             return $cat;
         });
 

@@ -1,5 +1,6 @@
 import AppLayout from "@/Layouts/AppLayout";
-import { Head, Link } from "@inertiajs/react";
+import { Head, Link, usePage } from "@inertiajs/react";
+import { useState } from "react";
 import { Users, ArrowLeft } from "lucide-react";
 import { useTranslation } from "@/Contexts/LanguageContext";
 
@@ -9,6 +10,12 @@ export default function Following({
     followingCount,
 }) {
     const { t } = useTranslation();
+    const { assetUrl } = usePage().props;
+    const [imgErrors, setImgErrors] = useState({});
+
+    const handleImgError = (userId) => {
+        setImgErrors((prev) => ({ ...prev, [userId]: true }));
+    };
 
     return (
         <AppLayout hideHeader={true}>
@@ -81,11 +88,16 @@ export default function Following({
                                         <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center text-lg font-semibold text-gray-600 dark:text-gray-300">
-                                                    {user.image ? (
+                                                    {user.image && !imgErrors[user.id] ? (
                                                         <img
-                                                            src={user.image}
+                                                            src={
+                                                                user.image.startsWith("http")
+                                                                    ? user.image
+                                                                    : `${assetUrl?.replace(/\/$/, "")}/${user.image.replace(/^\//, "")}`
+                                                            }
                                                             alt={user.name}
                                                             className="w-full h-full object-cover"
+                                                            onError={() => handleImgError(user.id)}
                                                         />
                                                     ) : (
                                                         user.name

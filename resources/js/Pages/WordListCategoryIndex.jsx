@@ -54,15 +54,18 @@ export default function WordListCategoryIndex({ wordListCategories }) {
                                             {/* Lock overlay */}
                                             {category.is_locked &&
                                                 !category.has_access && (
-                                                    <div
-                                                        className="absolute top-2.5 right-2.5 w-9 h-9 rounded-xl flex items-center justify-center border-2 border-white dark:border-slate-800 transition-transform group-hover:scale-110 z-10"
-                                                        style={{
-                                                            animation:
-                                                                "lockPulse 2s infinite alternate ease-in-out",
-                                                        }}
-                                                    >
-                                                        <Lock className="h-4.5 w-4.5 text-white" />
-                                                    </div>
+                                                    <>
+                                                        <div className="absolute inset-0 bg-black/40 z-[5]" />
+                                                        <div
+                                                            className="absolute top-2.5 right-2.5 w-9 h-9 rounded-xl flex items-center justify-center border-2 border-white dark:border-slate-800 transition-transform group-hover:scale-110 z-10"
+                                                            style={{
+                                                                animation:
+                                                                    "lockPulse 2s infinite alternate ease-in-out",
+                                                            }}
+                                                        >
+                                                            <Lock className="h-4.5 w-4.5 text-white" />
+                                                        </div>
+                                                    </>
                                                 )}
                                         </div>
 

@@ -243,12 +243,15 @@ class WordListController extends Controller
                 }
 
                 $userId = auth()->id();
-                $query->whereHas('word.wordList.category', function ($q) use ($userId) {
+                $query->whereHas('word.wordList', function ($q) use ($userId) {
                     $q->where('is_locked', false)
-                        ->orWhereIn('id', function ($q2) use ($userId) {
-                            $q2->select('word_list_category_id')
-                                ->from('user_word_list_access')
-                                ->where('user_id', $userId);
+                        ->orWhereHas('category', function ($q2) use ($userId) {
+                            $q2->where('is_locked', false)
+                                ->orWhereIn('id', function ($q3) use ($userId) {
+                                    $q3->select('word_list_category_id')
+                                        ->from('user_word_list_access')
+                                        ->where('user_id', $userId);
+                                });
                         });
                 });
 

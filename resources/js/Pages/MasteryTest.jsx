@@ -955,53 +955,55 @@ export default function MasteryTest({
                         </div>
                     </div>
                     <div className="mb-6 flex justify-between items-center">
-                        <TypeBadge type={q.type} />
+                        {q && <TypeBadge type={q.type} />}
                         <div className="flex items-center gap-1.5 text-xs font-bold text-gray-500 dark:text-gray-400">
                             <Trophy className="h-3.5 w-3.5 text-amber-500" />{" "}
                             {score} pts
                         </div>
                     </div>
-                    <div
-                        key={current}
-                        style={{ animation: "fadeInUp 0.3s ease-out" }}
-                    >
-                        {q.type === "fill_blank" && (
-                            <FillBlankQuestion
-                                q={q}
-                                answered={answered}
-                                selected={selected}
-                                isCorrect={isCorrect}
-                                onAnswer={handleMCQAnswer}
-                            />
-                        )}
-                        {q.type === "match_pairs" && (
-                            <MatchPairsQuestion
-                                q={q}
-                                onSubmit={handleMatchSubmit}
-                            />
-                        )}
-                        {(q.type === "synonym" ||
-                            q.type === "antonym" ||
-                            q.type === "translation_en_bn") && (
-                            <SimpleQuestion
-                                q={q}
-                                answered={answered}
-                                selected={selected}
-                                isCorrect={isCorrect}
-                                onAnswer={handleMCQAnswer}
-                            />
-                        )}
-                        {answered && (
-                            <button
-                                onClick={handleNext}
-                                className="w-full mt-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold py-4 rounded-2xl shadow-lg transition active:scale-[0.98]"
-                            >
-                                {current + 1 === total
-                                    ? t("quiz.finish_test")
-                                    : t("quiz.next_question")}
-                            </button>
-                        )}
-                    </div>
+                    {q && (
+                        <div
+                            key={current}
+                            style={{ animation: "fadeInUp 0.3s ease-out" }}
+                        >
+                            {q.type === "fill_blank" && (
+                                <FillBlankQuestion
+                                    q={q}
+                                    answered={answered}
+                                    selected={selected}
+                                    isCorrect={isCorrect}
+                                    onAnswer={handleMCQAnswer}
+                                />
+                            )}
+                            {q.type === "match_pairs" && (
+                                <MatchPairsQuestion
+                                    q={q}
+                                    onSubmit={handleMatchSubmit}
+                                />
+                            )}
+                            {(q.type === "synonym" ||
+                                q.type === "antonym" ||
+                                q.type === "translation_en_bn") && (
+                                <SimpleQuestion
+                                    q={q}
+                                    answered={answered}
+                                    selected={selected}
+                                    isCorrect={isCorrect}
+                                    onAnswer={handleMCQAnswer}
+                                />
+                            )}
+                            {answered && (
+                                <button
+                                    onClick={handleNext}
+                                    className="w-full mt-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold py-4 rounded-2xl shadow-lg transition active:scale-[0.98]"
+                                >
+                                    {current + 1 === total
+                                        ? t("quiz.finish_test")
+                                        : t("quiz.next_question")}
+                                </button>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
 

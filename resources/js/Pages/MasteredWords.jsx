@@ -1,4 +1,5 @@
-import { Head, Link } from "@inertiajs/react";
+import { useState } from "react";
+import { Head, Link, router } from "@inertiajs/react";
 import AppLayout from "@/Layouts/AppLayout";
 import {
     ChevronLeft,
@@ -10,10 +11,22 @@ import {
     Lock,
 } from "lucide-react";
 
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/Components/ui/alert-dialog";
+
 import { useTranslation } from "@/Contexts/LanguageContext";
 
 export default function MasteredWords({ wordlists, totalMastered }) {
     const { t } = useTranslation();
+    const [showLockedDialog, setShowLockedDialog] = useState(false);
 
     const getDifficultyConfig = (difficulty) => {
         const d = difficulty?.toLowerCase();
@@ -116,9 +129,9 @@ export default function MasteredWords({ wordlists, totalMastered }) {
                                             >
                                                 <div className="flex items-center justify-between gap-3">
                                                     <div className="flex items-center gap-3 min-w-0">
-                                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isLocked ? "bg-amber-50 dark:bg-amber-950/30" : "bg-green-50 dark:bg-green-950/30"}`}>
+                                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isLocked ? "bg-red-50 dark:bg-red-950/30" : "bg-green-50 dark:bg-green-950/30"}`}>
                                                             {isLocked ? (
-                                                                <Lock className="h-5 w-5 text-amber-500" />
+                                                                <Lock className="h-5 w-5 text-[#E5201C]" />
                                                             ) : (
                                                                 <Layers className="h-5 w-5 text-green-600 dark:text-green-400" />
                                                             )}
@@ -156,7 +169,7 @@ export default function MasteredWords({ wordlists, totalMastered }) {
                                                     {!isLocked ? (
                                                         <ChevronRight className="h-5 w-5 text-gray-300 dark:text-slate-600 shrink-0" />
                                                     ) : (
-                                                        <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">
+                                                        <span className="text-[10px] font-bold text-[#E5201C] uppercase tracking-wider">
                                                             {t("common.locked", {
                                                                 defaultValue:
                                                                     "Locked",
@@ -203,7 +216,10 @@ export default function MasteredWords({ wordlists, totalMastered }) {
                                         return isLocked ? (
                                             <div
                                                 key={wl.id}
-                                                className="block cursor-not-allowed"
+                                                className="block cursor-pointer"
+                                                onClick={() =>
+                                                    setShowLockedDialog(true)
+                                                }
                                                 style={{
                                                     animationDelay: `${index * 0.06}s`,
                                                     animation:
@@ -263,6 +279,32 @@ export default function MasteredWords({ wordlists, totalMastered }) {
                     to   { opacity: 1; transform: translateY(0); }
                 }
             `}</style>
+            <AlertDialog
+                open={showLockedDialog}
+                onOpenChange={setShowLockedDialog}
+            >
+                <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-sm rounded-2xl">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            {t("mastered.locked_alert_title")}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t("mastered.locked_alert_desc")}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="gap-2">
+                        <AlertDialogCancel className="rounded-xl flex-1">
+                            {t("mastered.locked_alert_cancel")}
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => router.get(route("shop"))}
+                            className="rounded-xl flex-1 bg-[#E5201C] hover:bg-red-700 text-white"
+                        >
+                            {t("mastered.locked_alert_action")}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </AppLayout>
     );
 }

@@ -5,44 +5,44 @@ import { useTranslation } from "@/Contexts/LanguageContext";
 
 export default function BottomNav() {
     const { t } = useTranslation();
-    const { url } = usePage();
+    const { props } = usePage();
 
     const tabs = [
         {
-            name: "Home",
+            name: t("nav.home"),
             icon: Home,
             href: route("dashboard"),
-            active: url === "/dashboard" || url === "/",
+            active: route().current("dashboard") || route().current("home"),
         },
         {
-            name: "Words",
+            name: t("nav.words"),
             icon: BookOpen,
             href: route("wordlistcategory.index"),
-            active: url.startsWith("/wordlist") || url.startsWith("/my/words"),
+            active: route().current("wordlistcategory.*") || route().current("wordlist.*") || route().current("my.words.*"),
         },
         {
-            name: "Practice",
+            name: t("nav.practice"),
             icon: Zap,
             href: route("quiz.index"),
-            active: url.startsWith("/quiz"),
+            active: route().current("quiz.*") || route().current("mastery-test.*"),
         },
         {
-            name: "Leaderboard",
+            name: t("nav.leaderboard"),
             icon: Trophy,
             href: route("leaderboard"),
-            active: url.startsWith("/leaderboard"),
+            active: route().current("leaderboard"),
         },
         {
-            name: "Shop",
+            name: t("nav.shop"),
             icon: ShoppingBag,
             href: route("shop"),
-            active: url.startsWith("/shop"),
+            active: route().current("shop"),
         },
         {
-            name: "Profile",
+            name: t("nav.profile"),
             icon: User,
             href: route("profile.edit"),
-            active: url.startsWith("/profile"),
+            active: route().current("profile.*") || route().current("settings.*"),
         },
     ];
 

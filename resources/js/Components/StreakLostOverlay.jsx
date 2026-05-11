@@ -187,7 +187,7 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak }) {
                             border: "1px solid var(--sl-card-border)",
                             boxShadow: "var(--sl-card-shadow)",
                             overflow: "hidden",
-                            padding: "40px 36px 36px",
+                            padding: "24px 24px 24px",
                             textAlign: "center",
                         }}
                     >
@@ -198,7 +198,7 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak }) {
                                 top: 0,
                                 left: 0,
                                 right: 0,
-                                height: "180px",
+                                height: "140px",
                                 background: "var(--sl-top-wash)",
                                 pointerEvents: "none",
                             }}
@@ -249,8 +249,8 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak }) {
                                 }}
                             >
                                 <svg
-                                    width="150"
-                                    height="150"
+                                    width="110"
+                                    height="110"
                                     viewBox="0 0 100 120"
                                     fill="none"
                                     xmlns="http://www.w3.org/2000/svg"
@@ -424,7 +424,7 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak }) {
                         >
                             <div
                                 style={{
-                                    fontSize: "88px",
+                                    fontSize: "72px",
                                     fontWeight: 900,
                                     color: "var(--sl-number-color)",
                                     lineHeight: 1,
@@ -457,7 +457,7 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak }) {
                                 fontWeight: 800,
                                 color: "var(--sl-headline)",
                                 letterSpacing: "-0.5px",
-                                margin: "20px 0 8px",
+                                margin: "12px 0 6px",
                                 lineHeight: 1.2,
                                 animation: "sl-slideUp 0.6s 0.7s ease-out both",
                             }}
@@ -471,7 +471,7 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak }) {
                                 color: "var(--sl-body)",
                                 fontSize: "14px",
                                 lineHeight: 1.65,
-                                margin: "0 0 24px",
+                                margin: "0 0 16px",
                                 animation:
                                     "sl-slideUp 0.6s 0.85s ease-out both",
                             }}
@@ -487,7 +487,7 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak }) {
                             style={{
                                 display: "flex",
                                 gap: "10px",
-                                marginBottom: "22px",
+                                marginBottom: "16px",
                                 animation:
                                     "sl-slideUp 0.6s 0.95s ease-out both",
                             }}
@@ -519,7 +519,7 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak }) {
                                     key={i}
                                     style={{
                                         flex: 1,
-                                        padding: "11px 6px",
+                                        padding: "8px 6px",
                                         background: "var(--sl-stat-bg)",
                                         border: "1px solid var(--sl-stat-border)",
                                         borderRadius: "16px",
@@ -569,7 +569,7 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak }) {
                                 onClick={onClose}
                                 style={{
                                     width: "100%",
-                                    padding: "16px 24px",
+                                    padding: "12px 24px",
                                     background:
                                         "linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #4338ca 100%)",
                                     border: "none",

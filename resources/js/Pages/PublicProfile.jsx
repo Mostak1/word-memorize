@@ -12,7 +12,8 @@ export default function PublicProfile({
     canFollow,
 }) {
     const { t } = useTranslation();
-    const { auth } = usePage().props;
+    const { auth, assetUrl } = usePage().props;
+    const [imgError, setImgError] = useState(false);
     const [following, setFollowing] = useState(isFollowing);
     const [loading, setLoading] = useState(false);
     const [followerCount, setFollowerCount] = useState(user.follower_count);
@@ -85,11 +86,16 @@ export default function PublicProfile({
                         <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
                             <div className="flex items-center gap-4">
                                 <div className="w-20 h-20 rounded-3xl bg-slate-100 dark:bg-slate-800 overflow-hidden flex items-center justify-center text-3xl text-slate-500 dark:text-slate-400">
-                                    {user.image ? (
+                                    {user.image && !imgError ? (
                                         <img
-                                            src={user.image}
+                                            src={
+                                                user.image.startsWith("http")
+                                                    ? user.image
+                                                    : `${assetUrl?.replace(/\/$/, "")}/${user.image.replace(/^\//, "")}`
+                                            }
                                             alt={user.name}
                                             className="w-full h-full object-cover"
+                                            onError={() => setImgError(true)}
                                         />
                                     ) : (
                                         user.name.charAt(0).toUpperCase()
