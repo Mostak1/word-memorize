@@ -60,7 +60,8 @@ class LearningController extends Controller
     {
         $user = $this->optionalMobileUser($request);
 
-        $categories = WordListCategory::withCount(['wordLists', 'words'])
+        $categories = WordListCategory::with('creator')
+            ->withCount(['wordLists', 'words'])
             ->where('status', true)
             ->where(function ($query) use ($user) {
                 $query->whereHas('creator', fn($creator) => $creator->where('email', 'admin@gmail.com'));

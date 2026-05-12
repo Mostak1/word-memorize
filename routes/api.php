@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\Mobile\AuthController as MobileAuthController;
 use App\Http\Controllers\Api\Mobile\LearningController as MobileLearningController;
+use App\Http\Controllers\Api\Mobile\ShopController as MobileShopController;
 use App\Http\Controllers\UserShopController;
 use App\Http\Controllers\UserAchievementController;
 use Illuminate\Http\Request;
@@ -75,6 +76,12 @@ Route::prefix('mobile')->name('api.mobile.')->group(function () {
 
         Route::get('/settings', [MobileLearningController::class, 'settings'])->name('settings.show');
         Route::patch('/settings', [MobileLearningController::class, 'updateSettings'])->name('settings.update');
+
+        Route::get('/shop', [MobileShopController::class, 'index'])->name('shop.index');
+        Route::get('/shop/xp-status', [MobileShopController::class, 'xpStatus'])->name('shop.xp-status');
+        Route::post('/shop/buy-streak-freeze', [MobileShopController::class, 'buyStreakFreeze'])->name('shop.buy-streak-freeze');
+        Route::post('/shop/buy-dark-mode', [MobileShopController::class, 'buyDarkMode'])->name('shop.buy-dark-mode');
+        Route::post('/shop/orders', [MobileShopController::class, 'storeOrder'])->name('shop.orders.store');
 
         Route::get('/achievements', [MobileLearningController::class, 'achievements'])->name('achievements.index');
         Route::get('/achievements/unseen', [MobileLearningController::class, 'unseenAchievements'])->name('achievements.unseen');

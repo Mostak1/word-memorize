@@ -15,6 +15,7 @@ class WordListCategoryResource extends JsonResource
             'description' => $this->description,
             'thumbnail_url' => $this->thumbnail_url_full,
             'price' => $this->price,
+            'is_admin_category' => $this->creator?->email === 'admin@gmail.com',
             'is_locked' => (bool) $this->is_locked,
             'has_access' => (bool) ($this->has_access ?? true),
             'show_example_sentences' => (bool) ($this->show_example_sentences ?? true),

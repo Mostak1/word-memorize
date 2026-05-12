@@ -3,8 +3,11 @@ export type Category = {
   name: string;
   description: string | null;
   thumbnail_url: string | null;
+  price?: number | null;
+  is_admin_category: boolean;
   is_locked: boolean;
   has_access: boolean;
+  show_example_sentences?: boolean;
   wordlists_count: number;
   words_count: number;
 };
