@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\UserSetting;
+use App\Support\Telemetry;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -39,6 +40,10 @@ class UserSettingController extends Controller
 
         $settings = UserSetting::forUser($request->user());
         $settings->update($validated);
+
+        Telemetry::record($request, 'settings_updated', [
+            'keys' => array_keys($validated),
+        ]);
 
         return back()->with('success', 'Settings saved.');
     }

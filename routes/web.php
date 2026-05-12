@@ -8,6 +8,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicLinkTreeController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\ReviewWordController;
+use App\Http\Controllers\TelemetryController;
 use App\Http\Controllers\UserPublicProfileController;
 use App\Http\Controllers\UserAchievementController;
 use App\Http\Controllers\UserSettingController;
@@ -32,7 +33,10 @@ Route::get('/practice', function () {
         ->get();
 
     $freeWordsCount = \App\Models\Word::whereHas('wordList', function ($q) {
-        $q->where('is_locked', false);
+        $q->where('is_locked', false)
+            ->whereHas('creator', function ($q) {
+                $q->where('id', 3)->orWhere('email', 'admin@gmail.com');
+            });
     })->count();
 
     return Inertia::render('Landing/Vocab', [
@@ -95,13 +99,14 @@ Route::get('/run-achievement-seeder', function () {
     return 'AchievementSeeder executed successfully';
 });
 
-Route::get('/run-seeder', function () {
+Route::get('/run-seeder', function (Illuminate\Http\Request $request) {
     $results = [];
 
     $seeders = [
         'AcademicWordListSeeder',
         'OxfordWordsSeeder',
         'GREWordListSeeder',
+        'PhrasesAndIdiomsSeeder',
     ];
 
     foreach ($seeders as $class) {
@@ -113,22 +118,31 @@ Route::get('/run-seeder', function () {
             preg_match('/images added:\s*(\d+),\s*already existed \/ no file:\s*(\d+)/i', $output, $img);
             preg_match('/words_without_images:\s*(\[.*\])/i', $output, $wni);
 
+            $stats = [
+                'inserted' => isset($m[1])   ? (int) $m[1]   : null,
+                'updated'  => isset($m[2])   ? (int) $m[2]   : null,
+                'skipped'  => isset($m[3])   ? (int) $m[3]   : null,
+                'deleted'  => isset($m[4])   ? (int) $m[4]   : null,
+                'images_added'   => isset($img[1]) ? (int) $img[1] : null,
+                'images_skipped' => isset($img[2]) ? (int) $img[2] : null,
+            ];
+
+            $noImageWords = isset($wni[1]) ? json_decode($wni[1], true) : [];
+
             $results[$class] = [
-                'status'              => 'success',
-                'inserted'            => isset($m[1]) ? (int) $m[1] : null,
-                'updated'             => isset($m[2]) ? (int) $m[2] : null,
-                'skipped'             => isset($m[3]) ? (int) $m[3] : null,
-                'deleted'             => isset($m[4]) ? (int) $m[4] : null,
-                'images_added'        => isset($img[1]) ? (int) $img[1] : null,
-                'images_skipped'      => isset($img[2]) ? (int) $img[2] : null,
-                'words_without_images' => isset($wni[1]) ? json_decode($wni[1], true) : [],
-                'raw_output'          => $output, // ← remove once stable
+                'status'  => 'success',
+                'summary' => "words +{$stats['inserted']} ~{$stats['updated']} -{$stats['deleted']} skip:{$stats['skipped']} | "
+                           . "imgs +{$stats['images_added']} skip:{$stats['images_skipped']}"
+                           . (count($noImageWords) ? ' | no-img: ' . implode(', ', $noImageWords) : ''),
+                ...$stats,
+                'words_without_images' => $noImageWords,
+                ...($request->boolean('debug') ? ['raw_output' => $output] : []),
             ];
         } catch (\Throwable $e) {
             $results[$class] = [
                 'status'  => 'error',
                 'message' => $e->getMessage(),
-                'trace'   => $e->getTraceAsString(), // ← remove once stable
+                ...($request->boolean('debug') ? ['trace' => $e->getTraceAsString()] : []),
             ];
         }
     }
@@ -276,5 +290,9 @@ Route::middleware(['auth'])->group(function () {
 });
 
 Route::get('/api/achievements/unseen', [UserAchievementController::class, 'getUnseen'])->name('api.achievements.unseen');
+
+Route::post('/telemetry/batch', [TelemetryController::class, 'batch'])
+    ->middleware('throttle:120,1')
+    ->name('telemetry.batch');
 
 require __DIR__ . '/auth.php';

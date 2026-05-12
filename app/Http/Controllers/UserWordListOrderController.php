@@ -9,6 +9,7 @@ use App\Models\UserWordListAccess;
 use App\Models\WordListCategory;
 use App\Models\WordListOrder;
 use App\Models\WordListOrderItem;
+use App\Support\Telemetry;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -99,6 +100,13 @@ class UserWordListOrderController extends Controller
     ])->all();
 
     WordListOrderItem::insert($items);
+
+    Telemetry::record($request, 'order_created', [
+      'order_id' => $order->id,
+      'category_ids' => $categoryIds->all(),
+      'item_count' => $categoryIds->count(),
+      'payment_method' => 'bkash',
+    ]);
 
     $receiverEmail = config('settings.receiver_email');
 

@@ -11,6 +11,8 @@ import {
     ClipboardList,
     HelpCircle,
     ShieldCheck,
+    Activity,
+    BarChart3,
 } from "lucide-react";
 
 /**
@@ -38,6 +40,11 @@ export const sidebarConfig = {
                     name: "Overview",
                     route: "admin.dashboard",
                     icon: LayoutDashboard,
+                },
+                {
+                    name: "Telemetry",
+                    route: "admin.telemetry",
+                    icon: Activity,
                 },
             ],
         },

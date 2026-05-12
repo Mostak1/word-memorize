@@ -36,6 +36,7 @@ import {
     playMastered,
 } from "@/Utils/sounds";
 import { useTranslation } from "@/Contexts/LanguageContext";
+import { telemetry } from "@/Utils/telemetry";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const MASTERED_BOX = 4;
@@ -291,9 +292,61 @@ export default function ExerciseSession({
     const word = queue[0] ?? null;
     const isDone = queue.length === 0 && !exiting;
     const isDoneRef = useRef(isDone);
+    const completedRef = useRef(false);
+    const latestSessionRef = useRef({
+        answeredCount: 0,
+        promotedCount: 0,
+        dontKnowCount: 0,
+        remainingCount: initialQueueSize,
+        currentWordId: null,
+    });
     useEffect(() => {
         isDoneRef.current = isDone;
     }, [isDone]);
+
+    useEffect(() => {
+        latestSessionRef.current = {
+            answeredCount,
+            promotedCount,
+            dontKnowCount,
+            remainingCount: queue.length,
+            currentWordId: word?.id ?? null,
+        };
+    }, [answeredCount, promotedCount, dontKnowCount, queue.length, word?.id]);
+
+    useEffect(() => {
+        telemetry.track("exercise_started", {
+            wordlist_id: wordList?.id ?? null,
+            wordlist_title: wordList?.title ?? null,
+            subcategory_id: subcategory?.id ?? null,
+            total_words: initialQueueSize,
+            is_quiz_only: !!isQuizOnly,
+        });
+
+        return () => {
+            if (completedRef.current || initialQueueSize === 0) return;
+
+            telemetry.track("exercise_abandoned", {
+                wordlist_id: wordList?.id ?? null,
+                wordlist_title: wordList?.title ?? null,
+                subcategory_id: subcategory?.id ?? null,
+                total_words: initialQueueSize,
+                ...latestSessionRef.current,
+            });
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!word) return;
+
+        telemetry.track("exercise_word_viewed", {
+            word_id: word.id,
+            wordlist_id: wordList?.id ?? null,
+            srs_box: word.srs_box ?? 1,
+            is_quiz: !!word.is_quiz,
+            remaining_count: queue.length,
+        });
+    }, [word?.id]);
 
     // const [openCollocationIndex, setOpenCollocationIndex] = useState(null);
     const meaningCardRef = useRef(null);
@@ -395,7 +448,21 @@ export default function ExerciseSession({
     }, []);
 
     useEffect(() => {
-        if (!isDone || !auth?.user || initialQueueSize === 0) return;
+        if (!isDone || initialQueueSize === 0) return;
+
+        completedRef.current = true;
+        telemetry.track("exercise_completed", {
+            wordlist_id: wordList?.id ?? null,
+            wordlist_title: wordList?.title ?? null,
+            subcategory_id: subcategory?.id ?? null,
+            total_words: initialQueueSize,
+            promoted_count: promotedCount,
+            dont_know_count: dontKnowCount,
+            result_count: sessionResults.length,
+            is_quiz_only: !!isQuizOnly,
+        });
+
+        if (!auth?.user) return;
 
         playSessionComplete(userSettings);
 
@@ -650,6 +717,11 @@ export default function ExerciseSession({
             setShowLoginDialog(true);
             return;
         }
+        telemetry.track("bookmark_toggled", {
+            word_id: wordId,
+            source: "exercise_session",
+            enabled: !bookmarks[wordId],
+        });
         setBookmarks((prev) => ({ ...prev, [wordId]: !prev[wordId] }));
         router.post(
             route("word.bookmark", wordId),
@@ -700,6 +772,19 @@ export default function ExerciseSession({
             setCardKey((k) => k + 1);
             callback();
         }, 400);
+    };
+
+    const handleToggleMeaning = () => {
+        const nextValue = !showMeaning;
+        setShowMeaning(nextValue);
+
+        if (nextValue && word) {
+            telemetry.track("exercise_meaning_revealed", {
+                word_id: word.id,
+                wordlist_id: wordList?.id ?? null,
+                srs_box: word.srs_box ?? 1,
+            });
+        }
     };
 
     // ── Core actions ──────────────────────────────────────────────────────────
@@ -783,6 +868,15 @@ export default function ExerciseSession({
         const wordId = word.id;
         const action = forceMaster ? "master" : "know";
 
+        telemetry.track("exercise_word_answered", {
+            word_id: wordId,
+            wordlist_id: wordList?.id ?? null,
+            action,
+            srs_box: currentBox,
+            will_master: willMaster,
+            force_master: forceMaster,
+        });
+
         // Update remaining items in the queue locally so that future occurrences
         // (like quizzes) of this same word reflect the updated SRS status.
         const syncUpdatedQueue = (prevQueue) => {
@@ -863,6 +957,15 @@ export default function ExerciseSession({
         setIsSubmitting(true);
 
         const wordId = word.id;
+
+        telemetry.track("exercise_word_answered", {
+            word_id: wordId,
+            wordlist_id: wordList?.id ?? null,
+            action: "learn",
+            srs_box: word.srs_box ?? 1,
+            will_master: false,
+            force_master: false,
+        });
 
         animateThen("right", () => {
             setSessionResults((prev) => [
@@ -999,7 +1102,7 @@ export default function ExerciseSession({
     // ── Loading Screen ─────────────────────────────────────────────────────
     if (isPreloading) {
         return (
-            <AppLayout hideHeader={true}>
+            <AppLayout hideHeader={true} showBottomNav={false}>
                 <Head title="Loading Session..." />
                 <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 flex flex-col items-center justify-center px-4">
                     <div className="max-w-md w-full text-center">
@@ -1046,7 +1149,7 @@ export default function ExerciseSession({
     // ── Empty queue (nothing due, nothing new) ────────────────────────────────
     if (initialQueueSize === 0) {
         return (
-            <AppLayout hideHeader={true}>
+            <AppLayout hideHeader={true} showBottomNav={false}>
                 <Head title="All Caught Up!" />
                 <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 flex flex-col items-center justify-center px-4 py-10">
                     <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-md dark:shadow-xl dark:shadow-slate-950 w-full max-w-md p-8 text-center">
@@ -1085,7 +1188,7 @@ export default function ExerciseSession({
     if (isDone) {
         const retries = dontKnowCount; // total "I Don't Know" taps during session
         return (
-            <AppLayout hideHeader={true}>
+            <AppLayout hideHeader={true} showBottomNav={false}>
                 <Head title="Session Complete" />
                 {/* StreakPop overlay — only for streak increase */}
                 {showStreakEffect && streakChange === "up" && (
@@ -1309,7 +1412,7 @@ export default function ExerciseSession({
             : 0;
 
     return (
-        <AppLayout hideHeader={true}>
+        <AppLayout hideHeader={true} showBottomNav={false}>
             <Head title={`Exercise — ${word?.word ?? ""}`} />
             <FlashMessages />
 
@@ -1653,9 +1756,7 @@ export default function ExerciseSession({
                                     {/* Tap to see meaning */}
                                     <div className="px-4 pb-3">
                                         <button
-                                            onClick={() =>
-                                                setShowMeaning((prev) => !prev)
-                                            }
+                                            onClick={handleToggleMeaning}
                                             className="w-full flex items-center justify-center gap-2 py-2.5 border border-dashed border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-slate-600 transition"
                                         >
                                             {showMeaning ? (

@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, usePage } from "@inertiajs/react";
-import { Zap, Loader2, User, Settings, LogOut } from "lucide-react";
+import { Zap, Loader2, User, Settings, LogOut, RotateCw } from "lucide-react";
 import logo from "/public/img/logo.png";
 import axios from "axios";
 import { ThemeToggle } from "@/Components/ThemeToggle";
 import { useTranslation } from "@/Contexts/LanguageContext";
+import PwaInstallButton from "@/Components/PwaInstallButton";
 
 export default function TopHeader() {
     const { t } = useTranslation();
@@ -15,6 +16,7 @@ export default function TopHeader() {
     const [imgError, setImgError] = useState(false);
     const [xpBalance, setXpBalance] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const dropdownRef = useRef(null);
 
     useEffect(() => {
@@ -55,6 +57,34 @@ export default function TopHeader() {
         fetchXp();
     }, [user]);
 
+    const handleForceRefresh = async () => {
+        setIsRefreshing(true);
+        try {
+            // Unregister Service Workers
+            if ("serviceWorker" in navigator) {
+                const registrations =
+                    await navigator.serviceWorker.getRegistrations();
+                for (const registration of registrations) {
+                    await registration.unregister();
+                }
+            }
+
+            // Clear Cache Storage
+            if ("caches" in window) {
+                const cacheNames = await caches.keys();
+                await Promise.all(
+                    cacheNames.map((name) => caches.delete(name)),
+                );
+            }
+
+            // Forced Reload (bypass cache)
+            window.location.reload(true);
+        } catch (err) {
+            console.error("Failed to force refresh:", err);
+            window.location.reload();
+        }
+    };
+
     return (
         <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-[28px] p-2 flex items-center justify-between shadow-[0_10px_40px_rgba(0,0,0,0.04)] mb-2 border border-white dark:border-slate-800 sticky top-4 z-50 transition-all">
             <Link
@@ -68,7 +98,26 @@ export default function TopHeader() {
                     VocabPix
                 </span>
             </Link>
-            <div className="flex items-center gap-3 pr-1">
+            <div className="flex items-center gap-2 sm:gap-3 pr-1">
+                {!user && (
+                    <PwaInstallButton
+                        compact
+                        className="sm:hidden h-10 w-10 px-0"
+                    />
+                )}
+                {!user && (
+                    <button
+                        onClick={handleForceRefresh}
+                        disabled={isRefreshing}
+                        className="p-2.5 rounded-xl bg-gray-50 dark:bg-slate-800 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-all active:scale-95 disabled:opacity-50 border border-gray-100 dark:border-slate-700 shadow-sm"
+                        title="Force refresh & clear cache"
+                    >
+                        <RotateCw
+                            className={`h-4 w-4 ${isRefreshing ? "animate-spin text-red-500" : ""}`}
+                        />
+                    </button>
+                )}
+                <PwaInstallButton className="hidden sm:inline-flex" />
                 {user ? (
                     <>
                         <div className="bg-yellow-50 dark:bg-yellow-950/30 px-3 py-1.5 rounded-2xl flex items-center gap-1.5 border border-yellow-100 dark:border-yellow-900/30">
@@ -143,6 +192,16 @@ export default function TopHeader() {
                                         <Settings className="h-4 w-4 opacity-70" />
                                         {t("nav.settings")}
                                     </Link>
+                                    <button
+                                        onClick={handleForceRefresh}
+                                        disabled={isRefreshing}
+                                        className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+                                    >
+                                        <RotateCw
+                                            className={`h-4 w-4 opacity-70 ${isRefreshing ? "animate-spin text-red-500" : ""}`}
+                                        />
+                                        {t("nav.force_refresh")}
+                                    </button>
                                     <div className="border-t border-gray-100 dark:border-slate-700 mt-2 pt-2">
                                         <Link
                                             href={route("logout")}

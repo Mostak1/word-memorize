@@ -7,6 +7,9 @@ import {
     Volume2,
     BookOpen,
     Layers,
+    Leaf,
+    Zap,
+    Flame,
 } from "lucide-react";
 
 export default function WordlistDetail({
@@ -148,11 +151,29 @@ export default function WordlistDetail({
                                 {wordList.title}
                             </h1>
                             <div className="flex items-center gap-2 mt-1">
-                                <span
-                                    className={`text-xs font-medium px-2.5 py-0.5 rounded-full border ${getDifficultyBadge(wordList.difficulty)}`}
-                                >
-                                    {wordList.difficulty}
-                                </span>
+                                {(() => {
+                                    const d = wordList.difficulty?.toLowerCase();
+                                    const isBeginner = d === "easy" || d === "beginner";
+                                    const isIntermediate = d === "medium" || d === "intermediate";
+                                    const isAdvanced = d === "hard" || d === "advanced";
+                                    
+                                    const star = isBeginner
+                                        ? <Leaf className="h-3 w-3" />
+                                        : isIntermediate
+                                            ? <Zap className="h-3 w-3" />
+                                            : isAdvanced
+                                                ? <Flame className="h-3 w-3" />
+                                                : null;
+                                    
+                                    return (
+                                        <span
+                                            className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full border ${getDifficultyBadge(wordList.difficulty)}`}
+                                        >
+                                            {star}
+                                            {wordList.difficulty}
+                                        </span>
+                                    );
+                                })()}
                                 <span className="text-xs font-medium px-2.5 py-0.5 rounded-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-600 dark:text-gray-400">
                                     {wordList.words_count} words
                                 </span>

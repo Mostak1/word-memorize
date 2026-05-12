@@ -4,90 +4,129 @@ import { BookOpen, Lock } from "lucide-react";
 
 import { useTranslation } from "@/Contexts/LanguageContext";
 
-export default function WordListCategoryIndex({ wordListCategories }) {
+export default function WordListCategoryIndex({
+    adminWordListCategories = [],
+    userWordListCategories = [],
+}) {
     const { t } = useTranslation();
+
+    const renderCategoryGrid = (categories, sectionOffset = 0) => (
+        <div className="grid grid-cols-2 gap-3">
+            {categories.map((category, index) => (
+                <Link
+                    key={category.id}
+                    href={route("wordlistcategory.wordlists", category.id)}
+                    className="block"
+                    style={{
+                        animationDelay: `${(index + sectionOffset) * 0.07}s`,
+                        animation: "fadeInUp 0.4s ease-out forwards",
+                        opacity: 0,
+                    }}
+                >
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-md active:scale-[0.98] transition-all flex flex-col relative">
+                        {/* Thumbnail */}
+                        <div className="w-full aspect-[4/3] bg-gray-100 dark:bg-slate-700 flex items-center justify-center overflow-hidden relative">
+                            {category.thumbnail_url_full ? (
+                                <img
+                                    src={category.thumbnail_url_full}
+                                    alt={category.name}
+                                    className="w-full h-full object-cover"
+                                />
+                            ) : (
+                                /* Monogram placeholder */
+                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-red-50 dark:from-red-950/30 to-red-100 dark:to-red-900/30">
+                                    <span className="text-4xl font-black text-[#E5201C]/40 dark:text-[#E5201C]/20 select-none">
+                                        {category.name.charAt(0).toUpperCase()}
+                                    </span>
+                                </div>
+                            )}
+
+                            {/* Lock overlay */}
+                            {category.is_locked && !category.has_access && (
+                                <>
+                                    <div className="absolute inset-0 bg-black/40 z-[5]" />
+                                    <div
+                                        className="absolute top-2.5 right-2.5 w-9 h-9 rounded-xl flex items-center justify-center border-2 border-white dark:border-slate-800 transition-transform group-hover:scale-110 z-10"
+                                        style={{
+                                            animation:
+                                                "lockPulse 2s infinite alternate ease-in-out",
+                                        }}
+                                    >
+                                        <Lock className="h-4.5 w-4.5 text-white" />
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
+                        {/* Info */}
+                        <div className="px-3.5 py-3 min-h-[80px] flex flex-col justify-between">
+                            <h2 className="text-xs font-bold text-gray-900 dark:text-gray-100 leading-snug line-clamp-2">
+                                {category.name}
+                            </h2>
+                            <div className="flex items-center gap-1.5 text-[10px] text-gray-500 dark:text-slate-400">
+                                {/* <BookOpen className="h-3 w-3 shrink-0" />
+                                <span>
+                                    {category.wordlists_count}{" "}
+                                    {category.wordlists_count === 1
+                                        ? t("shop.word_list")
+                                        : t("shop.word_lists")}
+                                </span> */}
+                                <span className="mx-1">•</span>
+                                <span>{category.words_count || 0} words</span>
+                            </div>
+                        </div>
+                    </div>
+                </Link>
+            ))}
+        </div>
+    );
+
+    const hasAnyCategories =
+        userWordListCategories.length > 0 || adminWordListCategories.length > 0;
 
     return (
         <AppLayout hideHeader={true}>
             <Head title={t("wordlists.breadcrumb_categories")} />
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
                 <main className="max-w-2xl mx-auto px-4 py-5 pb-20">
-                    {wordListCategories && wordListCategories.length > 0 ? (
-                        <div className="grid grid-cols-2 gap-3">
-                            {wordListCategories.map((category, index) => (
-                                <Link
-                                    key={category.id}
-                                    href={route(
-                                        "wordlistcategory.wordlists",
-                                        category.id,
-                                    )}
-                                    className="block"
-                                    style={{
-                                        animationDelay: `${index * 0.07}s`,
-                                        animation:
-                                            "fadeInUp 0.4s ease-out forwards",
-                                        opacity: 0,
-                                    }}
-                                >
-                                    <div className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-md active:scale-[0.98] transition-all flex flex-col relative">
-                                        {/* Thumbnail */}
-                                        <div className="w-full aspect-[4/3] bg-gray-100 dark:bg-slate-700 flex items-center justify-center overflow-hidden relative">
-                                            {category.thumbnail_url_full ? (
-                                                <img
-                                                    src={
-                                                        category.thumbnail_url_full
-                                                    }
-                                                    alt={category.name}
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            ) : (
-                                                /* Monogram placeholder */
-                                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-red-50 dark:from-red-950/30 to-red-100 dark:to-red-900/30">
-                                                    <span className="text-4xl font-black text-[#E5201C]/40 dark:text-[#E5201C]/20 select-none">
-                                                        {category.name
-                                                            .charAt(0)
-                                                            .toUpperCase()}
-                                                    </span>
-                                                </div>
-                                            )}
-
-                                            {/* Lock overlay */}
-                                            {category.is_locked &&
-                                                !category.has_access && (
-                                                    <>
-                                                        <div className="absolute inset-0 bg-black/40 z-[5]" />
-                                                        <div
-                                                            className="absolute top-2.5 right-2.5 w-9 h-9 rounded-xl flex items-center justify-center border-2 border-white dark:border-slate-800 transition-transform group-hover:scale-110 z-10"
-                                                            style={{
-                                                                animation:
-                                                                    "lockPulse 2s infinite alternate ease-in-out",
-                                                            }}
-                                                        >
-                                                            <Lock className="h-4.5 w-4.5 text-white" />
-                                                        </div>
-                                                    </>
-                                                )}
-                                        </div>
-
-                                        {/* Info */}
-                                        <div className="px-3.5 py-3 min-h-[80px] flex flex-col justify-between">
-                                            <h2 className="text-xs font-bold text-gray-900 dark:text-gray-100 leading-snug">
-                                                {category.name}
-                                            </h2>
-                                            <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-slate-400">
-                                                <BookOpen className="h-3.5 w-3.5 shrink-0" />
-                                                <span>
-                                                    {category.wordlists_count}{" "}
-                                                    {category.wordlists_count ===
-                                                    1
-                                                        ? t("shop.word_list")
-                                                        : t("shop.word_lists")}
-                                                </span>
-                                            </div>
-                                        </div>
+                    {hasAnyCategories ? (
+                        <div className="space-y-8">
+                            {/* Admin/Global lists */}
+                            {adminWordListCategories.length > 0 && (
+                                <section>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                            <div className="w-1.5 h-4 bg-gray-400 rounded-full" />
+                                            {t("wordlists.all_categories")}
+                                        </h3>
+                                        <span className="text-[10px] font-medium px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full dark:bg-slate-800 dark:text-slate-400">
+                                            {adminWordListCategories.length}
+                                        </span>
                                     </div>
-                                </Link>
-                            ))}
+                                    {renderCategoryGrid(
+                                        adminWordListCategories,
+                                    )}
+                                </section>
+                            )}
+
+                            {/* User created lists */}
+                            {userWordListCategories.length > 0 && (
+                                <section>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                            <div className="w-1.5 h-4 bg-[#E5201C] rounded-full" />
+                                            {t("wordlists.your_list")}
+                                        </h3>
+                                        <span className="text-[10px] font-medium px-2 py-0.5 bg-red-50 text-red-600 rounded-full dark:bg-red-950/30 dark:text-red-400">
+                                            {userWordListCategories.length}
+                                        </span>
+                                    </div>
+                                    {renderCategoryGrid(
+                                        userWordListCategories,
+                                        adminWordListCategories.length,
+                                    )}
+                                </section>
+                            )}
                         </div>
                     ) : (
                         <div className="bg-white dark:bg-slate-800 rounded-2xl p-10 text-center shadow-sm">

@@ -4,12 +4,17 @@ namespace App\Services;
 
 use App\Models\Setting;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 
 class SettingService
 {
   /** Get all payment gateway settings and store in cache */
   function getSettings(): array
   {
+    if (!Schema::hasTable('settings')) {
+      return [];
+    }
+
     return Cache::rememberForever('settings', function () {
       return Setting::pluck('value', 'key')->toArray(); // ['KEY' => 'VALUE']
     });

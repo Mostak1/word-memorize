@@ -15,6 +15,8 @@ export default function VocabPixLanding({
         if (n.includes("basic")) return "img/landing/basic.webp";
         if (n.includes("advanced"))
             return "img/landing/advanced_essantial_words.webp";
+        if (n.includes("phrase") || n.includes("idiom"))
+            return "img/landing/phrases_idioms.webp";
         if (
             n.includes("master") ||
             n.includes("iba") ||
@@ -747,7 +749,7 @@ export default function VocabPixLanding({
             font-size: 1rem;
             line-height: 1.7;
             max-width: 500px;
-            margin-bottom: 48px;
+            margin-bottom: 28px;
         }
 
         /* ── Exams ── */
@@ -759,8 +761,11 @@ export default function VocabPixLanding({
 
         .exams-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 16px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+            max-width: 1040px;
+            margin: 0 auto;
+            justify-content: center;
         }
 
         .exam-card {
@@ -814,16 +819,26 @@ export default function VocabPixLanding({
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 32px;
-            margin-top: 56px;
             position: relative;
         }
 
         .how-step {
-            background: var(--bg);
-            border-radius: 20px;
-            padding: 32px 24px;
+            background: #fff;
+            border-radius: 24px;
+            padding: 24px 24px;
             position: relative;
             border: 1.5px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .how-step:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+            border-color: var(--red);
         }
 
         .how-step-num {
@@ -837,31 +852,78 @@ export default function VocabPixLanding({
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 12px rgba(232, 25, 44, 0.3);
         }
 
         .how-step-icon {
-            margin-bottom: 16px;
+            margin-bottom: 28px;
+            width: 100%;
             display: flex;
-            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         .how-step-icon img {
-            width: auto;
-            object-fit: contain;
+            width: 190px;
+            height: auto;
+            border-radius: 22px;
+            border: 7px solid #1C1B1F;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            background: #fff;
+            position: relative;
+            z-index: 2;
+            transition: box-shadow 0.4s ease;
+        }
+
+        .how-step-icon::before {
+            content: "";
+            position: absolute;
+            top: 7px; /* Adjusted to sit better on the frame */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 12px;
+            background: #1C1B1F;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+            z-index: 10;
+        }
+
+        .how-step-icon::after {
+            content: "";
+            position: absolute;
+            top: 7px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 190px;
+            height: 100%; /* Use 100% to match image height */
+            background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 50%);
+            pointer-events: none;
+            z-index: 11;
+            border-radius: 22px;
+        }
+
+        .how-step:hover .how-step-icon {
+            transform: translateY(-12px) scale(1.05) rotate(-2deg);
+        }
+
+        .how-step:hover .how-step-icon img {
+            box-shadow: 0 30px 60px rgba(232, 25, 44, 0.2);
         }
 
         .how-step h3 {
             font-weight: 900;
-            font-size: 1.05rem;
+            font-size: 1.2rem;
             color: var(--dark);
-            margin-bottom: 8px;
+            margin-bottom: 12px;
         }
 
         .how-step p {
-            font-size: .88rem;
+            font-size: .95rem;
             color: var(--muted);
-            line-height: 1.7;
+            line-height: 1.6;
         }
 
         .how-step-arrow {
@@ -1782,7 +1844,6 @@ export default function VocabPixLanding({
             .how-steps {
                 grid-template-columns: 1fr;
                 gap: 16px;
-                margin-top: 32px;
             }
 
             .how-step-arrow {
@@ -2380,7 +2441,9 @@ export default function VocabPixLanding({
                                 }}
                             >
                                 <span className="t-en">Personal Word List</span>
-                                <span className="t-bn">ব্যক্তিগত শব্দ তালিকা</span>
+                                <span className="t-bn">
+                                    ব্যক্তিগত শব্দ তালিকা
+                                </span>
                             </div>
                             <div
                                 className="exam-words"
@@ -2391,10 +2454,22 @@ export default function VocabPixLanding({
                                     gap: "6px",
                                 }}
                             >
-                                <span className="t-en" style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>
+                                <span
+                                    className="t-en"
+                                    style={{
+                                        fontSize: "0.9rem",
+                                        color: "var(--muted)",
+                                    }}
+                                >
                                     Build your own custom vocabulary collection
                                 </span>
-                                <span className="t-bn" style={{ fontSize: '0.95rem', color: 'var(--muted)' }}>
+                                <span
+                                    className="t-bn"
+                                    style={{
+                                        fontSize: "0.95rem",
+                                        color: "var(--muted)",
+                                    }}
+                                >
                                     আপনার নিজস্ব কাস্টম শব্দ সংগ্রহ তৈরি করুন
                                 </span>
                             </div>
@@ -2448,7 +2523,7 @@ export default function VocabPixLanding({
                             <div className="how-step-num">1</div>
                             <div className="how-step-icon">
                                 <img
-                                    src="img/landing/how_works/wordlists.png"
+                                    src="img/landing/how_works/mobile_wordlist.png"
                                     alt="Pick a List"
                                 />
                             </div>
@@ -2472,7 +2547,7 @@ export default function VocabPixLanding({
                             <div className="how-step-num">2</div>
                             <div className="how-step-icon">
                                 <img
-                                    src="img/landing/how_works/learn_from_image.png"
+                                    src="img/landing/how_works/mobile_learn_from_img.png"
                                     alt="Learn with Images"
                                 />
                             </div>
@@ -2495,7 +2570,7 @@ export default function VocabPixLanding({
                             <div className="how-step-num">3</div>
                             <div className="how-step-icon">
                                 <img
-                                    src="img/landing/how_works/rate_memory.png"
+                                    src="img/landing/how_works/mobile_rate_memory.png"
                                     alt="Rate Your Memory"
                                 />
                             </div>
@@ -2521,14 +2596,14 @@ export default function VocabPixLanding({
                             <div className="how-step-num">4</div>
                             <div className="how-step-icon">
                                 <img
-                                    src="img/landing/how_works/gain_exp.png"
-                                    alt="Earn XP & Streak"
+                                    src="img/landing/how_works/mobile_xp.png"
+                                    alt="Earn XP & Unlock Rewards"
                                 />
                             </div>
                             <h3>
-                                <span className="t-en">Earn XP & Streak</span>
+                                <span className="t-en">Earn XP & Unlock Rewards</span>
                                 <span className="t-bn">
-                                    XP ও স্ট্রিক অর্জন করুন
+                                    XP অর্জন করুন এবং পুরস্কার আনলক করুন
                                 </span>
                             </h3>
                             <p className="t-en">
@@ -2586,7 +2661,7 @@ export default function VocabPixLanding({
                             <p>
                                 Our image-word pairing engine ensures the
                                 picture matches the word's meaning, tone, and
-                                usage — not just a generic stock photo.
+                                usage.
                             </p>
                         </div>
                         <div className="t-bn">
@@ -3171,23 +3246,20 @@ export default function VocabPixLanding({
                                         <span className="text-red">
                                             {freeWordsCount}+
                                         </span>{" "}
-                                        essential words for free, so you can
-                                        start learning and practicing{" "}
-                                        <span className="text-red">
-                                            forever
-                                        </span>{" "}
-                                        at no cost.
+                                        words for free, so you can
+                                        start learning and practicing and understand
+                                        which level is best suited for you.
                                     </span>
                                     <span className="t-bn">
                                         VocabPix-এ{" "}
                                         <span className="text-red">
                                             {freeWordsCount}+
                                         </span>{" "}
-                                        শব্দ আজীবন{" "}
+                                        শব্দ{" "}
                                         <span className="text-red">
                                             বিনামূল্যে
                                         </span>{" "}
-                                        শেখার এবং অনুশীলন করার সুযোগ রয়েছে।
+                                        শেখা ও অনুশীলন শুরু করুন এবং আপনার জন্য কোন লেভেলটি সবচেয়ে উপযোগী তা বুঝে নিন।
                                     </span>
                                 </p>
                                 <Link

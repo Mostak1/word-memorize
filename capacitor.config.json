@@ -1,9 +1,0 @@
-{
-  "appId": "org.fluento.vocabpix",
-  "appName": "VocabPix",
-  "webDir": "public",
-  "server": {
-    "url": "https://vocabpix.fluento.org",
-    "cleartext": true
-  }
-}

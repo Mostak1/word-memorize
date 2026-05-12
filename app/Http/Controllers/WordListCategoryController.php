@@ -31,8 +31,9 @@ class WordListCategoryController extends Controller
 
     public function index()
     {
-        $query = WordListCategory::withCount('wordlists')
+        $query = WordListCategory::withCount(['wordlists', 'words'])
             ->where('status', true)
+            ->with('creator')
             ->orderBy('created_at', 'desc');
 
         if (auth()->check()) {
@@ -50,7 +51,7 @@ class WordListCategoryController extends Controller
             });
         }
 
-        $wordListCategories = $query->get()->map(function ($cat) {
+        $allCategories = $query->get()->map(function ($cat) {
             $cat->has_access = true;
             if ($cat->is_locked) {
                 $cat->has_access = auth()->check() && UserWordListAccess::where('user_id', auth()->id())
@@ -61,8 +62,17 @@ class WordListCategoryController extends Controller
             return $cat;
         });
 
+        $adminCategories = $allCategories->filter(function ($cat) {
+            return $cat->creator && $cat->creator->email === 'admin@gmail.com';
+        })->values();
+
+        $userCategories = $allCategories->filter(function ($cat) {
+            return !$cat->creator || $cat->creator->email !== 'admin@gmail.com';
+        })->values();
+
         return Inertia::render('WordListCategoryIndex', [
-            'wordListCategories' => $wordListCategories,
+            'adminWordListCategories' => $adminCategories,
+            'userWordListCategories' => $userCategories,
         ]);
     }
 
@@ -72,31 +82,7 @@ class WordListCategoryController extends Controller
         $wordListsQuery = WordList::where('word_list_category_id', $category->id)
             ->where('status', true);
 
-        if ($userId) {
-            $wordListsQuery->select('wordlists.*')
-                ->selectRaw("
-                    CASE 
-                        WHEN EXISTS (
-                            SELECT 1 FROM quiz_attempts qa 
-                            JOIN quizzes q ON qa.quiz_id = q.id 
-                            WHERE q.wordlist_id = wordlists.id 
-                            AND qa.user_id = ? 
-                            AND qa.passed = 1
-                        ) THEN 3 -- Completed
-                        WHEN EXISTS (
-                            SELECT 1 FROM word_progress wp 
-                            JOIN words w ON wp.word_id = w.id 
-                            WHERE w.wordlist_id = wordlists.id 
-                            AND wp.user_id = ?
-                        ) THEN 1 -- In Progress
-                        ELSE 2 -- Not Started
-                    END as progress_sort_order
-                ", [$userId, $userId])
-                ->orderBy('progress_sort_order')
-                ->orderBy('id');
-        } else {
-            $wordListsQuery->orderBy('id');
-        }
+        $wordListsQuery->orderBy('id');
         
         $wordListsQuery->withCount('words');
 

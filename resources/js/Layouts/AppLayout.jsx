@@ -13,6 +13,7 @@ import {
     Zap,
     ShoppingBag,
     Settings,
+    RotateCw,
 } from "lucide-react";
 import FlashMessages from "@/Components/FlashMessage";
 import ReportErrorDialog from "@/Components/ReportErrorDialog";
@@ -26,8 +27,14 @@ import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import OfflineOverlay from "@/Components/OfflineOverlay";
 import BottomNav from "@/Components/BottomNav";
 import TopHeader from "@/Components/TopHeader";
+import PwaInstallButton from "@/Components/PwaInstallButton";
 
-export default function AppLayout({ children, hideHeader = false }) {
+export default function AppLayout({
+    children,
+    hideHeader = false,
+    showTopHeader = true,
+    showBottomNav = true,
+}) {
     const isOnline = useOnlineStatus();
     const { t } = useTranslation();
     const { props } = usePage();
@@ -40,6 +47,7 @@ export default function AppLayout({ children, hideHeader = false }) {
     const [headerVisible, setHeaderVisible] = useState(true);
     const [reportDialogOpen, setReportDialogOpen] = useState(false);
     const [xpData, setXpData] = useState(user?.xp ?? null);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const lastScrollY = useRef(0);
     const xpRefreshKey = useRef(0);
 
@@ -136,6 +144,29 @@ export default function AppLayout({ children, hideHeader = false }) {
 
     // No early return for offline anymore to keep header visible
 
+    const handleForceRefresh = async () => {
+        setIsRefreshing(true);
+        try {
+            if ("serviceWorker" in navigator) {
+                const registrations =
+                    await navigator.serviceWorker.getRegistrations();
+                for (const registration of registrations) {
+                    await registration.unregister();
+                }
+            }
+            if ("caches" in window) {
+                const cacheNames = await caches.keys();
+                await Promise.all(
+                    cacheNames.map((name) => caches.delete(name)),
+                );
+            }
+            window.location.reload(true);
+        } catch (err) {
+            console.error("Failed to force refresh:", err);
+            window.location.reload();
+        }
+    };
+
     return (
         <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
             <FlashMessages />
@@ -170,6 +201,20 @@ export default function AppLayout({ children, hideHeader = false }) {
 
                             {/* Desktop Nav */}
                             <div className="hidden sm:flex items-center gap-1">
+                                <PwaInstallButton
+                                    variant="solid"
+                                    className="mr-1"
+                                />
+                                <button
+                                    onClick={handleForceRefresh}
+                                    disabled={isRefreshing}
+                                    className="p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-all active:scale-95 disabled:opacity-50"
+                                    title="Force refresh & clear cache"
+                                >
+                                    <RotateCw
+                                        className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+                                    />
+                                </button>
                                 {user ? (
                                     <>
                                         <Link
@@ -285,6 +330,23 @@ export default function AppLayout({ children, hideHeader = false }) {
 
                             {/* Mobile Toggle */}
                             <div className="sm:hidden flex items-center gap-2">
+                                {!user && (
+                                    <PwaInstallButton
+                                        compact
+                                        variant="ghost"
+                                        className="h-9 w-9 px-0"
+                                    />
+                                )}
+                                <button
+                                    onClick={handleForceRefresh}
+                                    disabled={isRefreshing}
+                                    className="p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-all active:scale-95 disabled:opacity-50"
+                                    title="Force refresh & clear cache"
+                                >
+                                    <RotateCw
+                                        className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+                                    />
+                                </button>
                                 <button
                                     onClick={openReportDialog}
                                     className="flex items-center gap-1.5 text-xs font-medium text-white/80 hover:text-white border border-white/30 hover:border-white/60 rounded-full px-2.5 py-1.5 transition-all"
@@ -473,17 +535,17 @@ export default function AppLayout({ children, hideHeader = false }) {
 
             {!hideHeader && <div className="h-[60px]" />}
 
-            {hideHeader && (
+            {hideHeader && showTopHeader && (
                 <div className="w-full max-w-2xl mx-auto px-4 pt-6 sm:pt-12 relative z-50">
                     <TopHeader />
                 </div>
             )}
 
-            <main className="relative z-10 pb-32">
+            <main className={`relative z-10 ${showBottomNav ? "pb-32" : "pb-12"}`}>
                 {isOnline ? children : <OfflineOverlay />}
             </main>
 
-            <BottomNav />
+            {showBottomNav && <BottomNav />}
 
             {/* Background Gradients (Mobile optimized) */}
             <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden sm:hidden">

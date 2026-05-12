@@ -24,6 +24,7 @@ import XpCounter from "@/Components/XpCounter";
 import { useTranslation } from "@/Contexts/LanguageContext";
 import { usePage } from "@inertiajs/react";
 import { Zap } from "lucide-react";
+import { telemetry } from "@/Utils/telemetry";
 
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -719,9 +720,47 @@ export default function WordlistQuiz({
     }, [incorrectQuestions]);
 
     const q = questions[current] ?? null;
+    const startedRef = useRef(false);
+    const doneRef = useRef(false);
+    const latestQuizRef = useRef({ current, score: scoreCount, total });
+
+    useEffect(() => {
+        latestQuizRef.current = { current, score: scoreCount, total };
+        doneRef.current = done;
+    }, [current, scoreCount, total, done]);
+
+    useEffect(() => {
+        if (!canAttempt || total === 0 || startedRef.current) return;
+
+        startedRef.current = true;
+        telemetry.track("quiz_started", {
+            quiz_type: "wordlist_db",
+            quiz_id: quiz.id,
+            wordlist_id: wordList?.id ?? null,
+            total_questions: total,
+        });
+    }, [canAttempt, total, quiz.id, wordList?.id]);
+
+    useEffect(() => {
+        return () => {
+            if (!startedRef.current || doneRef.current) return;
+
+            telemetry.track("quiz_abandoned", {
+                quiz_type: "wordlist_db",
+                quiz_id: quiz.id,
+                wordlist_id: wordList?.id ?? null,
+                ...latestQuizRef.current,
+            });
+        };
+    }, []);
 
     const handleBookmark = (wordId) => {
         if (!wordId) return;
+        telemetry.track("bookmark_toggled", {
+            word_id: wordId,
+            source: "wordlist_quiz",
+            enabled: !bookmarks[wordId],
+        });
         setBookmarks((prev) => ({ ...prev, [wordId]: !prev[wordId] }));
         router.post(
             route("word.bookmark", wordId),
@@ -765,6 +804,16 @@ export default function WordlistQuiz({
             setSelected(choice);
             setAnswered(true);
             setIsCorrect(ok);
+            telemetry.track("quiz_question_answered", {
+                quiz_type: "wordlist_db",
+                quiz_id: quiz.id,
+                wordlist_id: wordList?.id ?? null,
+                question_id: q.id,
+                question_index: current,
+                question_type: q.type,
+                word_id: q.word_id ?? null,
+                correct: ok,
+            });
             if (ok) setScoreCount((s) => s + 1);
             else setIncorrectQuestions((prev) => [...prev, q]);
             setAnswers((prev) => [
@@ -786,6 +835,16 @@ export default function WordlistQuiz({
             setSelected(choices);
             setAnswered(true);
             setIsCorrect(ok);
+            telemetry.track("quiz_question_answered", {
+                quiz_type: "wordlist_db",
+                quiz_id: quiz.id,
+                wordlist_id: wordList?.id ?? null,
+                question_id: q.id,
+                question_index: current,
+                question_type: q.type,
+                word_id: q.word_id ?? null,
+                correct: ok,
+            });
             if (ok) setScoreCount((s) => s + 1);
             else setIncorrectQuestions((prev) => [...prev, q]);
             setAnswers((prev) => [
@@ -801,6 +860,17 @@ export default function WordlistQuiz({
             const ok = correctCount >= Math.ceil(totalPairs * 0.6);
             setAnswered(true);
             setIsCorrect(ok);
+            telemetry.track("quiz_question_answered", {
+                quiz_type: "wordlist_db",
+                quiz_id: quiz.id,
+                wordlist_id: wordList?.id ?? null,
+                question_id: q.id,
+                question_index: current,
+                question_type: q.type,
+                correct: ok,
+                match_correct_count: correctCount,
+                match_total: totalPairs,
+            });
             if (ok) setScoreCount((s) => s + 1);
             else setIncorrectQuestions((prev) => [...prev, q]);
             setAnswers((prev) => [
@@ -840,6 +910,17 @@ export default function WordlistQuiz({
                     }),
                 });
                 const result = await res.json();
+                doneRef.current = true;
+                telemetry.track("quiz_finished", {
+                    quiz_type: "wordlist_db",
+                    quiz_id: quiz.id,
+                    wordlist_id: wordList?.id ?? null,
+                    correct_count: scoreCount,
+                    total_questions: total,
+                    score: result.score ?? (total > 0 ? Math.round((scoreCount / total) * 100) : 0),
+                    passed: !!result.passed,
+                    xp_awarded: result.xp_awarded ?? 0,
+                });
                 if (result.xp_awarded) {
                     setXpAwarded(result.xp_awarded);
                 }
@@ -861,6 +942,12 @@ export default function WordlistQuiz({
                     triggerAchievements();
                 }
             } catch (e) {
+                telemetry.track("quiz_finish_failed", {
+                    quiz_type: "wordlist_db",
+                    quiz_id: quiz.id,
+                    wordlist_id: wordList?.id ?? null,
+                    total_questions: total,
+                });
                 console.error(e);
             }
             setSubmitting(false);
@@ -877,7 +964,7 @@ export default function WordlistQuiz({
 
     if (!canAttempt) {
         return (
-            <AppLayout hideHeader={true}>
+            <AppLayout hideHeader={true} showTopHeader={false} showBottomNav={false}>
                 <Head title={quiz.title} />
                 <CannotAttemptScreen
                     quiz={quiz}
@@ -892,7 +979,7 @@ export default function WordlistQuiz({
 
     if (total === 0) {
         return (
-            <AppLayout hideHeader={true}>
+            <AppLayout hideHeader={true} showTopHeader={false} showBottomNav={false}>
                 <Head title="Quiz" />
                 <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 flex items-center justify-center px-4">
                     <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-lg text-center max-w-sm w-full">
@@ -922,7 +1009,7 @@ export default function WordlistQuiz({
 
     if (done) {
         return (
-            <AppLayout hideHeader={true}>
+            <AppLayout hideHeader={true} showTopHeader={false} showBottomNav={false}>
                 <Head title="Quiz Results" />
                 {showStreakEffect && (
                     <StreakPop
@@ -972,7 +1059,7 @@ export default function WordlistQuiz({
     // ── Quiz in progress ───────────────────────────────────────────────────────
 
     return (
-        <AppLayout hideHeader={true}>
+        <AppLayout hideHeader={true} showTopHeader={false} showBottomNav={false}>
             <Head title={quiz.title} />
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
                 <div className="w-full max-w-xl mx-auto px-4 py-5">

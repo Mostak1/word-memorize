@@ -20,7 +20,7 @@ class WordListController extends Controller
                     ->orderBy('id', 'asc');
             }
         ])
-            ->withCount('wordLists')
+            ->withCount(['wordLists', 'words'])
             ->orderBy('id', 'desc')
             ->paginate(10);
 

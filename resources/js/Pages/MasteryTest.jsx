@@ -34,10 +34,11 @@ import {
     Target,
     Bookmark,
 } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useTranslation } from "@/Contexts/LanguageContext";
 import StreakPop from "@/Components/StreakPop";
 import WordlistUnlockedOverlay from "@/Components/WordlistUnlockedOverlay";
+import { telemetry } from "@/Utils/telemetry";
 
 // ── Type metadata ─────────────────────────────────────────────────────────────
 
@@ -459,12 +460,53 @@ export default function MasteryTest({
 
     const q = questions[current] ?? null;
     const total = questions.length;
+    const startedRef = useRef(false);
+    const doneRef = useRef(false);
+    const latestQuizRef = useRef({ current, score, total });
+
+    useEffect(() => {
+        latestQuizRef.current = { current, score, total };
+        doneRef.current = done;
+    }, [current, score, total, done]);
+
+    useEffect(() => {
+        if (showIntro || total === 0 || startedRef.current) return;
+
+        startedRef.current = true;
+        telemetry.track("quiz_started", {
+            quiz_type: wordlistId ? "wordlist_auto" : "mastery",
+            wordlist_id: wordlistId ?? null,
+            category_id: categoryId ?? null,
+            total_questions: total,
+        });
+    }, [showIntro, total, wordlistId, categoryId]);
+
+    useEffect(() => {
+        return () => {
+            if (!startedRef.current || doneRef.current) return;
+
+            telemetry.track("quiz_abandoned", {
+                quiz_type: wordlistId ? "wordlist_auto" : "mastery",
+                wordlist_id: wordlistId ?? null,
+                category_id: categoryId ?? null,
+                ...latestQuizRef.current,
+            });
+        };
+    }, []);
 
     const handleMCQAnswer = (option) => {
         if (answered) return;
         setSelected(option);
         setAnswered(true);
         const correct = option.toLowerCase() === q.correct.toLowerCase();
+        telemetry.track("quiz_question_answered", {
+            quiz_type: wordlistId ? "wordlist_auto" : "mastery",
+            wordlist_id: wordlistId ?? null,
+            question_index: current,
+            question_type: q.type,
+            word_id: q.id ?? null,
+            correct,
+        });
         setIsCorrect(correct);
         if (correct) {
             setScore((s) => s + 1);
@@ -481,6 +523,15 @@ export default function MasteryTest({
         setMatchCorrectCount(correctCount);
         setAnswered(true);
         const passed = correctCount >= matchPassThreshold;
+        telemetry.track("quiz_question_answered", {
+            quiz_type: wordlistId ? "wordlist_auto" : "mastery",
+            wordlist_id: wordlistId ?? null,
+            question_index: current,
+            question_type: q.type,
+            correct: passed,
+            match_correct_count: correctCount,
+            match_total: q.pairs.length,
+        });
         if (passed) {
             setScore((s) => s + 1);
             playCorrect(userSettings);
@@ -505,6 +556,11 @@ export default function MasteryTest({
     };
 
     const handleBookmark = (wordId) => {
+        telemetry.track("bookmark_toggled", {
+            word_id: wordId,
+            source: "mastery_test",
+            enabled: !bookmarks[wordId],
+        });
         setBookmarks((prev) => ({ ...prev, [wordId]: !prev[wordId] }));
         router.post(
             route("word.bookmark", wordId),
@@ -566,6 +622,17 @@ export default function MasteryTest({
                     body: JSON.stringify(body),
                 });
                 const result = await res.json();
+                doneRef.current = true;
+                telemetry.track("quiz_finished", {
+                    quiz_type: wordlistId ? "wordlist_auto" : "mastery",
+                    wordlist_id: wordlistId ?? null,
+                    category_id: categoryId ?? null,
+                    correct_count: score,
+                    total_questions: total,
+                    score: result.score ?? (total > 0 ? Math.round((score / total) * 100) : 0),
+                    passed: !!result.passed,
+                    xp_awarded: result.xp_awarded ?? 0,
+                });
 
                 if (result.xp_awarded) {
                     setXpAwarded(result.xp_awarded);
@@ -586,6 +653,11 @@ export default function MasteryTest({
                     // Achievements will be triggered after Lottie/Streak
                 }
             } catch (e) {
+                telemetry.track("quiz_finish_failed", {
+                    quiz_type: wordlistId ? "wordlist_auto" : "mastery",
+                    wordlist_id: wordlistId ?? null,
+                    total_questions: total,
+                });
                 console.error(e);
             }
             setDone(true);
@@ -612,7 +684,7 @@ export default function MasteryTest({
 
     if (showIntro && !noMasteredWords && !noUsableSentences) {
         return (
-            <AppLayout hideHeader={true}>
+            <AppLayout hideHeader={true} showTopHeader={false} showBottomNav={false}>
                 <Head title={t("quiz.title")} />
                 <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 flex justify-center px-4 pt-4">
                     <div
@@ -699,7 +771,7 @@ export default function MasteryTest({
         const pct = Math.round((score / total) * 100);
         const emoji = pct >= 80 ? "🎉" : pct >= 50 ? "👍" : "💪";
         return (
-            <AppLayout hideHeader={true}>
+            <AppLayout hideHeader={true} showTopHeader={false} showBottomNav={false}>
                 <Head title={t("quiz.results_title")} />
                 {done && showAnimation && !showStreakEffect && (
                     <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center">
@@ -917,7 +989,7 @@ export default function MasteryTest({
     }
 
     return (
-        <AppLayout hideHeader={true}>
+        <AppLayout hideHeader={true} showTopHeader={false} showBottomNav={false}>
             <Head title={q?.word ? `${q.word} - Quiz` : t("quiz.title")} />
             <Toaster position="top-center" expand={false} richColors />
             {showStreakEffect && (
@@ -928,8 +1000,21 @@ export default function MasteryTest({
             )}
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 px-4 py-8">
                 <div className="max-w-md mx-auto">
-                    <div className="flex items-center justify-between mb-6">
-                        <div className="flex-1 mr-4">
+                    <div className="flex items-center gap-4 mb-6">
+                        <Link
+                            href={
+                                categoryId
+                                    ? route("wordlistcategory.wordlists", {
+                                          category: categoryId,
+                                      })
+                                    : route("dashboard")
+                            }
+                            className="p-2 rounded-xl bg-white dark:bg-slate-900 shadow-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-all active:scale-95"
+                            title={t("quiz.exit")}
+                        >
+                            <X className="h-5 w-5" />
+                        </Link>
+                        <div className="flex-1">
                             <div className="h-2 bg-gray-200 dark:bg-slate-800 rounded-full overflow-hidden">
                                 <div
                                     className="h-full bg-[#E5201C] transition-all duration-500"
@@ -939,20 +1024,9 @@ export default function MasteryTest({
                                 />
                             </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                            {/* <button
-                                onClick={() => {
-                                    setStreakCount(5);
-                                    setShowStreakEffect(true);
-                                }}
-                                className="shrink-0 text-[10px] font-bold text-orange-500 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900/50 rounded-full px-2 py-0.5 shadow-sm hover:scale-105 active:scale-95 transition-all"
-                            >
-                                Test Streak
-                            </button> */}
-                            <span className="text-xs font-bold text-gray-400 dark:text-gray-500 tabular-nums shrink-0">
-                                {current + 1} / {total}
-                            </span>
-                        </div>
+                        <span className="text-xs font-bold text-gray-400 dark:text-gray-500 tabular-nums shrink-0">
+                            {current + 1} / {total}
+                        </span>
                     </div>
                     <div className="mb-6 flex justify-between items-center">
                         {q && <TypeBadge type={q.type} />}

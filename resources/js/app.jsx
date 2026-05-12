@@ -6,35 +6,50 @@ import { resolvePageComponent } from "laravel-vite-plugin/inertia-helpers";
 import { createRoot } from "react-dom/client";
 import { Toaster, toast } from "sonner";
 import { ThemeProvider, useTheme } from "@/Components/ThemeProvider";
-import PageLoadingState from "@/Components/PageLoadingState";
-import { registerSW } from "virtual:pwa-register";
 import { LanguageProvider } from "@/Contexts/LanguageContext";
+import { TelemetryProvider } from "@/Utils/telemetry";
 
 const appName = import.meta.env.VITE_APP_NAME || "Laravel";
 
-const updateSW = import.meta.env.PROD
-    ? registerSW({
-          immediate: false,
-          onNeedRefresh() {
-              toast.info("A new version is ready.", {
-                  action: {
-                      label: "Refresh",
-                      onClick: () => updateSW(true),
-                  },
-                  duration: Infinity,
-              });
-          },
-          onOfflineReady() {
-              toast.success("Offline support is ready.");
-          },
-          onRegistered(registration) {
-              console.log("Service Worker registered:", registration);
-          },
-          onRegisterError(error) {
-              console.error("Service Worker registration failed:", error);
-          },
-      })
-    : () => {};
+function registerAppServiceWorker() {
+    if (!("serviceWorker" in navigator)) return;
+
+    window.addEventListener("load", async () => {
+        try {
+            const registration = await navigator.serviceWorker.register("sw.js", {
+                scope: "./",
+            });
+
+            registration.addEventListener("updatefound", () => {
+                const worker = registration.installing;
+                if (!worker) return;
+
+                worker.addEventListener("statechange", () => {
+                    if (worker.state !== "installed") return;
+
+                    if (navigator.serviceWorker.controller) {
+                        toast.info("A new version is ready.", {
+                            action: {
+                                label: "Refresh",
+                                onClick: () => {
+                                    worker.postMessage({ type: "SKIP_WAITING" });
+                                    window.location.reload();
+                                },
+                            },
+                            duration: Infinity,
+                        });
+                    } else {
+                        toast.success("Offline support is ready.");
+                    }
+                });
+            });
+        } catch (error) {
+            console.error("Service Worker registration failed:", error);
+        }
+    });
+}
+
+registerAppServiceWorker();
 
 function ThemedToaster() {
     const { theme } = useTheme();
@@ -72,7 +87,9 @@ createInertiaApp({
                 isAdmin={isAdmin}
             >
                 <LanguageProvider initialLocale={initialLocale}>
-                    <App {...props} />
+                    <TelemetryProvider initialPage={props.initialPage}>
+                        <App {...props} />
+                    </TelemetryProvider>
                 </LanguageProvider>
                 <ThemedToaster />
             </ThemeProvider>,

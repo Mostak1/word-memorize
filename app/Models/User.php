@@ -144,6 +144,11 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
+    public function telemetryEvents()
+    {
+        return $this->hasMany(TelemetryEvent::class);
+    }
+
     // ─── Accessors ───────────────────────────────────────────────────────────────
 
     public function followerCount()

@@ -186,6 +186,9 @@ export default function Index({ categories }) {
                                 <Badge variant="outline" className="shrink-0">
                                     {category.word_lists_count} lists
                                 </Badge>
+                                <Badge variant="outline" className="shrink-0 bg-muted/30">
+                                    {category.words_count || 0} words
+                                </Badge>
 
                                 {/* Creator badge */}
                                 {category.creator ? (

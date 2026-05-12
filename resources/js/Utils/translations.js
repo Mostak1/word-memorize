@@ -43,6 +43,7 @@ export const translations = {
             register: "Register",
             report_error: "Report Error",
             settings: "Settings",
+            force_refresh: "Refresh",
         },
         auth: {
             welcome_back: "Welcome Back",
@@ -607,6 +608,8 @@ export const translations = {
             title: "Exercises",
             breadcrumb_home: "Home",
             breadcrumb_categories: "Wordlist Categories",
+            your_list: "Your list",
+            all_categories: "All Categories",
             pagination: {
                 showing: "Showing {from}–{to} of {total} lists",
                 previous: "Previous",
@@ -1484,10 +1487,21 @@ export const translations = {
             go_to_shop: "শপে যান",
             maybe_later: "পরে দেখা যাবে",
         },
+        nav: {
+            profile: "প্রোফাইল",
+            logout: "লগ আউট",
+            login: "লগইন",
+            register: "রেজিস্ট্রেশন",
+            report_error: "ভুল রিপোর্ট করুন",
+            settings: "সেটিংস",
+            force_refresh: "রিফ্রেশ",
+        },
         wordlists: {
             title: "অনুশীলনী",
             breadcrumb_home: "হোম",
             breadcrumb_categories: "শব্দ তালিকার ক্যাটাগরি",
+            your_list: "আপনার তালিকা",
+            all_categories: "সব ক্যাটাগরি",
             pagination: {
                 showing: "{total}টি তালিকার মধ্যে {from}–{to} দেখানো হচ্ছে",
                 previous: "পূর্ববর্তী",

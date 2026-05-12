@@ -7,6 +7,7 @@ use App\Models\WordListCategory;
 use App\Models\WordListOrderItem;
 use App\Services\XpService;
 use App\Services\StreakService;
+use App\Support\Telemetry;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -107,6 +108,11 @@ class UserShopController extends Controller
     if ($this->xpService->buyStreakFreeze($user)) {
       $this->streakService->awardFreeze($user, 1);
 
+      Telemetry::record($request, 'xp_shop_purchase_completed', [
+        'item' => 'streak_freeze',
+        'cost' => $cost,
+      ]);
+
       return response()->json([
         'success' => true,
         'message' => 'Streak freeze purchased!',
@@ -149,6 +155,11 @@ class UserShopController extends Controller
     }
 
     if ($this->xpService->buyDarkMode($user)) {
+      Telemetry::record($request, 'xp_shop_purchase_completed', [
+        'item' => 'dark_mode',
+        'cost' => \App\Services\XpService::DARK_MODE_COST,
+      ]);
+
       return response()->json([
         'success' => true,
         'message' => 'Dark Mode unlocked!',

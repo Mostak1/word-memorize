@@ -3,13 +3,15 @@ namespace App\Http\Controllers;
 
 use App\Models\BookmarkedWord;
 use App\Models\Word;
+use App\Support\Telemetry;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class BookmarkController extends Controller
 {
     /** Toggle bookmark — add if missing, remove if present */
-    public function toggle(Word $word)
+    public function toggle(Request $request, Word $word)
     {
         $userId = Auth::id();
 
@@ -24,6 +26,12 @@ class BookmarkController extends Controller
             BookmarkedWord::create(['user_id' => $userId, 'word_id' => $word->id]);
             $isBookmarked = true;
         }
+
+        Telemetry::record($request, 'bookmark_toggled', [
+            'word_id' => $word->id,
+            'enabled' => $isBookmarked,
+            'source' => 'server',
+        ]);
 
         return back()->with('bookmarked', $isBookmarked);
     }

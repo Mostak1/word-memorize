@@ -366,6 +366,7 @@ class OxfordWordsSeeder extends Seeder
                     'description' => null,
                     'thumbnail' => $thumbnailPath,
                     // 'status' => true,
+                    'is_locked' => true,
                     'created_by' => $creatorId,
                     'show_example_sentences' => false,
                     'price' => $this->price,

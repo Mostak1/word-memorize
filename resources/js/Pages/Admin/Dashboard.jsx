@@ -15,6 +15,7 @@ import {
     AlertTriangle,
     Settings,
     Clock,
+    Activity,
 } from "lucide-react";
 
 export default function Dashboard({ stats, recentUsers }) {
@@ -90,6 +91,34 @@ export default function Dashboard({ stats, recentUsers }) {
         },
     ];
 
+    // ── Telemetry Stats ───────────────────────────────────────────────────────
+    const telemetryCards = [
+        {
+            title: "Total Sessions",
+            value: (stats.total_sessions ?? 0).toLocaleString(),
+            icon: Activity,
+            color: "text-rose-600",
+            bgColor: "bg-rose-50 dark:bg-rose-950",
+            description: "All-time sessions",
+        },
+        {
+            title: "Sessions Today",
+            value: (stats.sessions_today ?? 0).toLocaleString(),
+            icon: TrendingUp,
+            color: "text-orange-600",
+            bgColor: "bg-orange-50 dark:bg-orange-950",
+            description: "New sessions today",
+        },
+        {
+            title: "Page Views Today",
+            value: (stats.page_views_today ?? 0).toLocaleString(),
+            icon: BookOpen,
+            color: "text-blue-600",
+            bgColor: "bg-blue-50 dark:bg-blue-950",
+            description: "Total views today",
+        },
+    ];
+
     // ── Role badge helper ─────────────────────────────────────────────────────
     const roleBadge = (role) => {
         const map = {
@@ -157,6 +186,33 @@ export default function Dashboard({ stats, recentUsers }) {
                                         <Icon
                                             className={`h-4 w-4 ${stat.color}`}
                                         />
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">
+                                        {stat.value}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        {stat.description}
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        );
+                    })}
+                </div>
+
+                {/* ── Telemetry Summary ────────────────────────────────────── */}
+                <div className="grid gap-4 sm:grid-cols-3">
+                    {telemetryCards.map((stat) => {
+                        const Icon = stat.icon;
+                        return (
+                            <Card key={stat.title} className="overflow-hidden border-rose-100 dark:border-rose-900/20">
+                                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                                        {stat.title}
+                                    </CardTitle>
+                                    <div className={`rounded-full p-2 ${stat.bgColor}`}>
+                                        <Icon className={`h-4 w-4 ${stat.color}`} />
                                     </div>
                                 </CardHeader>
                                 <CardContent>
@@ -349,6 +405,20 @@ export default function Dashboard({ stats, recentUsers }) {
                                         <span className="flex items-center gap-2">
                                             <Shield className="h-4 w-4" />
                                             System Settings
+                                        </span>
+                                        <ArrowRight className="h-4 w-4" />
+                                    </Link>
+                                </Button>
+
+                                <Button
+                                    asChild
+                                    className="w-full justify-between"
+                                    variant="outline"
+                                >
+                                    <Link href={route("admin.telemetry")}>
+                                        <span className="flex items-center gap-2">
+                                            <Activity className="h-4 w-4" />
+                                            Telemetry Data
                                         </span>
                                         <ArrowRight className="h-4 w-4" />
                                     </Link>

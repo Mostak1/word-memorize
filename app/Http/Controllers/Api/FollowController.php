@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\Telemetry;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -36,6 +37,10 @@ class FollowController extends Controller
 
         $currentUser->following()->attach($user->id);
 
+        Telemetry::record($request, 'user_followed', [
+            'target_user_id' => $user->id,
+        ]);
+
         if ($request->wantsJson() && !$isInertia) {
             return response()->json(['message' => 'Successfully followed user']);
         }
@@ -52,6 +57,10 @@ class FollowController extends Controller
         $isInertia = $request->header('X-Inertia');
 
         $currentUser->following()->detach($user->id);
+
+        Telemetry::record($request, 'user_unfollowed', [
+            'target_user_id' => $user->id,
+        ]);
 
         if ($request->wantsJson() && !$isInertia) {
             return response()->json(['message' => 'Successfully unfollowed user']);

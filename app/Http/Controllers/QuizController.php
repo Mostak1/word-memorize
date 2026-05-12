@@ -6,6 +6,7 @@ use App\Models\Quiz;
 use App\Models\QuizAttempt;
 use App\Models\User;
 use App\Models\UserSetting;
+use App\Models\UserWordListAccess;
 use App\Models\Word;
 use App\Models\WordList;
 use App\Models\WordProgress;

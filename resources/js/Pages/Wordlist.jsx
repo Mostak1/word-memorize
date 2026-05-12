@@ -14,6 +14,9 @@ import {
     XCircle,
     GraduationCap,
     AlertCircle,
+    Leaf,
+    Zap,
+    Flame,
 } from "lucide-react";
 
 import {
@@ -229,9 +232,10 @@ function QuizLockedCard({
             {/* Badges */}
             <div className="flex items-center gap-2 mb-3">
                 <span
-                    className={`text-xs font-medium px-2.5 py-0.5 rounded-full border ${color} opacity-70`}
+                    className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full border ${color} opacity-70`}
                 >
-                    {star} {t(`common.difficulties.${wordList.difficulty?.toLowerCase()}`)}
+                    {star}
+                    {t(`common.difficulties.${wordList.difficulty?.toLowerCase()}`)}
                 </span>
                 {total > 0 && (
                     <span className="text-xs font-medium px-2.5 py-0.5 rounded-full border border-gray-200 bg-gray-50 dark:bg-slate-800 dark:border-slate-700 text-gray-400">
@@ -357,20 +361,23 @@ export default function Wordlist({
 
     const getDifficultyBadge = (difficulty) => {
         const d = difficulty?.toLowerCase();
-        const star =
-            d === "easy" || d === "beginner"
-                ? "⭐"
-                : d === "medium" || d === "intermediate"
-                  ? "⭐⭐"
-                  : d === "hard" || d === "advanced"
-                    ? "⭐⭐⭐"
-                    : "⭐";
-        const color =
-            d === "easy" || d === "beginner"
-                ? "bg-green-50 text-green-700 border-green-200"
-                : d === "medium" || d === "intermediate"
-                  ? "bg-yellow-50 text-yellow-700 border-yellow-200"
-                  : "bg-red-50 text-red-700 border-red-200";
+        const isBeginner = d === "easy" || d === "beginner";
+        const isIntermediate = d === "medium" || d === "intermediate";
+        const isAdvanced = d === "hard" || d === "advanced";
+        
+        const star = isBeginner
+            ? <Leaf className="h-3 w-3" />
+            : isIntermediate
+                ? <Zap className="h-3 w-3" />
+                : isAdvanced
+                    ? <Flame className="h-3 w-3" />
+                    : <Leaf className="h-3 w-3" />;
+
+        const color = isBeginner
+            ? "bg-green-50 text-green-700 border-green-200"
+            : isIntermediate
+                ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                : "bg-red-50 text-red-700 border-red-200";
         return { star, color };
     };
 
@@ -472,9 +479,9 @@ export default function Wordlist({
 
                                                     <div className="flex items-center gap-2">
                                                         <span
-                                                            className={`text-xs font-medium px-2.5 py-0.5 rounded-full border ${color} opacity-50`}
+                                                            className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full border ${color} opacity-50`}
                                                         >
-                                                            {star}{" "}
+                                                            {star}
                                                             {t(`common.difficulties.${wordList.difficulty?.toLowerCase()}`)}
                                                         </span>
                                                         {total > 0 && (
@@ -563,9 +570,9 @@ export default function Wordlist({
 
                                                 <div className="flex items-center gap-2 mb-3">
                                                     <span
-                                                        className={`text-xs font-medium px-2.5 py-0.5 rounded-full border ${color}`}
+                                                        className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full border ${color}`}
                                                     >
-                                                        {star}{" "}
+                                                        {star}
                                                         {t(`common.difficulties.${wordList.difficulty?.toLowerCase()}`)}
                                                     </span>
                                                     {total > 0 && (

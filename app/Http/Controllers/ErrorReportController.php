@@ -10,6 +10,7 @@ use Brevo\TransactionalEmails\Types\SendTransacEmailRequestSender;
 use Brevo\TransactionalEmails\Types\SendTransacEmailRequestToItem;
 use Illuminate\Support\Facades\Log;
 use App\Traits\HandlesImageUploads;
+use App\Support\Telemetry;
 
 class ErrorReportController extends Controller
 {
@@ -41,6 +42,12 @@ class ErrorReportController extends Controller
     ]);
 
     // $this->sendEmailToAdmin($report);
+
+    Telemetry::record($request, 'error_report_created', [
+      'error_report_id' => $report->id,
+      'has_image' => (bool) $imagePath,
+      'page_url' => $validated['page_url'],
+    ]);
 
     return back()->with('flash', [
       'type' => 'success',

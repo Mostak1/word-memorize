@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\Route;
 
 // ── Dashboard ──────────────────────────────────────────────────────────────
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+Route::get('/telemetry', [DashboardController::class, 'telemetry'])->name('telemetry');
 
 
     // ── Admin Profile ──────────────────────────────────────────────────────────
