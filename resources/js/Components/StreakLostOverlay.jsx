@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "@/Contexts/LanguageContext";
 
-export default function StreakLostOverlay({ isOpen, onClose, prevStreak }) {
+export default function StreakLostOverlay({ isOpen, onClose, prevStreak, xpBalance = 0, onRepair }) {
+    const REPAIR_COST = 5000;
+    const canAffordRepair = xpBalance >= REPAIR_COST;
+    const [isRepairing, setIsRepairing] = useState(false);
+
     const { t } = useTranslation();
     const [shouldRender, setShouldRender] = useState(isOpen);
     const [hasAnimated, setHasAnimated] = useState(false);
@@ -72,6 +76,15 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak }) {
                     0%, 100% { box-shadow: 0 8px 32px var(--sl-btn-shadow-base), 0 0 0 1px var(--sl-btn-inset) inset; }
                     50%      { box-shadow: 0 8px 32px var(--sl-btn-shadow-base), 0 0 0 9px rgba(99,102,241,0.2), 0 0 0 1px var(--sl-btn-inset) inset; }
                 }
+                @keyframes sl-repairPulse {
+                    0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(234, 179, 8, 0.3); }
+                    50%      { transform: scale(1.02); box-shadow: 0 0 35px rgba(234, 179, 8, 0.6); }
+                }
+                @keyframes sl-spin-slow {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                }
+
 
                 /* ── Light mode tokens (default) ──────────────────────────── */
                 .sl-root {
@@ -557,6 +570,102 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak }) {
                                 </div>
                             ))}
                         </div>
+                        {/* ── Repair Option ────────────────────────────────── */}
+                        {prevStreak > 0 && (
+                            <div
+                                style={{
+                                    marginBottom: "16px",
+                                    animation: "sl-slideUp 0.6s 1.0s ease-out both",
+                                }}
+                            >
+                                <button
+                                    disabled={!canAffordRepair || isRepairing}
+                                    onClick={async () => {
+                                        if (onRepair) {
+                                            setIsRepairing(true);
+                                            await onRepair();
+                                            setIsRepairing(false);
+                                        }
+                                    }}
+                                    style={{
+                                        width: "100%",
+                                        padding: "16px 20px",
+                                        background: canAffordRepair
+                                            ? "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
+                                            : "rgba(0,0,0,0.05)",
+                                        border: canAffordRepair
+                                            ? "none"
+                                            : "1px dashed rgba(0,0,0,0.1)",
+                                        borderRadius: "20px",
+                                        color: canAffordRepair ? "white" : "#94a3b8",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "space-between",
+                                        cursor: canAffordRepair ? "pointer" : "not-allowed",
+                                        transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                                        opacity: isRepairing ? 0.7 : 1,
+                                        position: "relative",
+                                        overflow: "hidden",
+                                        animation: canAffordRepair ? "sl-repairPulse 3s infinite" : "none",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (canAffordRepair) {
+                                            e.currentTarget.style.transform = "translateY(-2px)";
+                                            e.currentTarget.style.filter = "brightness(1.1)";
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (canAffordRepair) {
+                                            e.currentTarget.style.transform = "translateY(0)";
+                                            e.currentTarget.style.filter = "brightness(1)";
+                                        }
+                                    }}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div
+                                            style={{
+                                                width: "36px",
+                                                height: "36px",
+                                                borderRadius: "12px",
+                                                background: "rgba(255,255,255,0.2)",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                fontSize: "20px",
+                                            }}
+                                        >
+                                            {isRepairing ? "⏳" : "💎"}
+                                        </div>
+                                        <div className="text-left">
+                                            <div style={{ fontWeight: 800, fontSize: "14px", lineHeight: 1.2 }}>
+                                                {isRepairing ? t("streak.repairing", "Repairing...") : t("streak.repair_title", "Repair Streak")}
+                                            </div>
+                                            <div style={{ fontSize: "11px", opacity: 0.8, fontWeight: 600 }}>
+                                                {canAffordRepair 
+                                                    ? t("streak.repair_cost", { cost: REPAIR_COST, defaultValue: `Use ${REPAIR_COST} XP to restore` })
+                                                    : t("streak.repair_insufficient", { cost: REPAIR_COST, defaultValue: `Need ${REPAIR_COST} XP` })}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style={{ fontWeight: 900, fontSize: "18px" }}>
+                                        {canAffordRepair ? "✨" : "🔒"}
+                                    </div>
+
+                                    {/* Shimmer for repair button */}
+                                    {canAffordRepair && (
+                                        <div
+                                            style={{
+                                                position: "absolute",
+                                                inset: 0,
+                                                background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)",
+                                                transform: "translateX(-100%)",
+                                                animation: "sl-shimmer 2s infinite",
+                                            }}
+                                        />
+                                    )}
+                                </button>
+                            </div>
+                        )}
 
                         {/* ── CTA ───────────────────────────────────────────── */}
                         <div

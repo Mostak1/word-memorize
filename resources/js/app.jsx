@@ -11,13 +11,14 @@ import { TelemetryProvider } from "@/Utils/telemetry";
 
 const appName = import.meta.env.VITE_APP_NAME || "Laravel";
 
-function registerAppServiceWorker() {
+function registerAppServiceWorker(assetUrl) {
     if (!("serviceWorker" in navigator)) return;
 
     window.addEventListener("load", async () => {
         try {
-            const registration = await navigator.serviceWorker.register("sw.js", {
-                scope: "./",
+            const baseUrl = assetUrl || window.location.origin;
+            const registration = await navigator.serviceWorker.register(`${baseUrl}/sw.js`, {
+                scope: `${baseUrl}/`,
             });
 
             registration.addEventListener("updatefound", () => {
@@ -49,8 +50,6 @@ function registerAppServiceWorker() {
     });
 }
 
-registerAppServiceWorker();
-
 function ThemedToaster() {
     const { theme } = useTheme();
 
@@ -74,6 +73,7 @@ createInertiaApp({
         ),
     setup({ el, App, props }) {
         const root = createRoot(el);
+        registerAppServiceWorker(props.initialPage.props.assetUrl);
         const isAdmin =
             props.initialPage.props.auth?.user?.role === "admin" || false;
 

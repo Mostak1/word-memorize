@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm, usePage } from "@inertiajs/react";
 import {
     Dialog,
@@ -16,6 +16,7 @@ import {
     Lock,
     ChevronRight,
     Loader2,
+    Tag,
 } from "lucide-react";
 import { useTranslation } from "@/Contexts/LanguageContext";
 
@@ -23,20 +24,29 @@ export default function PurchaseOrderDialog({
     open,
     onClose,
     category, // ← now a category object instead of wordList
+    availableCoupons = [], // New prop
     bkashNumber = "01825236112",
 }) {
     const { t } = useTranslation();
-    const { auth } = usePage().props;
+    const { auth, referral } = usePage().props;
     const user = auth?.user ?? null;
     const [copied, setCopied] = useState(false);
+    const [showCouponInput, setShowCouponInput] = useState(false);
+    const [couponInput, setCouponInput] = useState("");
+
+    const handleApplyCoupon = () => {
+        setData("coupon_code", couponInput.trim());
+    };
 
     // If opened via "Try Again", the category object carries _rejectedOrder
     const rejectedOrder = category?._rejectedOrder ?? null;
+    const selectedCategoryIds =
+        category?.category_ids ?? (category?.id ? [category.id] : []);
 
     const { data, setData, post, processing, errors, reset, wasSuccessful } =
         useForm({
             // word_list_category_id: category?.id ?? null,
-            category_ids: category?.id ? [category.id] : [],
+            category_ids: selectedCategoryIds,
             name: rejectedOrder?.name ?? user?.name ?? "",
             phone_number:
                 rejectedOrder?.phone_number ?? user?.phone_number ?? "",
@@ -44,11 +54,13 @@ export default function PurchaseOrderDialog({
             profession: rejectedOrder?.profession ?? user?.profession ?? "",
             transaction_id: "",
             note: "",
+            referral_discount_credit_id: "",
+            coupon_code: "", // New field
         });
 
     useEffect(() => {
-        setData("category_ids", category?.id ? [category.id] : []);
-    }, [category?.id]);
+        setData("category_ids", selectedCategoryIds);
+    }, [category?.id, category?.category_ids]);
 
     const copyBkash = () => {
         navigator.clipboard.writeText(bkashNumber);
@@ -63,8 +75,53 @@ export default function PurchaseOrderDialog({
         });
     };
 
+    // --- Discount Calculation ---
+    const subtotal = Number(category?.price ?? 0);
+
+    // 1. Referral Credit
+    const availableCredits = referral?.enabled
+        ? (referral.available_credits ?? [])
+        : [];
+    const selectedCredit = availableCredits.find(
+        (credit) =>
+            String(credit.id) === String(data.referral_discount_credit_id),
+    );
+
+    // 2. Coupon (Local lookup for immediate UI feedback)
+    const appliedCoupon = useMemo(() => {
+        if (!data.coupon_code) return null;
+        return availableCoupons.find(
+            (c) => c.code.toUpperCase() === data.coupon_code.toUpperCase(),
+        );
+    }, [data.coupon_code, availableCoupons]);
+
+    // Calculate final discount percentage
+    // If coupon is entered, it overrides referral (as per backend logic)
+    const activeDiscountPercent = useMemo(() => {
+        if (appliedCoupon) {
+            // Validate: If it's a course-only coupon, it shouldn't apply here (word lists)
+            if (appliedCoupon.course_only) return 0;
+            return appliedCoupon.discount_percent;
+        }
+        if (selectedCredit) return selectedCredit.discount_percent;
+        return 0;
+    }, [appliedCoupon, selectedCredit]);
+
+    const isCourseCouponBlocked = useMemo(() => {
+        return appliedCoupon && appliedCoupon.course_only;
+    }, [appliedCoupon]);
+
+    const discountAmount = useMemo(() => {
+        if (!subtotal || !activeDiscountPercent) return 0;
+        return Math.round(subtotal * activeDiscountPercent) / 100;
+    }, [subtotal, activeDiscountPercent]);
+
+    const payableAmount = Math.max(subtotal - discountAmount, 0);
+
     const handleClose = () => {
         reset();
+        setCouponInput("");
+        setShowCouponInput(false);
         onClose();
     };
 
@@ -151,18 +208,24 @@ export default function PurchaseOrderDialog({
                                         <AlertCircle className="h-4 v-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
                                         <div>
                                             <p className="text-sm font-bold text-red-700 dark:text-red-400 mb-1">
-                                                {t("shop.order_dialog.rejected_title")}
+                                                {t(
+                                                    "shop.order_dialog.rejected_title",
+                                                )}
                                             </p>
                                             {rejectedOrder.admin_note ? (
                                                 <p className="text-xs text-red-600 dark:text-red-400 leading-relaxed">
                                                     <span className="font-semibold">
-                                                        {t("shop.order_dialog.rejected_reason")}{" "}
+                                                        {t(
+                                                            "shop.order_dialog.rejected_reason",
+                                                        )}{" "}
                                                     </span>
                                                     {rejectedOrder.admin_note}
                                                 </p>
                                             ) : (
                                                 <p className="text-xs text-red-600 dark:text-red-400">
-                                                    {t("shop.order_dialog.rejected_fallback")}
+                                                    {t(
+                                                        "shop.order_dialog.rejected_fallback",
+                                                    )}
                                                 </p>
                                             )}
                                         </div>
@@ -202,10 +265,182 @@ export default function PurchaseOrderDialog({
                                 </div>
                                 {category?.price > 0 && (
                                     <p className="text-xs text-pink-600 dark:text-pink-400 mt-2 font-medium">
-                                        {t("shop.order_dialog.payment_instruction", { price: category.price })}
+                                        {t(
+                                            "shop.order_dialog.payment_instruction",
+                                            { price: payableAmount.toFixed(0) },
+                                        )}
                                     </p>
                                 )}
                             </div>
+
+                            {/* --- Discounts Section --- */}
+                            {category?.price > 0 && (
+                                <div className="space-y-3">
+                                    {/* Referral Selector */}
+                                    {availableCredits.length > 0 && (
+                                        <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-xl p-4">
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <Tag className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                                <span className="text-sm font-bold text-green-800 dark:text-green-300">
+                                                    Referral discount
+                                                </span>
+                                            </div>
+                                            <select
+                                                disabled={!!data.coupon_code}
+                                                value={
+                                                    data.referral_discount_credit_id
+                                                }
+                                                onChange={(e) =>
+                                                    setData(
+                                                        "referral_discount_credit_id",
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                className={`w-full border border-green-200 dark:border-green-800 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30 ${!!data.coupon_code ? "opacity-50 cursor-not-allowed" : ""}`}
+                                            >
+                                                <option value="">
+                                                    No referral discount
+                                                </option>
+                                                {availableCredits.map(
+                                                    (credit) => (
+                                                        <option
+                                                            key={credit.id}
+                                                            value={credit.id}
+                                                        >
+                                                            {
+                                                                credit.discount_percent
+                                                            }
+                                                            % off (
+                                                            {credit.source ===
+                                                            "new_user"
+                                                                ? "new user"
+                                                                : "referrer"}{" "}
+                                                            reward)
+                                                        </option>
+                                                    ),
+                                                )}
+                                            </select>
+                                            {data.coupon_code && (
+                                                <p className="text-[10px] text-gray-400 mt-1 italic">
+                                                    Referral discount disabled
+                                                    when a coupon is entered.
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Coupon Entry */}
+                                    {!showCouponInput && !data.coupon_code ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowCouponInput(true)}
+                                            className="w-full flex items-center justify-between px-4 py-3 bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 rounded-xl text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <Tag className="h-4 w-4" />
+                                                <span className="text-sm font-bold">Coupon Code</span>
+                                            </div>
+                                            <ChevronRight className="h-4 w-4 opacity-50" />
+                                        </button>
+                                    ) : (
+                                        <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl p-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <div className="flex items-center gap-2">
+                                                    <Tag className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                                    <span className="text-sm font-bold text-blue-800 dark:text-blue-300">
+                                                        Coupon Code
+                                                    </span>
+                                                </div>
+                                                {/* Allow hiding it again only if empty */}
+                                                {!data.coupon_code && (
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => setShowCouponInput(false)}
+                                                        className="text-[10px] font-bold text-blue-400 hover:text-blue-600 uppercase tracking-wider"
+                                                    >
+                                                        Hide
+                                                    </button>
+                                                )}
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <div className="relative flex-1">
+                                                    <input
+                                                        type="text"
+                                                        value={couponInput}
+                                                        onChange={(e) => setCouponInput(e.target.value)}
+                                                        placeholder="ENTER COUPON CODE (E.G. STREAK7)"
+                                                        className={`w-full border bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 uppercase font-mono tracking-wider ${
+                                                            isCourseCouponBlocked 
+                                                                ? 'border-red-300 dark:border-red-900 focus:ring-red-500/30' 
+                                                                : 'border-blue-200 dark:border-blue-800 focus:ring-blue-500/30'
+                                                        }`}
+                                                    />
+                                                    {data.coupon_code && couponInput.trim().toUpperCase() === data.coupon_code.toUpperCase() && appliedCoupon && !isCourseCouponBlocked && (
+                                                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                                            <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleApplyCoupon}
+                                                    disabled={!couponInput.trim()}
+                                                    className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold px-4 py-2 rounded-lg transition-all whitespace-nowrap"
+                                                >
+                                                    Apply
+                                                </button>
+                                            </div>
+                                            {isCourseCouponBlocked && (
+                                                <p className="text-[10px] text-red-600 dark:text-red-400 mt-1.5 font-medium flex items-center gap-1">
+                                                    <AlertCircle className="h-3 w-3" />
+                                                    This coupon is only valid for Courses, not Word Lists.
+                                                </p>
+                                            )}
+                                            {data.coupon_code && couponInput.trim().toUpperCase() === data.coupon_code.toUpperCase() && (
+                                                <>
+                                                    {!appliedCoupon && !isCourseCouponBlocked && (
+                                                        <p className="text-[10px] text-red-600 dark:text-red-400 mt-1.5 font-medium">
+                                                            ✕ Invalid Coupon Code
+                                                        </p>
+                                                    )}
+                                                    {appliedCoupon && !isCourseCouponBlocked && (
+                                                        <p className="text-[10px] text-green-600 dark:text-green-400 mt-1.5 font-medium">
+                                                            ✓ Valid Coupon: {appliedCoupon.discount_percent}% Discount Applied
+                                                        </p>
+                                                    )}
+                                                </>
+                                            )}
+                                            {errors.coupon_code && <FieldError msg={errors.coupon_code} />}
+                                        </div>
+                                    )}
+
+                                    {/* Summary Display */}
+                                    <div className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-4 space-y-1.5 border border-gray-100 dark:border-slate-800">
+                                        <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                                            <span>Subtotal</span>
+                                            <span>৳{subtotal.toFixed(0)}</span>
+                                        </div>
+                                        {activeDiscountPercent > 0 && (
+                                            <div className="flex justify-between text-xs text-green-600 dark:text-green-400 font-bold">
+                                                <span>
+                                                    Discount (
+                                                    {activeDiscountPercent}%)
+                                                </span>
+                                                <span>
+                                                    -৳
+                                                    {discountAmount.toFixed(0)}
+                                                </span>
+                                            </div>
+                                        )}
+                                        <div className="flex justify-between font-black text-gray-900 dark:text-gray-100 pt-2 border-t border-gray-200 dark:border-slate-700">
+                                            <span>Total Payable</span>
+                                            <span className="text-lg">
+                                                ৳{payableAmount.toFixed(0)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Order form */}
                             <form onSubmit={handleSubmit} className="space-y-4">
@@ -223,7 +458,9 @@ export default function PurchaseOrderDialog({
                                         onChange={(e) =>
                                             setData("name", e.target.value)
                                         }
-                                        placeholder={t("shop.order_dialog.placeholders.name")}
+                                        placeholder={t(
+                                            "shop.order_dialog.placeholders.name",
+                                        )}
                                         className="w-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#E5201C]/30 focus:border-[#E5201C] placeholder-gray-400 dark:placeholder-gray-600 transition"
                                     />
                                     {errors.name && (
@@ -248,7 +485,9 @@ export default function PurchaseOrderDialog({
                                                 e.target.value,
                                             )
                                         }
-                                        placeholder={t("shop.order_dialog.placeholders.phone")}
+                                        placeholder={t(
+                                            "shop.order_dialog.placeholders.phone",
+                                        )}
                                         className="w-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#E5201C]/30 focus:border-[#E5201C] placeholder-gray-400 dark:placeholder-gray-600 transition"
                                     />
                                     {errors.phone_number && (
@@ -269,7 +508,9 @@ export default function PurchaseOrderDialog({
                                         onChange={(e) =>
                                             setData("address", e.target.value)
                                         }
-                                        placeholder={t("shop.order_dialog.placeholders.address")}
+                                        placeholder={t(
+                                            "shop.order_dialog.placeholders.address",
+                                        )}
                                         rows={2}
                                         className="w-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#E5201C]/30 focus:border-[#E5201C] placeholder-gray-400 dark:placeholder-gray-600 transition resize-none"
                                     />
@@ -281,9 +522,15 @@ export default function PurchaseOrderDialog({
                                 {/* Profession */}
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                                        {t("shop.order_dialog.labels.profession")}{" "}
+                                        {t(
+                                            "shop.order_dialog.labels.profession",
+                                        )}{" "}
                                         <span className="text-xs font-normal text-gray-400">
-                                            ({t("shop.order_dialog.labels.optional")})
+                                            (
+                                            {t(
+                                                "shop.order_dialog.labels.optional",
+                                            )}
+                                            )
                                         </span>
                                     </label>
                                     <input
@@ -295,7 +542,9 @@ export default function PurchaseOrderDialog({
                                                 e.target.value,
                                             )
                                         }
-                                        placeholder={t("shop.order_dialog.placeholders.profession")}
+                                        placeholder={t(
+                                            "shop.order_dialog.placeholders.profession",
+                                        )}
                                         className="w-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#E5201C]/30 focus:border-[#E5201C] placeholder-gray-400 dark:placeholder-gray-600 transition"
                                     />
                                     {errors.profession && (
@@ -306,7 +555,9 @@ export default function PurchaseOrderDialog({
                                 {/* Transaction ID */}
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                                        {t("shop.order_dialog.labels.transaction_id")}{" "}
+                                        {t(
+                                            "shop.order_dialog.labels.transaction_id",
+                                        )}{" "}
                                         <span className="text-[#E5201C]">
                                             *
                                         </span>
@@ -320,7 +571,9 @@ export default function PurchaseOrderDialog({
                                                 e.target.value,
                                             )
                                         }
-                                        placeholder={t("shop.order_dialog.placeholders.transaction_id")}
+                                        placeholder={t(
+                                            "shop.order_dialog.placeholders.transaction_id",
+                                        )}
                                         className="w-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#E5201C]/30 focus:border-[#E5201C] placeholder-gray-400 dark:placeholder-gray-600 font-mono tracking-wider transition"
                                     />
                                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
@@ -338,7 +591,11 @@ export default function PurchaseOrderDialog({
                                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                                         {t("shop.order_dialog.labels.note")}{" "}
                                         <span className="text-xs font-normal text-gray-400">
-                                            ({t("shop.order_dialog.labels.optional")})
+                                            (
+                                            {t(
+                                                "shop.order_dialog.labels.optional",
+                                            )}
+                                            )
                                         </span>
                                     </label>
                                     <textarea
@@ -346,7 +603,9 @@ export default function PurchaseOrderDialog({
                                         onChange={(e) =>
                                             setData("note", e.target.value)
                                         }
-                                        placeholder={t("shop.order_dialog.placeholders.note")}
+                                        placeholder={t(
+                                            "shop.order_dialog.placeholders.note",
+                                        )}
                                         rows={2}
                                         className="w-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#E5201C]/30 focus:border-[#E5201C] placeholder-gray-400 dark:placeholder-gray-600 transition resize-none"
                                     />
@@ -372,11 +631,15 @@ export default function PurchaseOrderDialog({
                                         {processing ? (
                                             <>
                                                 <Loader2 className="h-4 w-4 animate-spin" />
-                                                {t("shop.order_dialog.submitting")}
+                                                {t(
+                                                    "shop.order_dialog.submitting",
+                                                )}
                                             </>
                                         ) : (
                                             <>
-                                                {t("shop.order_dialog.place_order")}
+                                                {t(
+                                                    "shop.order_dialog.place_order",
+                                                )}
                                                 <ChevronRight className="h-4 w-4" />
                                             </>
                                         )}

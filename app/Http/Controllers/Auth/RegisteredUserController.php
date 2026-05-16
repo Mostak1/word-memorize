@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\ReferralService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
@@ -15,6 +17,10 @@ use Inertia\Response;
 
 class RegisteredUserController extends Controller
 {
+    public function __construct(private ReferralService $referralService)
+    {
+    }
+
     /**
      * Display the registration view.
      */
@@ -32,24 +38,48 @@ class RegisteredUserController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
+            'email' => [
+                'required',
+                'string',
+                'lowercase',
+                'email',
+                'max:255',
+                'unique:' . User::class,
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    $allowedDomains = ['gmail.com', 'outlook.com', 'yahoo.com'];
+                    $domain = strtolower(substr(strrchr((string) $value, '@') ?: '', 1));
+
+                    if (!in_array($domain, $allowedDomains, true)) {
+                        $fail('Please use a Gmail, Outlook, or Yahoo email address.');
+                    }
+                },
+            ],
             'phone_number' => 'required|string|max:20',
             'password' => ['required', Rules\Password::defaults()],
             'location' => 'nullable|string|max:255',
             'learning_goal' => 'nullable|string|max:255',
+            'referral_code' => ['nullable', 'string', 'max:16'],
         ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone_number' => $request->phone_number,
-            'location' => $request->location,
-            // 'profession' => $request->learning_goal,
-            'role' => 'student',
-            'login_as' => 'student',
-            'approve_status' => 'approved',
-            'password' => Hash::make($request->password),
-        ]);
+        $referrer = $this->referralService->findReferrer($request->input('referral_code'));
+
+        $user = DB::transaction(function () use ($request, $referrer) {
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone_number' => $request->phone_number,
+                'location' => $request->location,
+                // 'profession' => $request->learning_goal,
+                'role' => 'student',
+                'login_as' => 'student',
+                'approve_status' => 'approved',
+                'password' => Hash::make($request->password),
+            ]);
+
+            $this->referralService->createReferralRewards($user, $referrer, $request->input('referral_code'));
+
+            return $user;
+        });
 
         event(new Registered($user));
 

@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Mobile\UserResource;
 use App\Models\User;
 use App\Models\UserSetting;
+use App\Services\ReferralService;
 use App\Services\StreakService;
 use App\Services\XpService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rules;
@@ -19,6 +21,7 @@ class AuthController extends Controller
     public function __construct(
         private StreakService $streakService,
         private XpService $xpService,
+        private ReferralService $referralService,
     ) {
     }
 
@@ -31,7 +34,10 @@ class AuthController extends Controller
             'password' => ['required', Rules\Password::defaults()],
             'location' => ['nullable', 'string', 'max:255'],
             'device_name' => ['nullable', 'string', 'max:100'],
+            'referral_code' => ['nullable', 'string', 'max:16'],
         ]);
+
+        $referrer = $this->referralService->findReferrer($data['referral_code'] ?? null);
 
         $attributes = [
             'name' => $data['name'],
@@ -51,7 +57,13 @@ class AuthController extends Controller
             }
         }
 
-        $user = User::create($attributes);
+        $user = DB::transaction(function () use ($attributes, $referrer, $data) {
+            $user = User::create($attributes);
+
+            $this->referralService->createReferralRewards($user, $referrer, $data['referral_code'] ?? null);
+
+            return $user;
+        });
 
         return $this->tokenResponse($request, $user, $data['device_name'] ?? 'android', 201);
     }
@@ -112,6 +124,10 @@ class AuthController extends Controller
             ],
             'xp' => $this->xpService->getSummary($user),
             'streak' => $this->streakService->getSummary($user),
+            'referral' => [
+                ...$this->referralService->publicSettings(),
+                'available_credits' => $this->referralService->availableCreditPayload($user),
+            ],
         ];
     }
 }

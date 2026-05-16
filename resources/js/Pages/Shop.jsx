@@ -10,8 +10,12 @@ import {
     XCircle,
     BookOpen,
     Lock,
+    Package,
     ShoppingBag,
     SunMoon,
+    Tag,
+    Copy,
+    Check,
 } from "lucide-react";
 import PurchaseOrderDialog from "@/Components/PurchaseOrderDialog";
 import { playXpPurchase } from "@/Utils/sounds";
@@ -49,6 +53,7 @@ function TabBar({ active, onChange }) {
     const tabs = [
         { id: "shop", label: t("shop.tabs.shop"), icon: ShoppingBag },
         { id: "xp", label: t("shop.tabs.xp"), icon: Zap },
+        { id: "rewards", label: t("shop.tabs.rewards"), icon: Tag },
     ];
 
     return (
@@ -64,7 +69,7 @@ function TabBar({ active, onChange }) {
                     }`}
                 >
                     <Icon
-                        className={`h-4 w-4 ${active === id && id === "xp" ? "text-yellow-400" : ""}`}
+                        className={`h-4 w-4 ${active === id && id === "xp" ? "text-yellow-400" : ""} ${active === id && id === "rewards" ? "text-green-500" : ""}`}
                     />
                     {label}
                 </button>
@@ -160,12 +165,86 @@ function CategoryCard({ category, index, onClick, categoryStatus }) {
     );
 }
 
+function AllCategoriesOfferCard({ offer, onClick }) {
+    const { t } = useTranslation();
+    if (!offer) return null;
+
+    const isPending = offer.status === "pending";
+    const isOwned = offer.status === "owned";
+    const isBlocked = isPending || isOwned || !offer.category_ids?.length;
+
+    return (
+        <button
+            type="button"
+            onClick={() => !isBlocked && onClick(offer)}
+            disabled={isBlocked}
+            className={`w-full text-left rounded-2xl overflow-hidden bg-white dark:bg-slate-900 shadow-sm border border-red-100 dark:border-red-900/40 transition-all ${
+                isBlocked
+                    ? "opacity-70 cursor-not-allowed"
+                    : "hover:shadow-md active:scale-[0.99]"
+            }`}
+            style={{
+                animation: "fadeInUp 0.35s ease-out forwards",
+                opacity: 0,
+            }}
+        >
+            <div className="bg-[#E5201C] px-4 py-3 text-white flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-10 w-10 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+                        <Package className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                        <p className="text-base font-black leading-tight">
+                            {t("shop.bundle_title")}
+                        </p>
+                        <p className="text-xs text-white/80 mt-0.5">
+                            {t("shop.bundle_category_count", {
+                                count: offer.category_count,
+                            })}
+                        </p>
+                    </div>
+                </div>
+                <div className="bg-black/25 rounded-lg px-2.5 py-1 flex items-center gap-1 shrink-0">
+                    <Lock className="h-3.5 w-3.5" />
+                    <span className="text-xs font-black">৳{offer.price}</span>
+                </div>
+            </div>
+            <div className="px-4 py-3 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                    <BookOpen className="h-3.5 w-3.5 shrink-0" />
+                    <span>
+                        {offer.wordlists_count}{" "}
+                        {offer.wordlists_count === 1
+                            ? t("shop.word_list")
+                            : t("shop.word_lists")}
+                    </span>
+                </div>
+                {isOwned ? (
+                    <span className="text-xs font-bold text-green-700 bg-green-100 rounded-full px-2.5 py-1">
+                        {t("shop.status.owned")}
+                    </span>
+                ) : isPending ? (
+                    <span className="text-xs font-bold text-yellow-700 bg-yellow-100 rounded-full px-2.5 py-1">
+                        {t("shop.status.pending")}
+                    </span>
+                ) : (
+                    <span className="text-xs font-bold text-[#E5201C]">
+                        {t("shop.bundle_buy_all")}
+                    </span>
+                )}
+            </div>
+        </button>
+    );
+}
+
 // ── Shop Tab ──────────────────────────────────────────────────────────────────
 
 function ShopTab({
     wordListCategories,
+    allCategoriesOffer = null,
     pendingCategoryIds = [],
     accessCategoryIds = [],
+    availableCoupons = [],
 }) {
     const { t } = useTranslation();
     const [selectedCategory, setSelectedCategory] = useState(null);
@@ -205,6 +284,11 @@ function ShopTab({
 
     return (
         <>
+            <AllCategoriesOfferCard
+                offer={allCategoriesOffer}
+                onClick={handleCardClick}
+            />
+
             <div className="grid grid-cols-2 gap-3">
                 {wordListCategories.map((category, index) => (
                     <CategoryCard
@@ -222,6 +306,7 @@ function ShopTab({
                 open={dialogOpen}
                 onClose={handleClose}
                 category={selectedCategory}
+                availableCoupons={availableCoupons}
             />
         </>
     );
@@ -534,6 +619,42 @@ function XpShopTab() {
         }
     };
 
+    const handleBuyDiscount = async () => {
+        setPurchasing(true);
+        try {
+            const data = await apiFetch(route("api.xp-shop.buy-discount"), {
+                method: "POST",
+            });
+            if (data.success) {
+                setStatus({
+                    ...status,
+                    xp: data.xp,
+                    streak: data.streak,
+                    discount_purchased: data.discount_purchased,
+                });
+
+                playXpPurchase();
+                showToast(data.message || "Discount coupon purchased successfully!");
+                
+                // Reload to get the new coupon in the rewards tab
+                router.reload({
+                    only: ["availableCoupons"],
+                    preserveState: true,
+                    preserveScroll: true,
+                });
+            } else {
+                showToast(
+                    data.error ?? "Purchase failed",
+                    "error",
+                );
+            }
+        } catch {
+            showToast(t("shop.toasts.error") || "An error occurred", "error");
+        } finally {
+            setPurchasing(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center py-20">
@@ -613,6 +734,38 @@ function XpShopTab() {
                             </div>
                         </div>
                     )}
+
+                    {!status?.discount_purchased && (
+                        <ShopItemCard
+                            title={t("shop.items.discount_title")}
+                            description={t("shop.items.discount_desc")}
+                            icon={Tag}
+                            iconBg="bg-gradient-to-br from-emerald-500 to-teal-600"
+                            cost={20000}
+                            canAfford={(status?.xp?.balance ?? 0) >= 20000}
+                            purchasing={purchasing}
+                            onBuy={handleBuyDiscount}
+                            footer={t("shop.items.discount_footer")}
+                        />
+                    )}
+
+                    {status?.discount_purchased && (
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-5 transition-all">
+                            <div className="flex items-center gap-4">
+                                <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-3">
+                                    <Tag className="h-8 w-8 text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">
+                                        {t("shop.items.discount_title")}
+                                    </h3>
+                                    <p className="text-sm text-green-600 font-medium font-bengali">
+                                        {t("shop.items.purchased")}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -623,12 +776,186 @@ function XpShopTab() {
     );
 }
 
+// ── Rewards Tab ───────────────────────────────────────────────────────────────
+
+function RewardsTab({ coupons = [], featuredCourses = [] }) {
+    const { t } = useTranslation();
+    const [copiedCode, setCopiedCode] = useState(null);
+
+    const handleCopy = (code) => {
+        navigator.clipboard.writeText(code);
+        setCopiedCode(code);
+        setTimeout(() => setCopiedCode(null), 2000);
+    };
+
+    if (coupons.length === 0 && featuredCourses.length === 0) {
+        return (
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-10 text-center shadow-sm">
+                <div className="w-20 h-20 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4">
+                    <Tag className="h-10 w-10 text-gray-400 dark:text-slate-600" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
+                    {t("shop.rewards.no_rewards")}
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">
+                    {t("shop.rewards.no_rewards_desc")}
+                </p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-4">
+            <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg">
+                <div className="flex items-center gap-4">
+                    <div className="bg-white/20 rounded-xl p-3">
+                        <Tag className="h-8 w-8 text-white" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-black">{t("shop.rewards.title")}</h2>
+                        <p className="text-sm text-white/80">{t("shop.rewards.subtitle")}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="grid gap-3">
+                {coupons.map((coupon, idx) => (
+                    <div 
+                        key={idx}
+                        className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden flex"
+                    >
+                        <div className="bg-green-500 w-2 flex-shrink-0" />
+                        <div className="p-4 flex-1 flex items-center justify-between gap-4">
+                            <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-lg font-black text-gray-900 dark:text-gray-100">
+                                        {coupon.discount_percent}% OFF
+                                    </span>
+                                    {coupon.course_only ? (
+                                        <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                            Course Only
+                                        </span>
+                                    ) : (
+                                        <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                            Active
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                                    {coupon.description}
+                                </p>
+                            </div>
+                            <div className="flex flex-col items-end gap-2">
+                                <div className="bg-gray-100 dark:bg-slate-800 rounded-lg px-3 py-1.5 font-mono font-bold text-gray-800 dark:text-gray-200 border border-dashed border-gray-300 dark:border-slate-600">
+                                    {coupon.code}
+                                </div>
+                                <button
+                                    onClick={() => handleCopy(coupon.code)}
+                                    className="flex items-center gap-1.5 text-xs font-bold text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 transition-colors"
+                                >
+                                    {copiedCode === coupon.code ? (
+                                        <><Check className="h-3.5 w-3.5" /> Copied</>
+                                    ) : (
+                                        <><Copy className="h-3.5 w-3.5" /> Copy Code</>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+            
+            <p className="text-xs text-gray-400 text-center italic mt-2">
+                {t("shop.rewards.tip")}
+            </p>
+
+            {featuredCourses.length > 0 && (
+                <div className="mt-8 space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
+                            Featured Courses
+                        </h3>
+                        <a 
+                            href="https://vocabpix.fluento.org" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-xs font-bold text-[#E5201C] hover:underline flex items-center gap-1"
+                        >
+                            View All <ExternalLink className="h-3 w-3" />
+                        </a>
+                    </div>
+                    
+                    <div className="grid gap-3">
+                        {featuredCourses.map((course) => (
+                            <div 
+                                key={course.id}
+                                className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-3 flex items-center gap-3 shadow-sm"
+                            >
+                                <div className="h-16 w-16 rounded-xl overflow-hidden bg-gray-100 dark:bg-slate-800 shrink-0">
+                                    <img 
+                                        src={course.thumbnail || "/images/course-placeholder.jpg"} 
+                                        alt={course.title}
+                                        className="h-full w-full object-cover"
+                                        onError={(e) => {
+                                            e.target.src = "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?q=80&w=200&auto=format&fit=crop";
+                                        }}
+                                    />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100 truncate">
+                                        {course.title}
+                                    </h4>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <span className="text-xs font-black text-gray-900 dark:text-gray-100">
+                                            ৳{course.price}
+                                        </span>
+                                        {course.discount > 0 && (
+                                            <span className="text-[10px] text-gray-400 line-through">
+                                                ৳{course.price + (course.price * (course.discount / 100))}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                                <a 
+                                    href={`https://vocabpix.fluento.org/courses/${course.slug}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-900 dark:text-gray-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors"
+                                >
+                                    Details
+                                </a>
+                            </div>
+                        ))}
+                    </div>
+                    
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 rounded-xl p-4 flex gap-3">
+                        <div className="bg-blue-500 rounded-lg p-2 shrink-0 h-fit">
+                            <GraduationCap className="h-4 w-4 text-white" />
+                        </div>
+                        <div>
+                            <p className="text-xs font-bold text-blue-900 dark:text-blue-300">
+                                Use your rewards on our partner platform!
+                            </p>
+                            <p className="text-[10px] text-blue-700/70 dark:text-blue-400/60 mt-0.5">
+                                Your streak discount coupons are also valid for these courses. Simply copy the code and apply it at checkout on the Course platform.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function Shop({
     wordListCategories = [],
+    allCategoriesOffer = null,
     pendingCategoryIds = [],
     accessCategoryIds = [],
+    availableCoupons = [],
+    featuredCourses = [],
     defaultTab = "shop",
 }) {
     const { t } = useTranslation();
@@ -638,11 +965,11 @@ export default function Shop({
         // Check URL parameters first
         const urlParams = new URLSearchParams(window.location.search);
         const tabFromUrl = urlParams.get("tab");
-        if (tabFromUrl === "xp" || tabFromUrl === "shop") {
+        if (tabFromUrl === "xp" || tabFromUrl === "shop" || tabFromUrl === "rewards") {
             return tabFromUrl;
         }
         // Fallback to prop value if valid
-        if (defaultTab === "xp" || defaultTab === "shop") {
+        if (defaultTab === "xp" || defaultTab === "shop" || defaultTab === "rewards") {
             return defaultTab;
         }
         // Default fallback
@@ -651,29 +978,31 @@ export default function Shop({
 
     const [activeTab, setActiveTab] = useState(getInitialTab);
 
+    const getTitle = () => {
+        if (activeTab === "shop") return t("shop.title");
+        if (activeTab === "xp") return t("shop.xp_shop_title");
+        return t("shop.rewards.title");
+    };
+
+    const getSubtitle = () => {
+        if (activeTab === "shop") return t("shop.subtitle_shop");
+        if (activeTab === "xp") return t("shop.subtitle_xp");
+        return t("shop.rewards.subtitle");
+    };
+
     return (
         <AppLayout hideHeader={true}>
-            <Head
-                title={
-                    activeTab === "shop"
-                        ? t("shop.title")
-                        : t("shop.xp_shop_title")
-                }
-            />
+            <Head title={getTitle()} />
 
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
                 <main className="max-w-2xl mx-auto px-4 py-5 pb-20 space-y-5">
                     {/* Page header */}
                     <div style={{ animation: "fadeInUp 0.3s ease-out" }}>
                         <h1 className="text-2xl font-black text-gray-900 dark:text-gray-100">
-                            {activeTab === "shop"
-                                ? t("shop.title")
-                                : t("shop.xp_shop_title")}
+                            {getTitle()}
                         </h1>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                            {activeTab === "shop"
-                                ? t("shop.subtitle_shop")
-                                : t("shop.subtitle_xp")}
+                            {getSubtitle()}
                         </p>
                     </div>
 
@@ -682,14 +1011,21 @@ export default function Shop({
 
                     {/* Tab content */}
                     <div className="space-y-5">
-                        {activeTab === "shop" ? (
+                        {activeTab === "shop" && (
                             <ShopTab
                                 wordListCategories={wordListCategories}
+                                allCategoriesOffer={allCategoriesOffer}
                                 pendingCategoryIds={pendingCategoryIds}
                                 accessCategoryIds={accessCategoryIds}
+                                availableCoupons={availableCoupons}
                             />
-                        ) : (
-                            <XpShopTab />
+                        )}
+                        {activeTab === "xp" && <XpShopTab />}
+                        {activeTab === "rewards" && (
+                            <RewardsTab 
+                                coupons={availableCoupons} 
+                                featuredCourses={featuredCourses} 
+                            />
                         )}
                     </div>
                 </main>

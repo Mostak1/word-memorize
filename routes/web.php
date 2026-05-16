@@ -275,6 +275,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/api/xp-shop/status', [UserShopController::class, 'getStatus'])->name('api.xp-shop.status');
     Route::post('/api/xp-shop/buy-freeze', [UserShopController::class, 'buyStreakFreeze'])->name('api.xp-shop.buy-freeze');
     Route::post('/api/xp-shop/buy-dark-mode', [UserShopController::class, 'buyDarkMode'])->name('api.xp-shop.buy-dark-mode');
+    Route::post('/api/xp-shop/buy-discount', [UserShopController::class, 'buyDiscountCoupon'])->name('api.xp-shop.buy-discount');
+    Route::post('/api/xp-shop/buy-streak-repair', [UserShopController::class, 'buyStreakRepair'])->name('api.xp-shop.buy-streak-repair');
 
     // Achievements API
     Route::get('/api/achievements', [UserAchievementController::class, 'index'])->name('api.achievements.index');

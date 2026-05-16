@@ -1,11 +1,10 @@
 import React from "react";
-import { Link, usePage } from "@inertiajs/react";
-import { Home, BookOpen, Zap, Trophy, User, ShoppingBag } from "lucide-react";
+import { Link } from "@inertiajs/react";
+import { Home, BookOpen, Zap, Trophy, ShoppingBag } from "lucide-react";
 import { useTranslation } from "@/Contexts/LanguageContext";
 
 export default function BottomNav() {
     const { t } = useTranslation();
-    const { props } = usePage();
 
     const tabs = [
         {
@@ -37,12 +36,6 @@ export default function BottomNav() {
             icon: ShoppingBag,
             href: route("shop"),
             active: route().current("shop"),
-        },
-        {
-            name: t("nav.profile"),
-            icon: User,
-            href: route("profile.edit"),
-            active: route().current("profile.*") || route().current("settings.*"),
         },
     ];
 

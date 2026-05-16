@@ -74,6 +74,7 @@ class StreakService
         // Missed 2+ days, OR missed 1 day but auto-save already used
         $streak->last_auto_save_at = $streak->last_auto_save_at; // unchanged
         $streak->freeze_count = 0;
+        $streak->pre_broken_streak = $streak->current_streak; // Store before reset
         $newStreak = 1;
       }
     }
@@ -102,6 +103,30 @@ class StreakService
     $streak->increment('freeze_count', $count);
 
     return $streak->fresh();
+  }
+
+  /**
+   * Repair a broken streak.
+   * Can be called BEFORE or AFTER the user has reset the streak via recordActivity.
+   */
+  public function repairStreak(User $user): UserStreak
+  {
+    $streak = $this->getOrCreate($user);
+
+    if ($streak->pre_broken_streak > 0) {
+      // User already reset the streak to 1 today. Restore the old value + today's session.
+      $streak->current_streak = $streak->pre_broken_streak + 1;
+      $streak->pre_broken_streak = 0;
+      $streak->last_activity_date = Carbon::today();
+    } else {
+      // Streak is broken but not reset yet. Bridge the gap.
+      $streak->last_activity_date = Carbon::yesterday();
+    }
+
+    $streak->broken_streak_notified = true; // Mark as notified so the overlay doesn't pop again
+    $streak->save();
+
+    return $streak;
   }
 
   /**
@@ -164,6 +189,7 @@ class StreakService
       'at_risk' => $streak->isAtRisk(),
       'is_frozen' => $streak->isFrozen(),
       'is_broken' => $streak->isBroken(),
+      'pre_broken_streak' => $streak->pre_broken_streak,
       'broken_streak_notified' => (bool) ($streak->broken_streak_notified ?? false),
       'auto_save_available' => !$streak->autoSaveUsedThisWeek(),
       'weekly_history' => $history,

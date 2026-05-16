@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import AppLayout from "@/Layouts/AppLayout";
-import { Head, Link, usePage } from "@inertiajs/react";
+import { Head, Link, usePage, router } from "@inertiajs/react";
 import {
     Plus,
     BookOpen,
@@ -147,7 +147,7 @@ export default function Dashboard({
     const [imgError, setImgError] = useState(false);
     const [xpBalance, setXpBalance] = useState(350);
     const [showStreakLost, setShowStreakLost] = useState(
-        streak?.is_broken && !streak?.broken_streak_notified,
+        (streak?.is_broken || (streak?.pre_broken_streak > 0)) && !streak?.broken_streak_notified,
     );
     const [showDropdown, setShowDropdown] = useState(false);
     const dropdownRef = useRef(null);
@@ -186,6 +186,19 @@ export default function Dashboard({
             await axios.post(route("streak.dismiss-broken"));
         } catch (err) {
             console.error("Failed to dismiss streak lost notification:", err);
+        }
+    };
+
+    const handleRepairStreak = async () => {
+        try {
+            const response = await axios.post(route("api.xp-shop.buy-streak-repair"));
+            if (response.data.success) {
+                setXpBalance(response.data.xp.balance);
+                setShowStreakLost(false);
+                router.reload({ only: ["streak"] });
+            }
+        } catch (err) {
+            console.error("Failed to repair streak:", err);
         }
     };
 
@@ -311,7 +324,9 @@ export default function Dashboard({
                     <StreakLostOverlay
                         isOpen={showStreakLost}
                         onClose={handleDismissStreakLost}
-                        prevStreak={streak?.current_streak ?? 0}
+                        prevStreak={streak?.is_broken ? streak?.current_streak : streak?.pre_broken_streak}
+                        xpBalance={xpBalance}
+                        onRepair={handleRepairStreak}
                     />
 
                     {/* ── Feature Grid ── */}

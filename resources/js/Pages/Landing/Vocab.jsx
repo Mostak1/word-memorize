@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Head, Link, useForm } from "@inertiajs/react";
+import { Head, Link, useForm, usePage } from "@inertiajs/react";
 
 export default function VocabPixLanding({
     categories = [],
     freeWordsCount = 0,
 }) {
     const [lang, setLang] = useState("en");
+    const { referral } = usePage().props;
 
     const getCategoryImage = (name) => {
         if (!name) return "img/landing/personal_word.webp";
@@ -97,6 +98,7 @@ export default function VocabPixLanding({
 
     const [activeTab, setActiveTab] = useState("register");
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [openFaq, setOpenFaq] = useState(null);
 
     const registerForm = useForm({
         name: "",
@@ -105,6 +107,7 @@ export default function VocabPixLanding({
         phone_number: "",
         learning_goal: "",
         location: "",
+        referral_code: referral?.prefill_code ?? "",
     });
 
     const loginForm = useForm({
@@ -149,6 +152,53 @@ export default function VocabPixLanding({
         document.querySelectorAll(".sr").forEach((el) => obs.observe(el));
         return () => obs.disconnect();
     }, []);
+
+    const isAdvancedEssentialCategory = (category) =>
+        category?.name?.toLowerCase().includes("advanced essential");
+
+    const isMasterVocabularyCategory = (category) => {
+        const name = category?.name?.toLowerCase() ?? "";
+        return (
+            name.includes("master vocabulary") ||
+            (name.includes("iba") &&
+                name.includes("gre") &&
+                name.includes("gmat") &&
+                name.includes("sat"))
+        );
+    };
+
+    const advancedEssentialCategory = categories.find(
+        isAdvancedEssentialCategory,
+    );
+    const masterVocabularyCategory = categories.find(
+        isMasterVocabularyCategory,
+    );
+
+    const pricingCategories =
+        advancedEssentialCategory && masterVocabularyCategory
+            ? categories
+                  .filter((category) => !isMasterVocabularyCategory(category))
+                  .map((category) => {
+                      if (!isAdvancedEssentialCategory(category)) {
+                          return category;
+                      }
+
+                      return {
+                          ...category,
+                          id: `${advancedEssentialCategory.id}-${masterVocabularyCategory.id}`,
+                          name: "Advanced Essential + Master Vocabulary",
+                          description:
+                              "Advanced GRE essentials plus extended IBA / GRE / GMAT / SAT master vocabulary.",
+                          price: 599,
+                          words_count:
+                              (Number(advancedEssentialCategory.words_count) ||
+                                  0) +
+                              (Number(masterVocabularyCategory.words_count) ||
+                                  0),
+                          is_combo: true,
+                      };
+                  })
+            : categories;
 
     return (
         <div className={lang === "bn" ? "lang-bn" : "lang-en"}>
@@ -481,9 +531,8 @@ export default function VocabPixLanding({
         .hero {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            align-items: center;
             gap: 60px;
-            max-width: 1140px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 80px 24px 60px;
         }
@@ -612,22 +661,27 @@ export default function VocabPixLanding({
         .hero-visual {
             position: relative;
             display: flex;
-            justify-content: center;
+            justify-content: flex-end;
+            align-items: flex-start;
+            margin-top: 10%;
         }
 
         .hero-video-wrap {
             width: 100%;
-            max-width: 500px;
-            border-radius: 20px;
+            padding: 10px;
+            background: #fff;
+            border: 1.5px solid var(--border);
+            border-radius: 24px;
             overflow: hidden;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, .15);
+            box-shadow: 0 22px 70px rgba(28, 27, 31, .14);
             aspect-ratio: 16 / 9;
-            align-self: center;
+            align-self: flex-start;
         }
 
         .hero-video-wrap iframe {
             width: 100%;
             height: 100%;
+            border-radius: 16px;
             display: block;
         }
 
@@ -1784,11 +1838,14 @@ export default function VocabPixLanding({
 
             .hero-visual {
                 display: flex;
+                justify-content: center;
+                min-height: auto;
             }
 
             .hero-video-wrap {
                 max-width: 100%;
-                border-radius: 14px;
+                border-radius: 18px;
+                padding: 6px;
             }
 
             .hero-actions {
@@ -1996,10 +2053,10 @@ export default function VocabPixLanding({
             {/* Topbar */}
             <div className="topbar">
                 <span className="t-en">
-                    🎓 GRE, IELTS, BCS, SAT, Medical & more — All in one place
+                    🎓 GRE, IELTS, BBA, SAT & more — All in one place
                 </span>
                 <span className="t-bn">
-                    🎓 GRE, IELTS, BCS, SAT, মেডিকেল ও আরও — সব এক জায়গায়
+                    🎓 GRE, IELTS, BBA, SAT ও আরও — সব এক জায়গায়
                 </span>
                 <span>
                     <span className="t-en">Free to Start</span>
@@ -2157,12 +2214,7 @@ export default function VocabPixLanding({
                         <div className="hero-exam-tags">
                             <span className="exam-tag">📝 GRE</span>
                             <span className="exam-tag">🎓 IELTS</span>
-                            <span className="exam-tag">📖 BCS</span>
                             <span className="exam-tag">💼 BBA</span>
-                            <span className="exam-tag">
-                                🏥 <span className="t-en">Medical</span>
-                                <span className="t-bn">মেডিকেল</span>
-                            </span>
                             <span className="exam-tag">📐 SAT</span>
                         </div>
                         <div className="hero-actions">
@@ -2601,7 +2653,9 @@ export default function VocabPixLanding({
                                 />
                             </div>
                             <h3>
-                                <span className="t-en">Earn XP & Unlock Rewards</span>
+                                <span className="t-en">
+                                    Earn XP & Unlock Rewards
+                                </span>
                                 <span className="t-bn">
                                     XP অর্জন করুন এবং পুরস্কার আনলক করুন
                                 </span>
@@ -2864,14 +2918,13 @@ export default function VocabPixLanding({
                                     </strong>{" "}
                                     —
                                     <span className="t-en">
-                                        GRE, IELTS, BCS, BBA, SAT and Medical
-                                        words used in Bangladesh's top
-                                        competitive exams.
+                                        GRE, IELTS, BBA and SAT words for
+                                        focused exam preparation and everyday
+                                        fluency.
                                     </span>
                                     <span className="t-bn">
-                                        GRE, IELTS, BCS, BBA, SAT ও মেডিকেল শব্দ
-                                        যা বাংলাদেশের শীর্ষ প্রতিযোগিতামূলক
-                                        পরীক্ষায় ব্যবহৃত হয়।
+                                        GRE, IELTS, BBA ও SAT শব্দ, পরীক্ষার
+                                        প্রস্তুতি ও দৈনন্দিন দক্ষতার জন্য।
                                     </span>
                                 </div>
                             </div>
@@ -3058,8 +3111,8 @@ export default function VocabPixLanding({
                         </p>
                     </div>
                     <div className="pricing-grid">
-                        {categories.length > 0 ? (
-                            categories.map((category, index) => (
+                        {pricingCategories.length > 0 ? (
+                            pricingCategories.map((category, index) => (
                                 <div
                                     key={category.id}
                                     className={`price-card ${index === 2 ? "featured" : ""}`}
@@ -3177,7 +3230,11 @@ export default function VocabPixLanding({
                                         </li>
                                     </ul>
                                     <a
-                                        href={`/wordlist-categories/${category.id}/wordlists`}
+                                        href={
+                                            category.is_combo
+                                                ? "/shop"
+                                                : `/wordlist-categories/${category.id}/wordlists`
+                                        }
                                         className={
                                             index === 2
                                                 ? "btn-red"
@@ -3246,8 +3303,8 @@ export default function VocabPixLanding({
                                         <span className="text-red">
                                             {freeWordsCount}+
                                         </span>{" "}
-                                        words for free, so you can
-                                        start learning and practicing and understand
+                                        words for free, so you can start
+                                        learning and practicing and understand
                                         which level is best suited for you.
                                     </span>
                                     <span className="t-bn">
@@ -3259,7 +3316,8 @@ export default function VocabPixLanding({
                                         <span className="text-red">
                                             বিনামূল্যে
                                         </span>{" "}
-                                        শেখা ও অনুশীলন শুরু করুন এবং আপনার জন্য কোন লেভেলটি সবচেয়ে উপযোগী তা বুঝে নিন।
+                                        শেখা ও অনুশীলন শুরু করুন এবং আপনার জন্য
+                                        কোন লেভেলটি সবচেয়ে উপযোগী তা বুঝে নিন।
                                     </span>
                                 </p>
                                 <Link
@@ -3448,19 +3506,9 @@ export default function VocabPixLanding({
                                                     labelBn: "🎓 IELTS",
                                                 },
                                                 {
-                                                    id: "BCS",
-                                                    labelEn: "📖 BCS",
-                                                    labelBn: "📖 BCS",
-                                                },
-                                                {
                                                     id: "BBA",
                                                     labelEn: "💼 BBA",
                                                     labelBn: "💼 BBA",
-                                                },
-                                                {
-                                                    id: "Medical",
-                                                    labelEn: "🏥 Medical",
-                                                    labelBn: "🏥 মেডিকেল",
                                                 },
                                                 {
                                                     id: "Other",
@@ -3562,6 +3610,71 @@ export default function VocabPixLanding({
                                             ))}
                                         </select>
                                     </div>
+                                    {referral?.enabled && (
+                                        <div className="fg">
+                                            <label>
+                                                <span className="t-en">
+                                                    Referral Code (optional)
+                                                </span>
+                                                <span className="t-bn">
+                                                    à¦°à§‡à¦«à¦¾à¦°à§‡à¦²
+                                                    à¦•à§‹à¦¡ (à¦à¦šà§à¦›à¦¿à¦•)
+                                                </span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={
+                                                    registerForm.data
+                                                        .referral_code
+                                                }
+                                                onChange={(e) =>
+                                                    registerForm.setData(
+                                                        "referral_code",
+                                                        e.target.value.toUpperCase(),
+                                                    )
+                                                }
+                                                placeholder="VPX8F3K2"
+                                                style={{
+                                                    textTransform: "uppercase",
+                                                }}
+                                            />
+                                            <p
+                                                style={{
+                                                    color: "var(--muted)",
+                                                    fontSize: "0.78rem",
+                                                    marginTop: "6px",
+                                                }}
+                                            >
+                                                <span className="t-en">
+                                                    Get{" "}
+                                                    {
+                                                        referral.new_user_discount_percent
+                                                    }
+                                                    % off your first paid order.
+                                                </span>
+                                                <span className="t-bn">
+                                                    à¦ªà§à¦°à¦¥à¦® à¦ªà§‡à¦‡à¦¡
+                                                    à¦…à¦°à§à¦¡à¦¾à¦°à§‡
+                                                    à¦›à¦¾à§œ à¦ªà¦¾à¦¨à¥¤
+                                                </span>
+                                            </p>
+                                            {registerForm.errors
+                                                .referral_code && (
+                                                <div
+                                                    style={{
+                                                        color: "var(--red)",
+                                                        fontSize: "0.75rem",
+                                                        marginTop: "4px",
+                                                    }}
+                                                >
+                                                    {
+                                                        registerForm.errors
+                                                            .referral_code
+                                                    }
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                     <button
                                         type="submit"
                                         className="form-submit"
@@ -3792,15 +3905,20 @@ export default function VocabPixLanding({
                 <div className="faq-item">
                     <button
                         className="faq-q"
-                        onClick={(e) => e.preventDefault()}
+                        onClick={() => setOpenFaq(openFaq === 0 ? null : 0)}
+                        aria-expanded={openFaq === 0}
                     >
                         <span className="t-en">Is VocabPix really free?</span>
                         <span className="t-bn">
                             VocabPix কি সত্যিই বিনামূল্যে?
                         </span>
-                        <span className="faq-icon">+</span>
+                        <span
+                            className={`faq-icon ${openFaq === 0 ? "open" : ""}`}
+                        >
+                            +
+                        </span>
                     </button>
-                    <div className="faq-a">
+                    <div className={`faq-a ${openFaq === 0 ? "open" : ""}`}>
                         <span className="t-en">
                             Yes — all public word lists (GRE, Oxford 3000,
                             Academic), images, audio, Bangla definitions, XP
@@ -3819,7 +3937,8 @@ export default function VocabPixLanding({
                 <div className="faq-item">
                     <button
                         className="faq-q"
-                        onClick={(e) => e.preventDefault()}
+                        onClick={() => setOpenFaq(openFaq === 1 ? null : 1)}
+                        aria-expanded={openFaq === 1}
                     >
                         <span className="t-en">
                             Why does VocabPix use images?
@@ -3827,9 +3946,13 @@ export default function VocabPixLanding({
                         <span className="t-bn">
                             VocabPix কেন ছবি ব্যবহার করে?
                         </span>
-                        <span className="faq-icon">+</span>
+                        <span
+                            className={`faq-icon ${openFaq === 1 ? "open" : ""}`}
+                        >
+                            +
+                        </span>
                     </button>
-                    <div className="faq-a">
+                    <div className={`faq-a ${openFaq === 1 ? "open" : ""}`}>
                         <span className="t-en">
                             Visual memory is one of the strongest memory systems
                             in the brain. Pairing a word with a vivid image
@@ -3850,53 +3973,28 @@ export default function VocabPixLanding({
                 <div className="faq-item">
                     <button
                         className="faq-q"
-                        onClick={(e) => e.preventDefault()}
-                    >
-                        <span className="t-en">
-                            Does it work for BCS and local Bangladesh exams?
-                        </span>
-                        <span className="t-bn">
-                            BCS ও বাংলাদেশের স্থানীয় পরীক্ষার জন্য কি কাজ করে?
-                        </span>
-                        <span className="faq-icon">+</span>
-                    </button>
-                    <div className="faq-a">
-                        <span className="t-en">
-                            Yes. BCS and Medical vocabulary lists are in
-                            development. GRE Extended and Academic Word List
-                            already have significant overlap with BCS English
-                            sections.
-                        </span>
-                        <span className="t-bn">
-                            হ্যাঁ। BCS ও মেডিকেল শব্দভান্ডার তালিকা তৈরি হচ্ছে।
-                            GRE Extended এবং Academic Word List ইতিমধ্যে BCS
-                            English অংশের সাথে উল্লেখযোগ্য মিল রয়েছে।
-                        </span>
-                    </div>
-                </div>
-                <div className="faq-item">
-                    <button
-                        className="faq-q"
-                        onClick={(e) => e.preventDefault()}
+                        onClick={() => setOpenFaq(openFaq === 2 ? null : 2)}
+                        aria-expanded={openFaq === 2}
                     >
                         <span className="t-en">Can I add my own words?</span>
                         <span className="t-bn">
                             আমি কি নিজের শব্দ যোগ করতে পারি?
                         </span>
-                        <span className="faq-icon">+</span>
+                        <span
+                            className={`faq-icon ${openFaq === 2 ? "open" : ""}`}
+                        >
+                            +
+                        </span>
                     </button>
-                    <div className="faq-a">
+                    <div className={`faq-a ${openFaq === 2 ? "open" : ""}`}>
                         <span className="t-en">
                             Yes! "Add New Word" lets you create personal word
                             entries with definition, pronunciation, and part of
-                            speech. Pro unlocks unlimited custom collections
-                            with full image and audio support.
+                            speech.
                         </span>
                         <span className="t-bn">
                             হ্যাঁ! "নতুন শব্দ যোগ করুন" দিয়ে সংজ্ঞা, উচ্চারণ ও
-                            পদ পরিচয়সহ ব্যক্তিগত শব্দ এন্ট্রি তৈরি করুন। Pro-তে
-                            সম্পূর্ণ ছবি ও অডিও সহায়তাসহ সীমাহীন কাস্টম সংগ্রহ
-                            আনলক হয়।
+                            পদ পরিচয়সহ ব্যক্তিগত শব্দ এন্ট্রি তৈরি করুন।
                         </span>
                     </div>
                 </div>
@@ -3912,13 +4010,13 @@ export default function VocabPixLanding({
                                 <span className="t-en">
                                     A Fluento product · Learn vocabulary the
                                     fast and proven way — both in Bangla and
-                                    English. Built for GRE, IELTS, BCS, BBA,
-                                    Medical, and SAT learners.
+                                    English. Built for GRE, IELTS, BBA, SAT, and
+                                    everyday learners.
                                 </span>
                                 <span className="t-bn">
                                     একটি Fluento পণ্য · দ্রুত ও প্রমাণিত উপায়ে
                                     শব্দভান্ডার শিখুন — বাংলা ও ইংরেজি উভয়ে।
-                                    GRE, IELTS, BCS, BBA, মেডিকেল ও SAT
+                                    GRE, IELTS, BBA, SAT ও দৈনন্দিন
                                     শিক্ষার্থীদের জন্য তৈরি।
                                 </span>
                             </p>

@@ -9,6 +9,8 @@ import {
     Moon,
     Lock,
     ShoppingBag,
+    Gift,
+    Copy,
 } from "lucide-react";
 import { Link } from "@inertiajs/react";
 import { useTranslation } from "@/Contexts/LanguageContext";
@@ -117,7 +119,7 @@ function Toast({ visible }) {
 
 export default function Settings({ settings: initialSettings }) {
     const { t, locale: currentLocale } = useTranslation();
-    const { auth } = usePage().props;
+    const { auth, referral } = usePage().props;
     const user = auth?.user ?? null;
     const { theme, setTheme, darkModeUnlocked, isAdmin } = useTheme();
 
@@ -167,6 +169,18 @@ export default function Settings({ settings: initialSettings }) {
             return;
         }
         setTheme(newTheme);
+    };
+
+    const referralLink =
+        user?.referral_code && typeof window !== "undefined"
+            ? `${window.location.origin}/register?ref=${user.referral_code}`
+            : "";
+
+    const copyReferralLink = () => {
+        if (!referralLink) return;
+        navigator.clipboard.writeText(referralLink);
+        setToastVisible(true);
+        setTimeout(() => setToastVisible(false), 2500);
     };
 
     return (
@@ -262,6 +276,60 @@ export default function Settings({ settings: initialSettings }) {
                             saving={false}
                         />
                     </SectionCard>
+
+                    {referral?.enabled && user?.referral_code && (
+                        <SectionCard title="Referral">
+                            <div className="py-4 space-y-4">
+                                <div className="flex items-start gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-950/40 text-[#E5201C] flex items-center justify-center shrink-0">
+                                        <Gift className="h-5 w-5" />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                            Invite friends to VocabPix
+                                        </p>
+                                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 leading-snug">
+                                            They get{" "}
+                                            {
+                                                referral.new_user_discount_percent
+                                            }
+                                            % off, and you earn{" "}
+                                            {
+                                                referral.referrer_discount_percent
+                                            }
+                                            % off after they register.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="rounded-xl bg-gray-50 dark:bg-slate-800/70 p-3">
+                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">
+                                        Your code
+                                    </p>
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span className="font-mono text-xl font-black text-gray-900 dark:text-gray-100">
+                                            {user.referral_code}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={copyReferralLink}
+                                            className="inline-flex items-center gap-1.5 rounded-lg bg-[#E5201C] px-3 py-2 text-xs font-bold text-white"
+                                        >
+                                            <Copy className="h-3.5 w-3.5" />
+                                            Copy Link
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="text-xs text-gray-500 dark:text-gray-400">
+                                    Available referral discounts:{" "}
+                                    <span className="font-bold text-gray-900 dark:text-gray-100">
+                                        {referral.available_credits?.length ?? 0}
+                                    </span>
+                                </div>
+                            </div>
+                        </SectionCard>
+                    )}
 
                     {/* Helper note */}
                     <p className="text-xs text-gray-400 dark:text-gray-500 text-center mt-4 px-2">

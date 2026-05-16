@@ -9,6 +9,7 @@ use App\Models\UserWordListAccess;
 use App\Models\WordListCategory;
 use App\Models\WordListOrder;
 use App\Models\WordListOrderItem;
+use App\Services\ReferralService;
 use App\Services\StreakService;
 use App\Services\XpService;
 use App\Support\Telemetry;
@@ -21,6 +22,7 @@ class ShopController extends Controller
     public function __construct(
         private XpService $xpService,
         private StreakService $streakService,
+        private ReferralService $referralService,
     ) {
     }
 
@@ -57,6 +59,10 @@ class ShopController extends Controller
                 ->values(),
             'pending_category_ids' => $pendingCategoryIds,
             'access_category_ids' => $accessCategoryIds,
+            'referral' => [
+                ...$this->referralService->publicSettings(),
+                'available_credits' => $this->referralService->availableCreditPayload($user),
+            ],
         ]);
     }
 
@@ -163,6 +169,7 @@ class ShopController extends Controller
             'profession' => ['nullable', 'string', 'max:255'],
             'transaction_id' => ['required', 'string', 'max:100'],
             'note' => ['nullable', 'string', 'max:1000'],
+            'referral_discount_credit_id' => ['nullable', 'integer'],
         ]);
 
         $user = $request->user();
@@ -198,7 +205,14 @@ class ShopController extends Controller
             ]);
         }
 
-        $order = DB::transaction(function () use ($user, $data, $categoryIds) {
+        $order = DB::transaction(function () use ($user, $data, $categoryIds, $categories) {
+            $amounts = $this->referralService->calculateOrderAmounts(
+                $user,
+                $categories,
+                $categoryIds,
+                isset($data['referral_discount_credit_id']) ? (int) $data['referral_discount_credit_id'] : null
+            );
+
             $order = WordListOrder::create([
                 'user_id' => $user->id,
                 'name' => $data['name'],
@@ -206,6 +220,11 @@ class ShopController extends Controller
                 'address' => $data['address'],
                 'profession' => $data['profession'] ?? null,
                 'payment_method' => 'bkash',
+                'subtotal_amount' => $amounts['subtotal_amount'],
+                'discount_percent' => $amounts['discount_percent'],
+                'discount_amount' => $amounts['discount_amount'],
+                'payable_amount' => $amounts['payable_amount'],
+                'referral_discount_credit_id' => $amounts['credit']?->id,
                 'transaction_id' => $data['transaction_id'],
                 'note' => $data['note'] ?? null,
                 'status' => 'pending',
@@ -218,6 +237,8 @@ class ShopController extends Controller
                 'updated_at' => now(),
             ])->all());
 
+            $this->referralService->markCreditUsed($amounts['credit'], $order);
+
             return $order;
         });
 
@@ -226,12 +247,19 @@ class ShopController extends Controller
             'category_ids' => $categoryIds->all(),
             'item_count' => $categoryIds->count(),
             'payment_method' => 'bkash',
+            'subtotal_amount' => $order->subtotal_amount,
+            'discount_percent' => $order->discount_percent,
+            'payable_amount' => $order->payable_amount,
         ]);
 
         return response()->json([
             'status' => 'success',
             'message' => 'Order submitted! We will review and grant access soon.',
             'order_id' => $order->id,
+            'subtotal_amount' => $order->subtotal_amount,
+            'discount_percent' => $order->discount_percent,
+            'discount_amount' => $order->discount_amount,
+            'payable_amount' => $order->payable_amount,
         ], 201);
     }
 }

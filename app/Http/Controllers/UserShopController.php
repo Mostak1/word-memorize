@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\UserWordListAccess;
 use App\Models\WordListCategory;
 use App\Models\WordListOrderItem;
+use App\Models\Coupon;
+use App\Models\Course;
+use App\Services\ReferralService;
 use App\Services\XpService;
 use App\Services\StreakService;
 use App\Support\Telemetry;
@@ -16,6 +19,7 @@ class UserShopController extends Controller
   public function __construct(
     private XpService $xpService,
     private StreakService $streakService,
+    private ReferralService $referralService,
   ) {
   }
 
@@ -36,6 +40,15 @@ class UserShopController extends Controller
 
     $pendingCategoryIds = [];
     $accessCategoryIds = [];
+    $allCategoriesOffer = null;
+    $availableCoupons = [];
+
+    $adminCategoryQuery = WordListCategory::where('is_locked', true)
+      ->where('status', true)
+      ->whereHas('creator', fn($q) => $q->where('email', 'admin@gmail.com'));
+
+    $adminCategoryIds = (clone $adminCategoryQuery)->pluck('id');
+    $adminWordListCount = (clone $adminCategoryQuery)->withCount('wordLists')->get()->sum('word_lists_count');
 
     if ($user) {
       $pendingCategoryIds = WordListOrderItem::whereHas(
@@ -45,12 +58,56 @@ class UserShopController extends Controller
 
       $accessCategoryIds = UserWordListAccess::where('user_id', $user->id)
         ->pluck('word_list_category_id')->all();
+
+      $availableCoupons = Coupon::where('assigned_user_id', $user->id)
+        ->where('is_active', true)
+        ->where(function ($q) {
+          $q->whereNull('max_uses')
+            ->orWhereColumn('used_count', '<', 'max_uses');
+        })
+        ->latest()
+        ->get(['code', 'discount_percent', 'description', 'used_count', 'max_uses', 'course_only'])
+        ->all();
     }
+
+    if ($adminCategoryIds->isNotEmpty()) {
+      $accessCollection = collect($accessCategoryIds);
+      $pendingCollection = collect($pendingCategoryIds);
+      $remainingCategoryIds = $adminCategoryIds->diff($accessCollection)->values();
+      $pendingRemainingIds = $remainingCategoryIds->intersect($pendingCollection)->values();
+
+      $allCategoriesOffer = [
+        'id' => 'all-admin-categories',
+        'name' => 'All Word List Categories',
+        'description' => 'Unlock every admin word list category from admin@gmail.com.',
+        'price' => 999,
+        'is_locked' => true,
+        'wordlists_count' => $adminWordListCount,
+        'category_count' => $adminCategoryIds->count(),
+        'category_ids' => $pendingRemainingIds->isEmpty()
+          ? $remainingCategoryIds->all()
+          : [],
+        'status' => $remainingCategoryIds->isEmpty()
+          ? 'owned'
+          : ($pendingRemainingIds->isNotEmpty() ? 'pending' : null),
+      ];
+    }
+
+    $featuredCourses = Course::where('status', 1)
+      ->where('is_approved', 1)
+      ->where('course_type', 'course')
+      ->latest()
+      ->limit(3)
+      ->get(['id', 'title', 'thumbnail', 'price', 'discount', 'slug']);
 
     return Inertia::render('Shop', [
       'wordListCategories' => $wordListCategories,
       'pendingCategoryIds' => $pendingCategoryIds,
       'accessCategoryIds' => $accessCategoryIds,
+      'allCategoriesOffer' => $allCategoriesOffer,
+      'availableReferralCredits' => $user ? $this->referralService->availableCreditPayload($user) : [],
+      'availableCoupons' => $availableCoupons,
+      'featuredCourses' => $featuredCourses,
     ]);
   }
 
@@ -71,6 +128,7 @@ class UserShopController extends Controller
       'xp' => $xpSummary,
       'streak' => $this->streakService->getSummary($user),
       'dark_mode_unlocked' => $this->xpService->hasDarkModeUnlocked($user),
+      'discount_purchased' => $this->xpService->hasPurchasedDiscountCoupon($user),
     ]);
   }
 
@@ -102,6 +160,7 @@ class UserShopController extends Controller
         'error' => 'Insufficient XP',
         'balance' => $userXp->xp_balance,
         'required' => $cost,
+        'dark_mode_unlocked' => $this->xpService->hasDarkModeUnlocked($user),
       ], 400);
     }
 
@@ -171,6 +230,97 @@ class UserShopController extends Controller
 
     return response()->json([
       'error' => 'Failed to unlock Dark Mode',
+    ], 500);
+  }
+
+  /**
+   * Purchase 10% Discount Coupon with XP.
+   */
+  public function buyDiscountCoupon(Request $request)
+  {
+    $user = $request->user();
+
+    if (!$user) {
+      return response()->json(['error' => 'Unauthorized'], 401);
+    }
+
+    if ($this->xpService->hasPurchasedDiscountCoupon($user)) {
+      return response()->json([
+        'error' => 'Already purchased',
+        'message' => 'You have already purchased the 10% discount coupon.',
+      ], 400);
+    }
+
+    $userXp = $this->xpService->getOrCreate($user);
+
+    if ($userXp->xp_balance < \App\Services\XpService::DISCOUNT_COUPON_COST) {
+      return response()->json([
+        'error' => 'Insufficient XP',
+        'balance' => $userXp->xp_balance,
+        'required' => \App\Services\XpService::DISCOUNT_COUPON_COST,
+      ], 400);
+    }
+
+    if ($this->xpService->buyDiscountCoupon($user)) {
+      Telemetry::record($request, 'xp_shop_purchase_completed', [
+        'item' => 'discount_coupon',
+        'cost' => \App\Services\XpService::DISCOUNT_COUPON_COST,
+      ]);
+
+      return response()->json([
+        'success' => true,
+        'message' => '10% Discount Coupon purchased!',
+        'xp' => $this->xpService->getSummary($user),
+        'streak' => $this->streakService->getSummary($user),
+        'discount_purchased' => true,
+      ]);
+    }
+
+    return response()->json([
+      'error' => 'Failed to purchase discount coupon',
+    ], 500);
+  }
+
+  /**
+   * Purchase streak repair with XP.
+   */
+  public function buyStreakRepair(Request $request)
+  {
+    $user = $request->user();
+
+    if (!$user) {
+      return response()->json(['error' => 'Unauthorized'], 401);
+    }
+
+    $cost = \App\Services\XpService::STREAK_REPAIR_COST;
+    $userXp = $this->xpService->getOrCreate($user);
+
+    if ($userXp->xp_balance < $cost) {
+      return response()->json([
+        'error' => 'Insufficient XP',
+        'balance' => $userXp->xp_balance,
+        'required' => $cost,
+      ], 400);
+    }
+
+    if ($this->xpService->buyStreakRepair($user)) {
+      $this->streakService->repairStreak($user);
+
+      Telemetry::record($request, 'xp_shop_purchase_completed', [
+        'item' => 'streak_repair',
+        'cost' => $cost,
+      ]);
+
+      return response()->json([
+        'success' => true,
+        'message' => 'Streak repaired successfully!',
+        'xp' => $this->xpService->getSummary($user),
+        'streak' => $this->streakService->getSummary($user),
+      ]);
+    }
+
+    return response()->json([
+      'error' => 'Failed to repair streak',
     ], 500);
   }
 }

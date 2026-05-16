@@ -48,6 +48,12 @@ class XpService
     /** Dark Mode unlock price */
     const DARK_MODE_COST = 6000;
 
+    /** 10% Shop/Course Discount cost */
+    const DISCOUNT_COUPON_COST = 20000;
+
+    /** Streak repair cost */
+    const STREAK_REPAIR_COST = 5000;
+
     /** Streak milestone rewards (day => xp) */
     const STREAK_MILESTONES = [
         7 => 50,
@@ -339,6 +345,73 @@ class XpService
             // Unlock Dark Mode for user
             $settings = UserSetting::forUser($user);
             $settings->update(['dark_mode_unlocked' => true]);
+
+            return true;
+        });
+    }
+
+    /**
+     * Check if user has purchased the 10% discount
+     */
+    public function hasPurchasedDiscountCoupon(User $user): bool
+    {
+        return UserSetting::forUser($user)->discount_purchased ?? false;
+    }
+
+    /**
+     * Purchase 10% discount coupon
+     */
+    public function buyDiscountCoupon(User $user): bool
+    {
+        return DB::transaction(function () use ($user) {
+            if ($this->hasPurchasedDiscountCoupon($user)) {
+                return false;
+            }
+
+            $userXp = $this->getOrCreate($user);
+
+            if ($userXp->xp_balance < self::DISCOUNT_COUPON_COST) {
+                return false;
+            }
+
+            if (!$userXp->spendXp(self::DISCOUNT_COUPON_COST)) {
+                return false;
+            }
+
+            $settings = UserSetting::forUser($user);
+            $settings->update(['discount_purchased' => true]);
+
+            // Create the coupon
+            \App\Models\Coupon::create([
+                'code' => 'TENOFF-' . strtoupper(\Illuminate\Support\Str::random(6)),
+                'discount_percent' => 10,
+                'description' => '10% OFF any Shop or Course purchase',
+                'max_uses' => 1,
+                'used_count' => 0,
+                'is_active' => true,
+                'assigned_user_id' => $user->id,
+                'course_only' => false,
+            ]);
+
+            return true;
+        });
+    }
+
+    /**
+     * Purchase streak repair with XP.
+     */
+    public function buyStreakRepair(User $user): bool
+    {
+        return DB::transaction(function () use ($user) {
+            $userXp = $this->getOrCreate($user);
+
+            if ($userXp->xp_balance < self::STREAK_REPAIR_COST) {
+                return false;
+            }
+
+            if (!$userXp->spendXp(self::STREAK_REPAIR_COST)) {
+                return false;
+            }
 
             return true;
         });

@@ -93,6 +93,7 @@ class ReviewWordController extends Controller
         if (!$xpEnabled) {
             return response()->json([
                 'xp_awarded' => 0,
+                'xp_balance' => $this->xpService->getBalance($user),
                 'streak' => $this->streakService->getSummary($user),
             ]);
         }
@@ -133,6 +134,7 @@ class ReviewWordController extends Controller
         return response()->json([
             'status' => 'ok',
             'xp_awarded' => $xpAwarded,
+            'xp_balance' => $this->xpService->getBalance($user),
             'streak' => $this->streakService->getSummary($user),
             'list_completed' => $listCompleted,
             'list_name' => $listName,

@@ -207,6 +207,21 @@ function EditDialog({ order, statuses, open, onClose }) {
                             {order.transaction_id ?? "—"}
                         </span>
                     </div>
+                    <div className="flex gap-2">
+                        <span className="text-muted-foreground w-20 shrink-0">
+                            Amount
+                        </span>
+                        <span className="text-xs">
+                            ৳{Number(order.payable_amount ?? 0).toFixed(0)}
+                            {Number(order.discount_amount ?? 0) > 0 && (
+                                <span className="text-green-600 font-semibold">
+                                    {" "}
+                                    after {order.discount_percent}% referral
+                                    discount
+                                </span>
+                            )}
+                        </span>
+                    </div>
                     {order.note && (
                         <div className="flex gap-2">
                             <span className="text-muted-foreground w-20 shrink-0">
@@ -424,6 +439,29 @@ export default function Index({ orders, filters, statuses }) {
                     <span className="font-mono text-xs">
                         {getValue() ?? "—"}
                     </span>
+                ),
+            },
+            {
+                accessorKey: "payable_amount",
+                header: "Payable",
+                cell: ({ row }) => (
+                    <div className="text-xs">
+                        <p className="font-bold">
+                            ৳
+                            {Number(
+                                row.original.payable_amount ?? 0,
+                            ).toFixed(0)}
+                        </p>
+                        {Number(row.original.discount_amount ?? 0) > 0 && (
+                            <p className="text-green-600">
+                                -৳
+                                {Number(
+                                    row.original.discount_amount,
+                                ).toFixed(0)}{" "}
+                                ({row.original.discount_percent}%)
+                            </p>
+                        )}
+                    </div>
                 ),
             },
             {

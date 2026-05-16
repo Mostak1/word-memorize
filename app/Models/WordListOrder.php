@@ -16,15 +16,33 @@ class WordListOrder extends Model
     'address',
     'profession',
     'payment_method',
+    'subtotal_amount',
+    'discount_percent',
+    'discount_amount',
+    'payable_amount',
+    'referral_discount_credit_id',
+    'coupon_id',
     'transaction_id',
     'status',
     'note',
     'admin_note',
   ];
 
+  protected $casts = [
+    'subtotal_amount' => 'double',
+    'discount_percent' => 'integer',
+    'discount_amount' => 'double',
+    'payable_amount' => 'double',
+  ];
+
   public function user()
   {
     return $this->belongsTo(User::class);
+  }
+
+  public function coupon()
+  {
+    return $this->belongsTo(Coupon::class);
   }
 
   public function items()
@@ -40,6 +58,11 @@ class WordListOrder extends Model
       'word_list_order_id',
       'word_list_category_id'
     );
+  }
+
+  public function referralDiscountCredit()
+  {
+    return $this->belongsTo(ReferralDiscountCredit::class);
   }
 
   public function isApproved(): bool

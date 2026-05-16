@@ -9,13 +9,22 @@ use App\Models\UserWordListAccess;
 use App\Models\WordListCategory;
 use App\Models\WordListOrder;
 use App\Models\WordListOrderItem;
+use App\Services\ReferralService;
+use App\Services\CouponService;
 use App\Support\Telemetry;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class UserWordListOrderController extends Controller
 {
+  public function __construct(
+    private ReferralService $referralService,
+    private CouponService $couponService
+  ) {
+  }
+
   /**
    * Store a new order — supports single or combo categories.
    *
@@ -35,6 +44,8 @@ class UserWordListOrderController extends Controller
       'profession' => ['nullable', 'string', 'max:255'],
       'transaction_id' => ['required', 'string', 'max:100'],
       'note' => ['nullable', 'string', 'max:1000'],
+      'referral_discount_credit_id' => ['nullable', 'integer'],
+      'coupon_code' => ['nullable', 'string', 'max:50'],
     ]);
 
     $categoryIds = collect($request->category_ids)->unique()->values();
@@ -78,34 +89,70 @@ class UserWordListOrderController extends Controller
       ]);
     }
 
-    // Create the order
-    $order = WordListOrder::create([
-      'user_id' => $user->id,
-      'name' => $request->name,
-      'phone_number' => $request->phone_number,
-      'address' => $request->address,
-      'profession' => $request->profession,
-      'payment_method' => 'bkash',
-      'transaction_id' => $request->transaction_id,
-      'note' => $request->note,
-      'status' => 'pending',
-    ]);
+    $order = DB::transaction(function () use ($request, $user, $categories, $categoryIds) {
+      $coupon = $this->couponService->validateCode($request->coupon_code, $user);
 
-    // Attach items
-    $items = $categoryIds->map(fn($id) => [
-      'word_list_order_id' => $order->id,
-      'word_list_category_id' => $id,
-      'created_at' => now(),
-      'updated_at' => now(),
-    ])->all();
+      $amounts = $this->referralService->calculateOrderAmounts(
+        $user,
+        $categories,
+        $categoryIds,
+        $request->integer('referral_discount_credit_id') ?: null
+      );
 
-    WordListOrderItem::insert($items);
+      // If coupon exists, it overrides referral credit
+      if ($coupon) {
+        $amounts['discount_percent'] = $coupon->discount_percent;
+        $amounts['discount_amount'] = round($amounts['subtotal_amount'] * ($coupon->discount_percent / 100), 2);
+        $amounts['payable_amount'] = max(round($amounts['subtotal_amount'] - $amounts['discount_amount'], 2), 0);
+        $amounts['credit'] = null; // Don't use referral credit if coupon is used
+      }
+
+      $order = WordListOrder::create([
+        'user_id' => $user->id,
+        'name' => $request->name,
+        'phone_number' => $request->phone_number,
+        'address' => $request->address,
+        'profession' => $request->profession,
+        'payment_method' => 'bkash',
+        'subtotal_amount' => $amounts['subtotal_amount'],
+        'discount_percent' => $amounts['discount_percent'],
+        'discount_amount' => $amounts['discount_amount'],
+        'payable_amount' => $amounts['payable_amount'],
+        'referral_discount_credit_id' => $amounts['credit']?->id,
+        'coupon_id' => $coupon?->id,
+        'transaction_id' => $request->transaction_id,
+        'note' => $request->note,
+        'status' => 'pending',
+      ]);
+
+      $items = $categoryIds->map(fn($id) => [
+        'word_list_order_id' => $order->id,
+        'word_list_category_id' => $id,
+        'created_at' => now(),
+        'updated_at' => now(),
+      ])->all();
+
+      WordListOrderItem::insert($items);
+
+      if ($amounts['credit']) {
+        $this->referralService->markCreditUsed($amounts['credit'], $order);
+      }
+
+      if ($coupon) {
+        $this->couponService->markAsUsed($coupon);
+      }
+
+      return $order;
+    });
 
     Telemetry::record($request, 'order_created', [
       'order_id' => $order->id,
       'category_ids' => $categoryIds->all(),
       'item_count' => $categoryIds->count(),
       'payment_method' => 'bkash',
+      'subtotal_amount' => $order->subtotal_amount,
+      'discount_percent' => $order->discount_percent,
+      'payable_amount' => $order->payable_amount,
     ]);
 
     $receiverEmail = config('settings.receiver_email');

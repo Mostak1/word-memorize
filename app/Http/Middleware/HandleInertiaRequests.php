@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\UserSetting;
+use App\Services\ReferralService;
 use App\Services\XpService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -32,6 +33,8 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = $request->user();
+        $referralService = app(ReferralService::class);
+        $referralSettings = $referralService->publicSettings();
 
         return [
             ...parent::share($request),
@@ -54,8 +57,14 @@ class HandleInertiaRequests extends Middleware
                     'location' => $user->location,
                     'gender' => $user->gender,
                     'profession' => $user->profession,
+                    'referral_code' => $user->referral_code,
                     'xp' => app(XpService::class)->getSummary($user),
                 ] : null,
+            ],
+            'referral' => [
+                ...$referralSettings,
+                'prefill_code' => $request->query('ref'),
+                'available_credits' => $user ? $referralService->availableCreditPayload($user) : [],
             ],
             'userSettings' => function () use ($user) {
                 if (!$user) {

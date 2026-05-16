@@ -1,7 +1,7 @@
 import GuestLayout from "@/Layouts/GuestLayout";
-import { Head, Link, useForm } from "@inertiajs/react";
+import { Head, Link, useForm, usePage } from "@inertiajs/react";
 import { useState } from "react";
-import { Eye, EyeOff, Mail, Lock, User as UserIcon, Phone } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User as UserIcon, Phone, Gift } from "lucide-react";
 import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
@@ -11,12 +11,14 @@ import { useTranslation } from "@/Contexts/LanguageContext";
 
 export default function Register() {
     const { t } = useTranslation();
+    const { referral } = usePage().props;
     const { data, setData, post, processing, errors, reset } = useForm({
         name: "",
         email: "",
         phone_number: "",
         password: "",
         password_confirmation: "",
+        referral_code: referral?.prefill_code ?? "",
     });
 
     const [showPassword, setShowPassword] = useState(false);
@@ -34,6 +36,8 @@ export default function Register() {
                     toast.error(errors.email);
                 } else if (errors.phone_number) {
                     toast.error(errors.phone_number);
+                } else if (errors.referral_code) {
+                    toast.error(errors.referral_code);
                 } else if (errors.password) {
                     toast.error(errors.password);
                 } else if (errors.password_confirmation) {
@@ -148,6 +152,48 @@ export default function Register() {
                             </p>
                         )}
                     </div>
+
+                    {referral?.enabled && (
+                        <div className="space-y-2">
+                            <Label
+                                htmlFor="referral_code"
+                                className="text-sm font-medium"
+                            >
+                                Referral Code{" "}
+                                <span className="text-gray-400">
+                                    (optional)
+                                </span>
+                            </Label>
+                            <div className="relative">
+                                <Gift className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                                <Input
+                                    id="referral_code"
+                                    type="text"
+                                    name="referral_code"
+                                    value={data.referral_code}
+                                    onChange={(e) =>
+                                        setData(
+                                            "referral_code",
+                                            e.target.value.toUpperCase(),
+                                        )
+                                    }
+                                    className="pl-10 h-12 border-gray-300 dark:border-zinc-700 focus:border-[#E5201C] focus:ring-[#E5201C] uppercase"
+                                    placeholder="VPX8F3K2"
+                                    autoComplete="off"
+                                />
+                            </div>
+                            {errors.referral_code && (
+                                <p className="text-sm text-red-600 dark:text-red-400">
+                                    {errors.referral_code}
+                                </p>
+                            )}
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                                Use a friend's code to get{" "}
+                                {referral.new_user_discount_percent}% off your
+                                first paid order.
+                            </p>
+                        </div>
+                    )}
 
                     {/* Password Field */}
                     <div className="space-y-2">

@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import QuizPanel from "@/Pages/ExerciseSession/QuizPanel";
 import StreakPop from "@/Components/StreakPop";
+import StreakLostOverlay from "@/Components/StreakLostOverlay";
 import ListCompletedOverlay from "@/Components/ListCompletedOverlay";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import FlashMessages from "@/Components/FlashMessage";
@@ -41,7 +42,6 @@ import { telemetry } from "@/Utils/telemetry";
 // ── Constants ─────────────────────────────────────────────────────────────────
 const MASTERED_BOX = 4;
 const SECRET_KEY = "wm-cache-secure-key";
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 // Confetti pieces — stable (generated once outside component)
 const CONFETTI = Array.from({ length: 60 }, (_, i) => ({
@@ -63,6 +63,12 @@ const CONFETTI = Array.from({ length: 60 }, (_, i) => ({
 }));
 
 const MAX_CACHED_SESSIONS = 2;
+
+const clearExerciseSessionCaches = () => {
+    Object.keys(localStorage)
+        .filter((key) => key.startsWith("cached-session-"))
+        .forEach((key) => localStorage.removeItem(key));
+};
 
 const pruneOldCaches = () => {
     const keys = Object.keys(localStorage).filter((k) =>
@@ -283,6 +289,8 @@ export default function ExerciseSession({
     // play their full animation without cancelling the previous one.
     const [masteryEventKey, setMasteryEventKey] = useState(0);
     const [levelUpPulse, setLevelUpPulse] = useState(false);
+    const [xpBalance, setXpBalance] = useState(0);
+    const [showStreakLost, setShowStreakLost] = useState(false);
 
     const triggerAchievements = () => {
         window.dispatchEvent(new CustomEvent("check-achievements"));
@@ -387,11 +395,11 @@ export default function ExerciseSession({
 
     // Auto-scroll to I Know / I Don't Know buttons when meaning is revealed
     useEffect(() => {
-        if (showMeaning && buttonsRef.current) {
+        if (showMeaning && meaningCardRef.current) {
             setTimeout(() => {
-                buttonsRef.current?.scrollIntoView({
+                meaningCardRef.current?.scrollIntoView({
                     behavior: "smooth",
-                    block: "center", // Center buttons to avoid being obscured by BottomNav
+                    block: "start",
                 });
             }, 300);
         }
@@ -487,7 +495,9 @@ export default function ExerciseSession({
             setTimeout(() => setShowStreakEffect(false), 2800);
 
             // Also update the local streak count immediately so the UI doesn't jump
-            const predictedStreak = (initialStreak?.current_streak ?? 0) + 1;
+            const predictedStreak = initialStreak?.is_broken || !initialStreak?.current_streak
+                ? 1
+                : (initialStreak.current_streak + 1);
             setStreak((prev) =>
                 prev
                     ? {
@@ -521,6 +531,11 @@ export default function ExerciseSession({
                     // playXpPurchase();
                 }
 
+                if (data.xp_balance !== undefined) {
+                    setXpBalance(data.xp_balance);
+                }
+
+
                 if (data.streak) {
                     const newStreak = data.streak.current_streak ?? 0;
                     const prevStreak = previousStreak.current;
@@ -545,6 +560,10 @@ export default function ExerciseSession({
 
                     previousStreak.current = newStreak;
                     setStreak(data.streak);
+
+                    if (data.streak.pre_broken_streak > 0 && !data.streak.broken_streak_notified) {
+                        setShowStreakLost(true);
+                    }
                 }
 
                 if (data.list_completed) {
@@ -587,64 +606,16 @@ export default function ExerciseSession({
     // Initial full preload + localStorage cache
     useEffect(() => {
         const runPreload = async () => {
-            // ── Try cached version first ─────────────────────────────
             if (wordList?.id) {
-                try {
-                    const encrypted = localStorage.getItem(
-                        `cached-session-${wordList.id}`,
-                    );
-                    if (encrypted) {
-                        const bytes = CryptoJS.AES.decrypt(
-                            encrypted,
-                            SECRET_KEY,
-                        );
-                        const cacheData = JSON.parse(
-                            bytes.toString(CryptoJS.enc.Utf8),
-                        );
-                        const age = Date.now() - (cacheData.timestamp ?? 0);
-                        if (age < CACHE_TTL_MS && cacheData.words?.length) {
-                            // Cache is fresh → skip preloading, use cached words
-                            setQueue(cacheData.words.map((w) => ({ ...w })));
-                            setIsPreloading(false);
-                            return; // early exit – no preload needed
-                        } else {
-                            // Cache expired → remove it so it can be recreated
-                            localStorage.removeItem(
-                                `cached-session-${wordList.id}`,
-                            );
-                        }
-                    }
-                } catch (e) {
-                    // Invalid cache data → just ignore and preload normally
-                }
+                clearExerciseSessionCaches();
             }
 
-            // ── Normal preload (first time or cache invalid) ─────────
+            // ── Normal preload from fresh backend props ──────────────
             setIsPreloading(true);
             setLoadingProgress(0);
+            setQueue(initialWords.map((w) => ({ ...w })));
 
             await preloadImages(initialWords, setLoadingProgress);
-
-            // Cache words JSON for future visits
-            // if (wordList?.id && initialWords.length > 0) {
-            //     try {
-            //         const cacheData = JSON.stringify({
-            //             words: initialWords,
-            //             timestamp: Date.now(),
-            //         });
-            //         // Obfuscating cache data so casual users cannot read it
-            //         const SECRET_KEY = "wm-cache-secure-key";
-            //         const encryptedData = CryptoJS.AES.encrypt(
-            //             cacheData,
-            //             SECRET_KEY,
-            //         ).toString();
-
-            //         localStorage.setItem(
-            //             `cached-session-${wordList.id}`,
-            //             encryptedData,
-            //         );
-            //     } catch (e) {}
-            // }
 
             // Cache the fresh data after preload
             if (wordList?.id && initialWords.length > 0) {
@@ -1207,6 +1178,46 @@ export default function ExerciseSession({
                         onDismiss={() => setShowListOverlay(false)}
                     />
                 )}
+
+                <StreakLostOverlay
+                    isOpen={showStreakLost}
+                    onClose={() => setShowStreakLost(false)}
+                    prevStreak={streak?.pre_broken_streak ?? 0}
+                    xpBalance={xpBalance}
+                    onRepair={async () => {
+                        try {
+                            const response = await axios.post(route("api.xp-shop.buy-streak-repair"));
+                            if (response.data.success) {
+                                setXpBalance(response.data.xp.balance);
+                                setStreak(response.data.streak);
+                                setShowStreakLost(false);
+                            }
+                        } catch (err) {
+                            console.error("Failed to repair streak:", err);
+                        }
+                    }}
+                />
+
+
+                <StreakLostOverlay
+                    isOpen={showStreakLost}
+                    onClose={() => setShowStreakLost(false)}
+                    prevStreak={streak?.pre_broken_streak ?? 0}
+                    xpBalance={xpBalance}
+                    onRepair={async () => {
+                        try {
+                            const response = await axios.post(route("api.xp-shop.buy-streak-repair"));
+                            if (response.data.success) {
+                                setXpBalance(response.data.xp.balance);
+                                setStreak(response.data.streak);
+                                setShowStreakLost(false);
+                            }
+                        } catch (err) {
+                            console.error("Failed to repair streak:", err);
+                        }
+                    }}
+                />
+
 
                 {/* Global confetti celebration for EVERY completed session */}
                 <div

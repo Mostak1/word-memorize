@@ -153,6 +153,11 @@ export const translations = {
             earned_at: "Earned {date}",
             failed_load: "Failed to load achievements",
             try_again: "Try Again",
+            course_reward: "{percent}% course discount reward",
+            reward_available: "Available",
+            reward_used: "Used",
+            copy_coupon: "Copy coupon code",
+            coupon_code: "Coupon: {code}",
             items: {
                 streak_bronze: {
                     name: "Streak Bronze",
@@ -465,6 +470,14 @@ export const translations = {
             tabs: {
                 shop: "Shop",
                 xp: "XP Shop",
+                rewards: "Rewards",
+            },
+            rewards: {
+                title: "Your Rewards",
+                subtitle: "Active discount coupons earned from your streaks.",
+                no_rewards: "No rewards yet",
+                no_rewards_desc: "Keep up your streak to earn discount coupons!",
+                tip: 'Tip: Copy a code and paste it in the "Coupon Code" field during checkout.',
             },
             status: {
                 owned: "Owned",
@@ -472,6 +485,9 @@ export const translations = {
             },
             word_list: "Word List",
             word_lists: "Word Lists",
+            bundle_title: "All Word List Categories",
+            bundle_category_count: "{count} categories",
+            bundle_buy_all: "Buy all",
             no_categories: "No Word List Categories Available",
             no_categories_desc:
                 "There are no word list categories available for purchase yet.",
@@ -495,6 +511,11 @@ export const translations = {
                 dark_mode_footer:
                     "Theme will be available everywhere once unlocked",
                 unlocked: "✓ Unlocked permanently",
+                discount_title: "10% Discount Coupon",
+                discount_desc:
+                    "Get 10% off on your next course or shop purchase. One-time only!",
+                discount_footer: "Coupon will be added to your Rewards tab.",
+                purchased: "✓ Purchased",
             },
             actions: {
                 cost: "Cost",
@@ -1030,6 +1051,11 @@ export const translations = {
             earned_at: "অর্জিত হয়েছে: {date}",
             failed_load: "কৃতিত্ব লোড করতে ব্যর্থ হয়েছে",
             try_again: "আবার চেষ্টা করুন",
+            course_reward: "{percent}% course discount reward",
+            reward_available: "Available",
+            reward_used: "Used",
+            copy_coupon: "Copy coupon code",
+            coupon_code: "Coupon: {code}",
             items: {
                 streak_bronze: {
                     name: "ব্রোঞ্জ স্ট্রাক",
@@ -1348,6 +1374,14 @@ export const translations = {
             tabs: {
                 shop: "শপ",
                 xp: "এক্সপি শপ",
+                rewards: "পুরস্কার",
+            },
+            rewards: {
+                title: "আপনার পুরস্কারসমূহ",
+                subtitle: "আপনার স্ট্রাক থেকে অর্জিত সক্রিয় ডিসকাউন্ট কুপন।",
+                no_rewards: "এখনো কোনো পুরস্কার নেই",
+                no_rewards_desc: "ডিসকাউন্ট কুপন অর্জন করতে স্ট্রাক বজায় রাখুন!",
+                tip: 'টিপ: একটি কোড কপি করুন এবং চেকআউটের সময় "Coupon Code" ফিল্ডে পেস্ট করুন।',
             },
             status: {
                 owned: "অর্জিত",
@@ -1355,6 +1389,9 @@ export const translations = {
             },
             word_list: "শব্দ তালিকা",
             word_lists: "শব্দ তালিকা",
+            bundle_title: "সব শব্দ তালিকা ক্যাটাগরি",
+            bundle_category_count: "{count}টি ক্যাটাগরি",
+            bundle_buy_all: "সব কিনুন",
             no_categories: "কোনো শব্দ তালিকা লভ্য নেই",
             no_categories_desc:
                 "এখনো কেনাকাটার জন্য কোনো শব্দ তালিকা ক্যাটাগরি লভ্য নেই।",
@@ -1378,6 +1415,11 @@ export const translations = {
                 dark_mode_desc: "পুরো অ্যাপের জন্য ডার্ক থিম আনলক করুন।",
                 dark_mode_footer: "আনলক করার পর সবখানে থিমটি লভ্য হবে",
                 unlocked: "✓ চিরস্থায়ীভাবে আনলক করা হয়েছে",
+                discount_title: "১০% ডিসকাউন্ট কুপন",
+                discount_desc:
+                    "আপনার পরবর্তী কোর্স বা শপ ক্রয়ে ১০% ছাড় পান। শুধুমাত্র একবারের জন্য!",
+                discount_footer: "কুপনটি আপনার পুরস্কার ট্যাবে যোগ করা হবে।",
+                purchased: "✓ কেনা হয়েছে",
             },
             actions: {
                 cost: "মূল্য",

@@ -6,6 +6,7 @@ use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Services\ReferralService;
 
 class User extends Authenticatable
 {
@@ -38,6 +39,7 @@ class User extends Authenticatable
         'approve_status',
         'login_as',
         'wallet',
+        'referral_code',
         'google_id',
         'provider',
     ];
@@ -51,6 +53,19 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $user) {
+            if (!$user->referral_code) {
+                do {
+                    $code = app(ReferralService::class)->generateCode();
+                } while (self::where('referral_code', $code)->exists());
+
+                $user->referral_code = $code;
+            }
+        });
+    }
 
     /**
      * Get the attributes that should be cast.
@@ -128,6 +143,21 @@ class User extends Authenticatable
     public function userAchievements()
     {
         return $this->hasMany(UserAchievement::class);
+    }
+
+    public function referredBy()
+    {
+        return $this->hasOne(Referral::class, 'referred_user_id');
+    }
+
+    public function referralsMade()
+    {
+        return $this->hasMany(Referral::class, 'referrer_user_id');
+    }
+
+    public function referralDiscountCredits()
+    {
+        return $this->hasMany(ReferralDiscountCredit::class);
     }
 
     public function followers()

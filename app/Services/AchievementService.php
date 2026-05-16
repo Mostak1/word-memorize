@@ -9,6 +9,10 @@ use Carbon\Carbon;
 
 class AchievementService
 {
+  public function __construct(private CourseStreakRewardCouponService $courseStreakRewardCouponService)
+  {
+  }
+
   /**
    * Check and award achievements for a user based on their current stats.
    *
@@ -29,6 +33,7 @@ class AchievementService
           'achievement_id' => $achievement->id,
           'awarded_at' => now(),
         ]);
+        $this->courseStreakRewardCouponService->ensureForAchievement($user, $achievement);
         $newAchievements[] = $userAchievement->load('achievement');
       }
     }
@@ -246,12 +251,16 @@ class AchievementService
     foreach ($achievements as $achievement) {
       $earned = in_array($achievement->id, $earnedIds);
       $progress = $this->getAchievementProgress($user, $achievement);
+      $rewardCoupon = $earned
+        ? $this->courseStreakRewardCouponService->payloadForAchievement($user, $achievement)
+        : null;
 
       $result[] = [
         'achievement' => $achievement,
         'earned' => $earned,
         'progress' => $progress,
         'earned_at' => $earned ? $userAchievements->where('achievement_id', $achievement->id)->first()->awarded_at : null,
+        'reward_coupon' => $rewardCoupon,
       ];
     }
 
