@@ -8,6 +8,7 @@ use App\Models\WordList;
 use App\Models\WordListCategory;
 use App\Models\WordListOrder;
 use App\Models\WordProgress;
+use App\Services\WordlistStarService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -93,6 +94,9 @@ class WordListCategoryController extends Controller
         $ids = $wordLists->pluck('id')->toArray();
 
         $masteredCounts = $this->getMasteredCounts($ids);
+        $starProgressByWordlist = auth()->check()
+            ? app(WordlistStarService::class)->summariesFor(auth()->user(), $ids)
+            : [];
 
         // ── Category purchase / access state ──────────────────────────────────
         $categoryOrder = null;
@@ -274,6 +278,7 @@ class WordListCategoryController extends Controller
             'category' => $category,
             'currentCategory' => $category->name,
             'masteredCounts' => $masteredCounts,
+            'starProgressByWordlist' => $starProgressByWordlist,
             'categoryOrder' => $categoryOrder,
             'userHasAccess' => $userHasAccess,
             'quizEligibleIds' => $quizEligibleIds,

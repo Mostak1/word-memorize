@@ -86,6 +86,19 @@ class XpService
         return $this->getOrCreate($user)->xp_balance;
     }
 
+    public function awardBonusXp(User $user, int $amount): int
+    {
+        $amount = max(0, $amount);
+        if ($amount === 0) {
+            return 0;
+        }
+
+        $this->getOrCreate($user)->addXp($amount);
+        $this->achievementService->checkAndAwardAchievements($user);
+
+        return $amount;
+    }
+
     /**
      * Award XP for completing an exercise session.
      *
@@ -385,12 +398,13 @@ class XpService
             \App\Models\Coupon::create([
                 'code' => 'TENOFF-' . strtoupper(\Illuminate\Support\Str::random(6)),
                 'discount_percent' => 10,
-                'description' => '10% OFF any Shop or Course purchase',
+                'description' => '10% OFF any Shop purchase (Wordlist)',
                 'max_uses' => 1,
                 'used_count' => 0,
                 'is_active' => true,
                 'assigned_user_id' => $user->id,
                 'course_only' => false,
+                'shop_only' => true,
             ]);
 
             return true;

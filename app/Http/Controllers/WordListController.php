@@ -93,7 +93,7 @@ class WordListController extends Controller
         ]);
     }
 
-    public function start(SrsService $srsService, $id)
+    public function start(Request $request, SrsService $srsService, $id)
     {
         $wordList = WordList::with('category.creator')
             ->where('id', $id)
@@ -110,12 +110,13 @@ class WordListController extends Controller
         }
 
         $isQuizOnly = false;
+        $isStarReview = $request->query('mode') === 'star-review';
         if (auth()->check()) {
             $sessionTracker = \App\Models\UserWordListSession::firstOrCreate(
                 ['user_id' => auth()->id(), 'wordlist_id' => $id],
                 ['regular_sessions_count' => 0]
             );
-            $isQuizOnly = $sessionTracker->regular_sessions_count >= 4;
+            $isQuizOnly = $isStarReview || $sessionTracker->regular_sessions_count >= 4;
             $words = $srsService->buildSessionQueue(auth()->user(), (int) $id, $isQuizOnly);
         } else {
             $words = Word::with([
@@ -145,6 +146,7 @@ class WordListController extends Controller
             'streak' => auth()->check() ? $this->streakService->getSummary(auth()->user()) : null,
             'xp_enabled' => $this->isAdminWordList($wordList),
             'isQuizOnly' => $isQuizOnly,
+            'isStarReview' => $isStarReview,
         ]);
     }
 

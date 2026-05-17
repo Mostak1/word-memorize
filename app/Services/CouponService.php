@@ -60,6 +60,12 @@ class CouponService
             ]);
         }
 
+        if ($coupon->course_only) {
+            throw ValidationException::withMessages([
+                'coupon_code' => 'This coupon is only valid for Course purchases.',
+            ]);
+        }
+
         return $coupon;
     }
 

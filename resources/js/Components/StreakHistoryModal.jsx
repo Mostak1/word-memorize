@@ -2,6 +2,7 @@ import React from "react";
 import Modal from "./Modal";
 import { Flame, Check, Snowflake } from "lucide-react";
 import { useTranslation } from "@/Contexts/LanguageContext";
+import FlameVisual from "./FlameVisual";
 
 export default function StreakHistoryModal({ show, onClose, streak }) {
     const { t } = useTranslation();
@@ -16,7 +17,7 @@ export default function StreakHistoryModal({ show, onClose, streak }) {
                 <div className="relative mb-4 mt-4">
                     <div className="absolute inset-0 bg-orange-500/20 blur-2xl rounded-full scale-150 animate-pulse" />
                     <div className="relative z-10 bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-xl">
-                        <Flame className="h-16 w-16 text-orange-500 fill-orange-500" />
+                        <FlameVisual isBroken={streak.is_broken} size={64} />
                     </div>
                 </div>
 

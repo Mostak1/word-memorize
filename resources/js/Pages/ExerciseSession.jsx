@@ -203,6 +203,7 @@ export default function ExerciseSession({
     streak: initialStreak = null,
     xp_enabled = true,
     isQuizOnly = false,
+    isStarReview = false,
 }) {
     const { t } = useTranslation();
 
@@ -240,6 +241,15 @@ export default function ExerciseSession({
 
     const [listCompletionData, setListCompletionData] = useState(null);
     const [showListOverlay, setShowListOverlay] = useState(false);
+
+    const [products, setProducts] = useState([]);
+    const advertisedProducts = useMemo(
+        () =>
+            products
+                .filter((product) => product?.id && product?.ad_image_url)
+                .slice(0, 3),
+        [products],
+    );
 
     const approvedAnim = approvedAnimation;
 
@@ -520,11 +530,12 @@ export default function ExerciseSession({
                 wordlist_id: wordList?.id,
                 results: sessionResults,
                 is_quiz_only: !!isQuizOnly,
+                is_star_review: !!isStarReview,
             }),
         })
             .then((response) => response.json())
             .then((data) => {
-                let streakIncreased = false;
+                let streakIncreased = immediateAnimationTriggered;
 
                 if (data.xp_awarded && xp_enabled) {
                     setSessionXpAwarded(data.xp_awarded);
@@ -539,10 +550,16 @@ export default function ExerciseSession({
                 if (data.streak) {
                     const newStreak = data.streak.current_streak ?? 0;
                     const prevStreak = previousStreak.current;
+                    const serverConfirmedIncrease =
+                        data.streak_increased === true;
 
-                    // Only trigger if not already triggered by the immediate effect
+                    setStreak(data.streak);
+
+                    // Prefer the backend's streak_increased flag, then fall back
+                    // to local comparison for older responses.
                     if (
-                        (newStreak > prevStreak ||
+                        (serverConfirmedIncrease ||
+                            newStreak > prevStreak ||
                             (newStreak === prevStreak &&
                                 !initialStreak?.active_today &&
                                 newStreak > 0)) &&
@@ -550,16 +567,13 @@ export default function ExerciseSession({
                     ) {
                         streakIncreased = true;
                         setStreakChange("up");
-                        // Show Fire Streak Animation with the NEW streak count
                         setShowStreakEffect(true);
-                        // Auto hide after animation
                         setTimeout(() => setShowStreakEffect(false), 2800);
                     } else if (newStreak < prevStreak) {
                         setStreakChange("down");
                     }
 
                     previousStreak.current = newStreak;
-                    setStreak(data.streak);
 
                     if (data.streak.pre_broken_streak > 0 && !data.streak.broken_streak_notified) {
                         setShowStreakLost(true);
@@ -567,7 +581,16 @@ export default function ExerciseSession({
                 }
 
                 if (data.list_completed) {
-                    setListCompletionData({ name: data.list_name });
+                    setListCompletionData({
+                        name: data.list_name,
+                        starProgress: data.star_progress,
+                        starAwarded: data.star_awarded,
+                        bonusReward: data.bonus_reward,
+                    });
+                }
+
+                if (data.products) {
+                    setProducts(data.products);
                 }
 
                 // If streak increased, StreakPop will handle the achievement check onComplete
@@ -1175,29 +1198,12 @@ export default function ExerciseSession({
                 {showListOverlay && (
                     <ListCompletedOverlay
                         listName={listCompletionData?.name}
+                        starProgress={listCompletionData?.starProgress}
+                        starAwarded={listCompletionData?.starAwarded}
+                        bonusReward={listCompletionData?.bonusReward}
                         onDismiss={() => setShowListOverlay(false)}
                     />
                 )}
-
-                <StreakLostOverlay
-                    isOpen={showStreakLost}
-                    onClose={() => setShowStreakLost(false)}
-                    prevStreak={streak?.pre_broken_streak ?? 0}
-                    xpBalance={xpBalance}
-                    onRepair={async () => {
-                        try {
-                            const response = await axios.post(route("api.xp-shop.buy-streak-repair"));
-                            if (response.data.success) {
-                                setXpBalance(response.data.xp.balance);
-                                setStreak(response.data.streak);
-                                setShowStreakLost(false);
-                            }
-                        } catch (err) {
-                            console.error("Failed to repair streak:", err);
-                        }
-                    }}
-                />
-
 
                 <StreakLostOverlay
                     isOpen={showStreakLost}
@@ -1374,6 +1380,72 @@ export default function ExerciseSession({
                                         total: totalWordsInList,
                                     })}
                                 </p>
+                            </div>
+                        )}
+
+                        {/* Product Advertisements */}
+                        {advertisedProducts.length > 0 && (
+                            <div className="mb-10 text-left">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <div className="h-px flex-1 bg-gray-200 dark:bg-slate-800" />
+                                    <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                                        Sponsored Products
+                                    </span>
+                                    <div className="h-px flex-1 bg-gray-200 dark:bg-slate-800" />
+                                </div>
+
+                                <div className="space-y-4">
+                                    {advertisedProducts.map((product) => (
+                                        <a
+                                            key={product.id}
+                                            href={`https://fluento.org/shop/${product.id}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="group block bg-gray-50 dark:bg-slate-800/40 hover:bg-white dark:hover:bg-slate-800 border border-gray-100 dark:border-slate-800 hover:border-red-200 dark:hover:border-red-900/50 rounded-2xl p-3 transition-all duration-300 hover:shadow-xl hover:shadow-red-500/5 hover:-translate-y-0.5"
+                                        >
+                                            <div className="flex gap-4">
+                                                <div className="relative flex-none w-20 h-20 rounded-xl overflow-hidden bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 group-hover:border-red-100 dark:group-hover:border-red-900/30 transition-colors">
+                                                    <img
+                                                        src={product.ad_image_url}
+                                                        alt={product.name}
+                                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                                    />
+                                                    {product.selling_price > 0 && (
+                                                        <div className="absolute top-1 right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-lg shadow-sm">
+                                                            ৳{product.selling_price}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="flex-1 min-w-0 py-1 flex flex-col justify-between">
+                                                    <div>
+                                                        <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 line-clamp-2 leading-snug group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">
+                                                            {product.name}
+                                                        </h4>
+                                                        <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 uppercase tracking-tight">
+                                                            Available on Fluento.org
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex items-center text-[11px] font-bold text-red-500 dark:text-red-400 group-hover:translate-x-1 transition-transform">
+                                                        View in Shop
+                                                        <svg
+                                                            className="w-3 h-3 ml-1"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                            stroke="currentColor"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth={2.5}
+                                                                d="M9 5l7 7-7 7"
+                                                            />
+                                                        </svg>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    ))}
+                                </div>
                             </div>
                         )}
 

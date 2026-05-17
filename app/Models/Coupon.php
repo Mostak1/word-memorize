@@ -22,6 +22,7 @@ class Coupon extends Model
         'source',
         'achievement_id',
         'course_only',
+        'shop_only',
     ];
 
     protected $casts = [
@@ -33,6 +34,7 @@ class Coupon extends Model
         'end_date' => 'datetime',
         'is_active' => 'boolean',
         'course_only' => 'boolean',
+        'shop_only' => 'boolean',
     ];
 
     public function assignedUser(): BelongsTo

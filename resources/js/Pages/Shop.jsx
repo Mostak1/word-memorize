@@ -835,6 +835,10 @@ function RewardsTab({ coupons = [], featuredCourses = [] }) {
                                         <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
                                             Course Only
                                         </span>
+                                    ) : coupon.shop_only ? (
+                                        <span className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                            Shop Only
+                                        </span>
                                     ) : (
                                         <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
                                             Active

@@ -513,7 +513,7 @@ export const translations = {
                 unlocked: "✓ Unlocked permanently",
                 discount_title: "10% Discount Coupon",
                 discount_desc:
-                    "Get 10% off on your next course or shop purchase. One-time only!",
+                    "Get 10% off on your next shop purchase (Wordlist). One-time only!",
                 discount_footer: "Coupon will be added to your Rewards tab.",
                 purchased: "✓ Purchased",
             },
@@ -1417,7 +1417,7 @@ export const translations = {
                 unlocked: "✓ চিরস্থায়ীভাবে আনলক করা হয়েছে",
                 discount_title: "১০% ডিসকাউন্ট কুপন",
                 discount_desc:
-                    "আপনার পরবর্তী কোর্স বা শপ ক্রয়ে ১০% ছাড় পান। শুধুমাত্র একবারের জন্য!",
+                    "আপনার পরবর্তী শপ (শব্দ তালিকা) ক্রয়ে ১০% ছাড় পান। শুধুমাত্র একবারের জন্য!",
                 discount_footer: "কুপনটি আপনার পুরস্কার ট্যাবে যোগ করা হবে।",
                 purchased: "✓ কেনা হয়েছে",
             },

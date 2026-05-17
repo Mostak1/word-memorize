@@ -67,6 +67,10 @@ class Product extends Model
         'sync_hash',
     ];
 
+    protected $appends = [
+        'ad_image_url',
+    ];
+
     protected $casts = [
         'image_gallery' => 'array',
         'local_image_gallery' => 'array',
@@ -74,6 +78,25 @@ class Product extends Model
         'discount_starts_at' => 'datetime',
         'discount_ends_at' => 'datetime',
     ];
+
+    public function getAdImageUrlAttribute()
+    {
+        $imagePath = $this->local_image_url ?: $this->image_url;
+
+        if (!$imagePath && !empty($this->local_image_gallery)) {
+            $imagePath = $this->local_image_gallery[0];
+        }
+
+        if (!$imagePath) {
+            return null;
+        }
+
+        if (str_starts_with($imagePath, 'http')) {
+            return $imagePath;
+        }
+
+        return 'https://fluento.org/' . ltrim($imagePath, '/');
+    }
 
     public function brand()
     {

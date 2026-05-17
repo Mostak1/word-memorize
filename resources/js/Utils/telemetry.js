@@ -8,6 +8,7 @@ const LAST_ACTIVITY_KEY = "wm.telemetry.last_activity_at";
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
 const HEARTBEAT_MS = 15 * 1000;
 const MAX_BATCH_SIZE = 40;
+const MAX_RETRIES = 3;
 
 const nowIso = () => new Date().toISOString();
 
@@ -73,6 +74,7 @@ class TelemetryClient {
         this.flushTimer = null;
         this.heartbeatTimer = null;
         this.userId = null;
+        this.flushing = false;
     }
 
     init() {
@@ -228,12 +230,15 @@ class TelemetryClient {
     }
 
     flush(beacon = false) {
-        if (this.queue.length === 0) return;
+        if (this.flushing || this.queue.length === 0) return;
 
-        const events = this.queue.splice(0, MAX_BATCH_SIZE);
+        const anonymousId = this.ensureAnonymousId();
+        const sessionId = this.ensureSession();
+        const queuedEvents = this.queue.splice(0, MAX_BATCH_SIZE);
+        const events = queuedEvents.map(({ __retryCount, ...event }) => event);
         const payload = {
-            anonymous_id: this.ensureAnonymousId(),
-            session_id: this.ensureSession(),
+            anonymous_id: anonymousId,
+            session_id: sessionId,
             session_started_at: sessionStorage.getItem(SESSION_STARTED_KEY),
             client: detectClient(),
             events,
@@ -262,12 +267,46 @@ class TelemetryClient {
             if (sent) return;
         }
 
+        this.flushing = true;
+        const restoreEvents = (err) => {
+            const status = err?.response?.status;
+            const retryable = !status || status >= 500 || status === 429;
+
+            if (!retryable) {
+                console.warn(
+                    "Telemetry batch discarded:",
+                    status ? `HTTP ${status}` : err.message,
+                );
+                return;
+            }
+
+            const retryableEvents = queuedEvents
+                .map((event) => ({
+                    ...event,
+                    __retryCount: (event.__retryCount ?? 0) + 1,
+                }))
+                .filter((event) => event.__retryCount <= MAX_RETRIES);
+
+            if (retryableEvents.length > 0) {
+                this.queue.unshift(...retryableEvents);
+            }
+        };
+
         // Use axios if available, otherwise fallback to fetch
         if (window.axios) {
-            window.axios.post(url, payload).catch((err) => {
-                console.warn("Telemetry flush failed (axios):", err.message);
-                this.queue.unshift(...events);
-            });
+            window.axios
+                .post(url, payload, {
+                    headers: {
+                        "X-CSRF-TOKEN": getMeta("csrf-token"),
+                    },
+                })
+                .catch((err) => {
+                    console.warn("Telemetry flush failed (axios):", err.message);
+                    restoreEvents(err);
+                })
+                .finally(() => {
+                    this.flushing = false;
+                });
         } else {
             fetch(url, {
                 method: "POST",
@@ -279,10 +318,21 @@ class TelemetryClient {
                 },
                 body: JSON.stringify(payload),
                 keepalive: beacon,
-            }).catch((err) => {
-                console.warn("Telemetry flush failed (fetch):", err.message);
-                this.queue.unshift(...events);
-            });
+            })
+                .then((response) => {
+                    if (!response.ok) {
+                        const err = new Error(`HTTP ${response.status}`);
+                        err.response = response;
+                        throw err;
+                    }
+                })
+                .catch((err) => {
+                    console.warn("Telemetry flush failed (fetch):", err.message);
+                    restoreEvents(err);
+                })
+                .finally(() => {
+                    this.flushing = false;
+                });
         }
     }
 

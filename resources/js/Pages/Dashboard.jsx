@@ -19,6 +19,7 @@ import {
 import { useTranslation } from "@/Contexts/LanguageContext";
 import StreakHistoryModal from "@/Components/StreakHistoryModal";
 import StreakLostOverlay from "@/Components/StreakLostOverlay";
+import FlameVisual from "@/Components/FlameVisual";
 import axios from "axios";
 import logo from "/public/img/logo.png";
 
@@ -66,9 +67,7 @@ function StreakBanner({ streak, onClick }) {
                 <div className="flex items-center gap-4">
                     <div className="relative">
                         <div className="w-16 h-16 rounded-full border-2 border-red-200 dark:border-red-800 flex items-center justify-center bg-white dark:bg-slate-900 shadow-sm">
-                            <Flame
-                                className={`h-8 w-8 text-red-500 ${!is_broken ? "animate-pulse" : "opacity-30"}`}
-                            />
+                            <FlameVisual isBroken={is_broken} size={42} />
                         </div>
                         {is_broken && (
                             <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center">

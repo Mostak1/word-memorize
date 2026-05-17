@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\BookmarkedWord;
+use App\Models\Product;
 use App\Models\ReviewWord;
 use App\Models\Word;
 use App\Models\WordProgress;
 use App\Services\SrsService;
 use App\Services\StreakService;
+use App\Services\WordlistStarService;
 use App\Services\XpService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,6 +21,7 @@ class ReviewWordController extends Controller
         private StreakService $streakService,
         private SrsService $srsService,
         private XpService $xpService,
+        private WordlistStarService $wordlistStarService,
     ) {
     }
 
@@ -88,32 +91,37 @@ class ReviewWordController extends Controller
             $xpEnabled = $category?->creator?->email === 'admin@gmail.com';
         }
 
-        $this->streakService->recordActivity($user);
-        
-        if (!$xpEnabled) {
-            return response()->json([
-                'xp_awarded' => 0,
-                'xp_balance' => $this->xpService->getBalance($user),
-                'streak' => $this->streakService->getSummary($user),
-            ]);
-        }
+        $streakBeforeActivity = $this->streakService->getOrCreate($user);
+        $streakBeforeCount = (int) $streakBeforeActivity->current_streak;
+        $streakWasActiveToday = $streakBeforeActivity->isActiveToday();
+        $streakMaintained = !$streakBeforeActivity->isBroken();
 
-        $xpAwarded = $this->xpService->awardSessionXp($user);
+        $streakAfterActivity = $this->streakService->recordActivity($user);
+        $streakIncreased = !$streakWasActiveToday
+            && (int) $streakAfterActivity->current_streak > $streakBeforeCount;
+        $ads = $this->sessionCompletionAds();
 
-        // Check if the entire wordlist is now completed (all words mastered)
-        $listCompleted = false;
-        $listName = '';
+        $xpAwarded = $xpEnabled ? $this->xpService->awardSessionXp($user) : 0;
+        $starResult = [
+            'list_completed' => false,
+            'list_name' => '',
+            'star_awarded' => false,
+        ];
+
         if ($wordlistId) {
             $wordList = \App\Models\WordList::withCount('words')->find($wordlistId);
-            if ($wordList && $wordList->words_count > 0) {
-                $listName = $wordList->title;
-                $masteredCount = \App\Models\WordProgress::where('user_id', $user->id)
-                    ->whereIn('word_id', $wordList->words()->pluck('id'))
-                    ->where('box', '>=', \App\Models\WordProgress::MASTERED_BOX)
-                    ->count();
+            if ($wordList) {
+                $starResult = $this->wordlistStarService->recordCompletedSession(
+                    $user,
+                    $wordList,
+                    $request->boolean('is_star_review'),
+                    $streakMaintained
+                );
 
-                if ($masteredCount === $wordList->words_count) {
-                    $listCompleted = true;
+                if ($xpEnabled && ($starResult['bonus_reward']['type'] ?? null) === 'xp_multiplier') {
+                    $bonusXp = $this->xpService->awardBonusXp($user, XpService::XP_PER_SESSION);
+                    $xpAwarded += $bonusXp;
+                    $starResult['bonus_reward']['extra_xp'] = $bonusXp;
                 }
             }
 
@@ -136,8 +144,13 @@ class ReviewWordController extends Controller
             'xp_awarded' => $xpAwarded,
             'xp_balance' => $this->xpService->getBalance($user),
             'streak' => $this->streakService->getSummary($user),
-            'list_completed' => $listCompleted,
-            'list_name' => $listName,
+            'streak_increased' => $streakIncreased,
+            'list_completed' => $starResult['list_completed'] ?? false,
+            'list_name' => $starResult['list_name'] ?? '',
+            'star_awarded' => $starResult['star_awarded'] ?? false,
+            'star_progress' => $starResult['star_progress'] ?? null,
+            'bonus_reward' => $starResult['bonus_reward'] ?? null,
+            'products' => $ads,
         ]);
     }
 
@@ -387,6 +400,28 @@ class ReviewWordController extends Controller
             ->whereIn('word_id', $wordIds)
             ->pluck('word_id')
             ->toArray();
+    }
+
+    private function sessionCompletionAds()
+    {
+        return Product::where('is_ad', true)
+            ->inRandomOrder()
+            ->limit(3)
+            ->get([
+                'id',
+                'name',
+                'selling_price',
+                'image_url',
+                'local_image_url',
+                'local_image_gallery',
+            ])
+            ->map(fn (Product $product) => [
+                'id' => $product->id,
+                'name' => $product->name,
+                'selling_price' => $product->selling_price,
+                'ad_image_url' => $product->ad_image_url,
+            ])
+            ->values();
     }
 
     private function handleRedirect(Request $request, Word $word)

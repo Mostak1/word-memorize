@@ -6,13 +6,20 @@ import {
     MessageCircle,
     Send,
     CheckCircle2,
+    Star,
 } from "lucide-react";
 import { usePage } from "@inertiajs/react";
 import { toPng } from "html-to-image";
 import { toast } from "sonner";
 import { useTranslation } from "@/Contexts/LanguageContext";
 
-export default function ListCompletedOverlay({ listName, onDismiss }) {
+export default function ListCompletedOverlay({
+    listName,
+    starProgress = null,
+    starAwarded = false,
+    bonusReward = null,
+    onDismiss,
+}) {
     const { t } = useTranslation();
     const { assetUrl } = usePage().props;
     const [showShareMenu, setShowShareMenu] = useState(false);
@@ -36,6 +43,8 @@ export default function ListCompletedOverlay({ listName, onDismiss }) {
     const shareText = t("achievements.overlay.list_share_text", {
         name: listName,
     });
+    const stars = starProgress?.stars ?? 0;
+    const maxStars = starProgress?.max_stars ?? 3;
 
     const shareActions = [
         {
@@ -413,8 +422,55 @@ export default function ListCompletedOverlay({ listName, onDismiss }) {
                                 fontWeight: 500,
                             }}
                         >
-                            {t("achievements.overlay.mastered_all")}
+                            {starAwarded
+                                ? `New star earned. ${stars}/${maxStars} stars unlocked.`
+                                : t("achievements.overlay.mastered_all")}
                         </p>
+                        {starProgress && (
+                            <div
+                                style={{
+                                    animation: "lc-slideUp 0.5s 0.62s ease both",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: 5,
+                                    marginTop: 12,
+                                }}
+                            >
+                                {Array.from({ length: maxStars }).map((_, i) => {
+                                    const filled = i < stars;
+                                    return (
+                                        <Star
+                                            key={i}
+                                            size={22}
+                                            fill={filled ? "#fbbf24" : "transparent"}
+                                            color={filled ? "#f59e0b" : "var(--lc-body-color)"}
+                                            strokeWidth={filled ? 2.4 : 1.8}
+                                            style={{ opacity: filled ? 1 : 0.35 }}
+                                        />
+                                    );
+                                })}
+                            </div>
+                        )}
+                        {bonusReward?.extra_xp > 0 && (
+                            <div
+                                style={{
+                                    animation: "lc-slideUp 0.5s 0.7s ease both",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    marginTop: 12,
+                                    padding: "7px 12px",
+                                    borderRadius: 999,
+                                    background: "rgba(124,58,237,0.10)",
+                                    color: "#7c3aed",
+                                    fontSize: 12,
+                                    fontWeight: 800,
+                                }}
+                            >
+                                Bonus {bonusReward.label || "2x XP"}: +{bonusReward.extra_xp} XP
+                            </div>
+                        )}
                     </div>
 
                     {/* ── Trophy Visual ── */}

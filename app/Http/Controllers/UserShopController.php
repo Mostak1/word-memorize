@@ -66,7 +66,7 @@ class UserShopController extends Controller
             ->orWhereColumn('used_count', '<', 'max_uses');
         })
         ->latest()
-        ->get(['code', 'discount_percent', 'description', 'used_count', 'max_uses', 'course_only'])
+        ->get(['code', 'discount_percent', 'description', 'used_count', 'max_uses', 'course_only', 'shop_only'])
         ->all();
     }
 

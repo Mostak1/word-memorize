@@ -18,6 +18,18 @@ export default function TopHeader() {
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const dropdownRef = useRef(null);
+    const assetBaseUrl = assetUrl?.replace(/\/$/, "") ?? "";
+    const defaultAvatarUrl = `${assetBaseUrl}/img/default_pic.jpeg`;
+    const userImage = user?.image?.trim();
+    const hasUsableUserImage =
+        userImage &&
+        !userImage.includes("default-files/avatar.png") &&
+        !imgError;
+    const userImageUrl = hasUsableUserImage
+        ? userImage.startsWith("http")
+            ? userImage
+            : `${assetBaseUrl}/${userImage.replace(/^\//, "")}`
+        : defaultAvatarUrl;
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -140,20 +152,16 @@ export default function TopHeader() {
                                         <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-200 dark:from-slate-700 dark:to-slate-800">
                                             <Loader2 className="h-5 w-5 text-gray-400 animate-spin" />
                                         </div>
-                                    ) : user?.image && !imgError ? (
+                                    ) : hasUsableUserImage ? (
                                         <img
-                                            src={
-                                                user.image.startsWith("http")
-                                                    ? user.image
-                                                    : `${assetUrl?.replace(/\/$/, "")}/${user.image.replace(/^\//, "")}`
-                                            }
+                                            src={userImageUrl}
                                             alt={user.name}
                                             className="w-full h-full object-cover"
                                             onError={() => setImgError(true)}
                                         />
                                     ) : (
                                         <img
-                                            src={`${assetUrl?.replace(/\/$/, "")}/img/default_pic.jpeg`}
+                                            src={defaultAvatarUrl}
                                             alt={user?.name}
                                             className="w-full h-full object-cover dark:brightness-[0.85] dark:opacity-40 transition-all"
                                         />
@@ -192,6 +200,10 @@ export default function TopHeader() {
                                         <Settings className="h-4 w-4 opacity-70" />
                                         {t("nav.settings")}
                                     </Link>
+                                    <PwaInstallButton
+                                        variant="menu"
+                                        className="w-full !justify-start gap-3 rounded-none px-4 py-2 text-sm font-normal"
+                                    />
                                     <button
                                         onClick={handleForceRefresh}
                                         disabled={isRefreshing}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import { Head, Link, router, usePage } from "@inertiajs/react";
 import AppLayout from "@/Layouts/AppLayout";
 import PurchaseOrderDialog from "@/Components/PurchaseOrderDialog";
@@ -17,6 +17,7 @@ import {
     Leaf,
     Zap,
     Flame,
+    Sparkles,
 } from "lucide-react";
 
 import {
@@ -31,8 +32,8 @@ import { useTranslation } from "@/Contexts/LanguageContext";
 
 function LoadMore({ meta, onLoadMore, loading }) {
     const { t } = useTranslation();
-    const hasNext = meta?.next_page_url || (meta?.current_page < meta?.last_page);
-    
+    const hasNext = meta?.next_page_url || meta?.current_page < meta?.last_page;
+
     if (!meta || !hasNext) return null;
 
     return (
@@ -50,10 +51,10 @@ function LoadMore({ meta, onLoadMore, loading }) {
                 {loading ? t("common.loading") : t("wordlists.load_more")}
             </button>
             <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 dark:text-gray-500">
-                {t("wordlists.pagination.showing", { 
-                    from: 1, 
-                    to: meta.to, 
-                    total: meta.total 
+                {t("wordlists.pagination.showing", {
+                    from: 1,
+                    to: meta.to,
+                    total: meta.total,
                 })}
             </p>
         </div>
@@ -96,6 +97,149 @@ function MasteredProgress({ mastered, total }) {
     );
 }
 
+function EarnedStarSvg({ className = "" }) {
+    const gradientId = useId();
+    const shadowId = useId();
+
+    return (
+        <svg
+            viewBox="0 0 128 128"
+            aria-hidden="true"
+            className={className}
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+        >
+            <defs>
+                <linearGradient
+                    id={gradientId}
+                    x1="24"
+                    y1="20"
+                    x2="96"
+                    y2="108"
+                    gradientUnits="userSpaceOnUse"
+                >
+                    <stop offset="0%" stopColor="#FFF7AE" />
+                    <stop offset="45%" stopColor="#FFD54F" />
+                    <stop offset="100%" stopColor="#F4A300" />
+                </linearGradient>
+                <filter
+                    id={shadowId}
+                    x="0"
+                    y="0"
+                    width="128"
+                    height="128"
+                    filterUnits="userSpaceOnUse"
+                >
+                    <feDropShadow
+                        dx="0"
+                        dy="4"
+                        stdDeviation="4"
+                        floodColor="#B36B00"
+                        floodOpacity="0.35"
+                    />
+                </filter>
+            </defs>
+
+            <g filter={`url(#${shadowId})`}>
+                <path
+                    d="M64 14L76.36 39.05L104 43.07L84 62.56L88.72 90.07L64 77.07L39.28 90.07L44 62.56L24 43.07L51.64 39.05L64 14Z"
+                    fill={`url(#${gradientId})`}
+                    stroke="#D88900"
+                    strokeWidth="4"
+                    strokeLinejoin="round"
+                />
+                <path
+                    d="M64 24L73.2 42.65L93.8 45.64L78.9 60.16L82.42 80.66L64 70.98L45.58 80.66L49.1 60.16L34.2 45.64L54.8 42.65L64 24Z"
+                    fill="white"
+                    fillOpacity="0.18"
+                />
+            </g>
+        </svg>
+    );
+}
+
+function StarHolderSvg({ className = "" }) {
+    return (
+        <svg
+            viewBox="0 0 128 128"
+            aria-hidden="true"
+            className={className}
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+        >
+            <path
+                d="M64 14L76.36 39.05L104 43.07L84 62.56L88.72 90.07L64 77.07L39.28 90.07L44 62.56L24 43.07L51.64 39.05L64 14Z"
+                stroke="#D88900"
+                strokeWidth="5"
+                strokeLinejoin="round"
+            />
+        </svg>
+    );
+}
+
+function StarRating({ stars = 0, max = 3, locked = false, align = "left" }) {
+    return (
+        <div
+            className={`flex items-center gap-0.5 ${align === "right" ? "justify-end" : ""}`}
+            aria-label={`${stars} of ${max} stars`}
+        >
+            {Array.from({ length: max }).map((_, i) => {
+                const filled = i < stars;
+                return filled ? (
+                    <EarnedStarSvg
+                        key={i}
+                        className="h-6 drop-shadow-[0_1px_1px_rgba(245,158,11,0.35)]"
+                    />
+                ) : (
+                    <StarHolderSvg
+                        key={i}
+                        className={`h-6 ${locked ? "opacity-70" : ""}`}
+                    />
+                );
+            })}
+        </div>
+    );
+}
+
+function StarOpportunity({ progress }) {
+    if (!progress || progress.stars <= 0) return null;
+
+    if (progress.status === "max_stars") {
+        return (
+            <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400">
+                <Trophy className="h-3.5 w-3.5" />
+                Fully reinforced
+            </span>
+        );
+    }
+
+    if (progress.can_attempt_next_star) {
+        return (
+            <span className="inline-flex items-center gap-1 text-xs font-bold text-violet-600 dark:text-violet-400">
+                <Sparkles className="h-3.5 w-3.5" />
+                New star unlocked: {progress.next_reward_label || "2x XP"}
+            </span>
+        );
+    }
+
+    if (progress.next_star_available_at) {
+        const unlockDate = new Date(progress.next_star_available_at);
+        const label = unlockDate.toLocaleDateString(undefined, {
+            month: "short",
+            day: "numeric",
+        });
+
+        return (
+            <span className="inline-flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+                <Clock className="h-3.5 w-3.5" />
+                Next star unlocks {label}
+            </span>
+        );
+    }
+
+    return null;
+}
+
 /** Banner shown at the top when the whole category is locked */
 function CategoryLockBanner({
     category,
@@ -115,9 +259,12 @@ function CategoryLockBanner({
         <div className="mb-4 rounded-2xl overflow-hidden shadow-sm border border-red-200 dark:border-red-900/30 bg-red-50 dark:bg-red-950/20">
             <div className="px-5 py-4">
                 <div className="flex items-start gap-3">
-                    <div 
+                    <div
                         className="mt-0.5 flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center"
-                        style={{ animation: 'lockPulse 2s infinite alternate ease-in-out' }}
+                        style={{
+                            animation:
+                                "lockPulse 2s infinite alternate ease-in-out",
+                        }}
                     >
                         <Lock className="h-5 w-5 text-white" />
                     </div>
@@ -127,7 +274,7 @@ function CategoryLockBanner({
                         </p>
 
                         {orderStatus === "pending" ? (
-                                <div className="flex items-center gap-1.5 text-xs text-red-700 dark:text-red-400">
+                            <div className="flex items-center gap-1.5 text-xs text-red-700 dark:text-red-400">
                                 <Clock className="h-3.5 w-3.5 shrink-0" />
                                 {t("wordlists.category_locked.pending")}
                             </div>
@@ -138,7 +285,12 @@ function CategoryLockBanner({
                                     {t("wordlists.category_locked.rejected")}
                                     {categoryOrder?.admin_note && (
                                         <span className="ml-1">
-                                            {t("wordlists.category_locked.reason", { reason: categoryOrder.admin_note })}
+                                            {t(
+                                                "wordlists.category_locked.reason",
+                                                {
+                                                    reason: categoryOrder.admin_note,
+                                                },
+                                            )}
                                         </span>
                                     )}
                                 </div>
@@ -153,7 +305,9 @@ function CategoryLockBanner({
                                         className="flex items-center gap-1.5 text-xs font-semibold text-[#E5201C] hover:underline"
                                     >
                                         <ShoppingCart className="h-3.5 w-3.5" />
-                                        {t("wordlists.category_locked.try_again")}
+                                        {t(
+                                            "wordlists.category_locked.try_again",
+                                        )}
                                     </button>
                                 )}
                             </div>
@@ -161,8 +315,13 @@ function CategoryLockBanner({
                             <div className="flex items-center justify-between mt-1 flex-wrap gap-2">
                                 <p className="text-xs text-red-700 dark:text-red-400">
                                     {category.price > 0
-                                        ? t("wordlists.category_locked.purchase_desc", { price: category.price })
-                                        : t("wordlists.category_locked.purchase_desc_free")}
+                                        ? t(
+                                              "wordlists.category_locked.purchase_desc",
+                                              { price: category.price },
+                                          )
+                                        : t(
+                                              "wordlists.category_locked.purchase_desc_free",
+                                          )}
                                 </p>
                                 {user ? (
                                     <button
@@ -170,7 +329,9 @@ function CategoryLockBanner({
                                         className="flex items-center gap-1.5 bg-[#E5201C] hover:bg-red-700 text-white text-xs font-semibold px-3 py-1.5 rounded-xl transition shrink-0"
                                     >
                                         <ShoppingCart className="h-3.5 w-3.5" />
-                                        {t("wordlists.category_locked.purchase_button")}
+                                        {t(
+                                            "wordlists.category_locked.purchase_button",
+                                        )}
                                         {category.price > 0 && (
                                             <span className="ml-0.5">
                                                 · ৳{category.price}
@@ -182,7 +343,9 @@ function CategoryLockBanner({
                                         href={route("login")}
                                         className="text-xs font-semibold text-[#E5201C] hover:underline"
                                     >
-                                        {t("wordlists.category_locked.login_to_purchase")}
+                                        {t(
+                                            "wordlists.category_locked.login_to_purchase",
+                                        )}
                                     </Link>
                                 )}
                             </div>
@@ -235,7 +398,9 @@ function QuizLockedCard({
                     className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full border ${color} opacity-70`}
                 >
                     {star}
-                    {t(`common.difficulties.${wordList.difficulty?.toLowerCase()}`)}
+                    {t(
+                        `common.difficulties.${wordList.difficulty?.toLowerCase()}`,
+                    )}
                 </span>
                 {total > 0 && (
                     <span className="text-xs font-medium px-2.5 py-0.5 rounded-full border border-gray-200 bg-gray-50 dark:bg-slate-800 dark:border-slate-700 text-gray-400">
@@ -246,32 +411,40 @@ function QuizLockedCard({
 
             {/* Lock notice + CTA */}
             <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-slate-800">
-                <p className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">
-                    {t("wordlists.quiz_locked.pass_previous")}
-                </p>
+                <div>
+                    <p className="text-xs text-indigo-600 dark:text-indigo-400 font-medium mt-1">
+                        {t("wordlists.quiz_locked.pass_previous")}
+                    </p>
+                </div>
 
-                {isTakeable ? (
-                    user ? (
-                        <a
-                            href={route("quiz.wordlist", previousWordlistId)}
-                            className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-1.5 rounded-xl transition"
-                        >
-                            <GraduationCap className="h-3.5 w-3.5" />
-                            {t("wordlists.quiz_locked.take_quiz")}
-                        </a>
+                <div className="flex flex-col items-end gap-1.5 shrink-0">
+                    <StarRating stars={0} max={3} locked align="right" />
+                    {isTakeable ? (
+                        user ? (
+                            <a
+                                href={route(
+                                    "quiz.wordlist",
+                                    previousWordlistId,
+                                )}
+                                className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-1.5 rounded-xl transition"
+                            >
+                                <GraduationCap className="h-3.5 w-3.5" />
+                                {t("wordlists.quiz_locked.take_quiz")}
+                            </a>
+                        ) : (
+                            <Link
+                                href={route("login")}
+                                className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                            >
+                                {t("wordlists.quiz_locked.login_to_take")}
+                            </Link>
+                        )
                     ) : (
-                        <Link
-                            href={route("login")}
-                            className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
-                        >
-                            {t("wordlists.quiz_locked.login_to_take")}
-                        </Link>
-                    )
-                ) : (
-                    <span className="text-xs text-gray-400 dark:text-gray-500 italic">
-                        {t("wordlists.quiz_locked.unlock_previous")}
-                    </span>
-                )}
+                        <span className="text-xs text-gray-400 dark:text-gray-500 italic">
+                            {t("wordlists.quiz_locked.unlock_previous")}
+                        </span>
+                    )}
+                </div>
             </div>
         </div>
     );
@@ -290,6 +463,7 @@ export default function Wordlist({
     quizUnlockedIds = [],
     previousWordlistIdMap = {},
     quizTakeableIds = [], // locked wordlists whose previous wordlist is accessible
+    starProgressByWordlist = {},
     bkashNumber = "01825236112",
 }) {
     const { t } = useTranslation();
@@ -308,6 +482,9 @@ export default function Wordlist({
     const [unlocked, setUnlocked] = useState(quizUnlockedIds || []);
     const [prevMap, setPrevMap] = useState(previousWordlistIdMap || {});
     const [takeable, setTakeable] = useState(quizTakeableIds || []);
+    const [starProgress, setStarProgress] = useState(
+        starProgressByWordlist || {},
+    );
 
     // Reset when category changes
     useEffect(() => {
@@ -320,43 +497,69 @@ export default function Wordlist({
             setUnlocked(quizUnlockedIds || []);
             setPrevMap(previousWordlistIdMap || {});
             setTakeable(quizTakeableIds || []);
+            setStarProgress(starProgressByWordlist || {});
         }
     }, [category?.id]);
 
     const handleLoadMore = () => {
-        const nextUrl = meta?.next_page_url || meta?.links?.find(l => l.label.includes('Next'))?.url;
+        const nextUrl =
+            meta?.next_page_url ||
+            meta?.links?.find((l) => l.label.includes("Next"))?.url;
         if (!nextUrl || isLoadingMore) return;
 
         setIsLoadingMore(true);
-        router.get(nextUrl, {}, {
-            preserveScroll: true,
-            preserveState: true,
-            only: [
-                'wordLists',
-                'masteredCounts',
-                'quizEligibleIds',
-                'hasQuizIds',
-                'quizUnlockedIds',
-                'previousWordlistIdMap',
-                'quizTakeableIds'
-            ],
-            onSuccess: (page) => {
-                const p = page.props;
-                const newItems = p.wordLists?.data ?? [];
-                
-                setItems(prev => [...prev, ...newItems]);
-                setMeta(p.wordLists?.meta ?? p.wordLists);
-                setCounts(prev => ({ ...prev, ...(p.masteredCounts || {}) }));
-                setEligible(prev => [...new Set([...prev, ...(p.quizEligibleIds || [])])]);
-                setHasQuiz(prev => [...new Set([...prev, ...(p.hasQuizIds || [])])]);
-                setUnlocked(prev => [...new Set([...prev, ...(p.quizUnlockedIds || [])])]);
-                setPrevMap(prev => ({ ...prev, ...(p.previousWordlistIdMap || {}) }));
-                setTakeable(prev => [...new Set([...prev, ...(p.quizTakeableIds || [])])]);
-                
-                setIsLoadingMore(false);
+        router.get(
+            nextUrl,
+            {},
+            {
+                preserveScroll: true,
+                preserveState: true,
+                only: [
+                    "wordLists",
+                    "masteredCounts",
+                    "quizEligibleIds",
+                    "hasQuizIds",
+                    "quizUnlockedIds",
+                    "previousWordlistIdMap",
+                    "quizTakeableIds",
+                    "starProgressByWordlist",
+                ],
+                onSuccess: (page) => {
+                    const p = page.props;
+                    const newItems = p.wordLists?.data ?? [];
+
+                    setItems((prev) => [...prev, ...newItems]);
+                    setMeta(p.wordLists?.meta ?? p.wordLists);
+                    setCounts((prev) => ({
+                        ...prev,
+                        ...(p.masteredCounts || {}),
+                    }));
+                    setEligible((prev) => [
+                        ...new Set([...prev, ...(p.quizEligibleIds || [])]),
+                    ]);
+                    setHasQuiz((prev) => [
+                        ...new Set([...prev, ...(p.hasQuizIds || [])]),
+                    ]);
+                    setUnlocked((prev) => [
+                        ...new Set([...prev, ...(p.quizUnlockedIds || [])]),
+                    ]);
+                    setPrevMap((prev) => ({
+                        ...prev,
+                        ...(p.previousWordlistIdMap || {}),
+                    }));
+                    setTakeable((prev) => [
+                        ...new Set([...prev, ...(p.quizTakeableIds || [])]),
+                    ]);
+                    setStarProgress((prev) => ({
+                        ...prev,
+                        ...(p.starProgressByWordlist || {}),
+                    }));
+
+                    setIsLoadingMore(false);
+                },
+                onError: () => setIsLoadingMore(false),
             },
-            onError: () => setIsLoadingMore(false)
-        });
+        );
     };
 
     const getDifficultyBadge = (difficulty) => {
@@ -364,20 +567,22 @@ export default function Wordlist({
         const isBeginner = d === "easy" || d === "beginner";
         const isIntermediate = d === "medium" || d === "intermediate";
         const isAdvanced = d === "hard" || d === "advanced";
-        
-        const star = isBeginner
-            ? <Leaf className="h-3 w-3" />
-            : isIntermediate
-                ? <Zap className="h-3 w-3" />
-                : isAdvanced
-                    ? <Flame className="h-3 w-3" />
-                    : <Leaf className="h-3 w-3" />;
+
+        const star = isBeginner ? (
+            <Leaf className="h-3 w-3" />
+        ) : isIntermediate ? (
+            <Zap className="h-3 w-3" />
+        ) : isAdvanced ? (
+            <Flame className="h-3 w-3" />
+        ) : (
+            <Leaf className="h-3 w-3" />
+        );
 
         const color = isBeginner
             ? "bg-green-50 text-green-700 border-green-200"
             : isIntermediate
-                ? "bg-yellow-50 text-yellow-700 border-yellow-200"
-                : "bg-red-50 text-red-700 border-red-200";
+              ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+              : "bg-red-50 text-red-700 border-red-200";
         return { star, color };
     };
 
@@ -405,7 +610,9 @@ export default function Wordlist({
                                         asChild
                                         className="hover:text-[#e70013] hover:underline transition-colors duration-200"
                                     >
-                                        <Link href={route("home")}>{t("wordlists.breadcrumb_home")}</Link>
+                                        <Link href={route("home")}>
+                                            {t("wordlists.breadcrumb_home")}
+                                        </Link>
                                     </BreadcrumbLink>
                                 </BreadcrumbItem>
                                 <BreadcrumbSeparator />
@@ -419,7 +626,9 @@ export default function Wordlist({
                                                 "wordlistcategory.index",
                                             )}
                                         >
-                                            {t("wordlists.breadcrumb_categories")}
+                                            {t(
+                                                "wordlists.breadcrumb_categories",
+                                            )}
                                         </Link>
                                     </BreadcrumbLink>
                                 </BreadcrumbItem>
@@ -454,9 +663,19 @@ export default function Wordlist({
                                     const mastered =
                                         counts?.[wordList.id] ?? null;
                                     const total = wordList.words_count ?? 0;
+                                    const progress = starProgress?.[
+                                        wordList.id
+                                    ] || {
+                                        stars: 0,
+                                        max_stars: 3,
+                                        can_attempt_next_star: false,
+                                    };
 
                                     // Locked by category purchase gate — skip this block if wordlist is NOT locked
-                                    if (categoryIsLocked && wordList.is_locked) {
+                                    if (
+                                        categoryIsLocked &&
+                                        wordList.is_locked
+                                    ) {
                                         return (
                                             <div key={wordList.id}>
                                                 <div
@@ -477,18 +696,33 @@ export default function Wordlist({
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex items-center gap-2">
-                                                        <span
-                                                            className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full border ${color} opacity-50`}
-                                                        >
-                                                            {star}
-                                                            {t(`common.difficulties.${wordList.difficulty?.toLowerCase()}`)}
-                                                        </span>
-                                                        {total > 0 && (
-                                                            <span className="text-xs font-medium px-2.5 py-0.5 rounded-full border border-gray-200 bg-gray-50 dark:bg-slate-800 dark:border-slate-700 text-gray-400">
-                                                                {t("wordlists.words_count", { count: total })}
+                                                    <div className="flex items-center justify-between gap-3">
+                                                        <div className="flex items-center gap-2 min-w-0">
+                                                            <span
+                                                                className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full border ${color} opacity-50`}
+                                                            >
+                                                                {star}
+                                                                {t(
+                                                                    `common.difficulties.${wordList.difficulty?.toLowerCase()}`,
+                                                                )}
                                                             </span>
-                                                        )}
+                                                            {total > 0 && (
+                                                                <span className="text-xs font-medium px-2.5 py-0.5 rounded-full border border-gray-200 bg-gray-50 dark:bg-slate-800 dark:border-slate-700 text-gray-400">
+                                                                    {t(
+                                                                        "wordlists.words_count",
+                                                                        {
+                                                                            count: total,
+                                                                        },
+                                                                    )}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <StarRating
+                                                            stars={0}
+                                                            max={3}
+                                                            locked
+                                                            align="right"
+                                                        />
                                                     </div>
                                                 </div>
                                             </div>
@@ -507,9 +741,8 @@ export default function Wordlist({
                                                     color={color}
                                                     star={star}
                                                     previousWordlistId={
-                                                        prevMap[
-                                                            wordList.id
-                                                        ] ?? null
+                                                        prevMap[wordList.id] ??
+                                                        null
                                                     }
                                                     isTakeable={takeable.includes(
                                                         wordList.id,
@@ -522,36 +755,56 @@ export default function Wordlist({
                                     }
 
                                     const canExercise = total >= 10;
+                                    const startUrl =
+                                        progress.can_attempt_next_star
+                                            ? `${route("wordlist.start", wordList.id)}?mode=star-review`
+                                            : route(
+                                                  "wordlist.start",
+                                                  wordList.id,
+                                              );
+                                    const actionLabel = !canExercise
+                                        ? t("wordlists.needs_words", {
+                                              count: 10,
+                                          })
+                                        : progress.can_attempt_next_star
+                                          ? "Earn Star"
+                                          : mastered !== null &&
+                                              mastered >= total &&
+                                              total > 0
+                                            ? t("wordlists.completed_status")
+                                            : t("wordlists.start_exercise");
 
                                     // ── UNLOCKED card — clickable ──
                                     return (
                                         <div key={wordList.id}>
                                             <div
-                                                role={canExercise ? "button" : undefined}
-                                                tabIndex={canExercise ? 0 : undefined}
+                                                role={
+                                                    canExercise
+                                                        ? "button"
+                                                        : undefined
+                                                }
+                                                tabIndex={
+                                                    canExercise ? 0 : undefined
+                                                }
                                                 onClick={() =>
-                                                    canExercise && router.visit(
-                                                        route(
-                                                            "wordlist.start",
-                                                            wordList.id,
-                                                        ),
-                                                    )
+                                                    canExercise &&
+                                                    router.visit(startUrl)
                                                 }
                                                 onKeyDown={(e) => {
                                                     if (
-                                                        canExercise && (e.key === "Enter" ||
-                                                        e.key === " ")
+                                                        canExercise &&
+                                                        (e.key === "Enter" ||
+                                                            e.key === " ")
                                                     )
-                                                        router.visit(
-                                                            route(
-                                                                "wordlist.start",
-                                                                wordList.id,
-                                                            ),
-                                                        );
+                                                        router.visit(startUrl);
                                                 }}
-                                                className={`bg-white dark:bg-slate-900 rounded-2xl px-5 py-4 shadow-sm border border-transparent transition-all ${
-                                                    canExercise 
-                                                        ? "hover:shadow-md cursor-pointer" 
+                                                className={`bg-white dark:bg-slate-900 rounded-2xl px-5 py-4 shadow-sm border transition-all ${
+                                                    progress.can_attempt_next_star
+                                                        ? "border-violet-200 dark:border-violet-800 shadow-violet-100/70 dark:shadow-violet-950/20"
+                                                        : "border-transparent"
+                                                } ${
+                                                    canExercise
+                                                        ? "hover:shadow-md cursor-pointer"
                                                         : "opacity-80 cursor-not-allowed"
                                                 }`}
                                                 style={{
@@ -562,10 +815,23 @@ export default function Wordlist({
                                                 }}
                                             >
                                                 <div className="flex items-start justify-between gap-3 mb-3">
-                                                    <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 leading-snug flex-1">
+                                                    <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 leading-snug flex-1 min-w-0">
                                                         {wordList.title}
                                                     </h2>
-                                                    <ChevronRight className="h-4 w-4 text-gray-300 shrink-0 mt-1" />
+                                                    <div className="flex items-start gap-1.5 shrink-0">
+                                                        <StarRating
+                                                            stars={
+                                                                progress.stars ||
+                                                                0
+                                                            }
+                                                            max={
+                                                                progress.max_stars ||
+                                                                3
+                                                            }
+                                                            align="right"
+                                                        />
+                                                        <ChevronRight className="h-4 w-4 text-gray-300 shrink-0 mt-1" />
+                                                    </div>
                                                 </div>
 
                                                 <div className="flex items-center gap-2 mb-3">
@@ -573,11 +839,18 @@ export default function Wordlist({
                                                         className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full border ${color}`}
                                                     >
                                                         {star}
-                                                        {t(`common.difficulties.${wordList.difficulty?.toLowerCase()}`)}
+                                                        {t(
+                                                            `common.difficulties.${wordList.difficulty?.toLowerCase()}`,
+                                                        )}
                                                     </span>
                                                     {total > 0 && (
                                                         <span className="text-xs font-medium px-2.5 py-0.5 rounded-full border border-blue-200 bg-blue-50 text-blue-700">
-                                                            {t("wordlists.words_count", { count: total })}
+                                                            {t(
+                                                                "wordlists.words_count",
+                                                                {
+                                                                    count: total,
+                                                                },
+                                                            )}
                                                         </span>
                                                     )}
                                                 </div>
@@ -589,8 +862,8 @@ export default function Wordlist({
                                                     />
                                                 )}
 
-                                                <div className="flex items-center justify-between mt-3">
-                                                    <div>
+                                                <div className="flex items-end justify-between gap-3 mt-3">
+                                                    <div className="min-w-0">
                                                         {user &&
                                                         eligible.includes(
                                                             wordList.id,
@@ -606,24 +879,34 @@ export default function Wordlist({
                                                                 }
                                                             >
                                                                 <GraduationCap className="h-3.5 w-3.5" />
-                                                                {t("wordlists.take_a_quiz")}
+                                                                {t(
+                                                                    "wordlists.take_a_quiz",
+                                                                )}
                                                             </Link>
                                                         ) : user ? (
                                                             <span className="text-xs text-gray-400 dark:text-gray-500">
-                                                                {t("wordlists.learn_to_unlock", { count: 20 })}
+                                                                {t(
+                                                                    "wordlists.learn_to_unlock",
+                                                                    {
+                                                                        count: 20,
+                                                                    },
+                                                                )}
                                                             </span>
                                                         ) : null}
                                                     </div>
-                                                    <span className={`${canExercise ? "text-[#E5201C]" : "text-gray-400"} text-sm font-semibold flex items-center gap-1`}>
-                                                        {!canExercise 
-                                                            ? t("wordlists.needs_words", { count: 10 })
-                                                            : (mastered !== null &&
-                                                               mastered >= total &&
-                                                               total > 0
-                                                                ? t("wordlists.completed_status")
-                                                                : t("wordlists.start_exercise"))}
-                                                        {canExercise && <Play className="h-3.5 w-3.5 fill-[#E5201C]" />}
-                                                    </span>
+                                                    <div className="flex flex-col items-end gap-1.5 shrink-0 text-right">
+                                                        <StarOpportunity
+                                                            progress={progress}
+                                                        />
+                                                        <span
+                                                            className={`${canExercise ? "text-[#E5201C]" : "text-gray-400"} text-sm font-semibold flex items-center justify-end gap-1`}
+                                                        >
+                                                            {actionLabel}
+                                                            {canExercise && (
+                                                                <Play className="h-3.5 w-3.5 fill-[#E5201C]" />
+                                                            )}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
