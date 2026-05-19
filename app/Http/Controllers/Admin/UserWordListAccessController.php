@@ -26,10 +26,23 @@ class UserWordListAccessController extends Controller
 
         $accessList = $query->latest('granted_at')->paginate(20)->withQueryString();
 
+        $categories = WordListCategory::where('created_by', 3)
+            ->select('id', 'name')
+            ->get();
+        $categoryIds = $categories->pluck('id');
+
+        $grantedCategoryIdsByUser = UserWordListAccess::whereIn('word_list_category_id', $categoryIds)
+            ->select('user_id', 'word_list_category_id')
+            ->get()
+            ->groupBy('user_id')
+            ->map(fn ($accesses) => $accesses->pluck('word_list_category_id')->values())
+            ->all();
+
         return Inertia::render('Admin/UserWordListAccess/Index', [
             'accessList' => $accessList,
             'users' => User::select('id', 'name', 'email')->get(),
-            'categories' => WordListCategory::where('created_by', 3)->select('id', 'name')->get(),
+            'categories' => $categories,
+            'grantedCategoryIdsByUser' => $grantedCategoryIdsByUser,
             'filters' => $request->only(['search']),
         ]);
     }

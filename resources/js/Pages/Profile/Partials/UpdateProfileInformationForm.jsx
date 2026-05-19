@@ -1,3 +1,4 @@
+import React, { useState, useRef } from "react";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import PrimaryButton from "@/Components/PrimaryButton";
@@ -12,6 +13,7 @@ import {
 import { Transition } from "@headlessui/react";
 import { Link, useForm, usePage } from "@inertiajs/react";
 import { useTranslation } from "@/Contexts/LanguageContext";
+import { Camera, X } from "lucide-react";
 
 export default function UpdateProfileInformation({
     mustVerifyEmail,
@@ -21,7 +23,10 @@ export default function UpdateProfileInformation({
     const user = usePage().props.auth.user;
     const { t } = useTranslation();
 
-    const { data, setData, patch, errors, processing, recentlySuccessful } =
+    const [previewUrl, setPreviewUrl] = useState(null);
+    const fileInputRef = useRef(null);
+
+    const { data, setData, post, errors, processing, recentlySuccessful } =
         useForm({
             name: user.name ?? "",
             email: user.email ?? "",
@@ -29,11 +34,31 @@ export default function UpdateProfileInformation({
             location: user.location ?? "",
             gender: user.gender ?? "",
             profession: user.profession ?? "",
+            avatar: null,
         });
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setData("avatar", file);
+            setPreviewUrl(URL.createObjectURL(file));
+        }
+    };
+
+    const handleCancelPreview = () => {
+        setData("avatar", null);
+        setPreviewUrl(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    };
 
     const submit = (e) => {
         e.preventDefault();
-        patch(route("profile.update"));
+        
+        post(route("profile.update"), {
+            forceFormData: true,
+        });
     };
 
     return (
@@ -48,12 +73,92 @@ export default function UpdateProfileInformation({
             </header>
 
             <form onSubmit={submit} className="mt-6 space-y-6">
+                {/* Profile Image Upload */}
+                <div className="flex flex-col items-center justify-center gap-3 pb-4 border-b border-gray-100 dark:border-slate-800">
+                    <div className="relative group">
+                        {/* Avatar Image Container */}
+                        <div 
+                            onClick={() => fileInputRef.current?.click()}
+                            className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl border-4 border-white dark:border-slate-800 shadow-md overflow-hidden bg-gray-50 dark:bg-slate-800 relative cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center justify-center animate-in fade-in duration-200"
+                        >
+                            {previewUrl ? (
+                                <img
+                                    src={previewUrl}
+                                    alt="Preview"
+                                    className="w-full h-full object-cover animate-in fade-in zoom-in-95 duration-200"
+                                />
+                            ) : user.image ? (
+                                <img
+                                    src={user.image}
+                                    alt={user.name}
+                                    className="w-full h-full object-cover"
+                                />
+                            ) : (
+                                <div className="text-3xl font-black text-[#E5201C] dark:text-red-400">
+                                    {user.name ? user.name.charAt(0).toUpperCase() : "U"}
+                                </div>
+                            )}
+                            
+                            {/* Hover Overlay */}
+                            <div className="absolute inset-0 bg-black/45 backdrop-blur-xs flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all text-white gap-1.5 duration-200">
+                                <Camera className="h-5 w-5" />
+                                <span className="text-[10px] font-bold tracking-wide uppercase">
+                                    {t("profile_edit.change_photo") || "Change"}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Floating Edit Icon Badge */}
+                        <div 
+                            onClick={() => fileInputRef.current?.click()}
+                            className="absolute bottom-[-6px] right-[-6px] bg-[#E5201C] hover:bg-[#d01a17] text-white p-2 rounded-xl shadow-lg border-2 border-white dark:border-slate-800 transition-all hover:scale-110 active:scale-95 cursor-pointer flex items-center justify-center z-10"
+                        >
+                            <Camera className="h-4 w-4" />
+                        </div>
+                    </div>
+
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        accept="image/*"
+                        className="hidden"
+                    />
+
+                    <div className="flex flex-col items-center gap-1.5">
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="text-xs font-bold px-4 py-2 bg-[#E5201C] hover:bg-[#d01a17] text-white rounded-xl transition-all shadow-md shadow-red-500/10 hover:shadow-red-500/20 active:scale-95 duration-200 flex items-center gap-1.5"
+                            >
+                                <Camera className="h-3.5 w-3.5" />
+                                {t("profile_edit.select_photo") || "Choose Photo"}
+                            </button>
+                            
+                            {previewUrl && (
+                                <button
+                                    type="button"
+                                    onClick={handleCancelPreview}
+                                    className="text-xs font-semibold px-3 py-2 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-900/30 rounded-xl transition-all flex items-center gap-1 shadow-sm active:scale-95 duration-150"
+                                >
+                                    <X className="h-3.5 w-3.5" />
+                                    {t("profile_edit.cancel") || "Cancel"}
+                                </button>
+                            )}
+                        </div>
+                        <p className="text-[10px] text-gray-400 dark:text-slate-500">
+                            {t("profile_edit.avatar_requirements") || "JPG, PNG, WebP up to 2MB"}
+                        </p>
+                        <InputError className="mt-1" message={errors.avatar} />
+                    </div>
+                </div>
                 {/* Name */}
                 <div>
                     <InputLabel htmlFor="name" value={t("profile_edit.name")} />
                     <TextInput
                         id="name"
-                        className="mt-1 block w-full dark:bg-slate-900 dark:border-slate-700 dark:text-gray-100"
+                        className="mt-1 block w-full rounded-xl border-gray-200 dark:border-slate-700 focus:border-[#E5201C] focus:ring-[#E5201C] focus:ring-1 dark:bg-slate-900 dark:text-gray-100 transition-all duration-200"
                         value={data.name}
                         onChange={(e) => setData("name", e.target.value)}
                         required
@@ -69,7 +174,7 @@ export default function UpdateProfileInformation({
                     <TextInput
                         id="email"
                         type="email"
-                        className="mt-1 block w-full dark:bg-slate-900 dark:border-slate-700 dark:text-gray-100"
+                        className="mt-1 block w-full rounded-xl border-gray-200 dark:border-slate-700 focus:border-[#E5201C] focus:ring-[#E5201C] focus:ring-1 dark:bg-slate-900 dark:text-gray-100 transition-all duration-200"
                         value={data.email}
                         onChange={(e) => setData("email", e.target.value)}
                         required
@@ -84,7 +189,7 @@ export default function UpdateProfileInformation({
                     <TextInput
                         id="phone_number"
                         type="tel"
-                        className="mt-1 block w-full dark:bg-slate-900 dark:border-slate-700 dark:text-gray-100"
+                        className="mt-1 block w-full rounded-xl border-gray-200 dark:border-slate-700 focus:border-[#E5201C] focus:ring-[#E5201C] focus:ring-1 dark:bg-slate-900 dark:text-gray-100 transition-all duration-200"
                         value={data.phone_number}
                         onChange={(e) =>
                             setData("phone_number", e.target.value)
@@ -103,7 +208,7 @@ export default function UpdateProfileInformation({
                     <InputLabel htmlFor="location" value={t("profile_edit.location")} />
                     <TextInput
                         id="location"
-                        className="mt-1 block w-full dark:bg-slate-900 dark:border-slate-700 dark:text-gray-100"
+                        className="mt-1 block w-full rounded-xl border-gray-200 dark:border-slate-700 focus:border-[#E5201C] focus:ring-[#E5201C] focus:ring-1 dark:bg-slate-900 dark:text-gray-100 transition-all duration-200"
                         value={data.location}
                         onChange={(e) => setData("location", e.target.value)}
                         placeholder={t("profile_edit.location_placeholder")}
@@ -122,7 +227,7 @@ export default function UpdateProfileInformation({
                         >
                             <SelectTrigger
                                 id="gender"
-                                className="mt-1 w-full dark:bg-slate-900 dark:border-slate-700 dark:text-gray-100"
+                                className="mt-1 w-full rounded-xl border-gray-200 dark:border-slate-700 focus:border-[#E5201C] focus:ring-[#E5201C] focus:ring-1 dark:bg-slate-900 dark:text-gray-100 transition-all duration-200"
                             >
                                 <SelectValue placeholder={t("profile_edit.gender_placeholder")} />
                             </SelectTrigger>
@@ -153,7 +258,7 @@ export default function UpdateProfileInformation({
                         >
                             <SelectTrigger
                                 id="profession"
-                                className="mt-1 w-full dark:bg-slate-900 dark:border-slate-700 dark:text-gray-100"
+                                className="mt-1 w-full rounded-xl border-gray-200 dark:border-slate-700 focus:border-[#E5201C] focus:ring-[#E5201C] focus:ring-1 dark:bg-slate-900 dark:text-gray-100 transition-all duration-200"
                             >
                                 <SelectValue placeholder={t("profile_edit.profession_placeholder")} />
                             </SelectTrigger>

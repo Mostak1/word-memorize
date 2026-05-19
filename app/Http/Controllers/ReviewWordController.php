@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BookmarkedWord;
-use App\Models\Product;
+use App\Models\Promotion;
 use App\Models\ReviewWord;
 use App\Models\Word;
 use App\Models\WordProgress;
@@ -99,7 +99,7 @@ class ReviewWordController extends Controller
         $streakAfterActivity = $this->streakService->recordActivity($user);
         $streakIncreased = !$streakWasActiveToday
             && (int) $streakAfterActivity->current_streak > $streakBeforeCount;
-        $ads = $this->sessionCompletionAds();
+        $promotions = $this->sessionCompletionPromotions();
 
         $xpAwarded = $xpEnabled ? $this->xpService->awardSessionXp($user) : 0;
         $starResult = [
@@ -150,7 +150,7 @@ class ReviewWordController extends Controller
             'star_awarded' => $starResult['star_awarded'] ?? false,
             'star_progress' => $starResult['star_progress'] ?? null,
             'bonus_reward' => $starResult['bonus_reward'] ?? null,
-            'products' => $ads,
+            'promotions' => $promotions,
         ]);
     }
 
@@ -402,25 +402,17 @@ class ReviewWordController extends Controller
             ->toArray();
     }
 
-    private function sessionCompletionAds()
+    private function sessionCompletionPromotions()
     {
-        return Product::where('is_ad', true)
-            ->inRandomOrder()
-            ->limit(3)
-            ->get([
-                'id',
-                'name',
-                'selling_price',
-                'image_url',
-                'local_image_url',
-                'local_image_gallery',
-            ])
-            ->map(fn (Product $product) => [
-                'id' => $product->id,
-                'name' => $product->name,
-                'selling_price' => $product->selling_price,
-                'ad_image_url' => $product->ad_image_url,
-            ])
+        return Promotion::with('product')
+            ->where('placement', Promotion::PLACEMENT_SESSION_COMPLETE)
+            ->where('is_active', true)
+            ->orderBy('priority')
+            ->get()
+            ->groupBy('priority')
+            ->flatMap(fn ($group) => $group->shuffle())
+            ->map(fn (Promotion $promotion) => $promotion->toRecommendationPayload())
+            ->filter()
             ->values();
     }
 

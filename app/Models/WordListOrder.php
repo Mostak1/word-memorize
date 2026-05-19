@@ -72,26 +72,27 @@ class WordListOrder extends Model
 
   /**
    * Grant access to all categories in this order for the order's user.
-   * Uses upsert so it's safe to call multiple times.
+   * Existing manual access should remain manual, so order revoke/delete will not remove it.
    */
   public function grantAccess(): void
   {
-    $categoryIds = $this->items()->pluck('word_list_category_id');
+    $categoryIds = $this->items()
+      ->pluck('word_list_category_id')
+      ->unique()
+      ->values();
 
-    $rows = $categoryIds->map(fn($catId) => [
-      'user_id' => $this->user_id,
-      'word_list_category_id' => $catId,
-      'word_list_order_id' => $this->id,
-      'granted_at' => now(),
-      'created_at' => now(),
-      'updated_at' => now(),
-    ])->all();
-
-    UserWordListAccess::upsert(
-      $rows,
-      ['user_id', 'word_list_category_id'], // unique keys
-      ['word_list_order_id', 'granted_at', 'updated_at']
-    );
+    foreach ($categoryIds as $catId) {
+      UserWordListAccess::firstOrCreate(
+        [
+          'user_id' => $this->user_id,
+          'word_list_category_id' => $catId,
+        ],
+        [
+          'word_list_order_id' => $this->id,
+          'granted_at' => now(),
+        ]
+      );
+    }
   }
 
   /**

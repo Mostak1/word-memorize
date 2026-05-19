@@ -13,6 +13,8 @@ import {
     ShieldCheck,
     Activity,
     BarChart3,
+    Zap,
+    Megaphone,
 } from "lucide-react";
 
 /**
@@ -85,6 +87,16 @@ export const sidebarConfig = {
                     name: "Word List Orders",
                     route: "admin.wordlist-orders.index",
                     icon: ClipboardList,
+                },
+                {
+                    name: "XP Orders",
+                    route: "admin.xp-orders.index",
+                    icon: Zap,
+                },
+                {
+                    name: "Promotions",
+                    route: "admin.promotions.index",
+                    icon: Megaphone,
                 },
                 {
                     name: "User Word List Access",

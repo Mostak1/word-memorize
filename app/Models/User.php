@@ -192,6 +192,23 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the user's profile image absolute URL.
+     */
+    public function getImageAttribute(?string $value): ?string
+    {
+        if (!$value) {
+            return $value;
+        }
+
+        if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) {
+            return $value;
+        }
+
+        $baseUrl = rtrim(config('services.fluento.asset_url', 'http://localhost/fluento/public/'), '/') . '/';
+        return $baseUrl . ltrim($value, '/');
+    }
+
+    /**
      * Get dark mode unlocked status from user settings
      */
     public function getDarkModeUnlockedAttribute(): bool

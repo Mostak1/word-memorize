@@ -200,8 +200,13 @@ class UserWordListOrderController extends Controller
       ->latest()
       ->get();
 
+    $xpOrders = \App\Models\XpOrder::where('user_id', $request->user()->id)
+      ->latest()
+      ->get();
+
     return Inertia::render('MyOrders', [
       'orders' => $orders,
+      'xpOrders' => $xpOrders,
     ]);
   }
 }

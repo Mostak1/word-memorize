@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Models\WordListOrder;
 use App\Observers\WordListOrderObserver;
+use App\Models\XpOrder;
+use App\Observers\XpOrderObserver;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
@@ -24,5 +26,6 @@ class AppServiceProvider extends ServiceProvider
     {
         Vite::prefetch(concurrency: 3);
         WordListOrder::observe(WordListOrderObserver::class);
+        XpOrder::observe(XpOrderObserver::class);
     }
 }

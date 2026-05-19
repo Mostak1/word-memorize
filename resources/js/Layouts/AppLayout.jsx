@@ -46,10 +46,8 @@ export default function AppLayout({
     const [imgError, setImgError] = useState(false);
     const [headerVisible, setHeaderVisible] = useState(true);
     const [reportDialogOpen, setReportDialogOpen] = useState(false);
-    const [xpData, setXpData] = useState(user?.xp ?? null);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const lastScrollY = useRef(0);
-    const xpRefreshKey = useRef(0);
 
     useEffect(() => {
         setAssetBaseUrl(assetUrl);
@@ -79,68 +77,24 @@ export default function AppLayout({
 
     const [darkModeUnlocked, setLocalDarkModeUnlocked] = useState(false);
 
-    // Immediately unlock dark mode for admin users before API fetch
-    useEffect(() => {
-        if (user?.role === "admin") {
-            setDarkModeUnlocked(true);
-            setLocalDarkModeUnlocked(true);
-        }
-    }, [user, setDarkModeUnlocked]);
-
-    // Fetch XP status from API
-    useEffect(() => {
-        if (!user) return;
-
-        const fetchXpStatus = async () => {
-            try {
-                const csrfToken = decodeURIComponent(
-                    document.cookie
-                        .split("; ")
-                        .find((row) => row.startsWith("XSRF-TOKEN="))
-                        ?.split("=")[1] ?? "",
-                );
-                const response = await fetch(route("api.xp-shop.status"), {
-                    credentials: "include",
-                    headers: {
-                        "X-XSRF-TOKEN": csrfToken,
-                        Accept: "application/json",
-                    },
-                });
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error(
-                        "Failed to fetch XP status:",
-                        response.status,
-                        errorText,
-                    );
-                    return;
-                }
-                const data = await response.json();
-                setXpData(data.xp);
-                let unlocked = data.dark_mode_unlocked || false;
-
-                // Admin users always have dark mode unlocked
-                if (user?.role === "admin") {
-                    unlocked = true;
-                }
-
-                setDarkModeUnlocked(unlocked);
-                setLocalDarkModeUnlocked(unlocked);
-            } catch (error) {
-                console.error("Failed to fetch XP status:", error);
-            }
-        };
-
-        fetchXpStatus();
-    }, [user, xpRefreshKey.current]);
-
-    // Reset dark mode lock when user logs out
+    // Set dark mode unlock status directly from shared settings (instantly, no API call)
     useEffect(() => {
         if (!user) {
             setDarkModeUnlocked(false);
             setLocalDarkModeUnlocked(false);
+            return;
         }
-    }, [user, setDarkModeUnlocked]);
+
+        let unlocked = props.userSettings?.dark_mode_unlocked || false;
+
+        // Admin users always have dark mode unlocked
+        if (user?.role === "admin") {
+            unlocked = true;
+        }
+
+        setDarkModeUnlocked(unlocked);
+        setLocalDarkModeUnlocked(unlocked);
+    }, [user, props.userSettings?.dark_mode_unlocked, setDarkModeUnlocked]);
 
     // No early return for offline anymore to keep header visible
 
@@ -226,7 +180,7 @@ export default function AppLayout({
                                         </Link>
 
                                         {/* XP balance pill — links to shop */}
-                                        {xpData && (
+                                        {user?.xp && (
                                             <Link
                                                 href={route("shop")}
                                                 className="flex items-center gap-1.5 text-white text-sm font-semibold px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors ml-2"
@@ -234,7 +188,7 @@ export default function AppLayout({
                                             >
                                                 <Zap className="h-4 w-4 text-yellow-300" />
                                                 <span>
-                                                    {xpData.balance.toLocaleString()}
+                                                    {user.xp.balance.toLocaleString()}
                                                 </span>
                                             </Link>
                                         )}
@@ -400,11 +354,11 @@ export default function AppLayout({
                                                 <span>{t("nav.shop")}</span>
                                             </div>
 
-                                            {xpData && (
+                                            {user?.xp && (
                                                 <div className="flex items-center gap-2">
                                                     <Zap className="h-4 w-4 text-yellow-300" />
                                                     <span>
-                                                        {xpData.balance.toLocaleString()}{" "}
+                                                        {user.xp.balance.toLocaleString()}{" "}
                                                         XP
                                                     </span>
                                                 </div>

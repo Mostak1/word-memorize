@@ -51,4 +51,10 @@ return [
         'admin_email' => env('BREVO_ADMIN_EMAIL'),
     ],
 
+    'fluento' => [
+        'image_api_token' => env('FLUENTO_IMAGE_API_TOKEN'),
+        'asset_url' => env('FLUENTO_ASSET_URL', 'http://localhost/fluento/public/'),
+        'image_api_url' => env('FLUENTO_IMAGE_API_URL', 'http://localhost/fluento/public/api/users'),
+    ],
+
 ];

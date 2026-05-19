@@ -22,6 +22,7 @@ import StreakLostOverlay from "@/Components/StreakLostOverlay";
 import FlameVisual from "@/Components/FlameVisual";
 import axios from "axios";
 import logo from "/public/img/logo.png";
+import FollowedProgressNotification from "@/Components/FollowedProgressNotification";
 
 // ── Components ───────────────────────────────────────────────────────────────
 
@@ -115,13 +116,13 @@ function StreakBanner({ streak, onClick }) {
                 ) : (
                     <span className="inline-flex items-center gap-1 text-[10px] font-black px-3 py-1 rounded-full bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-400 uppercase tracking-wider">
                         <Zap className="h-3 w-3" />
-                        Active
+                        {t("streak.active")}
                     </span>
                 )}
                 <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400 italic">
                     {is_broken
-                        ? "You missed too many days. Start a new streak today!"
-                        : "Great job! Keep the momentum going."}
+                        ? t("streak.message_lost")
+                        : t("streak.message_active_momentum")}
                 </p>
             </div>
 
@@ -144,9 +145,9 @@ export default function Dashboard({
     const user = auth?.user;
     const [showStreakModal, setShowStreakModal] = useState(false);
     const [imgError, setImgError] = useState(false);
-    const [xpBalance, setXpBalance] = useState(350);
+    const xpBalance = user?.xp?.balance ?? 0;
     const [showStreakLost, setShowStreakLost] = useState(
-        (streak?.is_broken || (streak?.pre_broken_streak > 0)) && !streak?.broken_streak_notified,
+        streak?.is_broken && !streak?.broken_streak_notified,
     );
     const [showDropdown, setShowDropdown] = useState(false);
     const dropdownRef = useRef(null);
@@ -166,16 +167,6 @@ export default function Dashboard({
     }, []);
 
     useEffect(() => {
-        const fetchXp = async () => {
-            if (!user) return;
-            try {
-                const response = await axios.get(route("api.xp-shop.status"));
-                setXpBalance(response.data.xp.balance);
-            } catch (err) {
-                console.error("Failed to fetch XP status:", err);
-            }
-        };
-        fetchXp();
         window.dispatchEvent(new CustomEvent("check-achievements"));
     }, [user]);
 
@@ -192,9 +183,8 @@ export default function Dashboard({
         try {
             const response = await axios.post(route("api.xp-shop.buy-streak-repair"));
             if (response.data.success) {
-                setXpBalance(response.data.xp.balance);
                 setShowStreakLost(false);
-                router.reload({ only: ["streak"] });
+                router.reload({ only: ["auth", "streak"] });
             }
         } catch (err) {
             console.error("Failed to repair streak:", err);
@@ -278,14 +268,39 @@ export default function Dashboard({
         <AppLayout hideHeader={true}>
             <Head title={t("dashboard.title")} />
             <div className="min-h-screen pb-28 sm:pb-12 bg-transparent">
-                <div className="w-full max-w-2xl mx-auto px-4 pt-6 pb-8 sm:pt-12">
+                <div className="w-full max-w-2xl mx-auto px-4 pt-3 pb-8 sm:pt-6">
+                    {/* ── Followed Users Progress Alerts ── */}
+                    {user && <FollowedProgressNotification />}
+
                     {/* ── Greeting ── */}
                     <div className="flex items-center justify-between mb-10 mt-2 px-2 relative min-h-[120px]">
                         <div className="relative z-10 max-w-[70%]">
                             <h1 className="text-3xl font-black text-gray-900 dark:text-gray-100 leading-tight">
                                 Hello<br></br>{" "}
-                                {user?.name?.split(" ")[0] || "Learner"}
-                                👋
+                                {user?.name?.split(" ")[0] || "Learner"}{" "}
+                                <svg
+                                    width="36"
+                                    height="36"
+                                    viewBox="0 0 36 36"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    aria-hidden="true"
+                                    role="img"
+                                    className="inline-block animate-hand-wave origin-[70%_70%] select-none shrink-0 align-middle ml-1"
+                                    preserveAspectRatio="xMidYMid meet"
+                                    fill="none"
+                                >
+                                    <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+                                    <g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g>
+                                    <g id="SVGRepo_iconCarrier">
+                                        <path fill="#EF9645" d="M4.861 9.147c.94-.657 2.357-.531 3.201.166l-.968-1.407c-.779-1.111-.5-2.313.612-3.093c1.112-.777 4.263 1.312 4.263 1.312c-.786-1.122-.639-2.544.483-3.331a2.483 2.483 0 0 1 3.456.611l10.42 14.72L25 31l-11.083-4.042L4.25 12.625a2.495 2.495 0 0 1 .611-3.478z" />
+                                        <path fill="#FFDC5D" d="M2.695 17.336s-1.132-1.65.519-2.781c1.649-1.131 2.78.518 2.78.518l5.251 7.658c.181-.302.379-.6.6-.894L4.557 11.21s-1.131-1.649.519-2.78c1.649-1.131 2.78.518 2.78.518l6.855 9.997c.255-.208.516-.417.785-.622L7.549 6.732s-1.131-1.649.519-2.78c1.649-1.131 2.78.518 2.78.518l7.947 11.589c.292-.179.581-.334.871-.498L12.238 4.729s-1.131-1.649.518-2.78c1.649-1.131 2.78.518 2.78.518l7.854 11.454l1.194 1.742c-4.948 3.394-5.419 9.779-2.592 13.902c.565.825 1.39.26 1.39.26c-3.393-4.949-2.357-10.51 2.592-13.903L24.515 8.62s-.545-1.924 1.378-2.47c1.924-.545 2.47 1.379 2.47 1.379l1.685 5.004c.668 1.984 1.379 3.961 2.32 5.831c2.657 5.28 1.07 11.842-3.94 15.279c-5.465 3.747-12.936 2.354-16.684-3.11L2.695 17.336z" />
+                                        <g fill="#5DADEC">
+                                            <path d="M12 32.042C8 32.042 3.958 28 3.958 24c0-.553-.405-1-.958-1s-1.042.447-1.042 1C1.958 30 6 34.042 12 34.042c.553 0 1-.489 1-1.042s-.447-.958-1-.958z" />
+                                            <path d="M7 34c-3 0-5-2-5-5a1 1 0 1 0-2 0c0 4 3 7 7 7a1 1 0 1 0 0-2zM24 2a1 1 0 0 0 0 2c4 0 8 3.589 8 8a1 1 0 0 0 2 0c0-5.514-4-10-10-10z" />
+                                            <path d="M29 .042c-.552 0-1 .406-1 .958s.448 1.042 1 1.042c3 0 4.958 2.225 4.958 4.958c0 .552.489 1 1.042 1s.958-.448.958-1C35.958 3.163 33 .042 29 .042z" />
+                                        </g>
+                                    </g>
+                                </svg>
                             </h1>
                             <p className="text-gray-400 dark:text-gray-500 font-bold mt-1 text-base">
                                 Ready to practice?
@@ -323,7 +338,7 @@ export default function Dashboard({
                     <StreakLostOverlay
                         isOpen={showStreakLost}
                         onClose={handleDismissStreakLost}
-                        prevStreak={streak?.is_broken ? streak?.current_streak : streak?.pre_broken_streak}
+                        prevStreak={streak?.current_streak ?? 0}
                         xpBalance={xpBalance}
                         onRepair={handleRepairStreak}
                     />

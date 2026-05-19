@@ -14,8 +14,7 @@ export default function TopHeader() {
 
     const [showDropdown, setShowDropdown] = useState(false);
     const [imgError, setImgError] = useState(false);
-    const [xpBalance, setXpBalance] = useState(0);
-    const [isLoading, setIsLoading] = useState(true);
+    const xpBalance = user?.xp?.balance ?? 0;
     const [isRefreshing, setIsRefreshing] = useState(false);
     const dropdownRef = useRef(null);
     const assetBaseUrl = assetUrl?.replace(/\/$/, "") ?? "";
@@ -53,21 +52,7 @@ export default function TopHeader() {
             document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    useEffect(() => {
-        const fetchXp = async () => {
-            if (!user) return;
-            setIsLoading(true);
-            try {
-                const response = await axios.get(route("api.xp-shop.status"));
-                setXpBalance(response.data.xp.balance);
-            } catch (err) {
-                console.error("Failed to fetch XP status:", err);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchXp();
-    }, [user]);
+    // No redundant on-mount XP fetching; we read the globally shared Inertia props directly
 
     const handleForceRefresh = async () => {
         setIsRefreshing(true);
@@ -134,13 +119,9 @@ export default function TopHeader() {
                     <>
                         <div className="bg-yellow-50 dark:bg-yellow-950/30 px-3 py-1.5 rounded-2xl flex items-center gap-1.5 border border-yellow-100 dark:border-yellow-900/30">
                             <Zap className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                            {isLoading ? (
-                                <Loader2 className="h-4 w-4 text-yellow-500 animate-spin" />
-                            ) : (
-                                <span className="text-sm font-black text-yellow-700 dark:text-yellow-400">
-                                    {xpBalance.toLocaleString()}
-                                </span>
-                            )}
+                            <span className="text-sm font-black text-yellow-700 dark:text-yellow-400">
+                                {xpBalance.toLocaleString()}
+                            </span>
                         </div>
                         <div className="relative" ref={dropdownRef}>
                             <button
@@ -148,11 +129,7 @@ export default function TopHeader() {
                                 className="active:scale-95 transition-transform outline-none"
                             >
                                 <div className="w-10 h-10 rounded-2xl border-2 border-white dark:border-slate-700 shadow-md overflow-hidden bg-gray-100 dark:bg-slate-800 relative">
-                                    {isLoading ? (
-                                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-200 dark:from-slate-700 dark:to-slate-800">
-                                            <Loader2 className="h-5 w-5 text-gray-400 animate-spin" />
-                                        </div>
-                                    ) : hasUsableUserImage ? (
+                                    {hasUsableUserImage ? (
                                         <img
                                             src={userImageUrl}
                                             alt={user.name}

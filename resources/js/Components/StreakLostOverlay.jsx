@@ -1,4 +1,14 @@
 import React, { useEffect, useState } from "react";
+import {
+    Flame,
+    Gem,
+    LoaderCircle,
+    Lock,
+    Sparkles,
+    Trophy,
+    X,
+    Zap,
+} from "lucide-react";
 import { useTranslation } from "@/Contexts/LanguageContext";
 
 export default function StreakLostOverlay({ isOpen, onClose, prevStreak, xpBalance = 0, onRepair }) {
@@ -227,7 +237,7 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak, xpBalan
                                 dark:bg-white/[0.06] dark:border-white/10 dark:text-white/40
                                 dark:hover:bg-white/[0.13] dark:hover:text-white/80"
                         >
-                            ✕
+                            <X size={16} strokeWidth={2.25} />
                         </button>
 
                         {/* ── Flame visual ──────────────────────────────────── */}
@@ -507,12 +517,16 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak, xpBalan
                         >
                             {[
                                 {
-                                    icon: "🔥",
+                                    Icon: Flame,
+                                    iconColor: "#f97316",
+                                    iconFillOpacity: 0.2,
                                     label: t("streak.stat_lost", "Streak Lost"),
                                     value: `${prevStreak}d`,
                                 },
                                 {
-                                    icon: "⚡",
+                                    Icon: Zap,
+                                    iconColor: "#eab308",
+                                    iconFillOpacity: 0.18,
                                     label: t(
                                         "streak.stat_restart",
                                         "Study Today",
@@ -520,7 +534,9 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak, xpBalan
                                     value: t("streak.stat_restart_val", "→ +1"),
                                 },
                                 {
-                                    icon: "🏆",
+                                    Icon: Trophy,
+                                    iconColor: "#d97706",
+                                    iconFillOpacity: 0.22,
                                     label: t("streak.stat_goal", "New Record"),
                                     value: t(
                                         "streak.stat_goal_val",
@@ -541,11 +557,18 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak, xpBalan
                                 >
                                     <div
                                         style={{
-                                            fontSize: "18px",
                                             marginBottom: "4px",
+                                            color: stat.iconColor,
+                                            display: "flex",
+                                            justifyContent: "center",
                                         }}
                                     >
-                                        {stat.icon}
+                                        <stat.Icon
+                                            size={19}
+                                            strokeWidth={2.4}
+                                            fill="currentColor"
+                                            fillOpacity={stat.iconFillOpacity}
+                                        />
                                     </div>
                                     <div
                                         style={{
@@ -631,10 +654,23 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak, xpBalan
                                                 display: "flex",
                                                 alignItems: "center",
                                                 justifyContent: "center",
-                                                fontSize: "20px",
+                                                color: canAffordRepair ? "white" : "#38bdf8",
                                             }}
                                         >
-                                            {isRepairing ? "⏳" : "💎"}
+                                            {isRepairing ? (
+                                                <LoaderCircle
+                                                    size={20}
+                                                    strokeWidth={2.4}
+                                                    style={{ animation: "sl-spin-slow 1s linear infinite" }}
+                                                />
+                                            ) : (
+                                                <Gem
+                                                    size={20}
+                                                    strokeWidth={2.4}
+                                                    fill="currentColor"
+                                                    fillOpacity={0.16}
+                                                />
+                                            )}
                                         </div>
                                         <div className="text-left">
                                             <div style={{ fontWeight: 800, fontSize: "14px", lineHeight: 1.2 }}>
@@ -647,8 +683,24 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak, xpBalan
                                             </div>
                                         </div>
                                     </div>
-                                    <div style={{ fontWeight: 900, fontSize: "18px" }}>
-                                        {canAffordRepair ? "✨" : "🔒"}
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                        }}
+                                    >
+                                        {canAffordRepair ? (
+                                            <Sparkles
+                                                size={20}
+                                                strokeWidth={2.4}
+                                                color="#fde68a"
+                                                fill="#fde68a"
+                                                fillOpacity={0.18}
+                                            />
+                                        ) : (
+                                            <Lock size={20} strokeWidth={2.4} color="#94a3b8" />
+                                        )}
                                     </div>
 
                                     {/* Shimmer for repair button */}
@@ -690,6 +742,10 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak, xpBalan
                                     cursor: "pointer",
                                     position: "relative",
                                     overflow: "hidden",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: "8px",
                                     boxShadow:
                                         "0 8px 32px var(--sl-btn-shadow-base), 0 0 0 1px var(--sl-btn-inset) inset",
                                     animation:
@@ -732,7 +788,13 @@ export default function StreakLostOverlay({ isOpen, onClose, prevStreak, xpBalan
                                         pointerEvents: "none",
                                     }}
                                 />
-                                🔥&nbsp;
+                                <Flame
+                                    size={18}
+                                    strokeWidth={2.5}
+                                    color="#fed7aa"
+                                    fill="#f97316"
+                                    fillOpacity={0.9}
+                                />
                                 {t(
                                     "streak.start_again",
                                     "Reignite My Streak Today",

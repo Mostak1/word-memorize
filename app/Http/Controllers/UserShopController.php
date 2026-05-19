@@ -47,8 +47,14 @@ class UserShopController extends Controller
       ->where('status', true)
       ->whereHas('creator', fn($q) => $q->where('email', 'admin@gmail.com'));
 
-    $adminCategoryIds = (clone $adminCategoryQuery)->pluck('id');
-    $adminWordListCount = (clone $adminCategoryQuery)->withCount('wordLists')->get()->sum('word_lists_count');
+    $adminCategories = (clone $adminCategoryQuery)
+      ->select('id', 'price')
+      ->withCount('wordLists')
+      ->get();
+    $adminCategoryIds = $adminCategories->pluck('id');
+    $adminWordListCount = $adminCategories->sum('word_lists_count');
+    $adminOriginalPrice = (int) $adminCategories->sum('price');
+    $adminOfferPrice = 999;
 
     if ($user) {
       $pendingCategoryIds = WordListOrderItem::whereHas(
@@ -80,7 +86,12 @@ class UserShopController extends Controller
         'id' => 'all-admin-categories',
         'name' => 'All Word List Categories',
         'description' => 'Unlock every admin word list category from admin@gmail.com.',
-        'price' => 999,
+        'price' => $adminOfferPrice,
+        'original_price' => $adminOriginalPrice,
+        'discount_percent' => $adminOriginalPrice > $adminOfferPrice
+          ? (int) round((($adminOriginalPrice - $adminOfferPrice) / $adminOriginalPrice) * 100)
+          : 0,
+        'thumbnail_url_full' => asset('img/all_wordlists.webp'),
         'is_locked' => true,
         'wordlists_count' => $adminWordListCount,
         'category_count' => $adminCategoryIds->count(),

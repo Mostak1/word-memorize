@@ -16,10 +16,16 @@ import {
     Tag,
     Copy,
     Check,
+    Sparkles,
+    AlertTriangle,
+    ExternalLink,
+    GraduationCap,
 } from "lucide-react";
 import PurchaseOrderDialog from "@/Components/PurchaseOrderDialog";
+import XpPurchaseDialog from "@/Components/XpPurchaseDialog";
 import { playXpPurchase } from "@/Utils/sounds";
 import { useTranslation } from "@/Contexts/LanguageContext";
+import FlameVisual from "@/Components/FlameVisual";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -172,6 +178,15 @@ function AllCategoriesOfferCard({ offer, onClick }) {
     const isPending = offer.status === "pending";
     const isOwned = offer.status === "owned";
     const isBlocked = isPending || isOwned || !offer.category_ids?.length;
+    const originalPrice = Number(offer.original_price ?? 0);
+    const offerPrice = Number(offer.price ?? 0);
+    const hasDiscount = originalPrice > offerPrice;
+    const discountPercent =
+        Number(offer.discount_percent ?? 0) ||
+        (hasDiscount
+            ? Math.round(((originalPrice - offerPrice) / originalPrice) * 100)
+            : 0);
+    const thumbnailUrl = offer.thumbnail_url_full ?? "/img/all_wordlists.webp";
 
     return (
         <button
@@ -188,6 +203,29 @@ function AllCategoriesOfferCard({ offer, onClick }) {
                 opacity: 0,
             }}
         >
+            <div className="relative aspect-[16/9] bg-red-50 dark:bg-slate-800 overflow-hidden">
+                <img
+                    src={thumbnailUrl}
+                    alt={offer.name}
+                    className="h-full w-full object-cover"
+                />
+                {discountPercent > 0 && !isOwned && (
+                    <div className="absolute left-3 top-3 rounded-full bg-[#E5201C] px-3 py-1 text-[11px] font-black text-white shadow-sm">
+                        {discountPercent}% OFF
+                    </div>
+                )}
+                <div className="absolute right-3 top-3 bg-black/65 backdrop-blur-sm rounded-lg px-2.5 py-1.5 flex items-center gap-1.5 shrink-0">
+                    <Lock className="h-3.5 w-3.5 text-white" />
+                    <span className="text-xs font-black text-white">
+                        ৳{offerPrice.toFixed(0)}
+                    </span>
+                    {hasDiscount && (
+                        <span className="text-[10px] font-bold text-white/70 line-through">
+                            ৳{originalPrice.toFixed(0)}
+                        </span>
+                    )}
+                </div>
+            </div>
             <div className="bg-[#E5201C] px-4 py-3 text-white flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                     <div className="h-10 w-10 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
@@ -204,9 +242,15 @@ function AllCategoriesOfferCard({ offer, onClick }) {
                         </p>
                     </div>
                 </div>
-                <div className="bg-black/25 rounded-lg px-2.5 py-1 flex items-center gap-1 shrink-0">
-                    <Lock className="h-3.5 w-3.5" />
-                    <span className="text-xs font-black">৳{offer.price}</span>
+                <div className="text-right shrink-0">
+                    <p className="text-sm font-black leading-none">
+                        ৳{offerPrice.toFixed(0)}
+                    </p>
+                    {hasDiscount && (
+                        <p className="mt-0.5 text-[10px] font-bold text-white/70 line-through">
+                            ৳{originalPrice.toFixed(0)}
+                        </p>
+                    )}
                 </div>
             </div>
             <div className="px-4 py-3 flex items-center justify-between gap-3">
@@ -352,33 +396,36 @@ function StreakStatusCard({ streak }) {
     const state = active_today
         ? {
               label: t("shop.streak_status.active_today"),
-              color: "text-green-600 bg-green-50 border-green-200",
+              color: "text-green-600 bg-green-50 border-green-200 dark:text-green-400 dark:bg-green-950/20 dark:border-green-900/30",
+              icon: CheckCircle2,
           }
         : at_risk
           ? {
                 label: t("shop.streak_status.at_risk"),
-                color: "text-orange-600 bg-orange-50 border-orange-200",
+                color: "text-orange-600 bg-orange-50 border-orange-200 dark:text-orange-400 dark:bg-orange-950/20 dark:border-orange-900/30",
+                icon: AlertTriangle,
             }
           : is_frozen
             ? {
                   label: t("shop.streak_status.frozen"),
-                  color: "text-blue-600 bg-blue-50 border-blue-200",
+                  color: "text-blue-600 bg-blue-50 border-blue-200 dark:text-blue-400 dark:bg-blue-950/20 dark:border-blue-900/30",
+                  icon: Snowflake,
               }
             : is_broken
               ? {
                     label: t("shop.streak_status.lost"),
-                    color: "text-red-600 bg-red-50 border-red-200",
+                    color: "text-red-600 bg-red-50 border-red-200 dark:text-red-400 dark:bg-red-950/20 dark:border-red-900/30",
+                    icon: XCircle,
                 }
               : {
                     label: t("shop.streak_status.none"),
-                    color: "text-gray-500 bg-gray-50 border-gray-200",
+                    color: "text-gray-500 bg-gray-50 border-gray-200 dark:text-gray-400 dark:bg-slate-800 dark:border-slate-700",
+                    icon: Zap,
                 };
 
     return (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-5 flex items-center gap-4">
-            <div className="bg-orange-50 dark:bg-orange-950/30 rounded-xl p-3">
-                <span className="text-3xl">🔥</span>
-            </div>
+            <FlameVisual isBroken={is_broken} size={48} />
             <div className="flex-1 min-w-0">
                 <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
                     {t("streak.current")}
@@ -390,8 +437,9 @@ function StreakStatusCard({ streak }) {
                     </span>
                 </p>
                 <span
-                    className={`inline-block mt-1 text-xs font-semibold px-2 py-0.5 rounded-full border ${state.color}`}
+                    className={`inline-flex items-center gap-1.5 mt-1 text-xs font-semibold px-2.5 py-0.5 rounded-full border ${state.color}`}
                 >
+                    {state.icon && <state.icon className="h-3.5 w-3.5 shrink-0" />}
                     {state.label}
                 </span>
             </div>
@@ -531,6 +579,19 @@ function XpShopTab() {
     const [loading, setLoading] = useState(true);
     const [purchasing, setPurchasing] = useState(false);
     const [toast, setToast] = useState(null);
+
+    const [selectedXpPackage, setSelectedXpPackage] = useState(null);
+    const [xpDialogOpen, setXpDialogOpen] = useState(false);
+
+    const handleBuyXpClick = (pkg) => {
+        setSelectedXpPackage(pkg);
+        setXpDialogOpen(true);
+    };
+
+    const handleXpDialogClose = () => {
+        setXpDialogOpen(false);
+        setTimeout(() => setSelectedXpPackage(null), 300);
+    };
 
     const showToast = (message, type = "success") => {
         setToast({ message, type });
@@ -686,6 +747,46 @@ function XpShopTab() {
             <XpBalanceCard balance={status?.xp?.balance ?? 0} />
             <StreakStatusCard streak={status?.streak} />
 
+            {/* XP Packages Section */}
+            <div className="space-y-3 pt-1">
+                <h2 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                    Buy XP Packages (bKash)
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {[
+                        { id: "starter", name: "Starter Kit", xp_amount: 5000, price: 50, color: "from-amber-400 to-orange-500", label: "Streak Save" },
+                        { id: "booster", name: "Booster Pack", xp_amount: 12000, price: 100, color: "from-blue-400 to-indigo-500", label: "20% Bonus" },
+                        { id: "legend", name: "Legend Bundle", xp_amount: 30000, price: 200, color: "from-purple-500 to-pink-500", label: "50% Bonus" },
+                    ].map((pkg) => (
+                        <div key={pkg.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col justify-between relative group hover:shadow-md transition duration-200">
+                            {pkg.label && (
+                                <span className="absolute top-2 right-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full">
+                                    {pkg.label}
+                                </span>
+                            )}
+                            <div className="p-4 flex-1">
+                                <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${pkg.color} flex items-center justify-center text-white font-black mb-3 shadow-[0_4px_10px_rgba(0,0,0,0.05)]`}>
+                                    <Zap className="h-4.5 w-4.5 animate-pulse" />
+                                </div>
+                                <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">{pkg.name}</h3>
+                                <p className="text-xl font-black text-[#E5201C] mt-0.5">৳{pkg.price} <span className="text-[10px] font-bold text-gray-400 uppercase">BDT</span></p>
+                                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-2 font-medium leading-relaxed">
+                                    Get {pkg.xp_amount.toLocaleString()} XP to repair streaks or spend in the shop.
+                                </p>
+                            </div>
+                            <div className="px-4 pb-4">
+                                <button
+                                    onClick={() => handleBuyXpClick(pkg)}
+                                    className="w-full py-2 rounded-xl bg-gray-50 dark:bg-slate-800 hover:bg-gradient-to-r hover:from-amber-500 hover:to-orange-500 hover:text-white dark:hover:from-amber-500 dark:hover:to-orange-500 dark:hover:text-white text-gray-800 dark:text-gray-200 text-xs font-bold transition active:scale-[0.97]"
+                                >
+                                    Buy Now
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
             <div className="space-y-3">
                 <h2 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                     {t("shop.available_items")}
@@ -772,6 +873,13 @@ function XpShopTab() {
 
 
             <Toast toast={toast} />
+
+            <XpPurchaseDialog
+                key={selectedXpPackage?.id ?? "empty-xp"}
+                open={xpDialogOpen}
+                onClose={handleXpDialogClose}
+                packageData={selectedXpPackage}
+            />
         </>
     );
 }

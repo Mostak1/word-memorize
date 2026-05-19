@@ -14,7 +14,9 @@ return new class extends Migration
     {
         // Ensure 'coupons' table uses InnoDB to support foreign keys
         // (MyISAM does not support foreign key constraints)
-        DB::statement('ALTER TABLE coupons ENGINE = InnoDB');
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement('ALTER TABLE coupons ENGINE = InnoDB');
+        }
 
         Schema::table('word_list_orders', function (Blueprint $table) {
             if (!Schema::hasColumn('word_list_orders', 'coupon_id')) {

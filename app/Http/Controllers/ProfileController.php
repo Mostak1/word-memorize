@@ -64,13 +64,43 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        $user->fill($request->validated());
+
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
         }
 
-        $request->user()->save();
+        if ($request->hasFile('avatar')) {
+            $request->validate([
+                'avatar' => ['image', 'max:2000'],
+            ]);
+
+            // Construct the Fluento API URL
+            $apiUrl = rtrim(config('services.fluento.image_api_url', 'http://localhost/fluento/public/api/users'), '/') . '/' . $user->id . '/image';
+            $apiToken = config('services.fluento.image_api_token');
+
+            // Send image using Laravel Http client
+            $response = \Illuminate\Support\Facades\Http::withToken($apiToken)
+                ->attach(
+                    'avatar', 
+                    file_get_contents($request->file('avatar')->getRealPath()), 
+                    $request->file('avatar')->getClientOriginalName()
+                )
+                ->post($apiUrl);
+
+            if ($response->failed()) {
+                return back()->withErrors([
+                    'avatar' => 'Failed to upload profile image to the image storage API: ' . ($response->json('message') ?? 'Unknown error')
+                ]);
+            }
+            
+            // Refresh to sync the shared database changes (user image column updated by Fluento)
+            $user->refresh();
+        }
+
+        $user->save();
 
         return Redirect::route('profile.edit');
     }

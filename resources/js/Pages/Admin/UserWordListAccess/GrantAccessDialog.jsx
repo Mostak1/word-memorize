@@ -22,7 +22,11 @@ import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
 import InputError from "@/Components/InputError";
 
-export default function GrantAccessDialog({ users, categories }) {
+export default function GrantAccessDialog({
+    users,
+    categories,
+    grantedCategoryIdsByUser = {},
+}) {
     const [open, setOpen] = useState(false);
     const [userSearch, setUserSearch] = useState("");
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
@@ -38,6 +42,30 @@ export default function GrantAccessDialog({ users, categories }) {
             user.email.toLowerCase().includes(search)
         );
     }, [users, userSearch]);
+
+    const availableCategories = useMemo(() => {
+        if (!data.user_id) return [];
+
+        const grantedIds = new Set(
+            (grantedCategoryIdsByUser[data.user_id] ?? []).map((id) => String(id)),
+        );
+
+        return categories.filter((cat) => !grantedIds.has(String(cat.id)));
+    }, [categories, data.user_id, grantedCategoryIdsByUser]);
+
+    const handleUserChange = (value) => {
+        setData({
+            ...data,
+            user_id: value,
+            word_list_category_id: "",
+        });
+        clearErrors("user_id", "word_list_category_id");
+    };
+
+    const handleCategoryChange = (value) => {
+        setData("word_list_category_id", value);
+        clearErrors("word_list_category_id");
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -77,7 +105,7 @@ export default function GrantAccessDialog({ users, categories }) {
                         <InputLabel htmlFor="user_id" value="User" />
                         <Select
                             value={data.user_id}
-                            onValueChange={(v) => setData("user_id", v)}
+                            onValueChange={handleUserChange}
                         >
                             <SelectTrigger id="user_id">
                                 <SelectValue placeholder="Select a user" />
@@ -112,24 +140,43 @@ export default function GrantAccessDialog({ users, categories }) {
                         <InputLabel htmlFor="category_id" value="Category" />
                         <Select
                             value={data.word_list_category_id}
-                            onValueChange={(v) => setData("word_list_category_id", v)}
+                            onValueChange={handleCategoryChange}
+                            disabled={!data.user_id || availableCategories.length === 0}
                         >
                             <SelectTrigger id="category_id">
-                                <SelectValue placeholder="Select a category" />
+                                <SelectValue
+                                    placeholder={
+                                        data.user_id
+                                            ? "Select a category"
+                                            : "Select a user first"
+                                    }
+                                />
                             </SelectTrigger>
                             <SelectContent>
-                                {categories.map((cat) => (
+                                {availableCategories.map((cat) => (
                                     <SelectItem key={cat.id} value={cat.id.toString()}>
                                         {cat.name}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
+                        {data.user_id && availableCategories.length === 0 && (
+                            <p className="text-xs text-muted-foreground">
+                                This user already has access to every available category.
+                            </p>
+                        )}
                         <InputError message={errors.word_list_category_id} />
                     </div>
 
                     <DialogFooter>
-                        <Button type="submit" disabled={processing}>
+                        <Button
+                            type="submit"
+                            disabled={
+                                processing ||
+                                !data.user_id ||
+                                !data.word_list_category_id
+                            }
+                        >
                             {processing ? (
                                 <>
                                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />

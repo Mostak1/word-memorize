@@ -71,7 +71,13 @@ function formatDate(dateString) {
     });
 }
 
-export default function Index({ accessList, filters, users, categories }) {
+export default function Index({
+    accessList,
+    filters,
+    users,
+    categories,
+    grantedCategoryIdsByUser = {},
+}) {
     const [globalFilter, setGlobalFilter] = useState(filters.search ?? "");
     const [sorting, setSorting] = useState([{ id: "granted_at", desc: true }]);
     const [deleteAccess, setDeleteAccess] = useState(null);
@@ -205,7 +211,11 @@ export default function Index({ accessList, filters, users, categories }) {
             <div className="space-y-5">
                 <div className="flex justify-between items-center">
                     <h1 className="text-3xl font-bold">User Word List Access</h1>
-                    <GrantAccessDialog users={users} categories={categories} />
+                    <GrantAccessDialog
+                        users={users}
+                        categories={categories}
+                        grantedCategoryIdsByUser={grantedCategoryIdsByUser}
+                    />
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3">

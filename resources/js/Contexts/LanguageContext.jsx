@@ -20,6 +20,10 @@ export const LanguageProvider = ({ children, initialLocale = 'en' }) => {
     }, [locale]);
 
     const t = (path, replacements = {}) => {
+        const values =
+            typeof replacements === 'string'
+                ? { defaultValue: replacements }
+                : replacements;
         const keys = path.split('.');
         let result = translations[locale];
 
@@ -33,7 +37,7 @@ export const LanguageProvider = ({ children, initialLocale = 'en' }) => {
                     if (fallback && fallback[fKey] !== undefined) {
                         fallback = fallback[fKey];
                     } else {
-                        return path; // Return key if not found at all
+                        return values.defaultValue ?? path; // Return provided fallback or key if not found at all
                     }
                 }
                 result = fallback;
@@ -42,13 +46,15 @@ export const LanguageProvider = ({ children, initialLocale = 'en' }) => {
         }
 
         if (typeof result === 'string') {
-            Object.keys(replacements).forEach((placeholder) => {
-                result = result.replace(`{${placeholder}}`, replacements[placeholder]);
+            Object.keys(values).forEach((placeholder) => {
+                if (placeholder !== 'defaultValue') {
+                    result = result.replace(`{${placeholder}}`, values[placeholder]);
+                }
             });
             return result;
         }
 
-        return path;
+        return values.defaultValue ?? path;
     };
 
     return (

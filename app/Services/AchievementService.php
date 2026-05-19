@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Achievement;
 use App\Models\User;
 use App\Models\UserAchievement;
+use App\Models\Notification;
 use Carbon\Carbon;
 
 class AchievementService
@@ -35,15 +36,34 @@ class AchievementService
         ]);
         $this->courseStreakRewardCouponService->ensureForAchievement($user, $achievement);
         $newAchievements[] = $userAchievement->load('achievement');
+
+        // Create notifications for followers
+        try {
+            $followers = $user->followers;
+            if ($followers) {
+                foreach ($followers as $follower) {
+                    Notification::create([
+                        'user_id' => $follower->id,
+                        'notifier_id' => $user->id,
+                        'type' => 'achievement',
+                        'data' => [
+                            'achievement_name' => $achievement->name,
+                            'achievement_description' => $achievement->description,
+                            'achievement_icon' => $achievement->icon,
+                            'achievement_category' => $achievement->category,
+                        ],
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error("Failed to dispatch achievement notification to followers: " . $e->getMessage());
+        }
       }
     }
 
     return $newAchievements;
   }
 
-  /**
-   * Check if a user should be awarded a specific achievement.
-   */
   private function shouldAwardAchievement(User $user, Achievement $achievement): bool
   {
     // Skip if user already has this achievement

@@ -13,7 +13,9 @@ use App\Http\Controllers\UserPublicProfileController;
 use App\Http\Controllers\UserAchievementController;
 use App\Http\Controllers\UserSettingController;
 use App\Http\Controllers\UserShopController;
+use App\Http\Controllers\UserXpPurchaseController;
 use App\Http\Controllers\Api\FollowController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\UserWordController;
 use App\Http\Controllers\UserWordListOrderController;
 use App\Http\Controllers\WordListCategoryController;
@@ -206,7 +208,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::get('/profile/followers', [ProfileController::class, 'followers'])->name('profile.followers');
     Route::get('/profile/following', [ProfileController::class, 'following'])->name('profile.following');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::match(['post', 'patch'], '/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::get('/settings', [UserSettingController::class, 'show'])->name('settings.show');
@@ -277,10 +279,15 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/api/xp-shop/buy-dark-mode', [UserShopController::class, 'buyDarkMode'])->name('api.xp-shop.buy-dark-mode');
     Route::post('/api/xp-shop/buy-discount', [UserShopController::class, 'buyDiscountCoupon'])->name('api.xp-shop.buy-discount');
     Route::post('/api/xp-shop/buy-streak-repair', [UserShopController::class, 'buyStreakRepair'])->name('api.xp-shop.buy-streak-repair');
+    Route::post('/api/xp-shop/purchase', [UserXpPurchaseController::class, 'store'])->name('api.xp-shop.purchase');
 
     // Achievements API
     Route::get('/api/achievements', [UserAchievementController::class, 'index'])->name('api.achievements.index');
     Route::post('/api/achievements/mark-seen', [UserAchievementController::class, 'markSeen'])->name('api.achievements.mark-seen');
+
+    // Followed user notifications API
+    Route::get('/api/followed-notifications', [NotificationController::class, 'index'])->name('api.followed-notifications.index');
+    Route::post('/api/followed-notifications/mark-read', [NotificationController::class, 'markRead'])->name('api.followed-notifications.mark-read');
 
 
     // Achievements page
@@ -289,6 +296,67 @@ Route::middleware(['auth'])->group(function () {
     })->name('achievements');
 
 
+});
+
+// Temporary test route for followed user notifications (public with auto-login)
+Route::get('/api/test-notifications', function () {
+    $currentUser = auth()->user();
+    if (!$currentUser) {
+        // Auto-login the first available user in the system
+        $currentUser = \App\Models\User::first();
+        if (!$currentUser) {
+            // Create a default test user if none exists
+            $currentUser = \App\Models\User::create([
+                'name' => 'Test User',
+                'email' => 'test_user@vocabpix.com',
+                'password' => bcrypt('password123'),
+            ]);
+        }
+        auth()->login($currentUser);
+    }
+
+    $notifier = \App\Models\User::firstOrCreate(
+        ['email' => 'followed_test_user@vocabpix.com'],
+        [
+            'name' => 'Emma Watson',
+            'password' => bcrypt('password123'),
+            'image' => 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=100&h=100',
+        ]
+    );
+
+    if (!$currentUser->following()->where('following_id', $notifier->id)->exists()) {
+        $currentUser->following()->attach($notifier->id);
+    }
+
+    // Clear existing notifications first to ensure a clean preview state
+    \App\Models\Notification::where('user_id', $currentUser->id)->delete();
+
+    // Create a streak notification
+    \App\Models\Notification::create([
+        'user_id' => $currentUser->id,
+        'notifier_id' => $notifier->id,
+        'type' => 'streak',
+        'data' => [
+            'current_streak' => 15,
+        ],
+        'is_read' => false,
+    ]);
+
+    // Create an achievement notification
+    \App\Models\Notification::create([
+        'user_id' => $currentUser->id,
+        'notifier_id' => $notifier->id,
+        'type' => 'achievement',
+        'data' => [
+            'achievement_name' => 'Century Club',
+            'achievement_description' => 'Mastered 100 words in VocabPix!',
+            'achievement_icon' => 'trophy',
+            'achievement_category' => 'words_mastered',
+        ],
+        'is_read' => false,
+    ]);
+
+    return redirect()->route('dashboard');
 });
 
 Route::get('/api/achievements/unseen', [UserAchievementController::class, 'getUnseen'])->name('api.achievements.unseen');

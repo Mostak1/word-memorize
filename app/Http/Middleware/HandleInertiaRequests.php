@@ -68,7 +68,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'userSettings' => function () use ($user) {
                 if (!$user) {
-                    return ['show_bangla' => true, 'sound_effects' => true, 'ui_language' => 'en'];
+                    return ['show_bangla' => true, 'sound_effects' => true, 'ui_language' => 'en', 'dark_mode_unlocked' => false];
                 }
                 $settings = UserSetting::forUser($user);   // This creates row automatically if not exists
     
@@ -76,6 +76,7 @@ class HandleInertiaRequests extends Middleware
                     'show_bangla' => (bool) $settings->show_bangla,
                     'sound_effects' => (bool) $settings->sound_effects,
                     'ui_language' => $settings->ui_language ?? 'en',
+                    'dark_mode_unlocked' => (bool) ($settings->dark_mode_unlocked ?? false),
                 ];
             },
             'csrf_token' => csrf_token(),

@@ -153,6 +153,12 @@ export default function WordListCategoryFormDialog({
     };
 
     const hasThumbnail = !!previewUrl;
+    const handlePaidLockChange = (checked) => {
+        setData((current) => ({
+            ...current,
+            is_locked: checked,
+        }));
+    };
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -278,9 +284,7 @@ export default function WordListCategoryFormDialog({
                             <Switch
                                 id="is_locked"
                                 checked={data.is_locked}
-                                onCheckedChange={(checked) =>
-                                    setData({ ...data, is_locked: checked })
-                                }
+                                onCheckedChange={handlePaidLockChange}
                             />
                             <div>
                                 <Label
@@ -290,8 +294,7 @@ export default function WordListCategoryFormDialog({
                                     Locked (paid access)
                                 </Label>
                                 <p className="text-xs text-muted-foreground mt-0.5">
-                                    Users must submit a purchase order to access
-                                    word lists in this category.
+                                    Users must submit a purchase order to access word lists in this category.
                                 </p>
                             </div>
                         </div>

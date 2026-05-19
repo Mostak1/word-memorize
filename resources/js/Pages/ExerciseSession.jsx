@@ -26,6 +26,7 @@ import QuizPanel from "@/Pages/ExerciseSession/QuizPanel";
 import StreakPop from "@/Components/StreakPop";
 import StreakLostOverlay from "@/Components/StreakLostOverlay";
 import ListCompletedOverlay from "@/Components/ListCompletedOverlay";
+import SessionPromotionDialog from "@/Components/SessionPromotionDialog";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import FlashMessages from "@/Components/FlashMessage";
 import XpCounter from "@/Components/XpCounter";
@@ -242,14 +243,9 @@ export default function ExerciseSession({
     const [listCompletionData, setListCompletionData] = useState(null);
     const [showListOverlay, setShowListOverlay] = useState(false);
 
-    const [products, setProducts] = useState([]);
-    const advertisedProducts = useMemo(
-        () =>
-            products
-                .filter((product) => product?.id && product?.ad_image_url)
-                .slice(0, 3),
-        [products],
-    );
+    const [promotions, setPromotions] = useState([]);
+    const [showPromotionDialog, setShowPromotionDialog] = useState(false);
+    const [sessionCompleteSynced, setSessionCompleteSynced] = useState(false);
 
     const approvedAnim = approvedAnimation;
 
@@ -480,7 +476,10 @@ export default function ExerciseSession({
             is_quiz_only: !!isQuizOnly,
         });
 
-        if (!auth?.user) return;
+        if (!auth?.user) {
+            setSessionCompleteSynced(true);
+            return;
+        }
 
         playSessionComplete(userSettings);
 
@@ -575,7 +574,7 @@ export default function ExerciseSession({
 
                     previousStreak.current = newStreak;
 
-                    if (data.streak.pre_broken_streak > 0 && !data.streak.broken_streak_notified) {
+                    if (data.streak.is_broken && !data.streak.broken_streak_notified) {
                         setShowStreakLost(true);
                     }
                 }
@@ -589,17 +588,23 @@ export default function ExerciseSession({
                     });
                 }
 
-                if (data.products) {
-                    setProducts(data.products);
-                }
+                setPromotions(Array.isArray(data.promotions) ? data.promotions : []);
 
                 // If streak increased, StreakPop will handle the achievement check onComplete
                 if (!streakIncreased) {
                     triggerAchievements();
                 }
             })
-            .catch(() => {});
+            .catch(() => {})
+            .finally(() => setSessionCompleteSynced(true));
     }, [isDone, auth?.user]);
+
+    useEffect(() => {
+        if (!isDone || !sessionCompleteSynced || promotions.length === 0) return;
+
+        const timer = setTimeout(() => setShowPromotionDialog(true), 700);
+        return () => clearTimeout(timer);
+    }, [isDone, sessionCompleteSynced, promotions.length]);
 
     useEffect(() => {
         const handleAchievementsDismissed = () => {
@@ -1208,7 +1213,7 @@ export default function ExerciseSession({
                 <StreakLostOverlay
                     isOpen={showStreakLost}
                     onClose={() => setShowStreakLost(false)}
-                    prevStreak={streak?.pre_broken_streak ?? 0}
+                    prevStreak={streak?.current_streak ?? 0}
                     xpBalance={xpBalance}
                     onRepair={async () => {
                         try {
@@ -1224,6 +1229,11 @@ export default function ExerciseSession({
                     }}
                 />
 
+                <SessionPromotionDialog
+                    open={showPromotionDialog}
+                    onOpenChange={setShowPromotionDialog}
+                    promotions={promotions}
+                />
 
                 {/* Global confetti celebration for EVERY completed session */}
                 <div
@@ -1380,72 +1390,6 @@ export default function ExerciseSession({
                                         total: totalWordsInList,
                                     })}
                                 </p>
-                            </div>
-                        )}
-
-                        {/* Product Advertisements */}
-                        {advertisedProducts.length > 0 && (
-                            <div className="mb-10 text-left">
-                                <div className="flex items-center gap-2 mb-4">
-                                    <div className="h-px flex-1 bg-gray-200 dark:bg-slate-800" />
-                                    <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
-                                        Sponsored Products
-                                    </span>
-                                    <div className="h-px flex-1 bg-gray-200 dark:bg-slate-800" />
-                                </div>
-
-                                <div className="space-y-4">
-                                    {advertisedProducts.map((product) => (
-                                        <a
-                                            key={product.id}
-                                            href={`https://fluento.org/shop/${product.id}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="group block bg-gray-50 dark:bg-slate-800/40 hover:bg-white dark:hover:bg-slate-800 border border-gray-100 dark:border-slate-800 hover:border-red-200 dark:hover:border-red-900/50 rounded-2xl p-3 transition-all duration-300 hover:shadow-xl hover:shadow-red-500/5 hover:-translate-y-0.5"
-                                        >
-                                            <div className="flex gap-4">
-                                                <div className="relative flex-none w-20 h-20 rounded-xl overflow-hidden bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 group-hover:border-red-100 dark:group-hover:border-red-900/30 transition-colors">
-                                                    <img
-                                                        src={product.ad_image_url}
-                                                        alt={product.name}
-                                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                                    />
-                                                    {product.selling_price > 0 && (
-                                                        <div className="absolute top-1 right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-lg shadow-sm">
-                                                            ৳{product.selling_price}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div className="flex-1 min-w-0 py-1 flex flex-col justify-between">
-                                                    <div>
-                                                        <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 line-clamp-2 leading-snug group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">
-                                                            {product.name}
-                                                        </h4>
-                                                        <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 uppercase tracking-tight">
-                                                            Available on Fluento.org
-                                                        </p>
-                                                    </div>
-                                                    <div className="flex items-center text-[11px] font-bold text-red-500 dark:text-red-400 group-hover:translate-x-1 transition-transform">
-                                                        View in Shop
-                                                        <svg
-                                                            className="w-3 h-3 ml-1"
-                                                            fill="none"
-                                                            viewBox="0 0 24 24"
-                                                            stroke="currentColor"
-                                                        >
-                                                            <path
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                strokeWidth={2.5}
-                                                                d="M9 5l7 7-7 7"
-                                                            />
-                                                        </svg>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </a>
-                                    ))}
-                                </div>
                             </div>
                         )}
 

@@ -14,11 +14,13 @@ use App\Http\Controllers\Admin\WordController;
 use App\Http\Controllers\Admin\WordImageController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\ProfileController;
+use App\Http\Controllers\Admin\PromotionController;
 use App\Http\Controllers\Admin\ErrorReportController;
 use App\Http\Controllers\Admin\WordListOrderController;
 use App\Http\Controllers\Admin\AchievementController;
 use App\Http\Controllers\Admin\UserProgressController;
 use App\Http\Controllers\Admin\UserWordListAccessController;
+use App\Http\Controllers\Admin\XpOrderController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -98,6 +100,20 @@ Route::get('/telemetry', [DashboardController::class, 'telemetry'])->name('telem
         Route::get('/', [WordListOrderController::class, 'index'])->name('index');
         Route::patch('/{order}', [WordListOrderController::class, 'update'])->name('update');
         Route::delete('/{order}', [WordListOrderController::class, 'destroy'])->name('destroy');
+    });
+
+    // ── XP Orders ──────────────────────────────────────────────────────────────
+    Route::prefix('xp-orders')->name('xp-orders.')->group(function () {
+        Route::get('/', [XpOrderController::class, 'index'])->name('index');
+        Route::patch('/{xpOrder}', [XpOrderController::class, 'update'])->name('update');
+        Route::delete('/{xpOrder}', [XpOrderController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('promotions')->name('promotions.')->group(function () {
+        Route::get('/', [PromotionController::class, 'index'])->name('index');
+        Route::post('/', [PromotionController::class, 'store'])->name('store');
+        Route::patch('/{promotion}', [PromotionController::class, 'update'])->name('update');
+        Route::delete('/{promotion}', [PromotionController::class, 'destroy'])->name('destroy');
     });
 
     // ── User Word List Access ──────────────────────────────────────────────────

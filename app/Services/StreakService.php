@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\User;
 use App\Models\UserStreak;
 use App\Models\UserDailyActivity;
+use App\Models\Notification;
 use Carbon\Carbon;
 
 class StreakService
@@ -90,6 +91,27 @@ class StreakService
 
     // Check for new achievements
     $this->achievementService->checkAndAwardAchievements($user);
+
+    // Create streak milestone notifications for followers if it's a multiple of 5 (and > 1)
+    if ($newStreak > 1 && $newStreak % 5 === 0) {
+      try {
+        $followers = $user->followers;
+        if ($followers) {
+          foreach ($followers as $follower) {
+            Notification::create([
+              'user_id' => $follower->id,
+              'notifier_id' => $user->id,
+              'type' => 'streak',
+              'data' => [
+                'current_streak' => $newStreak,
+              ],
+            ]);
+          }
+        }
+      } catch (\Exception $e) {
+        \Log::error("Failed to dispatch streak notification to followers: " . $e->getMessage());
+      }
+    }
 
     return $streak;
   }
