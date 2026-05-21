@@ -21,12 +21,18 @@ class WordListCategory extends Model
         'created_by',
         'price',
         'is_locked',
+        'side_quest_xp_cost',
+        'side_quest_timer_seconds',
+        'enable_side_quest',
     ];
 
     protected $casts = [
         'show_example_sentences' => 'boolean',
         'is_locked' => 'boolean',
         'status' => 'boolean',
+        'side_quest_xp_cost' => 'integer',
+        'side_quest_timer_seconds' => 'integer',
+        'enable_side_quest' => 'boolean',
     ];
 
     protected $appends = ['thumbnail_url_full']; // ✅ accessor
@@ -152,17 +158,24 @@ class WordListCategory extends Model
         return asset('storage' . $thumbnail);
     }
 
-    // public function getThumbnailUrlFullAttribute(): ?string
-    // {
-    //     if (!$this->thumbnail) {
-    //         return null;
-    //     }
+    public function sideQuestUnlocks()
+    {
+        return $this->hasMany(UserSideQuestUnlock::class, 'word_list_category_id');
+    }
 
-    //     // External URL support
-    //     if (str_starts_with($this->thumbnail, 'http')) {
-    //         return $this->thumbnail;
-    //     }
+    public function isSideQuestUnlockedFor(?User $user): bool
+    {
+        if (!$user) {
+            return false;
+        }
+        return $this->sideQuestUnlocks()->where('user_id', $user->id)->exists();
+    }
 
-    //     return asset('storage' . $this->thumbnail);
-    // }
+    public function getSideQuestUnlockFor(?User $user): ?UserSideQuestUnlock
+    {
+        if (!$user) {
+            return null;
+        }
+        return $this->sideQuestUnlocks()->where('user_id', $user->id)->first();
+    }
 }

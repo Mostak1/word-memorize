@@ -64,6 +64,10 @@ class Promotion extends Model
                     return null;
                 }
 
+                if (!$this->product->slug) {
+                    return null;
+                }
+
                 $adImageUrl = $this->thumbnail_url ?: $this->product->ad_image_url;
                 if (!$adImageUrl) {
                     return null;
@@ -76,7 +80,7 @@ class Promotion extends Model
                     'product_id' => $this->product->id,
                     'title' => $this->product->name,
                     'description' => 'A selected Fluento product that can support your next study session.',
-                    'href' => 'https://fluento.org/shop/' . $this->product->id,
+                    'href' => 'https://fluento.org/shop/' . $this->product->slug,
                     'cta' => 'View in Shop',
                     'ad_image_url' => $adImageUrl,
                     'selling_price' => $this->product->selling_price,

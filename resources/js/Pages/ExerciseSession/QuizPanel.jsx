@@ -1,5 +1,5 @@
-import { CheckCircle2, RefreshCw, XCircle } from "lucide-react";
-import { useState } from "react";
+import { CheckCircle2, Clock, RefreshCw, XCircle } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "@/Contexts/LanguageContext";
 
 const LEVEL_META = {
@@ -25,10 +25,39 @@ const LEVEL_META = {
     },
 };
 
-export default function QuizPanel({ question, onAnswer }) {
+export default function QuizPanel({ question, onAnswer, timerDuration }) {
     const { t } = useTranslation();
     const [selected, setSelected] = useState(null);
     const [status, setStatus] = useState("idle"); // 'idle', 'correct', 'wrong'
+    const [timeLeft, setTimeLeft] = useState(timerDuration || 0);
+
+    useEffect(() => {
+        setSelected(null);
+        setStatus("idle");
+        if (timerDuration) {
+            setTimeLeft(timerDuration);
+        }
+    }, [question.id, timerDuration]);
+
+    useEffect(() => {
+        if (!timerDuration || status !== "idle") return;
+
+        const interval = setInterval(() => {
+            setTimeLeft((prev) => {
+                if (prev <= 0.1) {
+                    clearInterval(interval);
+                    setStatus("wrong");
+                    setTimeout(() => {
+                        onAnswer(false);
+                    }, 1000);
+                    return 0;
+                }
+                return prev - 0.1;
+            });
+        }, 100);
+
+        return () => clearInterval(interval);
+    }, [question.id, status, timerDuration, onAnswer]);
 
     if (!question) return null;
 
@@ -48,9 +77,18 @@ export default function QuizPanel({ question, onAnswer }) {
     };
 
     const typeLabel = question.type === 'synonym' ? 'SYNONYM' : (question.type === 'translation' ? 'TRANSLATION' : 'DEFINITION');
+    const isTimedOut = status === "wrong" && selected === null;
 
     return (
-        <div className="flex flex-col h-full bg-white dark:bg-slate-900 rounded-3xl pb-2">
+        <div className="flex flex-col h-full bg-white dark:bg-slate-900 rounded-3xl pb-2 overflow-hidden border border-gray-100 dark:border-slate-800 shadow-md">
+            {timerDuration && (
+                <div className="w-full h-1 bg-gray-100 dark:bg-slate-800">
+                    <div 
+                        className={`h-full transition-all duration-100 ease-linear ${timeLeft <= 2 ? 'bg-red-500' : 'bg-[#E5201C]'}`}
+                        style={{ width: `${(timeLeft / timerDuration) * 100}%` }}
+                    />
+                </div>
+            )}
             
             {/* Top row: 4-dot level badge (similar to word card) */}
             <div className="flex justify-center pt-5 pb-3">
@@ -62,7 +100,7 @@ export default function QuizPanel({ question, onAnswer }) {
                                 box <= currentBox
                                     ? (LEVEL_META[box]?.dot ?? "bg-gray-400")
                                     : "bg-gray-200 dark:bg-slate-700"
-                            }`}
+                             }`}
                         />
                     ))}
                     <span
@@ -74,13 +112,27 @@ export default function QuizPanel({ question, onAnswer }) {
             </div>
 
             {/* Quiz Header: Icon + Label */}
-            <div className="px-5 pb-4 flex items-center gap-2">
-                <div className="bg-blue-600 rounded-md p-1.5 flex items-center justify-center">
-                    <RefreshCw className="w-4 h-4 text-white" />
+            <div className="px-5 pb-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <div className="bg-blue-600 rounded-md p-1.5 flex items-center justify-center">
+                        <RefreshCw className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-red-500 font-bold text-xs tracking-widest uppercase">
+                        {typeLabel}
+                    </span>
                 </div>
-                <span className="text-red-500 font-bold text-xs tracking-widest uppercase">
-                    {typeLabel}
-                </span>
+                {timerDuration && (
+                    isTimedOut ? (
+                        <span className="text-xs font-bold px-2 py-1 rounded-full bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 animate-bounce">
+                            Time's Up! ⏱️
+                        </span>
+                    ) : (
+                        <span className={`text-xs font-bold px-2.5 py-1 rounded-full font-mono flex items-center gap-1.5 transition-colors ${timeLeft <= 2 ? 'bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400 animate-pulse' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'}`}>
+                            <Clock className="w-3.5 h-3.5" />
+                            {timeLeft.toFixed(1)}s
+                        </span>
+                    )
+                )}
             </div>
 
             {/* Prompt */}

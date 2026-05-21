@@ -18,6 +18,7 @@ import {
     Zap,
     Flame,
     Sparkles,
+    Heart,
 } from "lucide-react";
 
 import {
@@ -29,6 +30,16 @@ import {
     BreadcrumbSeparator,
 } from "@/Components/ui/breadcrumb";
 import { useTranslation } from "@/Contexts/LanguageContext";
+import {
+    AlertDialog,
+    AlertDialogContent,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogCancel,
+    AlertDialogAction,
+} from "@/Components/ui/alert-dialog";
 
 function LoadMore({ meta, onLoadMore, loading }) {
     const { t } = useTranslation();
@@ -465,6 +476,8 @@ export default function Wordlist({
     quizTakeableIds = [], // locked wordlists whose previous wordlist is accessible
     starProgressByWordlist = {},
     bkashNumber = "01825236112",
+    sideQuestUnlock = null,
+    isSideQuestUnlocked = false,
 }) {
     const { t } = useTranslation();
     const { auth } = usePage().props;
@@ -472,6 +485,18 @@ export default function Wordlist({
 
     const [purchaseTarget, setPurchaseTarget] = useState(null);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [showUnlockConfirm, setShowUnlockConfirm] = useState(false);
+
+    const handleConfirmUnlock = () => {
+        setShowUnlockConfirm(false);
+        router.post(
+            route("sidequests.unlock", category.id),
+            {},
+            {
+                preserveScroll: true,
+            },
+        );
+    };
 
     // Dynamic state to accumulate items across loads
     const [items, setItems] = useState(wordLists?.data ?? []);
@@ -652,6 +677,170 @@ export default function Wordlist({
                             onPurchase={setPurchaseTarget}
                         />
                     )}
+
+                    {/* Survival Gauntlet Card */}
+                    {!categoryIsLocked &&
+                        category &&
+                        category.enable_side_quest && (
+                            <div className="mb-4 bg-gradient-to-br from-indigo-50/70 via-purple-50/50 to-red-50/50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950 text-slate-800 dark:text-white rounded-3xl p-6 shadow-xl border border-indigo-100 dark:border-indigo-500/20 relative overflow-hidden">
+                                {/* Background micro-illustrations or glow */}
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-400/20 dark:bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
+                                <div className="absolute -bottom-8 -left-8 w-24 h-24 bg-red-400/20 dark:bg-red-500/10 rounded-full blur-xl pointer-events-none" />
+
+                                <div className="flex items-start justify-between gap-4 relative z-10">
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2 mb-1.5">
+                                            <span className="bg-red-500 text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm animate-pulse">
+                                                {t(
+                                                    "wordlists.side_quest.badge_quest",
+                                                )}
+                                            </span>
+                                            <span className="bg-indigo-100 text-indigo-700 dark:bg-indigo-500/30 dark:text-indigo-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                                {t(
+                                                    "wordlists.side_quest.badge_practice",
+                                                )}
+                                            </span>
+                                        </div>
+                                        <h2 className="text-xl font-black tracking-tight flex items-center gap-2">
+                                            🎮 {t("wordlists.side_quest.title")}
+                                        </h2>
+                                        <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 max-w-md leading-relaxed">
+                                            {t(
+                                                "wordlists.side_quest.description",
+                                            )}
+                                        </p>
+                                    </div>
+
+                                    <div className="shrink-0 bg-slate-100 dark:bg-white/5 backdrop-blur-md border border-slate-200/60 dark:border-white/10 rounded-2xl p-3 flex flex-col items-center justify-center min-w-[70px] shadow-inner">
+                                        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                            {t("wordlists.side_quest.xp_cost")}
+                                        </span>
+                                        <span className="text-lg font-black text-yellow-600 dark:text-yellow-400 mt-0.5 flex items-center gap-0.5">
+                                            <Zap className="h-4 w-4 fill-yellow-500 text-yellow-500 dark:fill-yellow-400 dark:text-yellow-400" />
+                                            {category.side_quest_xp_cost ?? 150}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Action / Status Row */}
+                                <div className="mt-6 pt-4 border-t border-slate-200 dark:border-white/10 flex flex-wrap items-center justify-between gap-4 relative z-10">
+                                    {!isSideQuestUnlocked ? (
+                                        <>
+                                            {/* <div className="text-xs text-slate-500 dark:text-slate-400">
+                                                {t(
+                                                    "wordlists.side_quest.unlock_desc",
+                                                )}
+                                                {user && (
+                                                    <span className="block text-[11px] font-bold text-yellow-600 dark:text-yellow-400 mt-0.5">
+                                                        {t(
+                                                            "wordlists.side_quest.balance",
+                                                            {
+                                                                balance:
+                                                                    user?.xp
+                                                                        ?.balance ??
+                                                                    0,
+                                                            },
+                                                        )}
+                                                    </span>
+                                                )}
+                                            </div> */}
+                                            {user ? (
+                                                <button
+                                                    onClick={() =>
+                                                        setShowUnlockConfirm(
+                                                            true,
+                                                        )
+                                                    }
+                                                    className="bg-[#E5201C] hover:bg-red-700 text-white font-bold text-xs px-5 py-3 rounded-2xl flex items-center gap-2 shadow-lg hover:shadow-red-500/20 active:scale-95 transition-all"
+                                                >
+                                                    <Lock className="h-3.5 w-3.5" />
+                                                    {t(
+                                                        "wordlists.side_quest.unlock_button",
+                                                    )}
+                                                </button>
+                                            ) : (
+                                                <Link
+                                                    href={route("login")}
+                                                    className="text-xs font-bold text-red-500 dark:text-red-400 hover:underline"
+                                                >
+                                                    {t(
+                                                        "wordlists.side_quest.login_to_unlock",
+                                                    )}
+                                                </Link>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="grid grid-cols-3 gap-4 text-center bg-slate-100 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 rounded-2xl py-2.5 px-4 flex-1">
+                                                <div>
+                                                    <span className="block text-[9px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400">
+                                                        {t(
+                                                            "wordlists.side_quest.best_score",
+                                                        )}
+                                                    </span>
+                                                    <span className="text-sm font-black text-green-600 dark:text-green-400 mt-1 block">
+                                                        {sideQuestUnlock?.best_score ??
+                                                            0}{" "}
+                                                        / 20
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    <span className="block text-[9px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400">
+                                                        {t(
+                                                            "wordlists.side_quest.best_lives",
+                                                        )}
+                                                    </span>
+                                                    <span className="text-sm font-black text-red-500 dark:text-red-400 flex items-center justify-center gap-0.5 mt-1.5">
+                                                        {Array.from({
+                                                            length: 3,
+                                                        }).map((_, i) => {
+                                                            const isFilled =
+                                                                sideQuestUnlock &&
+                                                                i <
+                                                                    sideQuestUnlock.best_lives_remaining;
+                                                            return (
+                                                                <Heart
+                                                                    key={i}
+                                                                    className={`h-3.5 w-3.5 ${
+                                                                        isFilled
+                                                                            ? "fill-red-500 text-red-500"
+                                                                            : "text-red-500/40 dark:text-red-500/30"
+                                                                    }`}
+                                                                />
+                                                            );
+                                                        })}
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    <span className="block text-[9px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400">
+                                                        {t(
+                                                            "wordlists.side_quest.attempts",
+                                                        )}
+                                                    </span>
+                                                    <span className="text-sm font-black text-blue-600 dark:text-blue-400 mt-1 block">
+                                                        {sideQuestUnlock?.attempts_count ??
+                                                            0}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <Link
+                                                href={route(
+                                                    "sidequests.start",
+                                                    category.id,
+                                                )}
+                                                className="bg-green-600 hover:bg-green-700 text-white font-extrabold text-xs px-6 py-3 rounded-2xl flex items-center gap-2 shadow-lg hover:shadow-green-500/20 active:scale-95 transition-all justify-center"
+                                            >
+                                                <Play className="h-3.5 w-3.5 fill-white" />
+                                                {t(
+                                                    "wordlists.side_quest.play_button",
+                                                )}
+                                            </Link>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        )}
 
                     {items.length > 0 ? (
                         <>
@@ -962,6 +1151,36 @@ export default function Wordlist({
                     bkashNumber={bkashNumber}
                 />
             )}
+
+            {/* Unlock Confirmation Dialog */}
+            <AlertDialog
+                open={showUnlockConfirm}
+                onOpenChange={setShowUnlockConfirm}
+            >
+                <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-md sm:w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            {t("wordlists.side_quest.confirm_title")}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-base text-slate-600 dark:text-slate-400">
+                            {t("wordlists.side_quest.confirm_desc", {
+                                cost: category?.side_quest_xp_cost ?? 150,
+                            })}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                        <AlertDialogCancel className="w-full sm:w-auto border-slate-200 dark:border-slate-800 text-slate-800 dark:text-white">
+                            {t("wordlists.side_quest.confirm_cancel")}
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleConfirmUnlock}
+                            className="w-full sm:w-auto bg-[#E5201C] hover:bg-red-700 text-white font-bold"
+                        >
+                            {t("wordlists.side_quest.confirm_action")}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </AppLayout>
     );
 }

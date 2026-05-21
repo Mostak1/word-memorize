@@ -85,11 +85,11 @@ class PhrasesAndIdiomsSeeder extends Seeder
         $creatorId = $this->getCreatorId();
 
         [
-            'inserted'      => $inserted,
-            'updated'       => $updated,
-            'skipped'       => $skipped,
-            'deleted'       => $deleted,
-            'images_added'  => $imagesAdded,
+            'inserted' => $inserted,
+            'updated' => $updated,
+            'skipped' => $skipped,
+            'deleted' => $deleted,
+            'images_added' => $imagesAdded,
             'images_skipped' => $imagesSkipped,
             'no_image_words' => $noImageWords,
         ] = $this->seedSublists($sublists, $creatorId, $imageIndex);
@@ -260,10 +260,10 @@ class PhrasesAndIdiomsSeeder extends Seeder
             $thumbnailPath = $this->copyCategoryThumbnail('phrase_idioms.webp');
 
             $categoryData = [
-                'description'            => 'Common phrasal verbs and idioms for everyday English fluency.',
-                'created_by'             => $creatorId,
+                'description' => 'Common phrasal verbs and idioms for everyday English fluency.',
+                'created_by' => $creatorId,
                 'show_example_sentences' => true,
-                'price'                  => $this->price,
+                'price' => $this->price,
             ];
 
             if ($thumbnailPath) {
@@ -277,45 +277,45 @@ class PhrasesAndIdiomsSeeder extends Seeder
 
             $this->log('info', "WordListCategory: " . $category->name . " (ID: {$category->id})");
 
-            $totalInserted    = 0;
-            $totalUpdated     = 0;
-            $totalSkipped     = 0;
-            $totalDeleted     = 0;
+            $totalInserted = 0;
+            $totalUpdated = 0;
+            $totalSkipped = 0;
+            $totalDeleted = 0;
             $totalImagesAdded = 0;
-            $totalImagesSkip  = 0;
-            $allNoImageWords  = [];
+            $totalImagesSkip = 0;
+            $allNoImageWords = [];
 
             $sublistIndex = 0;
             foreach ($sublists as $sublistName => $rows) {
                 $this->log('info', "\n  ── {$sublistName} (" . count($rows) . " rows) ──");
 
                 [
-                    'inserted'       => $ins,
-                    'updated'        => $upd,
-                    'skipped'        => $skp,
-                    'deleted'        => $del,
-                    'images_added'   => $imgAdded,
+                    'inserted' => $ins,
+                    'updated' => $upd,
+                    'skipped' => $skp,
+                    'deleted' => $del,
+                    'images_added' => $imgAdded,
                     'images_skipped' => $imgSkip,
                     'no_image_words' => $noImgWords,
                 ] = $this->seedWordList($category->id, $sublistName, $rows, $sublistIndex, $creatorId, $imageIndex);
 
                 $sublistIndex++;
 
-                $totalInserted    += $ins;
-                $totalUpdated     += $upd;
-                $totalSkipped     += $skp;
-                $totalDeleted     += $del;
+                $totalInserted += $ins;
+                $totalUpdated += $upd;
+                $totalSkipped += $skp;
+                $totalDeleted += $del;
                 $totalImagesAdded += $imgAdded;
-                $totalImagesSkip  += $imgSkip;
-                $allNoImageWords   = array_merge($allNoImageWords, $noImgWords);
+                $totalImagesSkip += $imgSkip;
+                $allNoImageWords = array_merge($allNoImageWords, $noImgWords);
             }
 
             return [
-                'inserted'       => $totalInserted,
-                'updated'        => $totalUpdated,
-                'skipped'        => $totalSkipped,
-                'deleted'        => $totalDeleted,
-                'images_added'   => $totalImagesAdded,
+                'inserted' => $totalInserted,
+                'updated' => $totalUpdated,
+                'skipped' => $totalSkipped,
+                'deleted' => $totalDeleted,
+                'images_added' => $totalImagesAdded,
                 'images_skipped' => $totalImagesSkip,
                 'no_image_words' => $allNoImageWords,
             ];
@@ -340,29 +340,29 @@ class PhrasesAndIdiomsSeeder extends Seeder
         if (!$wordList) {
             $wordList = WordList::create([
                 'word_list_category_id' => $categoryId,
-                'title'                 => $title,
-                'difficulty'            => 'intermediate',
-                'status'                => true,
-                'is_locked'             => $isLocked,
-                'created_by'            => $creatorId,
-                'is_public'             => true,
+                'title' => $title,
+                'difficulty' => 'intermediate',
+                'status' => true,
+                'is_locked' => $isLocked,
+                'created_by' => $creatorId,
+                'is_public' => true,
             ]);
         } else {
             // Update existing WordList but do NOT change 'is_locked'
             $wordList->update([
                 'difficulty' => 'intermediate',
-                'status'     => true,
+                'status' => true,
                 'created_by' => $creatorId,
-                'is_public'  => true,
+                'is_public' => true,
             ]);
         }
 
         $this->log('info', "    WordList: {$title} (ID: {$wordList->id})");
 
-        $inserted   = 0;
-        $updated    = 0;
-        $skipped    = 0;
-        $deleted    = 0;
+        $inserted = 0;
+        $updated = 0;
+        $skipped = 0;
+        $deleted = 0;
         $csvPhrases = [];
 
         foreach ($rows as $row) {
@@ -386,41 +386,43 @@ class PhrasesAndIdiomsSeeder extends Seeder
 
             $wordModel = Word::updateOrCreate(
                 [
-                    'word'        => $phrase,           // phrase stored in the `word` column
+                    'word' => $phrase,           // phrase stored in the `word` column
                     'wordlist_id' => $wordList->id,
                 ],
                 [
                     // col 0  = Type (Phrasal Verb / Idiom) → parts_of_speech_variations
-                    'parts_of_speech_variations'   => $this->clean($row[0] ?? null) ?? '',
+                    'parts_of_speech_variations' => $this->clean($row[0] ?? null) ?? '',
                     // col 2  = Pronunciation
-                    'ipa'                          => $this->clean($row[2] ?? null),
+                    'ipa' => $this->clean($row[2] ?? null),
                     // col 3  = Sounds_Like
-                    'pronunciation'                => $this->clean($row[3] ?? null),
+                    'pronunciation' => $this->clean($row[3] ?? null),
                     // col 4  = Bangla_Pronunciation
-                    'bangla_pronunciation'         => $this->clean($row[4] ?? null),
+                    'bangla_pronunciation' => $this->clean($row[4] ?? null),
                     // col 5  = Meaning (English definition)
-                    'definition'                   => $this->clean($row[5] ?? null) ?? '',
+                    'definition' => $this->clean($row[5] ?? null) ?? '',
+                    // CEFR level
+                    'cefr_level' => $this->clean($row[11] ?? null),
                     // col 6  = Bangla_Meaning
-                    'bangla_meaning'               => $this->clean($row[6] ?? null),
+                    'bangla_meaning' => $this->clean($row[6] ?? null),
                     // col 7  = Collocations (JSON string from CSV)
-                    'collocations'                 => $this->clean($row[7] ?? null),
+                    'collocations' => $this->clean($row[7] ?? null),
                     // col 8  = Bangla Collocation
-                    'bangla_collocations'          => $this->clean($row[8] ?? null),
+                    'bangla_collocations' => $this->clean($row[8] ?? null),
                     // col 9  = Synonyms
-                    'synonym'                      => $this->clean($row[9] ?? null),
+                    'synonym' => $this->clean($row[9] ?? null),
                     // col 10 = Antonyms
-                    'antonym'                      => $this->clean($row[10] ?? null),
+                    'antonym' => $this->clean($row[10] ?? null),
                     // col 13 + 14 joined as example sentences
-                    'example_sentences'            => $exampleSentences ?: '',
+                    'example_sentences' => $exampleSentences ?: '',
                     // col 15 = image prompt (stored in image_related_sentence)
-                    'image_related_sentence'       => $this->clean($row[15] ?? null),
+                    'image_related_sentence' => $this->clean($row[13] ?? null),
                     // col 16 = array of 3 example sentences (stored as ai_prompt / extra data)
-                    'ai_prompt'                    => $this->clean($row[16] ?? null),
+                    'ai_prompt' => $this->clean($row[15] ?? null),
                     'image_related_sentence_bangla' => null,
-                    'hyphenation'                  => null,
-                    'image_url'                    => null,
-                    'created_by'                   => $creatorId,
-                    'is_public'                    => true,
+                    'hyphenation' => null,
+                    'image_url' => null,
+                    'created_by' => $creatorId,
+                    'is_public' => true,
                 ]
             );
 
@@ -450,11 +452,11 @@ class PhrasesAndIdiomsSeeder extends Seeder
         );
 
         return [
-            'inserted'       => $inserted,
-            'updated'        => $updated,
-            'skipped'        => $skipped,
-            'deleted'        => $deleted,
-            'images_added'   => $imagesAdded,
+            'inserted' => $inserted,
+            'updated' => $updated,
+            'skipped' => $skipped,
+            'deleted' => $deleted,
+            'images_added' => $imagesAdded,
             'images_skipped' => $imagesSkipped,
             'no_image_words' => $noImageWords,
         ];
@@ -479,8 +481,8 @@ class PhrasesAndIdiomsSeeder extends Seeder
             ->pluck('id', 'word')
             ->toArray();
 
-        $added        = 0;
-        $skipped      = 0;
+        $added = 0;
+        $skipped = 0;
         $noImageWords = [];
 
         foreach ($rows as $row) {
@@ -515,8 +517,8 @@ class PhrasesAndIdiomsSeeder extends Seeder
             WordImage::updateOrCreate(
                 ['word_id' => $wordId],
                 [
-                    'image_url'  => '/' . ltrim($storedPath, '/'),
-                    'caption'    => null,
+                    'image_url' => '/' . ltrim($storedPath, '/'),
+                    'caption' => null,
                     'sort_order' => 0,
                 ]
             );
@@ -537,10 +539,10 @@ class PhrasesAndIdiomsSeeder extends Seeder
      */
     private function copyImageToStorage(string $sourcePath, string $phrase): ?string
     {
-        $ext          = strtolower(pathinfo($sourcePath, PATHINFO_EXTENSION));
-        $slug         = strtolower(str_replace(' ', '_', $phrase)); // e.g. "bring_up"
+        $ext = strtolower(pathinfo($sourcePath, PATHINFO_EXTENSION));
+        $slug = strtolower(str_replace(' ', '_', $phrase)); // e.g. "bring_up"
         $destFilename = $slug . '.' . $ext;                          // e.g. "bring_up.jpg"
-        $destPath     = self::STORAGE_DIR . '/' . $destFilename;     // e.g. "words/phrases/bring_up.jpg"
+        $destPath = self::STORAGE_DIR . '/' . $destFilename;     // e.g. "words/phrases/bring_up.jpg"
 
         $contents = @file_get_contents($sourcePath);
 
@@ -567,7 +569,7 @@ class PhrasesAndIdiomsSeeder extends Seeder
             return null;
         }
 
-        $destDir  = 'word_categories';
+        $destDir = 'word_categories';
         $destPath = $destDir . '/' . $filename;
 
         $contents = @file_get_contents($sourcePath);
@@ -595,9 +597,9 @@ class PhrasesAndIdiomsSeeder extends Seeder
     {
         if ($this->command) {
             match ($level) {
-                'error'  => $this->command->error($message),
-                'warn'   => $this->command->warn($message),
-                default  => $this->command->info($message),
+                'error' => $this->command->error($message),
+                'warn' => $this->command->warn($message),
+                default => $this->command->info($message),
             };
         } else {
             logger()->info('[PhrasesAndIdiomsSeeder] ' . $message);

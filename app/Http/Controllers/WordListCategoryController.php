@@ -273,6 +273,13 @@ class WordListCategoryController extends Controller
                 ->toArray();
         }
 
+        $sideQuestUnlock = null;
+        $isSideQuestUnlocked = false;
+        if (auth()->check()) {
+            $sideQuestUnlock = $category->getSideQuestUnlockFor(auth()->user());
+            $isSideQuestUnlocked = !is_null($sideQuestUnlock);
+        }
+
         return Inertia::render('Wordlist', [
             'wordLists' => $wordLists,
             'category' => $category,
@@ -287,6 +294,8 @@ class WordListCategoryController extends Controller
             'previousWordlistIdMap' => $previousWordlistIdMap,
             'quizTakeableIds' => $quizTakeableIds,
             'bkashNumber' => env('BKASH_NUMBER', '01825236112'),
+            'sideQuestUnlock' => $sideQuestUnlock,
+            'isSideQuestUnlocked' => $isSideQuestUnlocked,
         ]);
     }
 }

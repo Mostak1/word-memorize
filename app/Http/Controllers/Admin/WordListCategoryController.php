@@ -30,6 +30,9 @@ class WordListCategoryController extends Controller
             'is_locked' => 'boolean',
             'price' => 'nullable|numeric|min:0',
             'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'side_quest_xp_cost' => 'required|integer|min:0',
+            'side_quest_timer_seconds' => 'required|integer|min:2|max:60',
+            'enable_side_quest' => 'boolean',
         ]);
 
         if ($request->hasFile('thumbnail')) {
@@ -54,6 +57,9 @@ class WordListCategoryController extends Controller
             'price' => 'nullable|numeric|min:0',
             'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'remove_thumbnail' => 'nullable|boolean',
+            'side_quest_xp_cost' => 'required|integer|min:0',
+            'side_quest_timer_seconds' => 'required|integer|min:2|max:60',
+            'enable_side_quest' => 'boolean',
         ]);
 
         if (!empty($validated['remove_thumbnail'])) {

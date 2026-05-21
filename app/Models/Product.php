@@ -12,6 +12,7 @@ class Product extends Model
     protected $table = 'products';
     protected $fillable = [
         'external_id',
+        'slug',
         'variation_id',
         'variation',
         'name',
@@ -98,10 +99,10 @@ class Product extends Model
         return 'https://fluento.org/' . ltrim($imagePath, '/');
     }
 
-    public function brand()
-    {
-        return $this->belongsTo(ProductBrand::class, 'product_brand_id');
-    }
+    // public function brand()
+    // {
+    //     return $this->belongsTo(ProductBrand::class, 'product_brand_id');
+    // }
 
     public function category()
     {
@@ -174,7 +175,7 @@ class Product extends Model
     {
         // Mock the Course->images relationship for frontend views
         $imagePath = $this->local_image_url ?: $this->image_url;
-        
+
         if (!$imagePath && !empty($this->local_image_gallery)) {
             $imagePath = $this->local_image_gallery[0];
         }
@@ -188,7 +189,7 @@ class Product extends Model
     {
         // Specifically for local images, as requested
         $imagePath = $this->local_image_url;
-        
+
         if (!$imagePath && !empty($this->local_image_gallery)) {
             $imagePath = $this->local_image_gallery[0];
         }

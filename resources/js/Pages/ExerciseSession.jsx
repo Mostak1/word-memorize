@@ -21,6 +21,11 @@ import {
     X,
     Check,
     Zap,
+    Heart,
+    Award,
+    Clock,
+    Trophy,
+    Skull,
 } from "lucide-react";
 import QuizPanel from "@/Pages/ExerciseSession/QuizPanel";
 import StreakPop from "@/Components/StreakPop";
@@ -205,6 +210,9 @@ export default function ExerciseSession({
     xp_enabled = true,
     isQuizOnly = false,
     isStarReview = false,
+    isSideQuest = false,
+    sideQuestUnlock = null,
+    category = null,
 }) {
     const { t } = useTranslation();
 
@@ -235,10 +243,14 @@ export default function ExerciseSession({
     const [streak, setStreak] = useState(initialStreak);
     const [streakChange, setStreakChange] = useState(null);
     const [showStreakEffect, setShowStreakEffect] = useState(false);
+    const [lives, setLives] = useState(3);
+    const [sideQuestResults, setSideQuestResults] = useState(null);
+    const [runTimeTaken, setRunTimeTaken] = useState(null);
     const [isPreloading, setIsPreloading] = useState(true);
     const [loadingProgress, setLoadingProgress] = useState(0);
 
     const previousStreak = useRef(initialStreak?.current_streak ?? 0);
+    const startTimeRef = useRef(null);
 
     const [listCompletionData, setListCompletionData] = useState(null);
     const [showListOverlay, setShowListOverlay] = useState(false);
@@ -304,7 +316,7 @@ export default function ExerciseSession({
 
     // Current word is always the front of the queue
     const word = queue[0] ?? null;
-    const isDone = queue.length === 0 && !exiting;
+    const isDone = (queue.length === 0 || (isSideQuest && lives === 0)) && !exiting;
     const isDoneRef = useRef(isDone);
     const completedRef = useRef(false);
     const latestSessionRef = useRef({
@@ -317,6 +329,12 @@ export default function ExerciseSession({
     useEffect(() => {
         isDoneRef.current = isDone;
     }, [isDone]);
+
+    useEffect(() => {
+        if (!isPreloading && startTimeRef.current === null) {
+            startTimeRef.current = Date.now();
+        }
+    }, [isPreloading]);
 
     useEffect(() => {
         latestSessionRef.current = {
@@ -374,6 +392,11 @@ export default function ExerciseSession({
         // Quizzes should only show if the user has already "learned" the word
         // and is not already "mastered" (Box 5+).
         if (word.is_quiz) {
+            if (isSideQuest) {
+                setActiveImageIndex(0);
+                setShowMeaning(false);
+                return;
+            }
             const result = sessionResults.find((r) => r.word_id === word.id);
             const isReviewWord = (word.srs_box ?? 1) > 1;
             const isMastered =
@@ -444,8 +467,9 @@ export default function ExerciseSession({
         const handleBeforeUnload = (e) => {
             if (!isDoneRef.current && !allowNavigation.current) {
                 e.preventDefault();
-                e.returnValue =
-                    "Are you sure you want to leave? You will lose the exercises progress";
+                e.returnValue = isSideQuest
+                    ? "Are you sure you want to leave? You will lose your gauntlet progress"
+                    : "Are you sure you want to leave? You will lose the exercises progress";
             }
         };
 
@@ -475,6 +499,52 @@ export default function ExerciseSession({
             result_count: sessionResults.length,
             is_quiz_only: !!isQuizOnly,
         });
+
+        if (isSideQuest) {
+            if (lives > 0) {
+                playSessionComplete(userSettings);
+            } else {
+                playIncorrect(userSettings);
+            }
+
+            const timeTaken = startTimeRef.current ? Math.round((Date.now() - startTimeRef.current) / 1000) : 0;
+            setRunTimeTaken(timeTaken);
+
+            const _xsrfRow = document.cookie
+                .split("; ")
+                .find((row) => row.startsWith("XSRF-TOKEN="));
+            const csrfToken = _xsrfRow
+                ? decodeURIComponent(_xsrfRow.substring("XSRF-TOKEN=".length))
+                : "";
+
+            fetch(route("sidequests.complete", category.id), {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-XSRF-TOKEN": csrfToken,
+                    Accept: "application/json",
+                },
+                body: JSON.stringify({
+                    score: promotedCount,
+                    lives_remaining: lives,
+                    time_taken: timeTaken,
+                }),
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.xp_awarded && xp_enabled) {
+                        setSessionXpAwarded(data.xp_awarded);
+                    }
+                    if (data.xp_balance !== undefined) {
+                        setXpBalance(data.xp_balance);
+                    }
+                    setSideQuestResults(data);
+                })
+                .catch(() => {})
+                .finally(() => setSessionCompleteSynced(true));
+
+            return;
+        }
 
         if (!auth?.user) {
             setSessionCompleteSynced(true);
@@ -810,6 +880,11 @@ export default function ExerciseSession({
         }
         if (isSubmitting) return;
 
+        if (isSideQuest) {
+            processKnowAction(false);
+            return;
+        }
+
         const currentBox = word.srs_box ?? 1;
         const willMaster = currentBox >= MASTERED_BOX - 1; // L3 → L4
 
@@ -920,14 +995,21 @@ export default function ExerciseSession({
             }, MASTERY_ANIM_MS);
         } else {
             animateThen("left", () => {
-                setSessionResults((prev) => [
-                    ...prev,
-                    { word_id: wordId, action: action },
-                ]);
-                setQueue((prev) => syncUpdatedQueue(prev.slice(1)));
-                setPromotedCount((c) => c + 1);
-                setIsSubmitting(false);
-                setPendingKnowWord(null);
+                if (isSideQuest) {
+                    setQueue((prev) => prev.slice(1));
+                    setPromotedCount((c) => c + 1);
+                    setIsSubmitting(false);
+                    setPendingKnowWord(null);
+                } else {
+                    setSessionResults((prev) => [
+                        ...prev,
+                        { word_id: wordId, action: action },
+                    ]);
+                    setQueue((prev) => syncUpdatedQueue(prev.slice(1)));
+                    setPromotedCount((c) => c + 1);
+                    setIsSubmitting(false);
+                    setPendingKnowWord(null);
+                }
             });
         }
     };
@@ -967,28 +1049,36 @@ export default function ExerciseSession({
         });
 
         animateThen("right", () => {
-            setSessionResults((prev) => [
-                ...prev,
-                { word_id: wordId, action: "learn" },
-            ]);
-            setDontKnowCount((c) => c + 1);
-            setQueue((prev) => {
-                const nextQueue = prev.slice(1);
-                return nextQueue.map((item) => {
-                    if (item.id === wordId) {
-                        const meta = LEVEL_META[1];
-                        return {
-                            ...item,
-                            srs_box: 1,
-                            srs_label: meta.label,
-                            srs_color: meta.color,
-                            srs_incorrect: (item.srs_incorrect ?? 0) + 1,
-                        };
-                    }
-                    return item;
+            if (isSideQuest) {
+                playIncorrect(userSettings);
+                setDontKnowCount((c) => c + 1);
+                setLives((prev) => Math.max(0, prev - 1));
+                setQueue((prev) => prev.slice(1));
+                setIsSubmitting(false);
+            } else {
+                setSessionResults((prev) => [
+                    ...prev,
+                    { word_id: wordId, action: "learn" },
+                ]);
+                setDontKnowCount((c) => c + 1);
+                setQueue((prev) => {
+                    const nextQueue = prev.slice(1);
+                    return nextQueue.map((item) => {
+                        if (item.id === wordId) {
+                            const meta = LEVEL_META[1];
+                            return {
+                                ...item,
+                                srs_box: 1,
+                                srs_label: meta.label,
+                                srs_color: meta.color,
+                                srs_incorrect: (item.srs_incorrect ?? 0) + 1,
+                            };
+                        }
+                        return item;
+                    });
                 });
-            });
-            setIsSubmitting(false);
+                setIsSubmitting(false);
+            }
         });
     };
 
@@ -1185,6 +1275,201 @@ export default function ExerciseSession({
 
     // ── Session complete screen ───────────────────────────────────────────────
     if (isDone) {
+        if (isSideQuest) {
+            let medal = null;
+            if (lives > 0 && runTimeTaken !== null) {
+                if (runTimeTaken <= 50) {
+                    medal = {
+                        type: 'gold',
+                        label: 'Gold Speed Medal',
+                        desc: 'Superhuman speed! (avg ≤ 2.5s/question)',
+                        colorClass: 'text-amber-500 bg-amber-500/5 dark:bg-amber-500/10 border-amber-500/30 dark:border-amber-500/20',
+                        iconClass: 'text-amber-500 fill-amber-500/20 drop-shadow-[0_0_8px_rgba(245,158,11,0.6)] animate-pulse'
+                    };
+                } else if (runTimeTaken <= 70) {
+                    medal = {
+                        type: 'silver',
+                        label: 'Silver Speed Medal',
+                        desc: 'Impressive reflexes! (avg ≤ 3.5s/question)',
+                        colorClass: 'text-slate-400 bg-slate-400/5 dark:bg-slate-400/10 border-slate-400/30 dark:border-slate-400/20',
+                        iconClass: 'text-slate-400 fill-slate-400/20 drop-shadow-[0_0_8px_rgba(148,163,184,0.6)]'
+                    };
+                } else {
+                    medal = {
+                        type: 'bronze',
+                        label: 'Bronze Speed Medal',
+                        desc: 'Gauntlet cleared! (avg > 3.5s/question)',
+                        colorClass: 'text-amber-700 bg-amber-700/5 dark:bg-amber-700/10 border-amber-700/30 dark:border-amber-700/20',
+                        iconClass: 'text-amber-700 fill-amber-700/20 drop-shadow-[0_0_8px_rgba(180,83,9,0.6)]'
+                    };
+                }
+            }
+
+            const bestTime = sideQuestResults ? sideQuestResults.best_time_taken : (sideQuestUnlock?.best_time_taken ?? null);
+
+            return (
+                <AppLayout hideHeader={true} showBottomNav={false}>
+                    <Head title="Gauntlet Complete" />
+                    
+                    <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950 flex flex-col items-center justify-center px-4 py-10">
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl w-full max-w-md p-8 text-center text-slate-800 dark:text-white">
+                            
+                            {/* Personal Record Banners */}
+                            {sideQuestResults?.best_time_updated && (
+                                <div className="mb-4 bg-emerald-500 text-white font-extrabold text-xs uppercase px-4 py-1.5 rounded-full inline-flex items-center gap-1.5 animate-pulse shadow-md">
+                                    ⚡ NEW SPEED RECORD! ⚡
+                                </div>
+                            )}
+                            {!sideQuestResults?.best_time_updated && sideQuestResults?.best_score_updated && (
+                                <div className="mb-4 bg-yellow-500 text-white font-extrabold text-xs uppercase px-4 py-1.5 rounded-full inline-flex items-center gap-1.5 animate-pulse shadow-md">
+                                    🌟 NEW BEST SCORE! 🌟
+                                </div>
+                            )}
+
+                            <div className="mb-4 flex justify-center">
+                                {lives > 0 ? (
+                                    medal ? (
+                                        <div className="relative">
+                                            <Award className={`h-20 w-20 ${medal.iconClass}`} />
+                                        </div>
+                                    ) : (
+                                        <div className="relative">
+                                            <Trophy className="h-20 w-20 text-yellow-500 fill-yellow-500/20 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)] animate-bounce" />
+                                        </div>
+                                    )
+                                ) : (
+                                    <div className="relative">
+                                        <svg
+                                            version="1.1"
+                                            id="_x32_"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            xmlnsXlink="http://www.w3.org/1999/xlink"
+                                            viewBox="0 0 512 512"
+                                            xmlSpace="preserve"
+                                            fill="currentColor"
+                                            className="h-20 w-20 text-slate-400 dark:text-slate-500 drop-shadow-[0_0_8px_rgba(148,163,184,0.3)] animate-pulse"
+                                        >
+                                            <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+                                            <g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g>
+                                            <g id="SVGRepo_iconCarrier">
+                                                <style type="text/css">{`
+                                                    .st_custom_skull{fill:currentColor;}
+                                                `}</style>
+                                                <g>
+                                                    <path className="st_custom_skull" d="M437.914,74.078C392.43,27,326.117,0,255.992,0C185.883,0,119.57,27,74.102,74.063 c-42.5,44-64.703,102.828-62.531,165.688l6.609,83.875c6.031,84.75,55.234,93.906,76.094,93.906c7.563,0,15.531-1.094,23.625-3.188 c1.094,7.938,1,21.859,0.922,32.688l-0.078,15.063c-0.141,10.938-0.359,27.5,11.234,39.234c4.797,4.875,13.563,10.672,28,10.672 h196.047c14.438,0,23.188-5.797,28-10.656c11.578-11.75,11.375-28.297,11.234-39.25l-0.094-15.031 c-0.063-10.844-0.172-24.781,0.938-32.719c8.172,2.109,16.094,3.188,23.625,3.188c20.859,0,70.047-9.156,76.094-93.75l6.563-83.156 l0.047-0.875C502.602,176.891,480.398,118.063,437.914,74.078z M459.961,237.906l-6.516,82.844 c-2.672,37.344-14.703,56.281-35.719,56.281c-4.844,0-10.266-0.891-16.297-2.688c-14.406-4.156-26.891-1.375-35.703,7.5 c-13.406,13.5-13.266,35.313-13.047,65.5l0.078,15.281c0.031,2.5,0.078,6.188-0.141,8.875h-42.75v-50.016h-32.406V471.5h-42.938 v-50.016h-32.391V471.5h-42.766c-0.203-2.688-0.156-6.375-0.125-8.906l0.078-15.297c0.219-30.156,0.359-51.953-13.047-65.453 c-8.766-8.844-20.953-11.75-35.875-7.453c-5.859,1.75-11.281,2.641-16.125,2.641c-21.031,0-33.031-18.938-35.719-56.438 l-6.531-82.688c-1.656-51.609,16.5-99.781,51.203-135.688C141.117,63,196.805,40.5,255.992,40.5 c59.203,0,114.891,22.5,152.781,61.719C443.477,138.125,461.648,186.297,459.961,237.906z"></path>
+                                                    <path className="st_custom_skull" d="M256.008,309.656c-9.719,0-31.125,46.688-35.031,54.469c-3.875,7.781,3.906,19.469,15.578,15.563 c11.672-3.875,19.453-13.609,19.453-13.609s7.781,9.734,19.453,13.609c11.656,3.906,19.453-7.781,15.563-15.563 C287.117,356.344,265.742,309.656,256.008,309.656z"></path>
+                                                    <path className="st_custom_skull" d="M171.586,183.281c-30.891-3.25-58.578,19.188-61.828,50.094l-4.188,29.422 c-3.25,30.922,19.188,58.578,50.078,61.828c30.922,3.25,58.609-19.172,61.844-50.094l4.188-29.422 C224.914,214.188,202.508,186.531,171.586,183.281z"></path>
+                                                    <path className="st_custom_skull" d="M402.242,233.375c-3.234-30.906-30.938-53.344-61.828-50.094c-30.922,3.25-53.328,30.906-50.094,61.828 l4.172,29.422c3.25,30.922,30.938,53.344,61.844,50.094s53.344-30.906,50.094-61.828L402.242,233.375z"></path>
+                                                </g>
+                                            </g>
+                                        </svg>
+                                    </div>
+                                )}
+                            </div>
+
+                            <h1 className="text-3xl font-black tracking-tight mb-1 text-slate-800 dark:text-white">
+                                {lives > 0 ? t("exercise.gauntlet.cleared") : t("exercise.gauntlet.failed")}
+                            </h1>
+                            <p className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider font-bold mb-4">
+                                {category?.name ?? 'Survival Gauntlet'}
+                            </p>
+
+                            {/* Medal explanation card */}
+                            {medal && (
+                                <div className={`border rounded-2xl p-3 mb-5 text-center ${medal.colorClass}`}>
+                                    <p className="font-extrabold text-sm uppercase tracking-wider">{medal.label}</p>
+                                    <p className="text-[11px] opacity-80 mt-0.5">{medal.desc}</p>
+                                </div>
+                            )}
+
+                            <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-2xl py-2.5 px-4 mb-5 inline-flex items-center gap-1.5 justify-center">
+                                <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold mr-1">{t("exercise.gauntlet.lives_remaining")}</span>
+                                {Array.from({ length: 3 }).map((_, i) => {
+                                    const isFilled = lives > 0 && i < lives;
+                                    return (
+                                        <Heart
+                                            key={i}
+                                            className={`h-4 w-4 ${
+                                                isFilled
+                                                    ? "fill-red-500 text-red-500"
+                                                    : "text-red-500/40 dark:text-red-500/30"
+                                            }`}
+                                        />
+                                    );
+                                })}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 mb-5">
+                                <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-2xl py-3.5 px-2 flex flex-col justify-center">
+                                    <p className="text-xl font-black text-green-600 dark:text-green-400">
+                                        {promotedCount} / 20
+                                    </p>
+                                    <p className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5 font-bold uppercase tracking-wider">
+                                        {t("exercise.gauntlet.your_score")}
+                                    </p>
+                                </div>
+                                <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-2xl py-3.5 px-2 flex flex-col justify-center">
+                                    <p className="text-xl font-black text-yellow-600 dark:text-yellow-400">
+                                        {sideQuestResults ? sideQuestResults.best_score : (sideQuestUnlock?.best_score ?? 0)} / 20
+                                    </p>
+                                    <p className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5 font-bold uppercase tracking-wider">
+                                        {t("exercise.gauntlet.best_score")}
+                                    </p>
+                                </div>
+                                <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-2xl py-3.5 px-2 flex flex-col justify-center">
+                                    <p className="text-xl font-black text-blue-600 dark:text-blue-400 flex items-center justify-center gap-1 font-mono">
+                                        <Clock className="h-4 w-4" />
+                                        {runTimeTaken !== null ? `${runTimeTaken}s` : '--'}
+                                    </p>
+                                    <p className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5 font-bold uppercase tracking-wider">
+                                        Time Taken
+                                    </p>
+                                </div>
+                                <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-2xl py-3.5 px-2 flex flex-col justify-center">
+                                    <p className="text-xl font-black text-indigo-600 dark:text-indigo-400 flex items-center justify-center gap-1 font-mono">
+                                        <Clock className="h-4 w-4" />
+                                        {bestTime !== null ? `${bestTime}s` : '--'}
+                                    </p>
+                                    <p className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5 font-bold uppercase tracking-wider">
+                                        Best Time
+                                    </p>
+                                </div>
+                            </div>
+
+                            {lives === 0 ? (
+                                <div className="bg-red-500/10 border border-red-500/20 rounded-2xl py-3 px-4 mb-6 text-center">
+                                    <p className="text-[11px] text-red-500 dark:text-red-400 font-medium">
+                                        {t("exercise.gauntlet.failed_desc")}
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="bg-green-500/10 border border-green-500/20 dark:border-green-500/30 rounded-2xl py-3 px-4 mb-6 text-center">
+                                    <p className="text-[11px] text-green-600 dark:text-green-400 font-medium">
+                                        {t("exercise.gauntlet.practice_desc")}
+                                    </p>
+                                </div>
+                            )}
+
+                            <div className="flex flex-col gap-3">
+                                <Link
+                                    href={route('sidequests.start', category?.id)}
+                                    className="w-full py-3.5 bg-green-600 hover:bg-green-700 text-white font-extrabold rounded-2xl flex items-center justify-center gap-2 transition"
+                                >
+                                    {lives > 0 ? t("exercise.gauntlet.play_again") : t("exercise.gauntlet.try_again")}
+                                </Link>
+                                <Link
+                                    href={backHref}
+                                    className="w-full py-3.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-2xl flex items-center justify-center gap-2 transition"
+                                >
+                                    <ChevronLeft className="h-4 w-4" /> {t("exercise.gauntlet.back_to_category")}
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                </AppLayout>
+            );
+        }
+
         const retries = dontKnowCount; // total "I Don't Know" taps during session
         return (
             <AppLayout hideHeader={true} showBottomNav={false}>
@@ -1477,15 +1762,15 @@ export default function ExerciseSession({
                         </div>
                         {/* Queue remaining badge */}
                         <div className="flex items-center gap-2">
-                            {/* <button
-                                onClick={() => {
-                                    setStreakChange("up");
-                                    setShowStreakEffect(true);
-                                }}
-                                className="shrink-0 text-[10px] font-bold text-orange-500 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900/50 rounded-full px-2 py-0.5 shadow-sm hover:scale-105 active:scale-95 transition-all"
-                            >
-                                Test Streak
-                            </button> */}
+                            {isSideQuest && (
+                                <div className="flex items-center gap-1 shrink-0 mr-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-full px-2.5 py-0.5 shadow-sm dark:shadow-lg">
+                                    {Array.from({ length: 3 }).map((_, i) => (
+                                        <span key={i} className="text-xs transition-transform hover:scale-110">
+                                            {i < lives ? "❤️" : "🖤"}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
                             <span className="shrink-0 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-full px-2.5 py-0.5 shadow-sm dark:shadow-lg">
                                 {t("exercise.left", {
                                     count: queue.length,
@@ -1527,6 +1812,7 @@ export default function ExerciseSession({
                                 <QuizPanel
                                     question={word}
                                     onAnswer={handleQuizAnswer}
+                                    timerDuration={isSideQuest ? (category?.side_quest_timer_seconds || 5) : null}
                                 />
                             </div>
                         ) : (
@@ -2267,7 +2553,9 @@ export default function ExerciseSession({
                             {t("exercise.dialogs.leave.confirm")}
                         </AlertDialogTitle>
                         <AlertDialogDescription className="text-base text-gray-500">
-                            {t("exercise.dialogs.leave.desc")}
+                            {isSideQuest
+                                ? t("exercise.dialogs.leave.desc_gauntlet")
+                                : t("exercise.dialogs.leave.desc")}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="flex-col sm:flex-row gap-2">

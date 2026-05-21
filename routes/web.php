@@ -21,6 +21,7 @@ use App\Http\Controllers\UserWordListOrderController;
 use App\Http\Controllers\WordListCategoryController;
 use App\Http\Controllers\WordListController;
 use App\Http\Controllers\WordProgressController;
+use App\Http\Controllers\SideQuestController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -295,7 +296,10 @@ Route::middleware(['auth'])->group(function () {
         return Inertia::render('Achievements');
     })->name('achievements');
 
-
+    // Side Quests
+    Route::post('/side-quests/{category}/unlock', [SideQuestController::class, 'unlock'])->name('sidequests.unlock');
+    Route::get('/side-quests/{category}/start', [SideQuestController::class, 'start'])->name('sidequests.start');
+    Route::post('/side-quests/{category}/complete', [SideQuestController::class, 'complete'])->name('sidequests.complete');
 });
 
 // Temporary test route for followed user notifications (public with auto-login)

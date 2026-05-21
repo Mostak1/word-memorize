@@ -19,6 +19,8 @@ class Word extends Model
         'hyphenation',
         'parts_of_speech_variations',
         'definition',
+        'cefr_level',
+        'word_origin',
         'bangla_meaning',
         'collocations',
         'bangla_collocations',

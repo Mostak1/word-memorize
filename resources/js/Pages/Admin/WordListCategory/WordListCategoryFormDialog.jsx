@@ -30,6 +30,9 @@ export default function WordListCategoryFormDialog({
         status: true,
         is_locked: false,
         price: "",
+        side_quest_xp_cost: 150,
+        side_quest_timer_seconds: 5,
+        enable_side_quest: false,
     });
 
     const [thumbnailFile, setThumbnailFile] = useState(null);
@@ -48,6 +51,9 @@ export default function WordListCategoryFormDialog({
                 status: category?.status ?? true,
                 is_locked: category?.is_locked ?? false,
                 price: category?.price ?? "",
+                side_quest_xp_cost: category?.side_quest_xp_cost ?? 150,
+                side_quest_timer_seconds: category?.side_quest_timer_seconds ?? 5,
+                enable_side_quest: category?.enable_side_quest ?? false,
             });
             setThumbnailFile(null);
             setPreviewUrl(category?.thumbnail_url_full || null);
@@ -66,6 +72,9 @@ export default function WordListCategoryFormDialog({
                 status: true,
                 is_locked: false,
                 price: "",
+                side_quest_xp_cost: 150,
+                side_quest_timer_seconds: 5,
+                enable_side_quest: false,
             });
             setErrors({});
         }
@@ -110,6 +119,9 @@ export default function WordListCategoryFormDialog({
         formData.append("description", data.description ?? "");
         formData.append("status", data.status ? "1" : "0");
         formData.append("is_locked", data.is_locked ? "1" : "0");
+        formData.append("side_quest_xp_cost", data.side_quest_xp_cost ?? "150");
+        formData.append("side_quest_timer_seconds", data.side_quest_timer_seconds ?? "5");
+        formData.append("enable_side_quest", data.enable_side_quest ? "1" : "0");
         if (data.price !== "" && data.price !== null) {
             formData.append("price", data.price);
         }
@@ -162,7 +174,7 @@ export default function WordListCategoryFormDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>
                         {isEditing
@@ -329,6 +341,79 @@ export default function WordListCategoryFormDialog({
                                 )}
                             </div>
                         )}
+                    </div>
+
+                    {/* Side Quest Unlock Cost */}
+                    <div className="space-y-1.5">
+                        <Label htmlFor="side_quest_xp_cost">
+                            Side Quest Unlock Cost (XP) <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                            id="side_quest_xp_cost"
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={data.side_quest_xp_cost}
+                            onChange={(e) =>
+                                setData({
+                                    ...data,
+                                    side_quest_xp_cost: e.target.value,
+                                })
+                            }
+                            placeholder="e.g. 150"
+                            className="max-w-[160px]"
+                        />
+                        {errors.side_quest_xp_cost && (
+                            <p className="text-sm text-red-600">
+                                {errors.side_quest_xp_cost}
+                            </p>
+                        )}
+                    </div>
+
+                    {/* Side Quest Timer Settings */}
+                    <div className="space-y-1.5">
+                        <Label htmlFor="side_quest_timer_seconds">
+                            Side Quest Timer Duration (Seconds) <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                            id="side_quest_timer_seconds"
+                            type="number"
+                            min="2"
+                            max="60"
+                            step="1"
+                            value={data.side_quest_timer_seconds}
+                            onChange={(e) =>
+                                setData({
+                                    ...data,
+                                    side_quest_timer_seconds: e.target.value,
+                                })
+                            }
+                            placeholder="e.g. 5"
+                            className="max-w-[160px]"
+                        />
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                            Time allowed per question in the Survival Gauntlet (minimum 2s, default 5s).
+                        </p>
+                        {errors.side_quest_timer_seconds && (
+                            <p className="text-sm text-red-600">
+                                {errors.side_quest_timer_seconds}
+                            </p>
+                        )}
+                    </div>
+
+                    {/* Enable Side Quest */}
+                    <div className="flex items-center gap-3">
+                        <Label htmlFor="enable_side_quest" className="cursor-pointer">Enable Side Quest</Label>
+                        <Switch
+                            id="enable_side_quest"
+                            checked={data.enable_side_quest}
+                            onCheckedChange={(checked) =>
+                                setData({ ...data, enable_side_quest: checked })
+                            }
+                        />
+                        <span className="text-sm text-muted-foreground">
+                            {data.enable_side_quest ? "Enabled" : "Disabled"}
+                        </span>
                     </div>
 
                     {/* Status */}
