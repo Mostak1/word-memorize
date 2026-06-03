@@ -92,9 +92,40 @@ export default function SessionPromotionDialog({
         setActiveIndex((index) => (index + 1) % activeGroup.items.length);
     };
 
+    const [touchStart, setTouchStart] = useState(null);
+    const [touchEnd, setTouchEnd] = useState(null);
+
+    const minSwipeDistance = 50;
+
+    const onTouchStart = (e) => {
+        setTouchEnd(null);
+        setTouchStart(e.targetTouches[0].clientX);
+    };
+
+    const onTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
+
+    const onTouchEndHandler = () => {
+        if (!touchStart || !touchEnd) return;
+        const distance = touchStart - touchEnd;
+        const isLeftSwipe = distance > minSwipeDistance;
+        const isRightSwipe = distance < -minSwipeDistance;
+        
+        if (isLeftSwipe) {
+            goNext();
+        }
+        if (isRightSwipe) {
+            goPrevious();
+        }
+    };
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="w-[calc(100vw-2rem)] max-w-md overflow-hidden border-0 bg-white p-0 shadow-2xl dark:bg-slate-900 sm:rounded-3xl">
+            <DialogContent 
+                className="w-[calc(100vw-2rem)] max-w-md overflow-hidden border-0 bg-white p-0 shadow-2xl dark:bg-slate-900 sm:rounded-3xl"
+                onTouchStart={onTouchStart}
+                onTouchMove={onTouchMove}
+                onTouchEnd={onTouchEndHandler}
+            >
                 <div className="p-5 pb-0">
                     <DialogHeader className="text-left">
                         <div className="flex items-center gap-3 pr-8">

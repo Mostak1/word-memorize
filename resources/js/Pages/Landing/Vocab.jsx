@@ -3920,17 +3920,21 @@ export default function VocabPixLanding({
                     </button>
                     <div className={`faq-a ${openFaq === 0 ? "open" : ""}`}>
                         <span className="t-en">
-                            Yes — all public word lists (GRE, Oxford 3000,
-                            Academic), images, audio, Bangla definitions, XP
-                            tracking and quizzes are completely free. Pro adds
-                            custom collections, streak protection, and offline
-                            mode.
+                            Yes — all public word lists (IELTS & Academic
+                            Writing Vocabulary, Basic to Fluent Vocabulary,
+                            Spoken English Phrases & Idioms, Advanced Essential
+                            + Master Vocabulary), images, audio, Bangla
+                            definitions, XP tracking and quizzes are completely
+                            free. Pro adds custom collections, streak
+                            protection, and offline mode.
                         </span>
                         <span className="t-bn">
-                            হ্যাঁ — সব পাবলিক শব্দ তালিকা (GRE, Oxford 3000,
-                            Academic), ছবি, অডিও, বাংলা সংজ্ঞা, XP ট্র্যাকিং ও
-                            কুইজ সম্পূর্ণ বিনামূল্যে। Pro-তে কাস্টম সংগ্রহ,
-                            স্ট্রিক সুরক্ষা ও অফলাইন মোড আছে।
+                            হ্যাঁ — সব পাবলিক শব্দ তালিকা (IELTS & Academic
+                            Writing Vocabulary, Basic to Fluent Vocabulary,
+                            Spoken English Phrases & Idioms, Advanced Essential
+                            + Master Vocabulary), ছবি, অডিও, বাংলা সংজ্ঞা, XP
+                            ট্র্যাকিং ও কুইজ সম্পূর্ণ বিনামূল্যে। Pro-তে কাস্টম
+                            সংগ্রহ, স্ট্রিক সুরক্ষা ও অফলাইন মোড আছে।
                         </span>
                     </div>
                 </div>

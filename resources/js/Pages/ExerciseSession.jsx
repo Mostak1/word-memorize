@@ -671,10 +671,11 @@ export default function ExerciseSession({
 
     useEffect(() => {
         if (!isDone || !sessionCompleteSynced || promotions.length === 0) return;
+        if (showStreakEffect || showStreakLost || showListOverlay) return;
 
-        const timer = setTimeout(() => setShowPromotionDialog(true), 700);
+        const timer = setTimeout(() => setShowPromotionDialog(true), 2500);
         return () => clearTimeout(timer);
-    }, [isDone, sessionCompleteSynced, promotions.length]);
+    }, [isDone, sessionCompleteSynced, promotions.length, showStreakEffect, showStreakLost, showListOverlay]);
 
     useEffect(() => {
         const handleAchievementsDismissed = () => {
