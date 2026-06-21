@@ -73,6 +73,9 @@ export default function SessionPromotionDialog({
     const meta = TYPE_META[activePromotion?.type] ?? TYPE_META.service;
     const PromotionIcon = meta.icon;
 
+    const [touchStart, setTouchStart] = useState(null);
+    const [touchEnd, setTouchEnd] = useState(null);
+
     useEffect(() => {
         if (!open || groups.length === 0) return;
 
@@ -92,8 +95,6 @@ export default function SessionPromotionDialog({
         setActiveIndex((index) => (index + 1) % activeGroup.items.length);
     };
 
-    const [touchStart, setTouchStart] = useState(null);
-    const [touchEnd, setTouchEnd] = useState(null);
 
     const minSwipeDistance = 50;
 

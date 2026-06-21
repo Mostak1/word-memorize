@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Download, Loader2, Plus, Share, Smartphone } from "lucide-react";
+import { Download, Loader2, Plus, MoreVertical, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import { usePwaInstallPrompt } from "@/hooks/usePwaInstallPrompt";
 import { usePage } from "@inertiajs/react";
@@ -26,7 +26,7 @@ export default function PwaInstallButton({
     const { assetUrl } = usePage().props;
     const assetBaseUrl = assetUrl?.replace(/\/$/, "") ?? "";
     const logoUrl = `${assetBaseUrl}/img/logo.png`;
-    const installAvifUrl = `${assetBaseUrl}/img/install.avif`;
+    const installAvifUrl = `${assetBaseUrl}/img/install_2.avif`;
 
     if (isStandalone) return null;
 
@@ -196,12 +196,18 @@ export default function PwaInstallButton({
                                 </div>
 
                                 <div className="mt-4 space-y-3.5 text-[15px] leading-snug">
+                                    <div className="rounded-md bg-blue-50 p-3 mb-2 dark:bg-blue-900/30">
+                                        <p className="text-sm text-blue-800 dark:text-blue-200">
+                                            <strong>Note:</strong> You must use the <strong>Google Chrome</strong> browser in order to do this.
+                                        </p>
+                                    </div>
+
                                     <div className="flex gap-3">
                                         <StepNumber>1</StepNumber>
                                         <p className="pt-0.5">
                                             Tap the{" "}
-                                            <InlineIcon label="Share">
-                                                <Share className="h-4 w-4 text-blue-500" />
+                                            <InlineIcon label="More options">
+                                                <MoreVertical className="h-4 w-4 text-gray-700 dark:text-gray-300" />
                                             </InlineIcon>{" "}
                                             button in the toolbar.
                                         </p>
