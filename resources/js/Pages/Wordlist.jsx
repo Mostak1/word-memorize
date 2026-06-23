@@ -624,7 +624,7 @@ export default function Wordlist({
 
     return (
         <AppLayout hideHeader={true}>
-            <Head title={t("wordlists.title")} />
+            <Head title={currentCategory ? `${currentCategory} - ${t("wordlists.title")}` : (currentDifficulty ? `${currentDifficulty} - ${t("wordlists.title")}` : t("wordlists.title"))} />
             <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950">
                 <main className="max-w-2xl mx-auto px-4 py-5 pb-20">
                     {(currentCategory || currentDifficulty) && (
