@@ -11,15 +11,20 @@ class GoogleController extends Controller
 {
     public function redirect()
     {
-        return Socialite::driver('google')->redirect();
+        return Socialite::driver('google')->stateless()->redirect();
     }
 
     public function callback(Request $request)
     {
         try {
-            $googleUser = Socialite::driver('google')->user();
+            $googleUser = Socialite::driver('google')->stateless()->user();
         } catch (\Exception $e) {
-            return redirect('/login');
+            return redirect('/login')->with('flash', [
+                'toast' => [
+                    'type' => 'error',
+                    'message' => 'Google login failed: ' . $e->getMessage()
+                ]
+            ]);
         }
 
         // 1. Try finding by google_id
