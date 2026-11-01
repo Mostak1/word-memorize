@@ -17,7 +17,14 @@ export const setAssetBaseUrl = (url) => {
 
 // 🔹 Helper to build full URL
 const getAssetUrl = (path) => {
-    return `${assetBaseUrl}${path}`;
+    const cleanPath = path.startsWith("/") ? path : `/${path}`;
+    if (assetBaseUrl) {
+        return `${assetBaseUrl.replace(/\/+$/, "")}${cleanPath}`;
+    }
+    if (typeof window !== "undefined" && window.__ASSET_URL__) {
+        return `${window.__ASSET_URL__.replace(/\/+$/, "")}${cleanPath}`;
+    }
+    return cleanPath;
 };
 
 // 🔹 Initialize and preload sounds

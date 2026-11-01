@@ -5,7 +5,15 @@ import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd(), "");
-    const assetUrl = env.ASSET_URL || "";
+    let assetUrl = env.ASSET_URL || "";
+    if (!assetUrl && env.APP_URL) {
+        try {
+            const parsed = new URL(env.APP_URL);
+            if (parsed.pathname && parsed.pathname !== "/") {
+                assetUrl = parsed.pathname;
+            }
+        } catch (e) {}
+    }
     // If we have an ASSET_URL, we use it as the base for the build
     const base = assetUrl
         ? (assetUrl.endsWith("/") ? assetUrl : assetUrl + "/") + "build/"

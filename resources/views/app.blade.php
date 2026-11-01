@@ -26,6 +26,9 @@
         rel="stylesheet" crossorigin="anonymous">
 
     <!-- Scripts -->
+    <script>
+        window.__ASSET_URL__ = "{{ rtrim(asset('/'), '/') }}";
+    </script>
     @routes
     @viteReactRefresh
     @vite(['resources/js/app.jsx', "resources/js/Pages/{$page['component']}.jsx"])
