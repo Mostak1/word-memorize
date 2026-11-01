@@ -211,6 +211,7 @@ class AchievementService
       case 'dedication_weekend_warrior':
         // Study on both Sat and Sun in the same weekend
         return \App\Models\UserDailyActivity::where('user_id', $user->id)
+          ->selectRaw('YEARWEEK(activity_date)')
           ->whereIn(\DB::raw('DAYOFWEEK(activity_date)'), [1, 7]) // 1=Sun, 7=Sat
           ->groupBy(\DB::raw('YEARWEEK(activity_date)'))
           ->havingRaw('COUNT(DISTINCT DAYOFWEEK(activity_date)) = 2')
