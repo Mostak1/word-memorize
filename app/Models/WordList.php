@@ -21,6 +21,12 @@ class WordList extends Model
         'is_public',
     ];
 
+    protected $casts = [
+        'status' => 'boolean',
+        'is_locked' => 'boolean',
+        'is_public' => 'boolean',
+    ];
+
     /**
      * Relationship: belongs to one WordListCategory
      */

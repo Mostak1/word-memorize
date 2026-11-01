@@ -78,6 +78,7 @@ export default function Index({ categories }) {
     };
 
     const toggleWordListLocked = (wordList) => {
+        const currentlyLocked = Boolean(Number(wordList.is_locked));
         router.patch(
             route("admin.word-lists.update", wordList.id),
             {
@@ -86,7 +87,7 @@ export default function Index({ categories }) {
                 price: wordList.price ?? 0,
                 difficulty: wordList.difficulty || "beginner",
                 status: wordList.status,
-                is_locked: !wordList.is_locked,
+                is_locked: !currentlyLocked,
                 is_public: wordList.is_public,
             },
             {
@@ -94,7 +95,7 @@ export default function Index({ categories }) {
                 preserveScroll: true,
                 onSuccess: () =>
                     toast.success(
-                        wordList.is_locked
+                        currentlyLocked
                             ? "Word list unlocked!"
                             : "Word list locked!",
                     ),
@@ -400,17 +401,17 @@ export default function Index({ categories }) {
                                                                         );
                                                                     }}
                                                                     title={
-                                                                        wordList.is_locked
+                                                                        Boolean(Number(wordList.is_locked))
                                                                             ? "Unlock this word list"
                                                                             : "Lock this word list"
                                                                     }
                                                                     className={`inline-flex items-center justify-center rounded-md p-1.5 transition-colors ${
-                                                                        wordList.is_locked
+                                                                        Boolean(Number(wordList.is_locked))
                                                                             ? "text-amber-600 bg-amber-50 hover:bg-amber-100"
                                                                             : "text-gray-400 hover:text-gray-600 hover:bg-muted"
                                                                     }`}
                                                                 >
-                                                                    {wordList.is_locked ? (
+                                                                    {Boolean(Number(wordList.is_locked)) ? (
                                                                         <Lock className="h-4 w-4" />
                                                                     ) : (
                                                                         <Unlock className="h-4 w-4" />

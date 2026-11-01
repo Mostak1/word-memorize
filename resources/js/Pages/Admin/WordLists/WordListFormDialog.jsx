@@ -33,9 +33,9 @@ export default function WordListFormDialog({
         title: wordList?.title || "",
         difficulty: wordList?.difficulty || "",
         price: wordList?.price ?? 0,
-        status: wordList?.status ?? true,
-        is_locked: wordList?.is_locked ?? false,
-        is_public: wordList?.is_public ?? true,
+        status: wordList?.status !== undefined ? Boolean(Number(wordList.status)) : true,
+        is_locked: Boolean(Number(wordList?.is_locked)),
+        is_public: wordList?.is_public !== undefined ? Boolean(Number(wordList.is_public)) : true,
         word_list_category_id:
             wordList?.word_list_category_id || categoryId || "",
     });
@@ -49,9 +49,9 @@ export default function WordListFormDialog({
                 title: wordList?.title || "",
                 difficulty: wordList?.difficulty || "",
                 price: wordList?.price ?? 0,
-                status: wordList?.status ?? true,
-                is_locked: wordList?.is_locked ?? false,
-                is_public: wordList?.is_public ?? true,
+                status: wordList?.status !== undefined ? Boolean(Number(wordList.status)) : true,
+                is_locked: Boolean(Number(wordList?.is_locked)),
+                is_public: wordList?.is_public !== undefined ? Boolean(Number(wordList.is_public)) : true,
                 word_list_category_id:
                     wordList?.word_list_category_id || categoryId || "",
             });
@@ -199,13 +199,13 @@ export default function WordListFormDialog({
                             Locked
                         </Label>
                         <Switch
-                            checked={data.is_locked}
+                            checked={Boolean(Number(data.is_locked))}
                             onCheckedChange={(checked) =>
                                 setData({ ...data, is_locked: checked })
                             }
                         />
                         <span className="text-sm text-muted-foreground">
-                            {data.is_locked
+                            {Boolean(Number(data.is_locked))
                                 ? "Locked (users must purchase)"
                                 : "Unlocked (free access)"}
                         </span>

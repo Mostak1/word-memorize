@@ -861,9 +861,11 @@ export default function Wordlist({
                                     };
 
                                     // Locked by category purchase gate — skip this block if wordlist is NOT locked
+                                    const isListLocked = Boolean(Number(wordList.is_locked));
+
                                     if (
                                         categoryIsLocked &&
-                                        wordList.is_locked
+                                        isListLocked
                                     ) {
                                         return (
                                             <div key={wordList.id}>
@@ -920,7 +922,7 @@ export default function Wordlist({
 
                                     // Locked by quiz gate — is_locked=true and user hasn't passed yet
                                     if (
-                                        wordList.is_locked &&
+                                        isListLocked &&
                                         !unlocked.includes(wordList.id)
                                     ) {
                                         return (
